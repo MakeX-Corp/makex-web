@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "MakeX | Build",
+  title: "MakeX | Anyone can build",
   description: "Create fully functional iOS apps instantly with AI. No coding required.",
   viewport: {
     width: 'device-width',
