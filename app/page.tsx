@@ -2,6 +2,14 @@
 
 import { useEffect, useState, useRef } from "react"
 import { Sparkles, Code } from "lucide-react"
+import Image from 'next/image'
+import dynamic from 'next/dynamic'
+import WaitlistContainer from '@/components/waitlist-container'
+import { DeviceFrameset } from 'react-device-frameset'
+import 'react-device-frameset/styles/marvel-devices.min.css'
+
+const TYPING_SPEED = 200 // Slower typing speed
+const TYPING_INITIAL_DELAY = 2000 // Longer initial delay
 
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false)
@@ -9,6 +17,13 @@ export default function LandingPage() {
   const [gameState, setGameState] = useState(Array(9).fill(null))
   const [currentPlayer, setCurrentPlayer] = useState("X")
   const codeRef = useRef<HTMLDivElement>(null)
+  const [step, setStep] = useState(0)
+  const [userPrompt, setUserPrompt] = useState("")
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generatingCode, setGeneratingCode] = useState<string[]>([])
+  const [isTyping, setIsTyping] = useState(false)
+  const demoPrompt = "A tic-tac-toe game"
+  const [isLooping, setIsLooping] = useState(true)
 
   const codeSnippets = [
     "function TicTacToe() {",
@@ -42,7 +57,6 @@ export default function LandingPage() {
     "        {renderSquare(3)}",
     "        {renderSquare(4)}",
     "        {renderSquare(5)}",
-    "      </div>",
     '      <div className="board-row">',
     "        {renderSquare(6)}",
     "        {renderSquare(7)}",
@@ -51,6 +65,52 @@ export default function LandingPage() {
     "    </div>",
     "  );",
     "}",
+  ]
+
+  // Add these realistic React code snippets
+  const realisticCode = [
+    'import React, { useState } from "react"',
+    'import { View, Text, TouchableOpacity } from "react-native"',
+    '',
+    'export default function TicTacToe() {',
+    '  const [board, setBoard] = useState(Array(9).fill(null))',
+    '  const [isXNext, setIsXNext] = useState(true)',
+    '',
+    '  const handlePress = (index) => {',
+    '    const newBoard = [...board]',
+    '    newBoard[index] = isXNext ? "X" : "O"',
+    '    setBoard(newBoard)',
+    '    setIsXNext(!isXNext)',
+    '  }',
+    '',
+    '  const renderSquare = (index) => (',
+    '    <TouchableOpacity',
+    '      style={styles.square}',
+    '      onPress={() => handlePress(index)}>',
+    '      <Text style={styles.text}>{board[index]}</Text>',
+    '    </TouchableOpacity>',
+    '  )',
+    '',
+    '  return (',
+    '    <View style={styles.container}>',
+    '      <Text style={styles.title}>Tic Tac Toe</Text>',
+    '      <View style={styles.board}>',
+    '        <View style={styles.row}>',
+    '          {renderSquare(0)}',
+    '          {renderSquare(1)}',
+    '          {renderSquare(2)}',
+    '        </View>',
+    '      </View>',
+    '    </View>',
+    '  )',
+    '}',
+    '',
+    'const styles = StyleSheet.create({',
+    '  container: { flex: 1, padding: 20 },',
+    '  board: { aspectRatio: 1 },',
+    '  square: { flex: 1, borderWidth: 1 },',
+    '  text: { fontSize: 24, textAlign: "center" }',
+    '})'
   ]
 
   useEffect(() => {
@@ -66,21 +126,24 @@ export default function LandingPage() {
       })
     }, 150)
 
-    // Tic-tac-toe game simulation
-    const gameInterval = setInterval(() => {
-      setGameState((prev) => {
-        const emptyCells = prev.map((cell, idx) => (cell === null ? idx : null)).filter((idx) => idx !== null)
-        if (emptyCells.length === 0) {
-          return Array(9).fill(null)
-        }
+    // Tic-tac-toe game simulation - only run in step 2
+    let gameInterval: NodeJS.Timeout | null = null
+    if (step === 2) {
+      gameInterval = setInterval(() => {
+        setGameState((prev) => {
+          const emptyCells = prev.map((cell, idx) => (cell === null ? idx : null)).filter((idx) => idx !== null)
+          if (emptyCells.length === 0) {
+            return Array(9).fill(null)
+          }
 
-        const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)] as number
-        const newState = [...prev]
-        newState[randomIndex] = currentPlayer
-        setCurrentPlayer(currentPlayer === "X" ? "O" : "X")
-        return newState
-      })
-    }, 1000)
+          const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)] as number
+          const newState = [...prev]
+          newState[randomIndex] = currentPlayer
+          setCurrentPlayer(currentPlayer === "X" ? "O" : "X")
+          return newState
+        })
+      }, 1000)
+    }
 
     // Scroll code into view as it's typed
     if (codeRef.current) {
@@ -89,9 +152,84 @@ export default function LandingPage() {
 
     return () => {
       clearInterval(codeInterval)
-      clearInterval(gameInterval)
+      if (gameInterval) clearInterval(gameInterval)
     }
-  }, [codeIndex, currentPlayer])
+  }, [codeIndex, currentPlayer, step])
+
+  useEffect(() => {
+    if (mounted && !isTyping) { // Only start if not already typing
+      simulateTyping()
+    }
+  }, [mounted]) // Remove other dependencies
+
+  const generateRandomCode = () => {
+    const elements = [
+      'import React', 'const App', 'function', 'export default', 'useState',
+      'useEffect', 'StyleSheet', 'View', 'Text', 'TouchableOpacity',
+      'const styles', 'return', 'render', 'props', 'navigation'
+    ]
+    const snippets = [
+      'from "react-native"',
+      'createStackNavigator()',
+      'flex: 1,',
+      'backgroundColor: "#fff",',
+      'padding: 20,',
+      'onPress={() => {}}',
+      '<View style={styles.container}>',
+      '<Text style={styles.text}>',
+      'justifyContent: "center",',
+      'alignItems: "center",'
+    ]
+    const randomElement = elements[Math.floor(Math.random() * elements.length)]
+    const randomSnippet = snippets[Math.floor(Math.random() * snippets.length)]
+    return `${randomElement} ${randomSnippet}`
+  }
+
+  const startGeneration = () => {
+    setStep(1)
+    
+    // Create multiple copies of the code to fill the screen
+    const repeatedCode = Array(5).fill(realisticCode).flat()
+    setGeneratingCode(repeatedCode)
+
+    // Move to game after animation
+    setTimeout(() => {
+      setStep(2)
+      // Reset to home page after showing game for 5 seconds
+      setTimeout(() => {
+        setStep(0)
+        setUserPrompt("")
+        setGameState(Array(9).fill(null))
+        simulateTyping() // Start the loop again
+      }, 5000)
+    }, 4000)
+  }
+
+  const simulateTyping = () => {
+    if (isTyping) return // Prevent multiple typing instances
+    
+    setIsTyping(true)
+    setUserPrompt("") // Clear existing text
+    
+    setTimeout(() => {
+      let i = 0
+      const typingInterval = setInterval(() => {
+        setUserPrompt(demoPrompt.slice(0, i + 1))
+        i++
+        if (i === demoPrompt.length) {
+          clearInterval(typingInterval)
+          setIsTyping(false)
+          // Add small delay before starting generation
+          setTimeout(() => {
+            startGeneration()
+          }, 500)
+        }
+      }, TYPING_SPEED)
+
+      // Cleanup function
+      return () => clearInterval(typingInterval)
+    }, TYPING_INITIAL_DELAY)
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background/95 to-background/90 overflow-hidden">
@@ -103,12 +241,15 @@ export default function LandingPage() {
 
       <main className="flex-1 flex flex-col items-center justify-center relative z-10">
         <div className="container px-4 py-16 md:py-24 flex flex-col items-center text-center">
-          <div className="animate-float flex items-center justify-center mb-6">
+          <div className="flex items-center justify-center mb-6">
             <div className="relative">
-              <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-primary to-purple-500 opacity-75 blur-sm animate-pulse"></div>
-              <div className="relative bg-background rounded-full p-3">
-                <Code className="h-8 w-8 text-primary" />
-              </div>
+              <Image 
+                src="/logo.png"
+                alt="MakeX Logo"
+                width={64}
+                height={64}
+                className="h-16 w-16"
+              />
             </div>
           </div>
 
@@ -117,110 +258,104 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-xl md:text-2xl text-muted-foreground max-w-[600px] mb-8 animate-fade-in-delay">
-            Generate iOS apps instantly with AI. No coding required.
+            Anyone can build
           </p>
 
           <div className="w-full max-w-md mb-12 animate-fade-in-delay-2">
-            <div id="getWaitlistContainer" data-waitlist_id="26328" data-widget_type="WIDGET_2"></div>
+            <WaitlistContainer />
           </div>
 
-          {/* iPhone Mockup */}
+          {/* iPhone Mockup using DeviceFrameset */}
           <div className="relative mx-auto animate-float-slow">
-            <div className="relative mx-auto border-[14px] border-gray-800 rounded-[60px] h-[600px] w-[300px] shadow-xl">
-              {/* iPhone Notch */}
-              <div className="absolute top-0 inset-x-0">
-                <div className="mx-auto h-6 w-40 bg-gray-800 rounded-b-3xl"></div>
-              </div>
-
-              {/* Power Button */}
-              <div className="absolute -right-[14px] top-[120px] h-[32px] w-[3px] bg-gray-800 rounded-r-lg"></div>
-
-              {/* Volume Buttons */}
-              <div className="absolute -left-[14px] top-[100px] h-[32px] w-[3px] bg-gray-800 rounded-l-lg"></div>
-              <div className="absolute -left-[14px] top-[150px] h-[32px] w-[3px] bg-gray-800 rounded-l-lg"></div>
-
-              {/* Screen Content */}
-              <div className="h-full w-full overflow-hidden rounded-[48px] bg-black">
-                {/* App Tabs */}
+            <DeviceFrameset device="iPhone X">
+              <div className="h-full w-full bg-white">
                 <div className="flex h-full flex-col">
                   {/* App Header */}
-                  <div className="flex-none h-14 bg-gray-900 flex items-center justify-center border-b border-gray-800">
+                  <div className="flex-none h-14 bg-white border-b flex items-center justify-between px-4">
                     <div className="flex items-center space-x-2">
-                      <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-                      <span className="text-sm font-medium text-white">MakeX App Generator</span>
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium text-gray-900">MakeX</span>
                     </div>
                   </div>
 
                   {/* App Content */}
-                  <div className="flex-grow overflow-hidden">
-                    {/* Tabs */}
-                    <div className="flex border-b border-gray-800 bg-gray-900">
-                      <div className="flex-1 py-2 text-xs text-center text-primary border-b-2 border-primary">Code</div>
-                      <div className="flex-1 py-2 text-xs text-center text-gray-400">Preview</div>
-                    </div>
-
-                    {/* Code View */}
-                    <div className="h-[calc(100%-40px)] overflow-y-auto p-3 text-left font-mono text-xs text-green-400 code-scrollbar">
-                      <div className="mb-2 text-xs text-gray-400">// AI generating TicTacToe app</div>
-                      {codeSnippets.slice(0, codeIndex + 1).map((line, i) => (
-                        <div key={i} className={`${i === codeIndex ? "typing-line" : ""}`}>
-                          {line || " "}
+                  <div className="flex-grow overflow-hidden p-4">
+                    {step === 0 && (
+                      <div className="h-full flex flex-col items-center justify-center space-y-6 px-4">
+                        <div className="text-center space-y-2">
+                          <h3 className="text-xl font-semibold text-gray-900">What would you like to build?</h3>
+                          <p className="text-sm text-gray-500">Describe your app idea in simple words</p>
                         </div>
-                      ))}
-                      <div className="typing-cursor"></div>
-                    </div>
-
-                    {/* Preview Button */}
-                    <div className="absolute bottom-20 right-4 bg-primary text-white text-xs px-3 py-1.5 rounded-full shadow-lg flex items-center space-x-1 animate-pulse">
-                      <Sparkles className="h-3 w-3" />
-                      <span>See Preview</span>
-                    </div>
-
-                    {/* Game Preview (Floating) */}
-                    <div className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-gray-800/90 backdrop-blur-sm rounded-xl p-3 shadow-xl border border-gray-700 animate-float">
-                      <div className="text-xs text-center text-white mb-2">Tic Tac Toe</div>
-                      <div className="grid grid-cols-3 gap-1 w-24 h-24">
-                        {gameState.map((cell, index) => (
-                          <div
-                            key={index}
-                            className={`
-                              flex items-center justify-center border border-gray-700 rounded-md text-sm font-bold bg-gray-900/80
-                              ${cell === "X" ? "text-primary animate-pop-in" : cell === "O" ? "text-purple-500 animate-pop-in" : ""}
-                            `}
-                          >
-                            {cell}
-                          </div>
-                        ))}
+                        <input
+                          type="text"
+                          value={userPrompt}
+                          readOnly
+                          placeholder="e.g. A tic-tac-toe game"
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                        <button
+                          onClick={simulateTyping}
+                          disabled={isTyping}
+                          className="w-full bg-primary text-white rounded-xl py-3 font-medium disabled:opacity-50"
+                        >
+                          {isTyping ? "Typing..." : "Generate App →"}
+                        </button>
                       </div>
-                    </div>
+                    )}
+
+                    {step === 1 && (
+                      <div className="h-full w-full bg-white overflow-hidden">
+                        <div 
+                          className="h-full font-mono text-xs whitespace-pre animate-scroll-up"
+                          style={{
+                            willChange: 'transform'
+                          }}
+                        >
+                          {generatingCode.map((line, i) => (
+                            <div 
+                              key={i} 
+                              className="text-gray-800 leading-5"
+                              style={{ opacity: 0.8 }}
+                            >
+                              {line}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {step === 2 && (
+                      <div className="h-full w-full bg-white flex items-center justify-center p-4">
+                        <div className="w-full max-w-xs">
+                          <div className="text-lg text-center text-gray-900 mb-6 font-semibold">Tic Tac Toe</div>
+                          <div className="grid grid-cols-3 gap-3 aspect-square w-full">
+                            {gameState.map((cell, index) => (
+                              <div
+                                key={index}
+                                className={`
+                                  flex items-center justify-center rounded-xl text-2xl font-bold bg-gray-50 border border-gray-100
+                                  ${cell === "X" ? "text-primary animate-pop-in" : cell === "O" ? "text-purple-500 animate-pop-in" : ""}
+                                `}
+                                style={{
+                                  aspectRatio: "1/1"
+                                }}
+                              >
+                                {cell}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* iPhone Home Indicator */}
-                  <div className="flex-none h-6 flex items-center justify-center">
-                    <div className="w-24 h-1 bg-gray-600 rounded-full"></div>
+                  {/* Bottom Bar */}
+                  <div className="flex-none h-16 border-t bg-white flex items-center justify-center">
+                    <div className="w-32 h-1 bg-gray-200 rounded-full"></div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Phone Shadow */}
-            <div className="absolute -bottom-6 inset-x-0">
-              <div className="h-6 w-48 mx-auto bg-gradient-to-b from-gray-900 to-transparent rounded-full blur-md"></div>
-            </div>
-          </div>
-
-          <div className="mt-12 flex items-center space-x-4 text-sm animate-fade-in-delay-3">
-            <div className="flex -space-x-2">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-8 w-8 rounded-full border-2 border-background bg-gray-${200 + i * 100}`}
-                ></div>
-              ))}
-            </div>
-            <div className="text-muted-foreground">
-              <span className="font-medium">5,000+</span> people on waitlist
-            </div>
+            </DeviceFrameset>
           </div>
         </div>
       </main>

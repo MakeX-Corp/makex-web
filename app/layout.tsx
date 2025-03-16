@@ -5,7 +5,22 @@ import "./globals.css"
 export const metadata: Metadata = {
   title: "MakeX - Generate iOS Apps with AI",
   description: "Create fully functional iOS apps instantly with AI. No coding required.",
-  generator: "v0.dev",
+  icons: {
+    icon: [
+      {
+        url: "/favicon.ico",
+        sizes: "32x32",
+      },
+      {
+        url: "/icon.png",
+        sizes: "512x512",
+      },
+    ],
+    apple: {
+      url: "/apple-touch-icon.png",
+      sizes: "180x180",
+    },
+  },
 }
 
 export default function RootLayout({
