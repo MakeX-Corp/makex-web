@@ -5,8 +5,6 @@ import { Sparkles, Code } from "lucide-react"
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import WaitlistContainer from '@/components/waitlist-container'
-import { DeviceFrameset } from 'react-device-frameset'
-import 'react-device-frameset/styles/marvel-devices.min.css'
 
 const TYPING_SPEED = 200 // Slower typing speed
 const TYPING_INITIAL_DELAY = 2000 // Longer initial delay
@@ -226,7 +224,7 @@ export default function LandingPage() {
         }
       }, TYPING_SPEED)
 
-      // Cleanup function
+      // Cleanup functionoptimise this for phone
       return () => clearInterval(typingInterval)
     }, TYPING_INITIAL_DELAY)
   }
@@ -240,7 +238,7 @@ export default function LandingPage() {
       </div>
 
       <main className="flex-1 flex flex-col items-center justify-center relative z-10">
-        <div className="container px-4 py-16 md:py-24 flex flex-col items-center text-center">
+        <div className="container px-4 py-8 md:py-16 flex flex-col items-center text-center">
           <div className="flex items-center justify-center mb-6">
             <div className="relative">
               <Image 
@@ -261,42 +259,46 @@ export default function LandingPage() {
             Anyone can build
           </p>
 
-          <div className="w-full max-w-md mb-12 animate-fade-in-delay-2">
+          <div className="w-full max-w-md mb-6 md:mb-8 animate-fade-in-delay-2">
             <WaitlistContainer />
           </div>
 
-          {/* iPhone Mockup using DeviceFrameset */}
-          <div className="relative mx-auto animate-float-slow">
-            <DeviceFrameset device="iPhone X">
-              <div className="h-full w-full bg-white">
+          {/* Updated iPhone Mockup */}
+          <div className="relative mx-auto animate-float-slow mb-8">
+            <div className="relative w-[266px] sm:w-[280px] h-[541.5px] sm:h-[570px] rounded-[44px] bg-black p-[12px] shadow-2xl">
+              {/* Notch */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[25px] w-[150px] bg-black rounded-b-[14px] z-20" />
+              
+              {/* Screen */}
+              <div className="relative h-full w-full rounded-[32px] overflow-hidden bg-white">
                 <div className="flex h-full flex-col">
                   {/* App Header */}
-                  <div className="flex-none h-14 bg-white border-b flex items-center justify-between px-4">
+                  <div className="flex-none h-12 sm:h-14 bg-white border-b flex items-center justify-between px-4">
                     <div className="flex items-center space-x-2">
                       <Sparkles className="h-4 w-4 text-primary" />
                       <span className="text-sm font-medium text-gray-900">MakeX</span>
                     </div>
                   </div>
 
-                  {/* App Content */}
-                  <div className="flex-grow overflow-hidden p-4">
+                  {/* App Content - Adjust padding and text sizes */}
+                  <div className="flex-grow overflow-hidden p-3 sm:p-4">
                     {step === 0 && (
-                      <div className="h-full flex flex-col items-center justify-center space-y-6 px-4">
+                      <div className="h-full flex flex-col items-center justify-center space-y-4 sm:space-y-6 px-2 sm:px-4">
                         <div className="text-center space-y-2">
-                          <h3 className="text-xl font-semibold text-gray-900">What would you like to build?</h3>
-                          <p className="text-sm text-gray-500">Describe your app idea in simple words</p>
+                          <h3 className="text-lg sm:text-xl font-semibold text-gray-900">What would you like to build?</h3>
+                          <p className="text-xs sm:text-sm text-gray-500">Describe your app idea in simple words</p>
                         </div>
                         <input
                           type="text"
                           value={userPrompt}
                           readOnly
                           placeholder="e.g. A tic-tac-toe game"
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                         />
                         <button
                           onClick={simulateTyping}
                           disabled={isTyping}
-                          className="w-full bg-primary text-white rounded-xl py-3 font-medium disabled:opacity-50"
+                          className="w-full bg-primary text-white rounded-xl py-2 sm:py-3 font-medium disabled:opacity-50 text-sm"
                         >
                           {isTyping ? "Typing..." : "Generate App →"}
                         </button>
@@ -325,15 +327,15 @@ export default function LandingPage() {
                     )}
 
                     {step === 2 && (
-                      <div className="h-full w-full bg-white flex items-center justify-center p-4">
+                      <div className="h-full w-full bg-white flex items-center justify-center p-2 sm:p-4">
                         <div className="w-full max-w-xs">
-                          <div className="text-lg text-center text-gray-900 mb-6 font-semibold">Tic Tac Toe</div>
-                          <div className="grid grid-cols-3 gap-3 aspect-square w-full">
+                          <div className="text-base sm:text-lg text-center text-gray-900 mb-4 sm:mb-6 font-semibold">Tic Tac Toe</div>
+                          <div className="grid grid-cols-3 gap-2 sm:gap-3 aspect-square w-full">
                             {gameState.map((cell, index) => (
                               <div
                                 key={index}
                                 className={`
-                                  flex items-center justify-center rounded-xl text-2xl font-bold bg-gray-50 border border-gray-100
+                                  flex items-center justify-center rounded-lg sm:rounded-xl text-xl sm:text-2xl font-bold bg-gray-50 border border-gray-100
                                   ${cell === "X" ? "text-primary animate-pop-in" : cell === "O" ? "text-purple-500 animate-pop-in" : ""}
                                 `}
                                 style={{
@@ -350,12 +352,19 @@ export default function LandingPage() {
                   </div>
 
                   {/* Bottom Bar */}
-                  <div className="flex-none h-16 border-t bg-white flex items-center justify-center">
-                    <div className="w-32 h-1 bg-gray-200 rounded-full"></div>
+                  <div className="flex-none h-12 sm:h-16 border-t bg-white flex items-center justify-center">
+                    <div className="w-24 sm:w-32 h-1 bg-gray-200 rounded-full"></div>
                   </div>
                 </div>
               </div>
-            </DeviceFrameset>
+
+              {/* Power Button */}
+              <div className="absolute right-[-2px] top-[120px] w-[3px] h-[30px] bg-neutral-800 rounded-l-sm" />
+              
+              {/* Volume Buttons */}
+              <div className="absolute left-[-2px] top-[100px] w-[3px] h-[30px] bg-neutral-800 rounded-r-sm" />
+              <div className="absolute left-[-2px] top-[140px] w-[3px] h-[60px] bg-neutral-800 rounded-r-sm" />
+            </div>
           </div>
         </div>
       </main>
