@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
+import { Analytics } from "@vercel/analytics/react"
 
 export const metadata: Metadata = {
   title: "MakeX | Anyone can build",
@@ -51,6 +52,7 @@ export default function RootLayout({
         <script src="https://prod-waitlist-widget.s3.us-east-2.amazonaws.com/getwaitlist.min.js"></script>
       </head>
       <body className="overflow-x-hidden antialiased">{children}</body>
+      <Analytics />
     </html>
   )
 }
