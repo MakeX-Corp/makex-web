@@ -98,7 +98,7 @@ export async function GET(request: Request) {
         }
 
         const currentCount = containers?.length || 0;
-        const neededContainers = 1 - currentCount;
+        const neededContainers = 10 - currentCount;
 
         if (neededContainers <= 0) {
             return NextResponse.json({
@@ -157,8 +157,8 @@ export async function GET(request: Request) {
                         {
                             protocol: 'tcp',
                             internal_port: 8000,
-                            auto_stop_machines: "stop",
-                            auto_start_machines: true,
+                            autostop: "stop",
+                            autostart: true,
                             min_machines_running: 0,
                             ports: [
                                 { port: 80, handlers: ['http'] },
@@ -168,8 +168,8 @@ export async function GET(request: Request) {
                         {
                             protocol: 'tcp',
                             internal_port: 8001,
-                            auto_stop_machines: "stop",
-                            auto_start_machines: true,
+                            autostop: "stop",
+                            autostart: true,
                             min_machines_running: 0,
                             ports: [
                                 { port: 8001, handlers: ['tls', 'http'] }

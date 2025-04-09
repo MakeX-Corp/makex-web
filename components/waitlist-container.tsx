@@ -17,22 +17,18 @@ export default function WaitlistContainer() {
     setError(null)
 
     try {
-      const response = await fetch('https://api.getwaitlist.com/api/v1/signup', {
+      const response = await fetch('/api/waitlist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email,
-          waitlist_id: 26328, // Your waitlist ID
-          referral_link: typeof window !== 'undefined' ? window.location.href : '',
-        }),
+        body: JSON.stringify({ email }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to join waitlist')
+        throw new Error(data.error || 'Failed to join waitlist')
       }
 
       setSuccess(true)
