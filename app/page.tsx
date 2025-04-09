@@ -368,8 +368,6 @@ export default function LandingPage() {
           </div>
         </div>
       </main>
-
-      <footer className="py-4 text-center text-sm text-muted-foreground relative z-10">© 2025 MakeX</footer>
     </div>
   )
 }

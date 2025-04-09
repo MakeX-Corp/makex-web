@@ -51,8 +51,22 @@ export default function RootLayout({
         />
         <script src="https://prod-waitlist-widget.s3.us-east-2.amazonaws.com/getwaitlist.min.js"></script>
       </head>
-      <body className="overflow-x-hidden antialiased">{children}</body>
-      <Analytics />
+      <body className="overflow-x-hidden antialiased">
+        {children}
+        <footer className="py-8 border-t">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <div className="text-sm text-muted-foreground">© 2025 MakeX</div>
+              <div className="flex gap-6 text-sm text-muted-foreground">
+                <a href="/terms" className="hover:text-foreground">Terms</a>
+                <a href="/privacy" className="hover:text-foreground">Privacy</a>
+                <a href="/refund" className="hover:text-foreground">Refund Policy</a>
+              </div>
+            </div>
+          </div>
+        </footer>
+        <Analytics />
+      </body>
     </html>
   )
 }
