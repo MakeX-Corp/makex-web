@@ -71,6 +71,14 @@ async function createMachines(appName: string, config: any, count: number) {
 }
 
 export async function GET(request: Request) {
+    // Add authorization check
+    if (request.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
+        return NextResponse.json({ 
+            success: false, 
+            error: 'Unauthorized' 
+        }, { status: 401 });
+    }
+
     try {
         const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
