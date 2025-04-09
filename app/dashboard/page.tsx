@@ -21,16 +21,26 @@ export default function Dashboard() {
   const [userApps, setUserApps] = useState<UserApp[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const supabase = createClientComponentClient();
 
   const handleCreateApp = async () => {
     try {
       setIsLoading(true);
       
+      // Get the token from cookies
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('sb-aljrjyhwwmjqfkgnbeiz-auth-token='))
+        ?.split('=')[1];
+
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
       const response = await fetch('/api/app', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -55,8 +65,20 @@ export default function Dashboard() {
 
   const handleDeleteApp = async (appId: string) => {
     try {
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('sb-aljrjyhwwmjqfkgnbeiz-auth-token='))
+        ?.split('=')[1];
+
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
       const response = await fetch(`/api/app?id=${appId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
@@ -84,7 +106,22 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchUserApps = async () => {
       try {
-        const response = await fetch('/api/app');
+        const token = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('sb-aljrjyhwwmjqfkgnbeiz-auth-token'))
+          ?.split('=')[1];
+
+        console.log(token);
+
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
+        const response = await fetch('/api/app', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         
         if (!response.ok) {
           const error = await response.json();

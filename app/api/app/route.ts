@@ -1,240 +1,236 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient, User } from '@supabase/supabase-js'
 
-// Helper function to create Supabase client with token or cookies
-async function createSupabaseClient(request: Request) {
-  const authHeader = request.headers.get('Authorization')
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+// ────────────────────────────────────────────────────────────────────────────────
+// Helper: build a Supabase client from the Bearer token and verify the user
+// ────────────────────────────────────────────────────────────────────────────────
+async function getSupabaseWithUser(request: Request): Promise<
+    | { supabase: SupabaseClient; user: User }
+    | NextResponse
+> {
+    const authHeader = request.headers.get('Authorization')
+    const token = authHeader?.startsWith('Bearer ')
+        ? authHeader.slice(7)
+        : null
 
-  if (token) {
-    return createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: { headers: { Authorization: `Bearer ${token}` } }
-      }
+    if (!token) {
+        return NextResponse.json(
+            { error: 'No authorization token provided' },
+            { status: 401 }
+        )
+    }
+
+    // IMPORTANT: pass the token as a global header so every DB call is
+    // executed in the context of this user (RLS)
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            global: {
+                headers: { Authorization: `Bearer ${token}` },
+            },
+        }
     )
-  }
-  
-  return createRouteHandlerClient({ cookies })
+
+    const { data: { user }, error } = await supabase.auth.getUser(token)
+
+    if (error || !user) {
+        return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
+    return { supabase, user }
 }
 
+// ────────────────────────────────────────────────────────────────────────────────
+// POST /api/app – allocate a container to the authenticated user
+// ────────────────────────────────────────────────────────────────────────────────
 export async function POST(request: Request) {
-  try {
-    // Initialize Supabase client with token support
-    const supabase = await createSupabaseClient(request)
+    // Authenticate
+    const result = await getSupabaseWithUser(request)
+    if (result instanceof NextResponse) return result
+    const { supabase, user } = result
 
-    // Get the authenticated user's session
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    // Get user ID from session
-    const userId = session.user.id
-
-    // Start a transaction to ensure atomicity
+    // Grab one available container
     const { data: container, error: containerError } = await supabase
-      .from('available_containers')
-      .select('*')
-      .limit(1)
-      .single()
+        .from('available_containers')
+        .select('*')
+        .limit(1)
+        .single()
 
     if (containerError || !container) {
-      return NextResponse.json(
-        { error: 'No available containers' },
-        { status: 404 }
-      )
+        return NextResponse.json(
+            { error: 'No available containers' },
+            { status: 404 }
+        )
     }
 
-    // Delete the container from available_containers
+    // Delete it from the pool
     const { error: deleteError } = await supabase
-      .from('available_containers')
-      .delete()
-      .match({ id: container.id })
+        .from('available_containers')
+        .delete()
+        .match({ id: container.id })
 
     if (deleteError) {
-      return NextResponse.json(
-        { error: 'Failed to allocate container' },
-        { status: 500 }
-      )
+        return NextResponse.json(
+            { error: 'Failed to allocate container' },
+            { status: 500 }
+        )
     }
 
-    // Create new user_app entry
+    // Insert into user_apps
     const { data: userApp, error: createError } = await supabase
-      .from('user_apps')
-      .insert({
-        user_id: userId,
-        app_name: container.app_name,
-        app_url: container.app_url
-      })
-      .select()
-      .single()
+        .from('user_apps')
+        .insert({
+            user_id: user.id,
+            app_name: container.app_name,
+            app_url: container.app_url,
+        })
+        .select()
+        .single()
 
     if (createError) {
-      // If this fails, we should ideally try to rollback the delete operation
-      return NextResponse.json(
-        { error: 'Failed to create user app' },
-        { status: 500 }
-      )
+        // Ideally rollback the previous delete (requires a Postgres function or RPC)
+        return NextResponse.json(
+            { error: 'Failed to create user app' },
+            { status: 500 }
+        )
     }
 
     return NextResponse.json(userApp)
-
-  } catch (error) {
-    console.error('Error:', error)
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    )
-  }
 }
+
 
 // GET /api/app - Get all apps for the authenticated user
 export async function GET(request: Request) {
-  try {
-    // Initialize Supabase client with token support
-    const supabase = await createSupabaseClient(request)
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    try {
+        const result = await getSupabaseWithUser(request)
+        if (result instanceof NextResponse) return result
+
+        const { supabase, user } = result
+
+
+        const { data: apps, error } = await supabase
+            .from('user_apps')
+            .select('*')
+            .eq('user_id', user.id)
+
+        if (error) {
+            return NextResponse.json(
+                { error: 'Failed to fetch apps' },
+                { status: 500 }
+            )
+        }
+
+        return NextResponse.json(apps)
+    } catch (error) {
+        return NextResponse.json(
+            { error: 'Internal Server Error' },
+            { status: 500 }
+        )
     }
-
-    const { data: apps, error } = await supabase
-      .from('user_apps')
-      .select('*')
-      .eq('user_id', session.user.id)
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to fetch apps' },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json(apps)
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    )
-  }
 }
 
 // DELETE /api/app - Delete specific app
 export async function DELETE(request: Request) {
-  try {
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    // Get the current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get the app ID from the URL
-    const { searchParams } = new URL(request.url);
-    const appId = searchParams.get('id');
-
-    if (!appId) {
-      return NextResponse.json({ error: 'App ID is required' }, { status: 400 });
-    }
-
-    // Get the app details from Supabase first
-    const { data: app, error: fetchError } = await supabase
-      .from('user_apps')
-      .select('*')
-      .eq('id', appId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (fetchError || !app) {
-      return NextResponse.json({ error: 'App not found' }, { status: 404 });
-    }
-
-    // Delete from Fly.io first
     try {
-      const flyToken = process.env.FLY_API_TOKEN;
-      const appName = app.app_name;
+        const result = await getSupabaseWithUser(request)
+        if (result instanceof NextResponse) return result
 
-      // First, list all machines for the app
-      const machinesResponse = await fetch(`https://api.machines.dev/v1/apps/${appName}/machines`, {
-        headers: {
-          'Authorization': `Bearer ${flyToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
+        const { supabase, user } = result
 
-      if (!machinesResponse.ok) {
-        throw new Error(`Failed to list machines: ${machinesResponse.statusText}`);
-      }
+        // Get the app ID from the URL
+        const { searchParams } = new URL(request.url)
+        const appId = searchParams.get('id')
 
-      const machines = await machinesResponse.json();
-
-      // Delete each machine with force=true
-      for (const machine of machines) {
-        const machineDeleteResponse = await fetch(
-          `https://api.machines.dev/v1/apps/${appName}/machines/${machine.id}?force=true`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${flyToken}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-
-        if (!machineDeleteResponse.ok) {
-          throw new Error(`Failed to delete machine ${machine.id}: ${machineDeleteResponse.statusText}`);
+        if (!appId) {
+            return NextResponse.json({ error: 'App ID is required' }, { status: 400 })
         }
-      }
 
-      // After all machines are deleted, delete the app
-      const deleteResponse = await fetch(`https://api.machines.dev/v1/apps/${appName}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${flyToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
+        // Get the app details from Supabase first
+        const { data: app, error: fetchError } = await supabase
+            .from('user_apps')
+            .select('*')
+            .eq('id', appId)
+            .eq('user_id', user.id)
+            .single()
 
-      if (!deleteResponse.ok) {
-        throw new Error(`Failed to delete app from Fly.io: ${deleteResponse.statusText}`);
-      }
-    } catch (flyError) {
-      console.error('Error deleting from Fly.io:', flyError);
-      return NextResponse.json(
-        { error: 'Failed to delete app from Fly.io' },
-        { status: 500 }
-      );
+        if (fetchError || !app) {
+            return NextResponse.json({ error: 'App not found' }, { status: 404 })
+        }
+
+        // Delete from Fly.io first
+        try {
+            const flyToken = process.env.FLY_API_TOKEN
+            const appName = app.app_name
+
+            // First, list all machines for the app
+            const machinesResponse = await fetch(`https://api.machines.dev/v1/apps/${appName}/machines`, {
+                headers: {
+                    'Authorization': `Bearer ${flyToken}`,
+                    'Content-Type': 'application/json',
+                },
+            })
+
+            if (!machinesResponse.ok) {
+                throw new Error(`Failed to list machines: ${machinesResponse.statusText}`)
+            }
+
+            const machines = await machinesResponse.json()
+
+            // Delete each machine with force=true
+            for (const machine of machines) {
+                const machineDeleteResponse = await fetch(
+                    `https://api.machines.dev/v1/apps/${appName}/machines/${machine.id}?force=true`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${flyToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+                )
+
+                if (!machineDeleteResponse.ok) {
+                    throw new Error(`Failed to delete machine ${machine.id}: ${machineDeleteResponse.statusText}`)
+                }
+            }
+
+            // After all machines are deleted, delete the app
+            const deleteResponse = await fetch(`https://api.machines.dev/v1/apps/${appName}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${flyToken}`,
+                    'Content-Type': 'application/json',
+                },
+            })
+
+            if (!deleteResponse.ok) {
+                throw new Error(`Failed to delete app from Fly.io: ${deleteResponse.statusText}`)
+            }
+        } catch (flyError) {
+            console.error('Error deleting from Fly.io:', flyError)
+            return NextResponse.json(
+                { error: 'Failed to delete app from Fly.io' },
+                { status: 500 }
+            )
+        }
+
+        // If Fly.io deletion was successful, delete from Supabase
+        const { error: deleteError } = await supabase
+            .from('user_apps')
+            .delete()
+            .eq('id', appId)
+            .eq('user_id', user.id)
+
+        if (deleteError) {
+            return NextResponse.json({ error: deleteError.message }, { status: 500 })
+        }
+
+        return NextResponse.json({ message: 'App deleted successfully' })
+    } catch (error) {
+        console.error('Error deleting app:', error)
+        return NextResponse.json(
+            { error: 'An error occurred while deleting the app' },
+            { status: 500 }
+        )
     }
-
-    // If Fly.io deletion was successful, delete from Supabase
-    const { error: deleteError } = await supabase
-      .from('user_apps')
-      .delete()
-      .eq('id', appId)
-      .eq('user_id', user.id);
-
-    if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ message: 'App deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting app:', error);
-    return NextResponse.json(
-      { error: 'An error occurred while deleting the app' },
-      { status: 500 }
-    );
-  }
 }
