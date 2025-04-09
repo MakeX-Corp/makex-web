@@ -100,7 +100,7 @@ export async function GET(request: Request) {
         }
 
         const currentCount = containers?.length || 0;
-        const neededContainers = 10 - currentCount;
+        const neededContainers = parseInt(process.env.MAX_CONTAINERS || '10') - currentCount;
 
         if (neededContainers <= 0) {
             return NextResponse.json({
