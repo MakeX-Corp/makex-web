@@ -83,13 +83,23 @@ export default function Dashboard() {
   // Add useEffect to fetch initial user apps
   useEffect(() => {
     const fetchUserApps = async () => {
-      const { data: apps, error } = await supabase
-        .from('user_apps')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const response = await fetch('/api/app');
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to fetch apps');
+        }
 
-      if (!error && apps) {
+        const apps = await response.json();
         setUserApps(apps);
+      } catch (error) {
+        console.error('Error fetching apps:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error instanceof Error ? error.message : 'An error occurred while fetching apps'
+        });
       }
     };
 
