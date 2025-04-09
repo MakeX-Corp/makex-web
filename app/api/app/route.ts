@@ -1,45 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient, SupabaseClient, User } from '@supabase/supabase-js'
-
-// ────────────────────────────────────────────────────────────────────────────────
-// Helper: build a Supabase client from the Bearer token and verify the user
-// ────────────────────────────────────────────────────────────────────────────────
-async function getSupabaseWithUser(request: Request): Promise<
-    | { supabase: SupabaseClient; user: User }
-    | NextResponse
-> {
-    const authHeader = request.headers.get('Authorization')
-    const token = authHeader?.startsWith('Bearer ')
-        ? authHeader.slice(7)
-        : null
-
-    if (!token) {
-        return NextResponse.json(
-            { error: 'No authorization token provided' },
-            { status: 401 }
-        )
-    }
-
-    // IMPORTANT: pass the token as a global header so every DB call is
-    // executed in the context of this user (RLS)
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            global: {
-                headers: { Authorization: `Bearer ${token}` },
-            },
-        }
-    )
-
-    const { data: { user }, error } = await supabase.auth.getUser(token)
-
-    if (error || !user) {
-        return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
-    }
-
-    return { supabase, user }
-}
+import { getSupabaseWithUser } from '@/utils/server/auth'
 
 // ────────────────────────────────────────────────────────────────────────────────
 // POST /api/app – allocate a container to the authenticated user

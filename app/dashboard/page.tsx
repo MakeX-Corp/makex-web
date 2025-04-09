@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
+import { getAuthToken } from '@/utils/client/auth';
 
 interface UserApp {
   id: string;
@@ -26,13 +27,9 @@ export default function Dashboard() {
     try {
       setIsLoading(true);
       
-      // Get the token from cookies
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('sb-aljrjyhwwmjqfkgnbeiz-auth-token='))
-        ?.split('=')[1];
-
-      if (!token) {
+      const decodedToken = getAuthToken();
+      
+      if (!decodedToken) {
         throw new Error('No authentication token found');
       }
 
@@ -40,7 +37,7 @@ export default function Dashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${decodedToken}`,
         },
       });
 
@@ -65,19 +62,16 @@ export default function Dashboard() {
 
   const handleDeleteApp = async (appId: string) => {
     try {
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('sb-aljrjyhwwmjqfkgnbeiz-auth-token='))
-        ?.split('=')[1];
+      const decodedToken = getAuthToken();
 
-      if (!token) {
+      if (!decodedToken) {
         throw new Error('No authentication token found');
       }
 
       const response = await fetch(`/api/app?id=${appId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${decodedToken}`,
         },
       });
 
@@ -106,20 +100,15 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchUserApps = async () => {
       try {
-        const token = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('sb-aljrjyhwwmjqfkgnbeiz-auth-token'))
-          ?.split('=')[1];
+        const decodedToken = getAuthToken();
 
-        console.log(token);
-
-        if (!token) {
+        if (!decodedToken) {
           throw new Error('No authentication token found');
         }
 
         const response = await fetch('/api/app', {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${decodedToken}`,
           },
         });
         
