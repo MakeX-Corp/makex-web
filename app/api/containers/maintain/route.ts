@@ -70,6 +70,8 @@ async function createMachines(appName: string, config: any, count: number) {
     return machines;
 }
 
+export const maxDuration = 300; // 5 minutes timeout
+
 export async function GET(request: Request) {
     // Add authorization check
     if (request.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
