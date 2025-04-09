@@ -75,7 +75,7 @@ export default function AppEditor() {
         {/* Chat Window */}
         <Card className="w-1/2">
           <CardContent className="p-4 h-full">
-            <Chat 
+            <Chat
               appId={appId}
               appUrl={app.app_url || ""}
             />
