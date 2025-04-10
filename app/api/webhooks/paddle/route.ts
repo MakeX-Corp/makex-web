@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Missing Supabase environment variables');
+    return null;
+  }
+  
+  return createClient(supabaseUrl, supabaseKey);
+};
 
 export async function POST(request: Request) {
   try {
@@ -17,18 +24,26 @@ export async function POST(request: Request) {
     
     console.log('Received webhook:', eventType, event);
     
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database connection not available' },
+        { status: 503 }
+      );
+    }
+    
     switch (eventType) {
       case 'subscription.created':
-        await handleSubscriptionCreated(event);
+        await handleSubscriptionCreated(event, supabase);
         break;
       case 'subscription.updated':
-        await handleSubscriptionUpdated(event);
+        await handleSubscriptionUpdated(event, supabase);
         break;
       case 'subscription.canceled':
-        await handleSubscriptionCanceled(event);
+        await handleSubscriptionCanceled(event, supabase);
         break;
       case 'transaction.completed':
-        await handleTransactionCompleted(event);
+        await handleTransactionCompleted(event, supabase);
         break;
     }
     
@@ -42,7 +57,7 @@ export async function POST(request: Request) {
   }
 }
 
-async function handleSubscriptionCreated(event: any) {
+async function handleSubscriptionCreated(event: any, supabase: any) {
   const userId = event.passthrough?.userId;
   if (!userId) return;
   
@@ -64,7 +79,7 @@ async function handleSubscriptionCreated(event: any) {
   }
 }
 
-async function handleSubscriptionUpdated(event: any) {
+async function handleSubscriptionUpdated(event: any, supabase: any) {
   try {
     await supabase.from('subscriptions').update({
       status: event.status,
@@ -80,7 +95,7 @@ async function handleSubscriptionUpdated(event: any) {
   }
 }
 
-async function handleSubscriptionCanceled(event: any) {
+async function handleSubscriptionCanceled(event: any, supabase: any) {
   try {
     await supabase.from('subscriptions').update({
       status: 'canceled',
@@ -92,7 +107,7 @@ async function handleSubscriptionCanceled(event: any) {
   }
 }
 
-async function handleTransactionCompleted(event: any) {
+async function handleTransactionCompleted(event: any, supabase: any) {
   try {
     await supabase.from('transactions').insert({
       id: event.id,
