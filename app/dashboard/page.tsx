@@ -8,6 +8,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
 import { getAuthToken } from '@/utils/client/auth';
+import SubscriptionStatus from '@/components/subscription-status';
 
 interface UserApp {
   id: string;
@@ -136,10 +137,16 @@ export default function Dashboard() {
     <div className="container mx-auto p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">My Apps</h1>
-        <Button onClick={handleCreateApp} disabled={isLoading}>
-          <Plus className="h-4 w-4 mr-2" />
-          {isLoading ? 'Creating...' : 'Create New App'}
-        </Button>
+        <div className="flex items-center gap-4">
+          {/* Add subscription status component */}
+          <div className="hidden md:block">
+            <SubscriptionStatus />
+          </div>
+          <Button onClick={handleCreateApp} disabled={isLoading}>
+            <Plus className="h-4 w-4 mr-2" />
+            {isLoading ? 'Creating...' : 'Create New App'}
+          </Button>
+        </div>
       </div>
 
       {userApps.length === 0 ? (

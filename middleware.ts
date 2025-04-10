@@ -9,7 +9,7 @@ export async function middleware(req: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
 
   // Protected routes
-  const protectedRoutes = ['/dashboard', '/ai-editor']
+  const protectedRoutes = ['/dashboard', '/ai-editor', '/account']
   const isProtectedRoute = protectedRoutes.some(route => req.nextUrl.pathname.startsWith(route))
 
   if (isProtectedRoute && !session) {
@@ -23,4 +23,4 @@ export async function middleware(req: NextRequest) {
   }
 
   return res
-} 
+}  

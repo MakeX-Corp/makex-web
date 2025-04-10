@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from "react"
 import { Sparkles, Code } from "lucide-react"
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 import WaitlistContainer from '@/components/waitlist-container'
 
 const TYPING_SPEED = 200 // Slower typing speed
@@ -261,6 +263,13 @@ export default function LandingPage() {
 
           <div className="w-full max-w-md mb-6 md:mb-8 animate-fade-in-delay-2">
             <WaitlistContainer />
+            <div className="mt-4 text-center">
+              <Link href="/pricing">
+                <Button variant="outline">
+                  View Pricing Plans
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* Updated iPhone Mockup */}
