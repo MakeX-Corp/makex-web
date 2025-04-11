@@ -9,8 +9,11 @@ export const maxDuration = 300;
 export async function POST(req: Request) {
   const { messages } = await req.json();
   // get appUrl from query params
-  const appUrl = req.url.split('?')[1].split('=')[1];
+  let appUrl = req.url.split('?')[1].split('=')[1];
+  appUrl = appUrl.replace('makex.app', 'fly.dev');
   const API_BASE = appUrl + ':8001';
+
+  console.log("API_BASE", API_BASE);
 
   const result = streamText({
     model: anthropic('claude-3-7-sonnet-20250219'),

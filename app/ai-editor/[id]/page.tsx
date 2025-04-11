@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import MobileMockup from '@/components/mobile-mockup';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, ExternalLink } from "lucide-react";
 import { Chat } from '@/components/chat';
 import { QRCodeDisplay } from '@/components/qr-code';
 
@@ -115,9 +115,21 @@ export default function AppEditor() {
       {/* App Details Header */}
       <div className="p-4 bg-white border-b">
         <h1 className="text-2xl font-bold">Edit App: {app.app_name}</h1>
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 flex items-center">
           <span>Created: {new Date(app.created_at).toLocaleDateString()}</span>
-          {app.app_url && <span className="ml-4">URL: {app.app_url}</span>}
+          {app.app_url && (
+            <div className="ml-4 flex items-center gap-2">
+              <span>URL: {app.app_url}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => app.app_url && window.open(app.app_url, '_blank')}
+                className="h-6 px-2 flex items-center gap-1"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
