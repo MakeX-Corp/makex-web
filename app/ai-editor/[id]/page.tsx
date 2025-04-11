@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import MobileMockup from '@/components/mobile-mockup';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, ExternalLink } from "lucide-react";
 import { Chat } from '@/components/chat';
 import { QRCodeDisplay } from '@/components/qr-code';
+import { SessionsSidebar } from '@/components/sessions-sidebar';
+import { getAuthToken } from '@/utils/client/auth';
 
 interface AppDetails {
   id: string;
@@ -22,13 +24,20 @@ interface AppDetails {
 
 export default function AppEditor() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const appId = params.id as string;
+  const sessionId = searchParams.get('session');
   const [app, setApp] = useState<AppDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isContainerLoading, setIsContainerLoading] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
   const [viewMode, setViewMode] = useState<'mobile' | 'qr'>('mobile');
+  const [authToken, setAuthToken] = useState<string | null>(null);
   const supabase = createClientComponentClient();
+
+  useEffect(() => {
+    setAuthToken(getAuthToken());
+  }, []);
 
   const wakeContainer = async (appName: string, machineId: string) => {
     setIsContainerLoading(true);
@@ -111,115 +120,126 @@ export default function AppEditor() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-100">
-      {/* App Details Header */}
-      <div className="p-4 bg-white border-b">
-        <h1 className="text-2xl font-bold">Edit App: {app.app_name}</h1>
-        <div className="text-sm text-gray-600 flex items-center">
-          <span>Created: {new Date(app.created_at).toLocaleDateString()}</span>
-          {app.app_url && (
-            <div className="ml-4 flex items-center gap-2">
-              <span>URL: {app.app_url}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => app.app_url && window.open(app.app_url, '_blank')}
-                className="h-6 px-2 flex items-center gap-1"
-              >
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </div>
+    <>
+      {/* Sessions Sidebar */}
+      <div className="w-64 h-screen border-r bg-background">
+        <SessionsSidebar appId={appId} authToken={authToken || ""} />
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex flex-1 p-4 gap-4 overflow-hidden">
-        {/* Chat Window */}
-        <Card className="w-1/2">
-          <CardContent className="p-4 h-full">
-            <Chat
-              appId={appId}
-              appUrl={app.app_url || ""}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Preview Section */}
-        <Card className="w-1/2 bg-zinc-50">
-          <CardContent className="relative h-full flex flex-col p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2 border rounded-lg p-1 bg-white">
-                <button
-                  onClick={() => setViewMode('mobile')}
-                  className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                    viewMode === 'mobile' 
-                      ? 'bg-zinc-100 text-zinc-900' 
-                      : 'text-zinc-500 hover:text-zinc-900'
-                  }`}
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* App Details Header */}
+        <div className="p-4 bg-white border-b">
+          <h1 className="text-2xl font-bold">Edit App: {app.app_name}</h1>
+          <div className="text-sm text-gray-600 flex items-center">
+            <span>Created: {new Date(app.created_at).toLocaleDateString()}</span>
+            {app.app_url && (
+              <div className="ml-4 flex items-center gap-2">
+                <span>URL: {app.app_url}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => app.app_url && window.open(app.app_url, '_blank')}
+                  className="h-6 px-2 flex items-center gap-1"
                 >
-                  Mockup
-                </button>
-                <button
-                  onClick={() => setViewMode('qr')}
-                  className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                    viewMode === 'qr' 
-                      ? 'bg-zinc-100 text-zinc-900' 
-                      : 'text-zinc-500 hover:text-zinc-900'
-                  }`}
-                >
-                  View in Mobile
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
-                  isContainerLoading 
-                    ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' 
-                    : 'bg-green-100 text-green-700 border border-green-300'
-                }`}>
-                  <div className={`w-2 h-2 rounded-full ${
-                    isContainerLoading ? 'bg-yellow-500' : 'bg-green-500'
-                  }`} />
-                  {isContainerLoading ? 'Starting...' : 'Ready'}
-                </div>
-                <Button 
-                  size="icon"
-                  variant="ghost" 
-                  onClick={handleRefresh}
-                >
-                  <RefreshCw className="h-4 w-4" />
+                  <ExternalLink className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
+            )}
+          </div>
+        </div>
 
-            <div className="flex-1">
-              {viewMode === 'mobile' ? (
-                <div className="h-full w-full flex items-center justify-center">
-                  <MobileMockup>
-                    <div className="flex flex-col h-full w-full">
-                      <iframe 
-                        key={iframeKey}
-                        src={app.app_url || ""}
-                        className="w-full h-full rounded-md"
-                        style={{
-                          border: 'none',
-                          borderRadius: '8px',
-                          backgroundColor: 'white',
-                          minHeight: '500px'
-                        }}
-                      />
-                    </div>
-                  </MobileMockup>
+        {/* Main Content Area */}
+        <div className="flex-1 p-4 gap-4 flex overflow-hidden">
+          {/* Chat Window */}
+          <Card className="flex-1">
+            <CardContent className="p-4 h-full">
+              <Chat
+                key={sessionId}
+                appId={appId}
+                appUrl={app.app_url || ""}
+                authToken={authToken || ""}
+                sessionId={sessionId || ""}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Preview Section */}
+          <Card className="w-1/2 bg-zinc-50">
+            <CardContent className="relative h-full flex flex-col p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 border rounded-lg p-1 bg-white">
+                  <button
+                    onClick={() => setViewMode('mobile')}
+                    className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                      viewMode === 'mobile' 
+                        ? 'bg-zinc-100 text-zinc-900' 
+                        : 'text-zinc-500 hover:text-zinc-900'
+                    }`}
+                  >
+                    Mockup
+                  </button>
+                  <button
+                    onClick={() => setViewMode('qr')}
+                    className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                      viewMode === 'qr' 
+                        ? 'bg-zinc-100 text-zinc-900' 
+                        : 'text-zinc-500 hover:text-zinc-900'
+                    }`}
+                  >
+                    View in Mobile
+                  </button>
                 </div>
-              ) : (
-                <div className="h-full w-full rounded-lg p-4 overflow-auto flex items-center justify-center">
-                  <QRCodeDisplay url={(app.app_url || '').replace('https://', 'exp://')} />
+                <div className="flex items-center gap-2">
+                  <div className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
+                    isContainerLoading 
+                      ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' 
+                      : 'bg-green-100 text-green-700 border border-green-300'
+                  }`}>
+                    <div className={`w-2 h-2 rounded-full ${
+                      isContainerLoading ? 'bg-yellow-500' : 'bg-green-500'
+                    }`} />
+                    {isContainerLoading ? 'Starting...' : 'Ready'}
+                  </div>
+                  <Button 
+                    size="icon"
+                    variant="ghost" 
+                    onClick={handleRefresh}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+
+              <div className="flex-1">
+                {viewMode === 'mobile' ? (
+                  <div className="h-full w-full flex items-center justify-center">
+                    <MobileMockup>
+                      <div className="flex flex-col h-full w-full">
+                        <iframe 
+                          key={iframeKey}
+                          src={app.app_url || ""}
+                          className="w-full h-full rounded-md"
+                          style={{
+                            border: 'none',
+                            borderRadius: '8px',
+                            backgroundColor: 'white',
+                            minHeight: '500px'
+                          }}
+                        />
+                      </div>
+                    </MobileMockup>
+                  </div>
+                ) : (
+                  <div className="h-full w-full rounded-lg p-4 overflow-auto flex items-center justify-center">
+                    <QRCodeDisplay url={(app.app_url || '').replace('https://', 'exp://')} />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

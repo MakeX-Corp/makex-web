@@ -5,14 +5,47 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
+import { useEffect, useState } from "react";
 
-export function Chat({ appId, appUrl }: { appId: string, appUrl: string }) {
+export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, appUrl: string, authToken: string, sessionId: string }) {
+  const [initialMessages, setInitialMessages] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch(`/api/chat?sessionId=${sessionId}&appId=${appId}`, {
+          headers: {
+            Authorization: 'Bearer ' + authToken,
+          },
+        });
+        if (!response.ok) throw new Error('Failed to fetch messages');
+        const messages = await response.json();
+        setInitialMessages(messages.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+        })));
+        console.log("messages", messages);
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (sessionId && appId) {
+      fetchMessages();
+    }
+  }, [sessionId, appId, authToken]);
+
   const { messages, input, handleInputChange, handleSubmit, addToolResult } = useChat({
-    api: `/api/chat?appUrl=${appUrl}`,
-    initialMessages: [{
-      id: 'initial-message',
-      role: 'assistant',
-      content: `    
+    api: `/api/chat/`,
+    initialMessages: isLoading ? [] : [
+      {
+        id: 'initial-message',
+        role: 'assistant',
+        content: `    
     You are a helpful assistant that can read and write files. You can only write files in React Native.
     You cannot install any packages.
     You can also replace text in a file.
@@ -24,16 +57,32 @@ export function Chat({ appId, appUrl }: { appId: string, appUrl: string }) {
     If you need to say something, say it in the last message.
     Try to do it in minimum tool calls.
     `,
-
-
-    }],
+      },
+      ...initialMessages,
+    ],
+    headers: {
+      Authorization: 'Bearer ' + authToken,
+    },
+    body: {
+      appUrl,
+      appId,
+      sessionId,
+    },
     maxSteps: 5,
     onToolCall: async ({ toolCall }) => {
       // Handle tool calls here
       const result = await executeToolCall(toolCall);
       addToolResult({ toolCallId: toolCall.toolCallId, result });
-    },
+    }
   });
+
+  // Reset chat state when session changes
+  useEffect(() => {
+    if (sessionId) {
+      setIsLoading(true);
+      setInitialMessages([]);
+    }
+  }, [sessionId]);
 
   // Helper function to render message parts
   const renderMessagePart = (part: any) => {
@@ -111,5 +160,4 @@ async function executeToolCall(toolCall: any) {
   // Implement your tool execution logic here
   // This is just a placeholder
   console.log('Executing tool:', toolCall);
-  return { success: true };
 }
