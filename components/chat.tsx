@@ -18,7 +18,14 @@ export function Chat({ appId, appUrl }: { appId: string, appUrl: string }) {
     You can also replace text in a file.
     You can also delete a file.
     You can also create a new file.
-    You can also read a file.`,
+    You can also read a file.
+
+    Don't say too much except calling the tools. 
+    If you need to say something, say it in the last message.
+    Try to do it in minimum tool calls.
+    `,
+
+
     }],
     maxSteps: 5,
     onToolCall: async ({ toolCall }) => {

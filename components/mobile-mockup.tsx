@@ -17,7 +17,7 @@ export default function MobileMockup({ children, className = '' }: MobileMockupP
           <div className="flex h-full flex-col">
 
             {/* App Content */}
-            <div className="flex-grow overflow-hidden p-3 sm:p-4">
+            <div className="flex-grow overflow-hidden">
               {children}
             </div>
           </div>

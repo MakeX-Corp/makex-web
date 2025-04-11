@@ -3,7 +3,7 @@ import { streamText,tool } from 'ai';
 import { z } from 'zod';
 import axios from 'axios';
 
-const API_BASE = 'https://container-1744202547700-0.fly.dev:8001';
+const API_BASE = 'https://container-1744386429369-0.fly.dev:8001';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
