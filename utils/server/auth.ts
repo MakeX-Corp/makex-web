@@ -9,8 +9,6 @@ export async function getSupabaseWithUser(request: Request): Promise<
     const token = authHeader?.startsWith('Bearer ')
         ? authHeader.slice(7)
         : null
-    
-    console.log("token", token);
 
     if (!token) {
         return NextResponse.json(

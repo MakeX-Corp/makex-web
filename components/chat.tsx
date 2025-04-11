@@ -12,8 +12,11 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log("isLoading", isLoading);
+
     const fetchMessages = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch(`/api/chat?sessionId=${sessionId}&appId=${appId}`, {
           headers: {
             Authorization: 'Bearer ' + authToken,
@@ -26,18 +29,25 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
           role: msg.role,
           content: msg.content,
         })));
+        setIsLoading(false);
         console.log("messages", messages);
       } catch (error) {
         console.error('Error fetching messages:', error);
-      } finally {
         setIsLoading(false);
-      }
+      } 
     };
+
+    console.log("sessionId", sessionId);
 
     if (sessionId && appId) {
       fetchMessages();
     }
-  }, [sessionId, appId, authToken]);
+
+    console.log("isLoading", isLoading);  
+    console.log("initialMessages", initialMessages);
+    console.log("sessionId", sessionId);
+    console.log("appId", appId);
+  }, [sessionId, appId]);
 
   const { messages, input, handleInputChange, handleSubmit, addToolResult } = useChat({
     api: `/api/chat/`,

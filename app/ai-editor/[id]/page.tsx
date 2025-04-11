@@ -23,6 +23,12 @@ interface AppDetails {
   updated_at: string;
 }
 
+interface Session {
+  id: string;
+  title: string;
+  created_at: string;
+}
+
 export default function AppEditor() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -34,6 +40,8 @@ export default function AppEditor() {
   const [iframeKey, setIframeKey] = useState(0);
   const [viewMode, setViewMode] = useState<'mobile' | 'qr'>('mobile');
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [isSessionsLoading, setIsSessionsLoading] = useState(true);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -84,6 +92,30 @@ export default function AppEditor() {
     }
   };
 
+  const fetchSessions = async () => {
+    setIsSessionsLoading(true);
+    try {
+      const response = await fetch(`/api/sessions?appId=${appId}`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      const data = await response.json();
+      setSessions(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+      setSessions([]);
+    } finally {
+      setIsSessionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (authToken) {
+      fetchSessions();
+    }
+  }, [appId, authToken]);
+
   useEffect(() => {
     const fetchAppDetails = async () => {
       try {
@@ -112,6 +144,25 @@ export default function AppEditor() {
     setIframeKey(prev => prev + 1);
   };
 
+  const handleCreateSession = async () => {
+    try {
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ appId }),
+      });
+      const newSession: Session = await response.json();
+      if (newSession) {
+        setSessions(prev => [newSession, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error creating new session:', error);
+    }
+  };
+
   if (isLoading) {
     return <AppEditorSkeleton />;
   }
@@ -124,7 +175,14 @@ export default function AppEditor() {
     <>
       {/* Sessions Sidebar */}
       <div className="w-64 h-screen border-r bg-background">
-        <SessionsSidebar appId={appId} authToken={authToken || ""} />
+        <SessionsSidebar 
+          appId={appId} 
+          authToken={authToken || ""} 
+          sessions={sessions}
+          setSessions={setSessions}
+          loading={isSessionsLoading}
+          onCreateSession={handleCreateSession}
+        />
       </div>
 
       {/* Main Content */}
@@ -156,7 +214,6 @@ export default function AppEditor() {
           <Card className="flex-1">
             <CardContent className="p-4 h-full">
               <Chat
-                key={sessionId}
                 appId={appId}
                 appUrl={app.app_url || ""}
                 authToken={authToken || ""}
