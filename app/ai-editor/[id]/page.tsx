@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { Chat } from '@/components/chat';
-import { time } from 'console';
+import { QRCodeDisplay } from '@/components/qr-code';
 
 interface AppDetails {
   id: string;
@@ -27,6 +27,7 @@ export default function AppEditor() {
   const [isLoading, setIsLoading] = useState(true);
   const [isContainerLoading, setIsContainerLoading] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
+  const [viewMode, setViewMode] = useState<'mobile' | 'qr'>('mobile');
   const supabase = createClientComponentClient();
 
   const wakeContainer = async (appName: string, machineId: string) => {
@@ -62,7 +63,7 @@ export default function AppEditor() {
         });
         const data = await response.json();
         if (data.ok) {
-          await new Promise(resolve => setTimeout(resolve, 15000));
+          await new Promise(resolve => setTimeout(resolve, timeout));
           handleRefresh();
         }
       }
@@ -132,43 +133,78 @@ export default function AppEditor() {
           </CardContent>
         </Card>
 
-        {/* Mobile Preview */}
+        {/* Preview Section */}
         <Card className="w-1/2 bg-zinc-50">
-          <CardContent className="relative h-full flex items-center justify-center p-4">
-            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-              <div className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
-                isContainerLoading 
-                  ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' 
-                  : 'bg-green-100 text-green-700 border border-green-300'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
-                  isContainerLoading ? 'bg-yellow-500' : 'bg-green-500'
-                }`} />
-                {isContainerLoading ? 'Starting...' : 'Ready'}
+          <CardContent className="relative h-full flex flex-col p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 border rounded-lg p-1 bg-white">
+                <button
+                  onClick={() => setViewMode('mobile')}
+                  className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                    viewMode === 'mobile' 
+                      ? 'bg-zinc-100 text-zinc-900' 
+                      : 'text-zinc-500 hover:text-zinc-900'
+                  }`}
+                >
+                  Mockup
+                </button>
+                <button
+                  onClick={() => setViewMode('qr')}
+                  className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                    viewMode === 'qr' 
+                      ? 'bg-zinc-100 text-zinc-900' 
+                      : 'text-zinc-500 hover:text-zinc-900'
+                  }`}
+                >
+                  View in Mobile
+                </button>
               </div>
-              <Button 
-                size="icon"
-                variant="ghost" 
-                onClick={handleRefresh}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <div className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
+                  isContainerLoading 
+                    ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' 
+                    : 'bg-green-100 text-green-700 border border-green-300'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    isContainerLoading ? 'bg-yellow-500' : 'bg-green-500'
+                  }`} />
+                  {isContainerLoading ? 'Starting...' : 'Ready'}
+                </div>
+                <Button 
+                  size="icon"
+                  variant="ghost" 
+                  onClick={handleRefresh}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <MobileMockup>
-              <div className="flex flex-col h-full w-full">
-                <iframe 
-                  key={iframeKey}
-                  src={app.app_url || ""}
-                  className="w-full h-full rounded-md"
-                  style={{
-                    border: 'none',
-                    borderRadius: '8px',
-                    backgroundColor: 'white',
-                    minHeight: '500px'
-                  }}
-                />
-              </div>
-            </MobileMockup>
+
+            <div className="flex-1">
+              {viewMode === 'mobile' ? (
+                <div className="h-full w-full flex items-center justify-center">
+                  <MobileMockup>
+                    <div className="flex flex-col h-full w-full">
+                      <iframe 
+                        key={iframeKey}
+                        src={app.app_url || ""}
+                        className="w-full h-full rounded-md"
+                        style={{
+                          border: 'none',
+                          borderRadius: '8px',
+                          backgroundColor: 'white',
+                          minHeight: '500px'
+                        }}
+                      />
+                    </div>
+                  </MobileMockup>
+                </div>
+              ) : (
+                <div className="h-full w-full rounded-lg p-4 overflow-auto flex items-center justify-center">
+                  <QRCodeDisplay url={(app.app_url || '').replace('https://', 'exp://')} />
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

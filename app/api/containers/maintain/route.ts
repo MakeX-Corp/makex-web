@@ -106,7 +106,7 @@ export const maxDuration = 300; // 5 minutes timeout
 
 export async function GET(request: Request) {
     // Add authorization check
-    if (request.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (request.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}` && process.env.NODE_ENV == 'production') {
         return NextResponse.json({ 
             success: false, 
             error: 'Unauthorized' 
@@ -234,6 +234,7 @@ export async function GET(request: Request) {
             const volume = await createVolume(appName, 'dfw'); // You can adjust the region as needed
 
             const machines = await createMachines(appName, machineConfig, 1);
+            const machineId = machines[0]?.id; // Get the machine ID from the first machine
 
             // Add new container to available_containers table with error checking
             const { data: insertData, error: insertError } = await supabase
@@ -242,10 +243,11 @@ export async function GET(request: Request) {
                     {
                         app_name: appName,
                         app_url: `https://${appName}.makex.app`,
-                        created_at: new Date().toISOString()
+                        created_at: new Date().toISOString(),
+                        machine_id: machineId // Add the machine_id to the insert
                     }
                 ])
-                .select();  // Add this to get back the inserted data
+                .select();
 
             if (insertError) {
                 console.error('Failed to insert container:', insertError);

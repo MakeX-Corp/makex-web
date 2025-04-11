@@ -44,6 +44,7 @@ export async function POST(request: Request) {
             user_id: user.id,
             app_name: container.app_name,
             app_url: container.app_url,
+            machine_id: container.machine_id,
         })
         .select()
         .single()
