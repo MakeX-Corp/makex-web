@@ -14,6 +14,7 @@ interface AppDetails {
   user_id: string;
   app_name: string;
   app_url: string | null;
+  machine_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -23,8 +24,38 @@ export default function AppEditor() {
   const appId = params.id as string;
   const [app, setApp] = useState<AppDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isContainerLoading, setIsContainerLoading] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
   const supabase = createClientComponentClient();
+
+  const wakeContainer = async (appName: string, machineId: string) => {
+    setIsContainerLoading(true);
+    try {
+      // First check container status
+      const statusResponse = await fetch(`/api/machines?app=${appName}&machineId=${machineId}&action=status`, {
+        method: 'POST',
+      });
+      const statusData = await statusResponse.json();
+
+      if (statusData.state === "started") {
+        // mark the badge as started
+        console.log("Container is already started");
+      } else {
+        // If not started, wake up the container
+        const response = await fetch(`/api/machines?app=${appName}&machineId=${machineId}&action=wait&state=started`, {
+          method: 'POST',
+        });
+        const data = await response.json();
+        if (data.ok) {
+          handleRefresh();
+        }
+      }
+    } catch (error) {
+      console.error('Error managing container:', error);
+    } finally {
+      setIsContainerLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchAppDetails = async () => {
@@ -36,6 +67,9 @@ export default function AppEditor() {
           .single();
 
         if (error) throw error;
+        if (data.machine_id) {
+          wakeContainer(data.app_name, data.machine_id);
+        }
         setApp(data);
       } catch (error) {
         console.error('Error fetching app details:', error);
@@ -85,14 +119,25 @@ export default function AppEditor() {
         {/* Mobile Preview */}
         <Card className="w-1/2 bg-zinc-50">
           <CardContent className="relative h-full flex items-center justify-center p-4">
-            <Button 
-              size="icon"
-              variant="ghost" 
-              className="absolute top-4 right-4 z-10"
-              onClick={handleRefresh}
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
+            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+              <div className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
+                isContainerLoading 
+                  ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' 
+                  : 'bg-green-100 text-green-700 border border-green-300'
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${
+                  isContainerLoading ? 'bg-yellow-500' : 'bg-green-500'
+                }`} />
+                {isContainerLoading ? 'Starting...' : 'Ready'}
+              </div>
+              <Button 
+                size="icon"
+                variant="ghost" 
+                onClick={handleRefresh}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
             <MobileMockup>
               <div className="flex flex-col h-full w-full">
                 <iframe 
