@@ -1,13 +1,17 @@
-'use client';
+"use client";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useState, useEffect } from 'react';
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
-import { getAuthToken } from '@/utils/client/auth';
+import { getAuthToken } from "@/utils/client/auth";
+
+import {
+  SubscriptionAuthWrapper,
+  useSubscriptionActions,
+} from "@/components/subscription-auth-wrapper";
 
 interface UserApp {
   id: string;
@@ -18,42 +22,49 @@ interface UserApp {
   updated_at: string;
 }
 
-export default function Dashboard() {
+// This is a child component that will be rendered inside the SubscriptionAuthWrapper
+function DashboardContent() {
   const [userApps, setUserApps] = useState<UserApp[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // Use the hook to get access to the subscription management function
+  const { handleManageSubscription } = useSubscriptionActions();
+
   const handleCreateApp = async () => {
     try {
       setIsLoading(true);
-      
+
       const decodedToken = getAuthToken();
-      
+
       if (!decodedToken) {
-        throw new Error('No authentication token found');
+        throw new Error("No authentication token found");
       }
 
-      const response = await fetch('/api/app', {
-        method: 'POST',
+      const response = await fetch("/api/app", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${decodedToken}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${decodedToken}`,
         },
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create app');
+        throw new Error(error.error || "Failed to create app");
       }
 
       const newApp = await response.json();
-      setUserApps(prev => [...prev, newApp]);
+      setUserApps((prev) => [...prev, newApp]);
     } catch (error) {
-      console.error('Error creating app:', error);
+      console.error("Error creating app:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : 'An error occurred while creating the app'
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred while creating the app",
       });
     } finally {
       setIsLoading(false);
@@ -65,33 +76,36 @@ export default function Dashboard() {
       const decodedToken = getAuthToken();
 
       if (!decodedToken) {
-        throw new Error('No authentication token found');
+        throw new Error("No authentication token found");
       }
 
       const response = await fetch(`/api/app?id=${appId}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${decodedToken}`,
+          Authorization: `Bearer ${decodedToken}`,
         },
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to delete app');
+        throw new Error(error.error || "Failed to delete app");
       }
 
-      setUserApps(prev => prev.filter(app => app.id !== appId));
-      
+      setUserApps((prev) => prev.filter((app) => app.id !== appId));
+
       toast({
         title: "Success",
-        description: "App deleted successfully"
+        description: "App deleted successfully",
       });
     } catch (error) {
-      console.error('Error deleting app:', error);
+      console.error("Error deleting app:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : 'An error occurred while deleting the app'
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred while deleting the app",
       });
     }
   };
@@ -103,28 +117,31 @@ export default function Dashboard() {
         const decodedToken = getAuthToken();
 
         if (!decodedToken) {
-          throw new Error('No authentication token found');
+          throw new Error("No authentication token found");
         }
 
-        const response = await fetch('/api/app', {
+        const response = await fetch("/api/app", {
           headers: {
-            'Authorization': `Bearer ${decodedToken}`,
+            Authorization: `Bearer ${decodedToken}`,
           },
         });
-        
+
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || 'Failed to fetch apps');
+          throw new Error(error.error || "Failed to fetch apps");
         }
 
         const apps = await response.json();
         setUserApps(apps);
       } catch (error) {
-        console.error('Error fetching apps:', error);
+        console.error("Error fetching apps:", error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: error instanceof Error ? error.message : 'An error occurred while fetching apps'
+          description:
+            error instanceof Error
+              ? error.message
+              : "An error occurred while fetching apps",
         });
       }
     };
@@ -136,16 +153,23 @@ export default function Dashboard() {
     <div className="container mx-auto p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">My Apps</h1>
-        <Button onClick={handleCreateApp} disabled={isLoading}>
-          <Plus className="h-4 w-4 mr-2" />
-          {isLoading ? 'Creating...' : 'Create New App'}
-        </Button>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={handleManageSubscription}>
+            Manage Subscription
+          </Button>
+          <Button onClick={handleCreateApp} disabled={isLoading}>
+            <Plus className="h-4 w-4 mr-2" />
+            {isLoading ? "Creating..." : "Create New App"}
+          </Button>
+        </div>
       </div>
 
       {userApps.length === 0 ? (
         <Card className="p-8">
           <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">You haven't created any apps yet</p>
+            <p className="text-muted-foreground mb-4">
+              You haven't created any apps yet
+            </p>
             <Button onClick={handleCreateApp}>
               <Plus className="h-4 w-4 mr-2" />
               Create Your First App
@@ -172,8 +196,8 @@ export default function Dashboard() {
                       Edit App
                     </Button>
                   </Link>
-                  <Button 
-                    variant="destructive" 
+                  <Button
+                    variant="destructive"
                     className="w-full"
                     onClick={() => handleDeleteApp(app.id)}
                   >
@@ -186,5 +210,14 @@ export default function Dashboard() {
         </div>
       )}
     </div>
+  );
+}
+
+// Main Dashboard component that wraps DashboardContent with the SubscriptionAuthWrapper
+export default function Dashboard() {
+  return (
+    <SubscriptionAuthWrapper requiredPlan="basic">
+      <DashboardContent />
+    </SubscriptionAuthWrapper>
   );
 }
