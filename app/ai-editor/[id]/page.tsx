@@ -11,6 +11,7 @@ import { Chat } from '@/components/chat';
 import { QRCodeDisplay } from '@/components/qr-code';
 import { SessionsSidebar } from '@/components/sessions-sidebar';
 import { getAuthToken } from '@/utils/client/auth';
+import { AppEditorSkeleton } from '@/app/components/AppEditorSkeleton';
 
 interface AppDetails {
   id: string;
@@ -112,7 +113,7 @@ export default function AppEditor() {
   };
 
   if (isLoading) {
-    return <div className="container mx-auto p-8">Loading...</div>;
+    return <AppEditorSkeleton />;
   }
 
   if (!app) {

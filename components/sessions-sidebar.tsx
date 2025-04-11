@@ -1,4 +1,4 @@
-import { Plus, MessageSquare } from "lucide-react"
+import { Plus, MessageSquare, ArrowLeft } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useRouter } from "next/navigation"
 
 interface Session {
   id: string
@@ -21,10 +23,15 @@ interface Session {
 
 export function SessionsSidebar({ appId, authToken }: { appId: string, authToken: string }) {
   const [sessions, setSessions] = useState<Session[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(
+    new URLSearchParams(window.location.search).get('session')
+  )
 
   useEffect(() => {
     const fetchSessions = async () => {
+      setLoading(true)
       try {
         const response = await fetch(`/api/sessions?appId=${appId}`, {
           headers: {
@@ -32,13 +39,12 @@ export function SessionsSidebar({ appId, authToken }: { appId: string, authToken
           }
         })
         const data = await response.json()
-        // Ensure data is an array, even if null/undefined
         setSessions(Array.isArray(data) ? data : [])
       } catch (error) {
         console.error('Error fetching sessions:', error)
         setSessions([])
       } finally {
-        setIsLoading(false)
+        setLoading(false)
       }
     }
 
@@ -64,12 +70,28 @@ export function SessionsSidebar({ appId, authToken }: { appId: string, authToken
     }
   }
 
+  const handleSessionClick = (sessionId: string) => {
+    setActiveSessionId(sessionId)
+    router.push(`/ai-editor/${appId}?session=${sessionId}`)
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => router.push('/dashboard')}
+                  className="h-8 w-8 p-0 hover:bg-transparent"
+                  aria-label="Back to home"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </div>
               <span>Chat Sessions</span>
               <Button
                 variant="ghost"
@@ -82,18 +104,29 @@ export function SessionsSidebar({ appId, authToken }: { appId: string, authToken
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {isLoading ? (
-                  <div key="loading" className="px-4 py-2 text-sm text-muted-foreground">Loading sessions...</div>
+                {loading ? (
+                  <>
+                    <div className="px-4 py-2">
+                      <Skeleton className="h-8 w-full" />
+                    </div>
+                    <div className="px-4 py-2">
+                      <Skeleton className="h-8 w-full" />
+                    </div>
+                    <div className="px-4 py-2">
+                      <Skeleton className="h-8 w-full" />
+                    </div>
+                  </>
                 ) : !sessions || sessions.length === 0 ? (
                   <div key="empty" className="px-4 py-2 text-sm text-muted-foreground">No sessions yet</div>
                 ) : (
                   sessions.map((session) => (
                     <SidebarMenuItem key={session.id}>
-                      <SidebarMenuButton asChild>
-                        <a href={`/ai-editor/${appId}?session=${session.id}`}>
-                          <MessageSquare className="h-4 w-4" />
-                          <span className="truncate">{session.title || 'New Chat'}</span>
-                        </a>
+                      <SidebarMenuButton 
+                        onClick={() => handleSessionClick(session.id)}
+                        className={session.id === activeSessionId ? "bg-primary/40 hover:bg-primary/15" : ""}
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        <span className="truncate">{session.title || 'New Chat'}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))

@@ -115,7 +115,7 @@ export function SubscriptionAuthWrapper({
   }, [router]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Loading..</div>;
   }
 
   // If no subscription is required, render children with context

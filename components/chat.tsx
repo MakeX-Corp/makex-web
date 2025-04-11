@@ -4,7 +4,7 @@ import { useChat } from '@ai-sdk/react'
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, appUrl: string, authToken: string, sessionId: string }) {
@@ -41,7 +41,7 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
 
   const { messages, input, handleInputChange, handleSubmit, addToolResult } = useChat({
     api: `/api/chat/`,
-    initialMessages: isLoading ? [] : [
+    initialMessages: isLoading ? [] : initialMessages.length > 0 ? initialMessages : [
       {
         id: 'initial-message',
         role: 'assistant',
@@ -57,8 +57,7 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
     If you need to say something, say it in the last message.
     Try to do it in minimum tool calls.
     `,
-      },
-      ...initialMessages,
+      }
     ],
     headers: {
       Authorization: 'Bearer ' + authToken,
@@ -75,14 +74,6 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
       addToolResult({ toolCallId: toolCall.toolCallId, result });
     }
   });
-
-  // Reset chat state when session changes
-  useEffect(() => {
-    if (sessionId) {
-      setIsLoading(true);
-      setInitialMessages([]);
-    }
-  }, [sessionId]);
 
   // Helper function to render message parts
   const renderMessagePart = (part: any) => {
@@ -113,28 +104,34 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
     <div className="flex flex-col h-full bg-slate-50">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {messages.map(message => (
-          <div 
-            key={message.id} 
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <Card className={`max-w-[80%] ${
-              message.role === 'user' 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-card text-card-foreground'
-            }`}>
-              <CardContent className="p-4">
-                {message.parts?.length ? (
-                  message.parts.map((part, i) => (
-                    <div key={i}>{renderMessagePart(part)}</div>
-                  ))
-                ) : (
-                  <div className="text-sm">{message.content}</div>
-                )}
-              </CardContent>
-            </Card>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-full">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
-        ))}
+        ) : (
+          messages.map(message => (
+            <div 
+              key={message.id} 
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <Card className={`max-w-[80%] ${
+                message.role === 'user' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-card text-card-foreground'
+              }`}>
+                <CardContent className="p-4">
+                  {message.parts?.length ? (
+                    message.parts.map((part, i) => (
+                      <div key={i}>{renderMessagePart(part)}</div>
+                    ))
+                  ) : (
+                    <div className="text-sm">{message.content}</div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          ))
+        )}
       </div>
       
       {/* Input area - fixed at bottom */}
