@@ -70,6 +70,38 @@ async function createMachines(appName: string, config: any, count: number) {
     return machines;
 }
 
+async function createVolume(appName: string, region: string) {
+    const url = `${FLY_MACHINES_API}/apps/${appName}/volumes`;
+    
+    try {
+        const response = await axios.post(
+            url,
+            {
+                name: "data",
+                region: region,
+                size_gb: 2
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${FLY_API_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            }
+        );
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.error('Volume creation error:', {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message
+            });
+        }
+        throw error;
+    }
+}
+
 export const maxDuration = 300; // 5 minutes timeout
 
 export async function GET(request: Request) {
@@ -155,6 +187,12 @@ export async function GET(request: Request) {
             const machineConfig = {
                 config: {
                     image: 'tkejr/expo-fast:latest',
+                    mounts: [
+                        {
+                            volume: "data",
+                            path: "/app/DemoApp"
+                        }
+                    ],
                     services: [
                         {
                             protocol: 'tcp',
@@ -192,7 +230,10 @@ export async function GET(request: Request) {
                 },
             };
 
-            const machines = await createMachines(appName, machineConfig, 2);
+            console.log(`Creating volume for app: ${appName}`);
+            const volume = await createVolume(appName, 'iad'); // You can adjust the region as needed
+
+            const machines = await createMachines(appName, machineConfig, 1);
 
             // Add new container to available_containers table with error checking
             const { data: insertData, error: insertError } = await supabase
