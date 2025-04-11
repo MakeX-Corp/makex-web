@@ -5,10 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
-
+import { getAuthToken } from '@/utils/client/auth';
 export function Chat({ appId, appUrl }: { appId: string, appUrl: string }) {
+
+  const decodedToken = getAuthToken();
   const { messages, input, handleInputChange, handleSubmit, addToolResult } = useChat({
-    api: `/api/chat?appUrl=${appUrl}`,
+    api: `/api/chat?appUrl=${appUrl}&appId=${appId}`,
     initialMessages: [{
       id: 'initial-message',
       role: 'assistant',
@@ -24,9 +26,10 @@ export function Chat({ appId, appUrl }: { appId: string, appUrl: string }) {
     If you need to say something, say it in the last message.
     Try to do it in minimum tool calls.
     `,
-
-
     }],
+    headers: {
+      Authorization: 'Bearer ' + decodedToken,
+    },
     maxSteps: 5,
     onToolCall: async ({ toolCall }) => {
       // Handle tool calls here
