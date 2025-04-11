@@ -64,10 +64,9 @@ export default function PricingPage() {
   useEffect(() => {
     const token = getAuthToken();
     if (token) {
-      // Assuming you have a function to decode the JWT token
       const decoded = decodeToken(token);
       if (decoded && decoded.sub) {
-        setUserId(decoded.sub); // Typically the 'sub' claim contains the user ID
+        setUserId(decoded.sub);
       }
     }
   }, []);
@@ -112,7 +111,6 @@ export default function PricingPage() {
           userId: userId,
         },
       });
-      console.log("Checkout created:", checkout);
     } catch (error) {
       console.error("Checkout error:", error);
       toast({

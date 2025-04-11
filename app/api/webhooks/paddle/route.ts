@@ -18,9 +18,9 @@ const getSupabaseClient = () => {
 // Verify webhook signature manually
 function verifyPaddleSignature(payload: string, signature: string): boolean {
   try {
-    const publicKey = process.env.PADDLE_PUBLIC_KEY;
+    const publicKey = process.env.PADDLE_SECRET_KEY;
     if (!publicKey) {
-      console.error("Missing Paddle public key");
+      console.error("Missing Paddle secret key");
       return false;
     }
 
@@ -132,12 +132,12 @@ async function handleSubscriptionUpdated(event: any, supabase: any) {
       .from("subscriptions")
       .update({
         status: event.status,
-        price_id: event.price?.id,
-        quantity: event.quantity || 1,
+        price_id: event.items[0].price?.id,
+        quantity: event.items[0].quantity || 1,
         cancel_at_period_end: event.cancel_at_period_end || false,
         canceled_at: event.canceled_at,
-        current_period_start: event.current_period_start,
-        current_period_end: event.current_period_end,
+        current_period_start: event.current_billing_period.starts_at,
+        current_period_end: event.current_billing_period.ends_at,
       })
       .eq("id", event.id);
 
