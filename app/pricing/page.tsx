@@ -61,56 +61,11 @@ export default function PricingPage() {
 
   const { toast } = useToast();
 
-  const handleCheckout45 = async (priceId: string) => {
-    const paddle = await initPaddle();
-    if (!paddle) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Payment processor not available",
-      });
-      return;
-    }
-    try {
-      setLoading(priceId);
-      const token = getAuthToken();
-
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
-      const checkout = paddle.Checkout.open({
-        items: [
-          {
-            priceId: priceId,
-            quantity: 1,
-          },
-        ],
-        customData: {
-          userId: "02c1203f-bc39-49ed-b88a-6ca2c03a8f6d",
-        },
-      });
-      console.log("Checkout created:", checkout);
-    } catch (error) {
-      console.error("Checkout error:", error);
-      toast({
-        variant: "destructive",
-        title: "Checkout Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to initiate checkout",
-      });
-    } finally {
-      setLoading(null);
-    }
-  };
   useEffect(() => {
     const token = getAuthToken();
     if (token) {
       // Assuming you have a function to decode the JWT token
       const decoded = decodeToken(token);
-      console.log("Decoded token:", decoded.sub);
       if (decoded && decoded.sub) {
         setUserId(decoded.sub); // Typically the 'sub' claim contains the user ID
       }

@@ -71,11 +71,11 @@ export async function POST(req: Request) {
       case "subscription.created":
         await handleSubscriptionCreated(event, supabase);
         break;
-      case "subscription.updated":
-        await handleSubscriptionUpdated(event, supabase);
-        break;
       case "subscription.canceled":
         await handleSubscriptionCanceled(event, supabase);
+        break;
+      case "subscription.updated":
+        await handleSubscriptionUpdated(event, supabase);
         break;
       case "transaction.completed":
         await handleTransactionCompleted(event, supabase);

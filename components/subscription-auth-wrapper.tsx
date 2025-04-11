@@ -103,7 +103,6 @@ export function SubscriptionAuthWrapper({
         }
 
         const data = await response.json();
-        console.log(data);
         setSubscriptionStatus(data);
       } catch (error) {
         console.error("Error fetching subscription status:", error);
