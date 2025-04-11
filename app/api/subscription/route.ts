@@ -53,6 +53,7 @@ export async function GET(request: Request) {
       pendingCancellation,
       expiresAt: subscription?.current_period_end || null,
       planId: subscription?.price_id || null,
+      customerId: subscription?.customer_id || null,
     });
   } catch (error) {
     console.error("Error fetching subscription:", error);

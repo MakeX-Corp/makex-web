@@ -1,9 +1,18 @@
 "use client";
-import React from "react";
-import { useState, useEffect } from "react";
+
+import React, { useState, useEffect, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { getAuthToken } from "@/utils/client/auth";
 import { Button } from "./ui/button";
+
+// Very simple context with just the function we need
+const SubscriptionContext = createContext({
+  handleManageSubscription: () => {},
+});
+
+// Export the hook for components to use
+export const useSubscriptionActions = () => useContext(SubscriptionContext);
+
 interface SubscriptionAuthWrapperProps {
   children: React.ReactNode;
   requiredPlan?: "basic" | "pro" | "enterprise";
@@ -26,6 +35,52 @@ export function SubscriptionAuthWrapper({
     useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  // The function we want to expose to children
+  const handleManageSubscription = async () => {
+    try {
+      if (!subscriptionStatus?.customerId) {
+        // If no customer ID exists, redirect to pricing page
+        router.push("/pricing");
+        return;
+      }
+
+      // Make API call using the customer_id
+      const decodedToken = getAuthToken();
+      if (!decodedToken) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch("/api/customer-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${decodedToken}`,
+        },
+        body: JSON.stringify({
+          customerId: subscriptionStatus?.customerId,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to manage subscription");
+      }
+
+      const data = await response.json();
+
+      // Redirect to the subscription portal URL returned from the API
+      if (data.url) {
+        window.open(data.url, "_blank");
+      } else {
+        router.push("/pricing");
+      }
+    } catch (error) {
+      console.error("Error managing subscription:", error);
+      // Fallback to pricing page on error
+      router.push("/pricing");
+    }
+  };
 
   useEffect(() => {
     const fetchSubscriptionStatus = async () => {
@@ -64,9 +119,13 @@ export function SubscriptionAuthWrapper({
     return <div>Loading...</div>;
   }
 
-  // If no subscription is required, render children
+  // If no subscription is required, render children with context
   if (!requiredPlan) {
-    return <>{children}</>;
+    return (
+      <SubscriptionContext.Provider value={{ handleManageSubscription }}>
+        {children}
+      </SubscriptionContext.Provider>
+    );
   }
 
   // If subscription is required but user doesn't have one
@@ -103,7 +162,13 @@ export function SubscriptionAuthWrapper({
       </div>
     );
   }
-  return <>{children}</>;
+
+  // Provide subscription management function to children
+  return (
+    <SubscriptionContext.Provider value={{ handleManageSubscription }}>
+      {children}
+    </SubscriptionContext.Provider>
+  );
 }
 
 function checkPlanLevel(
@@ -124,8 +189,8 @@ function checkPlanLevel(
 }
 
 function getPlanLevelFromId(planId: string): number {
-  if (planId.includes("pri_01jrgq0gf89e4xae6060s53j80")) return 1; // basic
-  if (planId.includes("pri_01h9whhq7pg7qmgz7dnbpdz155")) return 2; // pro
-  if (planId.includes("pri_01h9whhq7pg7qmgz7dnbpdz156")) return 3; // enterprise
+  if (planId === process.env.NEXT_PUBLIC_PADDLE_STARTER_ID) return 1; // basic
+  if (planId === process.env.NEXT_PUBLIC_PADDLE_PRO_ID) return 2; // pro
+  if (planId === process.env.NEXT_PUBLIC_PADDLE_ENTERPRISE_ID) return 3; // enterprise
   return 0;
 }

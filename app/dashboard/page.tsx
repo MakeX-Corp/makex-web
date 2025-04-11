@@ -4,12 +4,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
 import { getAuthToken } from "@/utils/client/auth";
 
-import { SubscriptionAuthWrapper } from "@/components/subscription-auth-wrapper";
+import {
+  SubscriptionAuthWrapper,
+  useSubscriptionActions,
+} from "@/components/subscription-auth-wrapper";
+
 interface UserApp {
   id: string;
   user_id: string;
@@ -19,10 +22,14 @@ interface UserApp {
   updated_at: string;
 }
 
-export default function Dashboard() {
+// This is a child component that will be rendered inside the SubscriptionAuthWrapper
+function DashboardContent() {
   const [userApps, setUserApps] = useState<UserApp[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // Use the hook to get access to the subscription management function
+  const { handleManageSubscription } = useSubscriptionActions();
 
   const handleCreateApp = async () => {
     try {
@@ -142,73 +149,75 @@ export default function Dashboard() {
     fetchUserApps();
   }, []);
 
-  // Use the function passed from SubscriptionAuthWrapper, or fallback to a default
-  const handleManageSubscription = () => {
-    window.location.href = "/pricing";
-  };
+  return (
+    <div className="container mx-auto p-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">My Apps</h1>
+        <div className="flex items-center gap-4">
+          <Button variant="secondary" onClick={handleManageSubscription}>
+            Manage Subscription
+          </Button>
+          <Button onClick={handleCreateApp} disabled={isLoading}>
+            <Plus className="h-4 w-4 mr-2" />
+            {isLoading ? "Creating..." : "Create New App"}
+          </Button>
+        </div>
+      </div>
 
+      {userApps.length === 0 ? (
+        <Card className="p-8">
+          <CardContent className="text-center">
+            <p className="text-muted-foreground mb-4">
+              You haven't created any apps yet
+            </p>
+            <Button onClick={handleCreateApp}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Your First App
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {userApps.map((app) => (
+            <Card key={app.id} className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-4">
+                <h2 className="font-semibold mb-2">{app.app_name}</h2>
+                <p className="text-sm text-muted-foreground">
+                  Created: {new Date(app.created_at).toLocaleDateString()}
+                </p>
+                {app.app_url && (
+                  <p className="text-sm text-muted-foreground truncate">
+                    URL: {app.app_url}
+                  </p>
+                )}
+                <div className="mt-4 space-y-2">
+                  <Link href={`/ai-editor/${app.id}`}>
+                    <Button variant="outline" className="w-full">
+                      Edit App
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => handleDeleteApp(app.id)}
+                  >
+                    Delete App
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Main Dashboard component that wraps DashboardContent with the SubscriptionAuthWrapper
+export default function Dashboard() {
   return (
     <SubscriptionAuthWrapper requiredPlan="basic">
-      <div className="container mx-auto p-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">My Apps</h1>
-          <div className="flex items-center gap-4">
-            <Button variant="secondary" onClick={handleManageSubscription}>
-              {"Manage Subscription"}
-            </Button>
-            <Button onClick={handleCreateApp} disabled={isLoading}>
-              <Plus className="h-4 w-4 mr-2" />
-              {isLoading ? "Creating..." : "Create New App"}
-            </Button>
-          </div>
-        </div>
-
-        {userApps.length === 0 ? (
-          <Card className="p-8">
-            <CardContent className="text-center">
-              <p className="text-muted-foreground mb-4">
-                You haven't created any apps yet
-              </p>
-              <Button onClick={handleCreateApp}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First App
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {userApps.map((app) => (
-              <Card key={app.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-4">
-                  <h2 className="font-semibold mb-2">{app.app_name}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Created: {new Date(app.created_at).toLocaleDateString()}
-                  </p>
-                  {app.app_url && (
-                    <p className="text-sm text-muted-foreground truncate">
-                      URL: {app.app_url}
-                    </p>
-                  )}
-                  <div className="mt-4 space-y-2">
-                    <Link href={`/ai-editor/${app.id}`}>
-                      <Button variant="outline" className="w-full">
-                        Edit App
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="destructive"
-                      className="w-full"
-                      onClick={() => handleDeleteApp(app.id)}
-                    >
-                      Delete App
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+      <DashboardContent />
     </SubscriptionAuthWrapper>
   );
 }

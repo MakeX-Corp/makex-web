@@ -115,7 +115,7 @@ async function handleSubscriptionCreated(event: any, supabase: any) {
       current_period_start: event.current_billing_period.starts_at,
       current_period_end: event.current_billing_period.ends_at,
       created_at: event.created_at,
-      customer_id: event.customer.id,
+      customer_id: event.customer_id,
     });
 
     if (error) throw error;
