@@ -30,7 +30,7 @@ export default function PrivacyPage() {
         Email: contact@makex.app<br /><br />
         Official Mailing Address:<br />
         Privacy Department<br />
-        MakeX Corporation<br />
+        Bit Wise LLC<br />
         131 Continental Dr, Suite 305<br />
         Newark, Delaware 19713<br />
         United States<br /><br />

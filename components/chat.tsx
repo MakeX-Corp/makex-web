@@ -8,7 +8,7 @@ import { Send } from "lucide-react";
 
 export function Chat({ appId, appUrl }: { appId: string, appUrl: string }) {
   const { messages, input, handleInputChange, handleSubmit, addToolResult } = useChat({
-    api: '/api/chat',
+    api: `/api/chat?appUrl=${appUrl}`,
     initialMessages: [{
       id: 'initial-message',
       role: 'assistant',

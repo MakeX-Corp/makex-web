@@ -3,14 +3,14 @@ import { streamText,tool } from 'ai';
 import { z } from 'zod';
 import axios from 'axios';
 
-const API_BASE = 'https://container-1744386429369-0.fly.dev:8001';
-
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
-  console.log(messages);
+  // get appUrl from query params
+  const appUrl = req.url.split('?')[1].split('=')[1];
+  const API_BASE = appUrl + ':8001';
 
   const result = streamText({
     model: anthropic('claude-3-7-sonnet-20250219'),
