@@ -1,89 +1,55 @@
 'use client';
 
-import { useState } from 'react';
+import { useChat } from '@ai-sdk/react'
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 
-// Define the message type
-type Message = {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-};
-
 export function Chat({ appId, appUrl }: { appId: string, appUrl: string }) {
-  const [messages, setMessages] = useState<Message[]>([{
-    id: 'initial-message',
-    role: 'assistant',
-    content: `You are an expert in the app with the id ${appId}. You are given a url to the app ${appUrl}. You are also given a message from the user. You need to help the user edit the app.`,
-  }]);
-  const [input, setInput] = useState('');
+  const { messages, input, handleInputChange, handleSubmit, addToolResult } = useChat({
+    api: '/api/chat',
+    initialMessages: [{
+      id: 'initial-message',
+      role: 'assistant',
+      content: `    
+    You are a helpful assistant that can read and write files. You can only write files in React Native.
+    You cannot install any packages.
+    You can also replace text in a file.
+    You can also delete a file.
+    You can also create a new file.
+    You can also read a file.`,
+    }],
+    maxSteps: 5,
+    onToolCall: async ({ toolCall }) => {
+      // Handle tool calls here
+      const result = await executeToolCall(toolCall);
+      addToolResult({ toolCallId: toolCall.toolCallId, result });
+    },
+  });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    // Add user message
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input,
-    };
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-
-    try {
-      // Send message to API
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          messages: [...messages, userMessage],
-          appId,
-          appUrl,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to send message: ${errorText}`);
-      }
-
-      let data;
-      try {
-        data = await response.json();
-      } catch (parseError) {
-        console.error('Failed to parse response:', parseError);
-        throw new Error('Invalid response format from server');
-      }
-
-      if (!data.content) {
-        throw new Error('Invalid response format: missing content');
-      }
-      
-      // Add assistant response
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: data.content,
-      }]);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      // Add error message to chat
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: `Error: ${error.message}. Please try again.`,
-      }]);
+  // Helper function to render message parts
+  const renderMessagePart = (part: any) => {
+    switch (part.type) {
+      case 'text':
+        return <div className="text-sm">{part.text}</div>;
+      case 'tool-invocation':
+        return (
+          <div className="bg-slate-100 rounded p-2 my-2">
+            <div className="font-medium">Tool: {part.toolInvocation.toolName}</div>
+            <div className="text-sm">
+              {part.toolInvocation.state === 'result' ? (
+                <>
+                  <div>Result: {JSON.stringify(part.toolInvocation.result)}</div>
+                </>
+              ) : (
+                <div>Args: {JSON.stringify(part.toolInvocation.args)}</div>
+              )}
+            </div>
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
@@ -102,9 +68,13 @@ export function Chat({ appId, appUrl }: { appId: string, appUrl: string }) {
                 : 'bg-card text-card-foreground'
             }`}>
               <CardContent className="p-4">
-                <div className="text-sm">
-                  {message.content}
-                </div>
+                {message.parts?.length ? (
+                  message.parts.map((part, i) => (
+                    <div key={i}>{renderMessagePart(part)}</div>
+                  ))
+                ) : (
+                  <div className="text-sm">{message.content}</div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -127,4 +97,12 @@ export function Chat({ appId, appUrl }: { appId: string, appUrl: string }) {
       </div>
     </div>
   );
+}
+
+// Helper function to execute tool calls
+async function executeToolCall(toolCall: any) {
+  // Implement your tool execution logic here
+  // This is just a placeholder
+  console.log('Executing tool:', toolCall);
+  return { success: true };
 }

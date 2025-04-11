@@ -161,6 +161,7 @@ export async function GET(request: Request) {
                             internal_port: 8000,
                             autostop: "stop",
                             autostart: true,
+                            max_machines_running: 1,
                             min_machines_running: 0,
                             ports: [
                                 { port: 80, handlers: ['http'] },
@@ -172,6 +173,7 @@ export async function GET(request: Request) {
                             internal_port: 8001,
                             autostop: "stop",
                             autostart: true,
+                            max_machines_running: 1,
                             min_machines_running: 0,
                             ports: [
                                 { port: 8001, handlers: ['tls', 'http'] }
