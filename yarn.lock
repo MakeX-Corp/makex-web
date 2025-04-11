@@ -324,6 +324,11 @@
   resolved "https://registry.yarnpkg.com/@opentelemetry/api/-/api-1.9.0.tgz#d03eba68273dc0f7509e2a3d5cba21eae10379fe"
   integrity sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==
 
+"@paddle/paddle-js@^1.4.0":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@paddle/paddle-js/-/paddle-js-1.4.0.tgz#27e9def6259739342bc6ced188cf979c235df492"
+  integrity sha512-pX6Yx+RswB1rHMuYl8RKcAAVZhVJ6nd5f8w8l4kVM63pM3HNeQ5/Xuk4sK/X9P5fUE2dmN0mTti7+gZ8cZtqvg==
+
 "@pkgjs/parseargs@^0.11.0":
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"
