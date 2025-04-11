@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { Chat } from '@/components/chat';
+import { time } from 'console';
 
 interface AppDetails {
   id: string;
@@ -30,6 +31,7 @@ export default function AppEditor() {
 
   const wakeContainer = async (appName: string, machineId: string) => {
     setIsContainerLoading(true);
+    let timeout = 0;
     try {
       // First check container status
       const statusResponse = await fetch(`/api/machines?app=${appName}&machineId=${machineId}&action=status`, {
@@ -40,13 +42,27 @@ export default function AppEditor() {
       if (statusData.state === "started") {
         // mark the badge as started
         console.log("Container is already started");
-      } else {
+
+      } 
+
+      if(statusData.state === "stopped") {
+        // mark the badge as stopped
+        console.log("Container is stopped");
+        timeout = 25000;
+      }
+      if(statusData.state === "suspended") {
+        // mark the badge as suspended
+        console.log("Container is suspended");
+        timeout = 25000;
+      }
+      else {
         // If not started, wake up the container
         const response = await fetch(`/api/machines?app=${appName}&machineId=${machineId}&action=wait&state=started`, {
           method: 'POST',
         });
         const data = await response.json();
         if (data.ok) {
+          await new Promise(resolve => setTimeout(resolve, 15000));
           handleRefresh();
         }
       }
