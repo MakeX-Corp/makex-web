@@ -231,7 +231,7 @@ export async function GET(request: Request) {
             };
 
             console.log(`Creating volume for app: ${appName}`);
-            const volume = await createVolume(appName, 'iad'); // You can adjust the region as needed
+            const volume = await createVolume(appName, 'dfw'); // You can adjust the region as needed
 
             const machines = await createMachines(appName, machineConfig, 1);
 
@@ -241,7 +241,7 @@ export async function GET(request: Request) {
                 .insert([
                     {
                         app_name: appName,
-                        app_url: appUrl,
+                        app_url: `https://${appName}.makex.app`,
                         created_at: new Date().toISOString()
                     }
                 ])
