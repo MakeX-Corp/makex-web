@@ -110,6 +110,9 @@ export default function PricingPage() {
         customData: {
           userId: userId,
         },
+        settings: {
+          successUrl: `${window.location.origin}/dashboard`,
+        },
       });
     } catch (error) {
       console.error("Checkout error:", error);
