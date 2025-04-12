@@ -24,7 +24,6 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log("Data.data.urlsdfdf:", data.data.urls.general);
 
     return NextResponse.json({ url: data.data.urls.general.overview });
   } catch (error) {
