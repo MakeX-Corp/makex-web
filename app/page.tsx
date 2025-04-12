@@ -255,7 +255,7 @@ export default function LandingPage() {
         <span className="font-medium">Get early access</span>
       </a>
 
-      <main className="flex-1 flex flex-col items-center justify-center relative z-10">
+      <main className="flex-1 flex flex-col items-center justify-center relative z-10 mt-16 md:mt-0">
         <div className="container px-4 py-4 md:py-16 flex flex-col items-center text-center">
           <div className="flex items-center justify-center mb-4 md:mb-6">
             <div className="relative">
