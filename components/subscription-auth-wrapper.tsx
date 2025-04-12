@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
-import { getAuthToken } from "@/utils/client/auth";
+import { getAuthToken, decodeToken } from "@/utils/client/auth";
 import { Button } from "./ui/button";
-
+import posthog from "posthog-js";
 // Very simple context with just the function we need
 const SubscriptionContext = createContext({
   handleManageSubscription: () => {},
@@ -85,16 +85,26 @@ export function SubscriptionAuthWrapper({
   useEffect(() => {
     const fetchSubscriptionStatus = async () => {
       try {
-        const decodedToken = getAuthToken();
+        const token = getAuthToken();
 
-        if (!decodedToken) {
+        if (!token) {
           router.push("/login");
           return;
         }
+        const decodedToken = decodeToken(token);
+        const email = decodedToken.email;
+
+        // Identify user in PostHog
+        posthog.identify(email, {
+          email: email,
+          subscription_status: subscriptionStatus?.hasActiveSubscription,
+          subscription_plan: subscriptionStatus?.planId,
+          customer_id: subscriptionStatus?.customerId,
+        });
 
         const response = await fetch("/api/subscription", {
           headers: {
-            Authorization: `Bearer ${decodedToken}`,
+            Authorization: `Bearer ${token}`,
           },
         });
 
