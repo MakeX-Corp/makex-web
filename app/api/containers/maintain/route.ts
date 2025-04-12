@@ -186,7 +186,7 @@ export async function GET(request: Request) {
             // Create machine with config
             const machineConfig = {
                 config: {
-                    image: 'tkejr/expo-fast:latest',
+                    image: 'registry.fly.io/expo-fast:latest',
                     mounts: [
                         {
                             volume: "data",

@@ -115,7 +115,7 @@ export default function AppEditor() {
     if (authToken) {
       fetchSessions();
     }
-  }, [appId, authToken, currentSessionId]);
+  }, [appId, authToken]);
 
   useEffect(() => {
     const fetchAppDetails = async () => {
@@ -224,6 +224,7 @@ export default function AppEditor() {
                 appUrl={app.app_url || ""}
                 authToken={authToken || ""}
                 sessionId={currentSessionId || ""}
+                onResponseComplete={handleRefresh}
               />
             </CardContent>
           </Card>

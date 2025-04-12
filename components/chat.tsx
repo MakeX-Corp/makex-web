@@ -7,12 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Send, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, appUrl: string, authToken: string, sessionId: string }) {
+export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }: { appId: string, appUrl: string, authToken: string, sessionId: string, onResponseComplete?: () => void }) {
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log("sessionId", sessionId);
     const fetchMessages = async () => {
       try {
         setIsLoading(true);
@@ -36,16 +35,10 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
       } 
     };
 
-    console.log("sessionId", sessionId);
 
     if (sessionId && appId) {
       fetchMessages();
     }
-
-    console.log("isLoading", isLoading);  
-    console.log("initialMessages", initialMessages);
-    console.log("sessionId", sessionId);
-    console.log("appId", appId);
   }, [sessionId, appId]);
 
   const { messages, input, handleInputChange, handleSubmit, addToolResult } = useChat({
@@ -62,8 +55,7 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
     You can also create a new file.
     You can also read a file.
 
-    Don't say too much except calling the tools. 
-    If you need to say something, say it in the last message.
+    Don't say anything except calling the tools. 
     Try to do it in minimum tool calls.
     `,
       }
@@ -79,10 +71,23 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
     maxSteps: 5,
     onToolCall: async ({ toolCall }) => {
       // Handle tool calls here
-      const result = await executeToolCall(toolCall);
-      addToolResult({ toolCallId: toolCall.toolCallId, result });
+      console.log("toolCall", toolCall);
+      addToolResult({ toolCallId: toolCall.toolCallId, result: "Test" });
+    },
+    onFinish: () => {
+      if (onResponseComplete) {
+        onResponseComplete();
+      }
     }
   });
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    const messagesContainer = document.querySelector('.overflow-y-auto');
+    if (messagesContainer) {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+  }, [messages]);
 
   // Helper function to render message parts
   const renderMessagePart = (part: any) => {
@@ -159,11 +164,4 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
       </div>
     </div>
   );
-}
-
-// Helper function to execute tool calls
-async function executeToolCall(toolCall: any) {
-  // Implement your tool execution logic here
-  // This is just a placeholder
-  console.log('Executing tool:', toolCall);
 }
