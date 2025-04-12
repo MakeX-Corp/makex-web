@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
+import { uniqueNamesGenerator, Config, adjectives, colors, animals } from 'unique-names-generator';
 
 const FLY_API_TOKEN = process.env.FLY_API_TOKEN;
 const FLY_API_URL = 'https://api.fly.io/graphql';
@@ -27,6 +28,17 @@ const allocateIpv4Mutation = `
     }
   }
 `;
+
+function generateContainerName(): string {
+    const nameConfig: Config = {
+        dictionaries: [adjectives, colors, animals],
+        separator: '-',
+        length: 3,
+        style: 'lowerCase'
+    };
+    
+    return uniqueNamesGenerator(nameConfig);
+}
 
 async function createMachine(appName: string, config: any) {
     const url = `${FLY_MACHINES_API}/apps/${appName}/machines`;
@@ -145,7 +157,7 @@ export async function GET(request: Request) {
         let totalCreated = 0;
         // Create exactly the number of needed containers
         for (let i = 0; i < neededContainers; i++) {
-            const appName = `container-${Date.now()}-${i}`;
+            const appName = generateContainerName();
             const appUrl = `https://${appName}.fly.dev`;
 
             // Create app and allocate IP
