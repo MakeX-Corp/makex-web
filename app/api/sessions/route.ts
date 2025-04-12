@@ -29,12 +29,13 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'App not found or unauthorized' }, { status: 404 })
         }
 
-        // Get all chat sessions for this app
+        // Get all visible chat sessions for this app
         const { data: sessions, error: sessionsError } = await supabase
             .from('chat_sessions')
             .select('*')
             .eq('app_id', appId)
             .eq('user_id', user.id)
+            .or('visible.is.null,visible.neq.false')  // Include sessions where visible is null or not false
             .order('created_at', { ascending: false })
 
         if (sessionsError) {
@@ -101,6 +102,56 @@ export async function POST(request: Request) {
         }
 
         return NextResponse.json(session)
+    } catch (error) {
+        return NextResponse.json(
+            { error: 'Internal Server Error' },
+            { status: 500 }
+        )
+    }
+}
+
+// DELETE /api/sessions - Soft delete a chat session by setting visible to false
+export async function DELETE(request: Request) {
+    try {
+        const result = await getSupabaseWithUser(request)
+        if (result instanceof NextResponse) return result
+
+        const { supabase, user } = result
+
+        // Get the session ID from the URL
+        const { searchParams } = new URL(request.url)
+        const sessionId = searchParams.get('sessionId')
+
+        if (!sessionId) {
+            return NextResponse.json({ error: 'Session ID is required' }, { status: 400 })
+        }
+
+        // Verify the session belongs to the user
+        const { data: session, error: sessionError } = await supabase
+            .from('chat_sessions')
+            .select('id')
+            .eq('id', sessionId)
+            .eq('user_id', user.id)
+            .single()
+
+        if (sessionError || !session) {
+            return NextResponse.json({ error: 'Session not found or unauthorized' }, { status: 404 })
+        }
+
+        // Soft delete the session by setting visible to false
+        const { error: updateError } = await supabase
+            .from('chat_sessions')
+            .update({ visible: false })
+            .eq('id', sessionId)
+
+        if (updateError) {
+            return NextResponse.json(
+                { error: 'Failed to delete chat session' },
+                { status: 500 }
+            )
+        }
+
+        return NextResponse.json({ success: true })
     } catch (error) {
         return NextResponse.json(
             { error: 'Internal Server Error' },

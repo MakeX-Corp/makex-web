@@ -1,4 +1,4 @@
-import { Plus, MessageSquare, ArrowLeft } from "lucide-react"
+import { Plus, MessageSquare, ArrowLeft, Trash2 } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -28,17 +28,50 @@ interface SessionsSidebarProps {
   setSessions: (sessions: Session[]) => void
   loading: boolean
   onCreateSession: () => Promise<void>
+  currentSessionId: string | null
+  setCurrentSessionId: (sessionId: string | null) => void
 }
 
-export function SessionsSidebar({ appId, authToken, sessions, setSessions, loading, onCreateSession }: SessionsSidebarProps) {
+export function SessionsSidebar({ 
+  appId, 
+  authToken, 
+  sessions, 
+  setSessions, 
+  loading, 
+  onCreateSession,
+  currentSessionId,
+  setCurrentSessionId
+}: SessionsSidebarProps) {
   const router = useRouter()
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(
-    new URLSearchParams(window.location.search).get('session')
-  )
 
   const handleSessionClick = (sessionId: string) => {
-    setActiveSessionId(sessionId)
+    setCurrentSessionId(sessionId)
     router.push(`/ai-editor/${appId}?session=${sessionId}`)
+  }
+
+  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent triggering the session click
+    try {
+      const response = await fetch(`/api/sessions?sessionId=${sessionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+
+      if (response.ok) {
+        // Remove the deleted session from the list
+        setSessions(sessions.filter(session => session.id !== sessionId));
+        
+        // If the deleted session was the current one, clear the current session
+        if (currentSessionId === sessionId) {
+          setCurrentSessionId(null);
+          router.push(`/ai-editor/${appId}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting session:', error);
+    }
   }
 
   return (
@@ -89,10 +122,18 @@ export function SessionsSidebar({ appId, authToken, sessions, setSessions, loadi
                     <SidebarMenuItem key={session.id}>
                       <SidebarMenuButton 
                         onClick={() => handleSessionClick(session.id)}
-                        className={session.id === activeSessionId ? "bg-primary/40 hover:bg-primary/15" : ""}
+                        className={`flex items-center justify-between group ${session.id === currentSessionId ? "bg-primary/40 hover:bg-primary/15" : ""}`}
                       >
-                        <MessageSquare className="h-4 w-4" />
-                        <span className="truncate">{session.title || 'New Chat'}</span>
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="h-4 w-4" />
+                          <span className="truncate">{session.title || 'New Chat'}</span>
+                        </div>
+                        <div
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer hover:text-destructive"
+                          onClick={(e) => handleDeleteSession(session.id, e)}
+                        >
+                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </div>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))

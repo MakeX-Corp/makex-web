@@ -12,8 +12,7 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log("isLoading", isLoading);
-
+    console.log("sessionId", sessionId);
     const fetchMessages = async () => {
       try {
         setIsLoading(true);

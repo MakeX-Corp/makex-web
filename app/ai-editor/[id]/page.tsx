@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import MobileMockup from '@/components/mobile-mockup';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,8 +32,9 @@ interface Session {
 export default function AppEditor() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const appId = params.id as string;
-  const sessionId = searchParams.get('session');
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(searchParams.get('session'));
   const [app, setApp] = useState<AppDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isContainerLoading, setIsContainerLoading] = useState(false);
@@ -114,7 +115,7 @@ export default function AppEditor() {
     if (authToken) {
       fetchSessions();
     }
-  }, [appId, authToken]);
+  }, [appId, authToken, currentSessionId]);
 
   useEffect(() => {
     const fetchAppDetails = async () => {
@@ -157,6 +158,9 @@ export default function AppEditor() {
       const newSession: Session = await response.json();
       if (newSession) {
         setSessions(prev => [newSession, ...prev]);
+        setCurrentSessionId(newSession.id);
+        // Update URL with new session ID
+        router.push(`/ai-editor/${appId}?session=${newSession.id}`);
       }
     } catch (error) {
       console.error('Error creating new session:', error);
@@ -182,6 +186,8 @@ export default function AppEditor() {
           setSessions={setSessions}
           loading={isSessionsLoading}
           onCreateSession={handleCreateSession}
+          currentSessionId={currentSessionId}
+          setCurrentSessionId={setCurrentSessionId}
         />
       </div>
 
@@ -217,7 +223,7 @@ export default function AppEditor() {
                 appId={appId}
                 appUrl={app.app_url || ""}
                 authToken={authToken || ""}
-                sessionId={sessionId || ""}
+                sessionId={currentSessionId || ""}
               />
             </CardContent>
           </Card>
