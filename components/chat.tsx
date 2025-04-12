@@ -4,16 +4,17 @@ import { useChat } from '@ai-sdk/react'
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, appUrl: string, authToken: string, sessionId: string }) {
+export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }: { appId: string, appUrl: string, authToken: string, sessionId: string, onResponseComplete?: () => void }) {
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchMessages = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch(`/api/chat?sessionId=${sessionId}&appId=${appId}`, {
           headers: {
             Authorization: 'Bearer ' + authToken,
@@ -26,22 +27,23 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
           role: msg.role,
           content: msg.content,
         })));
+        setIsLoading(false);
         console.log("messages", messages);
       } catch (error) {
         console.error('Error fetching messages:', error);
-      } finally {
         setIsLoading(false);
-      }
+      } 
     };
+
 
     if (sessionId && appId) {
       fetchMessages();
     }
-  }, [sessionId, appId, authToken]);
+  }, [sessionId, appId]);
 
   const { messages, input, handleInputChange, handleSubmit, addToolResult } = useChat({
     api: `/api/chat/`,
-    initialMessages: isLoading ? [] : [
+    initialMessages: isLoading ? [] : initialMessages.length > 0 ? initialMessages : [
       {
         id: 'initial-message',
         role: 'assistant',
@@ -53,12 +55,10 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
     You can also create a new file.
     You can also read a file.
 
-    Don't say too much except calling the tools. 
-    If you need to say something, say it in the last message.
+    Don't say anything except calling the tools. 
     Try to do it in minimum tool calls.
     `,
-      },
-      ...initialMessages,
+      }
     ],
     headers: {
       Authorization: 'Bearer ' + authToken,
@@ -71,18 +71,23 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
     maxSteps: 5,
     onToolCall: async ({ toolCall }) => {
       // Handle tool calls here
-      const result = await executeToolCall(toolCall);
-      addToolResult({ toolCallId: toolCall.toolCallId, result });
+      console.log("toolCall", toolCall);
+      addToolResult({ toolCallId: toolCall.toolCallId, result: "Test" });
+    },
+    onFinish: () => {
+      if (onResponseComplete) {
+        onResponseComplete();
+      }
     }
   });
 
-  // Reset chat state when session changes
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
-    if (sessionId) {
-      setIsLoading(true);
-      setInitialMessages([]);
+    const messagesContainer = document.querySelector('.overflow-y-auto');
+    if (messagesContainer) {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-  }, [sessionId]);
+  }, [messages]);
 
   // Helper function to render message parts
   const renderMessagePart = (part: any) => {
@@ -113,28 +118,34 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
     <div className="flex flex-col h-full bg-slate-50">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {messages.map(message => (
-          <div 
-            key={message.id} 
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <Card className={`max-w-[80%] ${
-              message.role === 'user' 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-card text-card-foreground'
-            }`}>
-              <CardContent className="p-4">
-                {message.parts?.length ? (
-                  message.parts.map((part, i) => (
-                    <div key={i}>{renderMessagePart(part)}</div>
-                  ))
-                ) : (
-                  <div className="text-sm">{message.content}</div>
-                )}
-              </CardContent>
-            </Card>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-full">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
-        ))}
+        ) : (
+          messages.map(message => (
+            <div 
+              key={message.id} 
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <Card className={`max-w-[80%] ${
+                message.role === 'user' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-card text-card-foreground'
+              }`}>
+                <CardContent className="p-4">
+                  {message.parts?.length ? (
+                    message.parts.map((part, i) => (
+                      <div key={i}>{renderMessagePart(part)}</div>
+                    ))
+                  ) : (
+                    <div className="text-sm">{message.content}</div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          ))
+        )}
       </div>
       
       {/* Input area - fixed at bottom */}
@@ -153,11 +164,4 @@ export function Chat({ appId, appUrl, authToken, sessionId }: { appId: string, a
       </div>
     </div>
   );
-}
-
-// Helper function to execute tool calls
-async function executeToolCall(toolCall: any) {
-  // Implement your tool execution logic here
-  // This is just a placeholder
-  console.log('Executing tool:', toolCall);
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import MobileMockup from '@/components/mobile-mockup';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Chat } from '@/components/chat';
 import { QRCodeDisplay } from '@/components/qr-code';
 import { SessionsSidebar } from '@/components/sessions-sidebar';
 import { getAuthToken } from '@/utils/client/auth';
+import { AppEditorSkeleton } from '@/app/components/AppEditorSkeleton';
 
 interface AppDetails {
   id: string;
@@ -22,17 +23,26 @@ interface AppDetails {
   updated_at: string;
 }
 
+interface Session {
+  id: string;
+  title: string;
+  created_at: string;
+}
+
 export default function AppEditor() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const appId = params.id as string;
-  const sessionId = searchParams.get('session');
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(searchParams.get('session'));
   const [app, setApp] = useState<AppDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isContainerLoading, setIsContainerLoading] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
   const [viewMode, setViewMode] = useState<'mobile' | 'qr'>('mobile');
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [isSessionsLoading, setIsSessionsLoading] = useState(true);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -83,6 +93,30 @@ export default function AppEditor() {
     }
   };
 
+  const fetchSessions = async () => {
+    setIsSessionsLoading(true);
+    try {
+      const response = await fetch(`/api/sessions?appId=${appId}`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      const data = await response.json();
+      setSessions(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+      setSessions([]);
+    } finally {
+      setIsSessionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (authToken) {
+      fetchSessions();
+    }
+  }, [appId, authToken]);
+
   useEffect(() => {
     const fetchAppDetails = async () => {
       try {
@@ -111,8 +145,30 @@ export default function AppEditor() {
     setIframeKey(prev => prev + 1);
   };
 
+  const handleCreateSession = async () => {
+    try {
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ appId }),
+      });
+      const newSession: Session = await response.json();
+      if (newSession) {
+        setSessions(prev => [newSession, ...prev]);
+        setCurrentSessionId(newSession.id);
+        // Update URL with new session ID
+        router.push(`/ai-editor/${appId}?session=${newSession.id}`);
+      }
+    } catch (error) {
+      console.error('Error creating new session:', error);
+    }
+  };
+
   if (isLoading) {
-    return <div className="container mx-auto p-8">Loading...</div>;
+    return <AppEditorSkeleton />;
   }
 
   if (!app) {
@@ -123,7 +179,16 @@ export default function AppEditor() {
     <>
       {/* Sessions Sidebar */}
       <div className="w-64 h-screen border-r bg-background">
-        <SessionsSidebar appId={appId} authToken={authToken || ""} />
+        <SessionsSidebar 
+          appId={appId} 
+          authToken={authToken || ""} 
+          sessions={sessions}
+          setSessions={setSessions}
+          loading={isSessionsLoading}
+          onCreateSession={handleCreateSession}
+          currentSessionId={currentSessionId}
+          setCurrentSessionId={setCurrentSessionId}
+        />
       </div>
 
       {/* Main Content */}
@@ -155,11 +220,11 @@ export default function AppEditor() {
           <Card className="flex-1">
             <CardContent className="p-4 h-full">
               <Chat
-                key={sessionId}
                 appId={appId}
                 appUrl={app.app_url || ""}
                 authToken={authToken || ""}
-                sessionId={sessionId || ""}
+                sessionId={currentSessionId || ""}
+                onResponseComplete={handleRefresh}
               />
             </CardContent>
           </Card>
