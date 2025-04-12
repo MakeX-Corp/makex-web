@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
 import { getAuthToken } from "@/utils/client/auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import {
   SubscriptionAuthWrapper,
@@ -25,7 +26,7 @@ interface UserApp {
 // This is a child component that will be rendered inside the SubscriptionAuthWrapper
 function DashboardContent() {
   const [userApps, setUserApps] = useState<UserApp[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   // Use the hook to get access to the subscription management function
@@ -33,8 +34,6 @@ function DashboardContent() {
 
   const handleCreateApp = async () => {
     try {
-      setIsLoading(true);
-
       const decodedToken = getAuthToken();
 
       if (!decodedToken) {
@@ -66,8 +65,6 @@ function DashboardContent() {
             ? error.message
             : "An error occurred while creating the app",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -133,8 +130,10 @@ function DashboardContent() {
 
         const apps = await response.json();
         setUserApps(apps);
+        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching apps:", error);
+        setIsLoading(false);
         toast({
           variant: "destructive",
           title: "Error",
@@ -149,6 +148,21 @@ function DashboardContent() {
     fetchUserApps();
   }, []);
 
+  // Add this new component for the skeleton loading state
+  const AppCardSkeleton = () => (
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardContent className="p-4">
+        <Skeleton className="h-6 w-3/4 mb-2" />
+        <Skeleton className="h-4 w-1/2 mb-2" />
+        <Skeleton className="h-4 w-2/3 mb-4" />
+        <div className="mt-4 space-y-2">
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="container mx-auto p-8">
       <div className="flex justify-between items-center mb-8">
@@ -159,12 +173,18 @@ function DashboardContent() {
           </Button>
           <Button onClick={handleCreateApp} disabled={isLoading}>
             <Plus className="h-4 w-4 mr-2" />
-            {isLoading ? "Creating..." : "Create New App"}
+            Create New App
           </Button>
         </div>
       </div>
 
-      {userApps.length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, index) => (
+            <AppCardSkeleton key={index} />
+          ))}
+        </div>
+      ) : userApps.length === 0 ? (
         <Card className="p-8">
           <CardContent className="text-center">
             <p className="text-muted-foreground mb-4">
