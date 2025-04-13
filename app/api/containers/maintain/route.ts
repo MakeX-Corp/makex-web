@@ -101,6 +101,26 @@ async function createVolume(appName: string, region: string) {
                 }
             }
         );
+
+        // Add a small delay to ensure volume is ready
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Verify volume exists
+        const verifyUrl = `${FLY_MACHINES_API}/apps/${appName}/volumes`;
+        const verifyResponse = await axios.get(verifyUrl, {
+            headers: {
+                'Authorization': `Bearer ${FLY_API_TOKEN}`,
+                'Accept': 'application/json'
+            }
+        });
+
+        const volumes = verifyResponse.data;
+        const createdVolume = volumes.find((v: any) => v.name === "data");
+        
+        if (!createdVolume) {
+            throw new Error('Volume was not found after creation');
+        }
+
         return response.data;
     } catch (error) {
         if (axios.isAxiosError(error)) {
