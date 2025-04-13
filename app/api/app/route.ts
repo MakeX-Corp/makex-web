@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from '@supabase/supabase-js';
 import { getSupabaseWithUser } from "@/utils/server/auth";
 
 // ────────────────────────────────────────────────────────────────────────────────
@@ -10,8 +11,13 @@ export async function POST(request: Request) {
   if (result instanceof NextResponse) return result;
   const { supabase, user } = result;
 
-  // Grab one available container
-  const { data: container, error: containerError } = await supabase
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!
+);
+
+  // Get one available container from the pool using admin because the user doesn't have access to the table
+  const { data: container, error: containerError } = await supabaseAdmin
     .from("available_containers")
     .select("*")
     .limit(1)
@@ -24,8 +30,8 @@ export async function POST(request: Request) {
     );
   }
 
-  // Delete it from the pool
-  const { error: deleteError } = await supabase
+  // Delete it from the pool using admin because the user doesn't have access to the table
+  const { error: deleteError } = await supabaseAdmin
     .from("available_containers")
     .delete()
     .match({ id: container.id });
