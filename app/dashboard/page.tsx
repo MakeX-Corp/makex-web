@@ -8,12 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
 import { getAuthToken } from "@/utils/client/auth";
 import { Skeleton } from "@/components/ui/skeleton";
-
-import {
-  SubscriptionAuthWrapper,
-  useSubscriptionActions,
-} from "@/components/subscription-auth-wrapper";
-
+import { useRouter } from "next/navigation";
 interface UserApp {
   id: string;
   user_id: string;
@@ -24,13 +19,64 @@ interface UserApp {
 }
 
 // This is a child component that will be rendered inside the SubscriptionAuthWrapper
-function DashboardContent() {
+export default function Dashboard() {
   const [userApps, setUserApps] = useState<UserApp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [customerId, setCustomerId] = useState<string | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
+  const handleManageSubscription = async () => {
+    try {
+      const decodedToken = getAuthToken();
 
-  // Use the hook to get access to the subscription management function
-  const { handleManageSubscription } = useSubscriptionActions();
+      if (!decodedToken) {
+        throw new Error("No authentication token found");
+      }
+      // If we don't have a customer ID, redirect to pricing
+      if (!customerId) {
+        router.push("/pricing");
+        return;
+      }
+
+      // Fetch customer session with customer ID
+      const response = await fetch("/api/customer-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${decodedToken}`,
+        },
+        body: JSON.stringify({
+          customerId: customerId,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to manage subscription");
+      }
+
+      const data = await response.json();
+
+      // Redirect to the subscription portal URL returned from the API
+      if (data.url) {
+        window.open(data.url, "_blank");
+      } else {
+        router.push("/pricing");
+      }
+    } catch (error) {
+      console.error("Error managing subscription:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred while managing your subscription",
+      });
+      // Fallback to pricing page on error
+      router.push("/pricing");
+    }
+  };
 
   const handleCreateApp = async () => {
     try {
@@ -107,9 +153,9 @@ function DashboardContent() {
     }
   };
 
-  // Add useEffect to fetch initial user apps
+  // Fetch initial user apps and subscription data
   useEffect(() => {
-    const fetchUserApps = async () => {
+    const fetchInitialData = async () => {
       try {
         const decodedToken = getAuthToken();
 
@@ -117,35 +163,53 @@ function DashboardContent() {
           throw new Error("No authentication token found");
         }
 
-        const response = await fetch("/api/app", {
+        // Fetch user apps
+        const appsResponse = await fetch("/api/app", {
           headers: {
             Authorization: `Bearer ${decodedToken}`,
           },
         });
 
-        if (!response.ok) {
-          const error = await response.json();
+        if (!appsResponse.ok) {
+          const error = await appsResponse.json();
           throw new Error(error.error || "Failed to fetch apps");
         }
 
-        const apps = await response.json();
+        const apps = await appsResponse.json();
+        console.log(apps);
         setUserApps(apps);
-        setIsLoading(false);
+
+        // Fetch subscription data to get customer ID
+        const subscriptionResponse = await fetch("/api/subscription", {
+          headers: {
+            Authorization: `Bearer ${decodedToken}`,
+          },
+        });
+
+        if (subscriptionResponse.ok) {
+          const subscriptionData = await subscriptionResponse.json();
+          // Save the customer ID for later use
+          console.log(subscriptionData);
+          if (subscriptionData && subscriptionData.customerId) {
+            setCustomerId(subscriptionData.customerId);
+          }
+        }
       } catch (error) {
-        console.error("Error fetching apps:", error);
-        setIsLoading(false);
+        console.error("Error fetching initial data:", error);
         toast({
           variant: "destructive",
           title: "Error",
           description:
             error instanceof Error
               ? error.message
-              : "An error occurred while fetching apps",
+              : "An error occurred while fetching data",
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchUserApps();
+    fetchInitialData();
   }, []);
 
   // Add this new component for the skeleton loading state
@@ -230,12 +294,5 @@ function DashboardContent() {
         </div>
       )}
     </div>
-  );
-}
-
-// Main Dashboard component that wraps DashboardContent with the SubscriptionAuthWrapper
-export default function Dashboard() {
-  return (
-      <DashboardContent />
   );
 }
