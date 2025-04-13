@@ -42,6 +42,8 @@ function generateContainerName(): string {
 
 async function createMachine(appName: string, config: any) {
     const url = `${FLY_MACHINES_API}/apps/${appName}/machines`;
+    console.log(`[Machine Creation] Starting machine creation for app: ${appName}`);
+    console.log(`[Machine Creation] Using config:`, JSON.stringify(config, null, 2));
 
     try {
         const response = await axios.post(
@@ -55,13 +57,19 @@ async function createMachine(appName: string, config: any) {
                 }
             }
         );
+        console.log(`[Machine Creation] Success response:`, response.data);
         return response;
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            console.error('Machine creation error:', {
+            console.error('[Machine Creation] Detailed error:', {
                 status: error.response?.status,
                 data: error.response?.data,
-                message: error.message
+                message: error.message,
+                config: {
+                    url: error.config?.url,
+                    method: error.config?.method,
+                    headers: error.config?.headers
+                }
             });
         }
         throw error;
@@ -86,6 +94,7 @@ async function createVolume(appName: string, region: string) {
     const url = `${FLY_MACHINES_API}/apps/${appName}/volumes`;
     
     try {
+        console.log(`[Volume Creation] Starting volume creation for app: ${appName}`);
         const response = await axios.post(
             url,
             {
@@ -101,13 +110,44 @@ async function createVolume(appName: string, region: string) {
                 }
             }
         );
+        console.log(`[Volume Creation] Initial creation response:`, response.data);
+
+        // Add a small delay to ensure volume is ready
+        console.log(`[Volume Creation] Waiting for volume to be ready...`);
+        await new Promise(resolve => setTimeout(resolve, 8000));
+
+        // Verify volume exists
+        const verifyUrl = `${FLY_MACHINES_API}/apps/${appName}/volumes`;
+        console.log(`[Volume Creation] Verifying volume existence at: ${verifyUrl}`);
+        const verifyResponse = await axios.get(verifyUrl, {
+            headers: {
+                'Authorization': `Bearer ${FLY_API_TOKEN}`,
+                'Accept': 'application/json'
+            }
+        });
+
+        console.log(`[Volume Creation] Verification response:`, verifyResponse.data);
+        const volumes = verifyResponse.data;
+        const createdVolume = volumes.find((v: any) => v.name === "data");
+        
+        if (!createdVolume) {
+            console.error(`[Volume Creation] Volume not found in verification response. Available volumes:`, volumes);
+            throw new Error('Volume was not found after creation');
+        }
+
+        console.log(`[Volume Creation] Successfully created and verified volume:`, createdVolume);
         return response.data;
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            console.error('Volume creation error:', {
+            console.error('[Volume Creation] Detailed error:', {
                 status: error.response?.status,
                 data: error.response?.data,
-                message: error.message
+                message: error.message,
+                config: {
+                    url: error.config?.url,
+                    method: error.config?.method,
+                    headers: error.config?.headers
+                }
             });
         }
         throw error;
