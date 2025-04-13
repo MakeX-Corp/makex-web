@@ -6,10 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { generateId } from 'ai';
+
 
 export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }: { appId: string, appUrl: string, authToken: string, sessionId: string, onResponseComplete?: () => void }) {
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [restoringMessageId, setRestoringMessageId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -75,6 +78,7 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
       addToolResult({ toolCallId: toolCall.toolCallId, result: "Test" });
     },
     onFinish: () => {
+      console.log("onFinish", messages);
       if (onResponseComplete) {
         onResponseComplete();
       }
@@ -114,6 +118,33 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
     }
   };
 
+  const handleRestore = async (messageId: string) => {
+    try {
+      setRestoringMessageId(messageId);
+      const response = await fetch('/api/code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + authToken,
+        },
+        body: JSON.stringify({
+          messageId,
+          appUrl,
+          sessionId,
+        }),
+      });
+
+      console.log("response", response);
+
+      if (!response.ok) throw new Error('Failed to restore checkpoint');
+    } catch (error) {
+      console.error('Error restoring checkpoint:', error);
+    } finally {
+      onResponseComplete?.();
+      setRestoringMessageId(null);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-50">
       {/* Messages area */}
@@ -126,7 +157,7 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
           messages.map(message => (
             <div 
               key={message.id} 
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
             >
               <Card className={`max-w-[80%] ${
                 message.role === 'user' 
@@ -143,6 +174,16 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
                   )}
                 </CardContent>
               </Card>
+              {message.role === 'assistant' && (
+                <button 
+                  className="text-[10px] text-gray-400 hover:text-gray-600 mt-0.5 flex items-center gap-1"
+                  onClick={() => handleRestore(message.id)}
+                  disabled={restoringMessageId !== null}
+                >
+                  {restoringMessageId === message.id && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+                  Restore Checkpoint
+                </button>
+              )}
             </div>
           ))
         )}

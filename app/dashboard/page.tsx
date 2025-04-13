@@ -236,8 +236,6 @@ function DashboardContent() {
 // Main Dashboard component that wraps DashboardContent with the SubscriptionAuthWrapper
 export default function Dashboard() {
   return (
-    <SubscriptionAuthWrapper requiredPlan="basic">
       <DashboardContent />
-    </SubscriptionAuthWrapper>
   );
 }

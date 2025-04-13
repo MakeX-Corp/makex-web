@@ -75,6 +75,9 @@ export async function POST(req: Request) {
   // Get the last user message
   const lastUserMessage = messages[messages.length - 1];
   
+
+  console.log(messages)
+  
   // get appUrl from query params
   let apiUrl = appUrl.replace('makex.app', 'fly.dev');
   const API_BASE = apiUrl + ':8001';
@@ -84,6 +87,7 @@ export async function POST(req: Request) {
   const { supabase, user } = userResult
 
   let fullResponse = '';
+  let commitHash = '';
 
   const modelName = 'claude-3-5-sonnet-latest';
   const apiClient = createFileBackendApiClient(API_BASE);
@@ -264,6 +268,19 @@ export async function POST(req: Request) {
       }
     },
     onFinish: async (result) => {
+      // Save checkpoint after completing the response
+      try {
+        const checkpointResponse = await apiClient.post('/checkpoint/save', {
+          name: 'ai-assistant-checkpoint',
+          message: 'Checkpoint after AI assistant changes'
+        });
+        
+        console.log('checkpointResponse', checkpointResponse);
+        // Store the commit hash from the response
+        commitHash = checkpointResponse.commit || checkpointResponse.current_commit;
+      } catch (error) {
+        console.error('Failed to save checkpoint:', error);
+      }
 
       const inputTokens = result.usage.promptTokens;
       const outputTokens = result.usage.completionTokens;
@@ -283,6 +300,7 @@ export async function POST(req: Request) {
         output_tokens_used: 0,
         cost: inputCost,
         session_id: sessionId,
+        message_id: lastUserMessage.id,
 
       });
       
@@ -293,11 +311,14 @@ export async function POST(req: Request) {
         content: fullResponse,
         role: 'assistant',
         model_used: modelName,
-        metadata: { streamed: true },
+        metadata: { 
+          streamed: true,
+        },
         input_tokens_used: 0,
         output_tokens_used: outputTokens,
         cost: outputCost,
         session_id: sessionId,
+        commit_hash: commitHash,
       });
     },
     maxSteps: 5, // allow up to 5 steps
