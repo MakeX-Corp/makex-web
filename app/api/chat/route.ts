@@ -74,10 +74,7 @@ export async function POST(req: Request) {
   const { messages, appUrl, appId, sessionId } = await req.json();
   // Get the last user message
   const lastUserMessage = messages[messages.length - 1];
-  
-
-  console.log(messages)
-  
+    
   // get appUrl from query params
   let apiUrl = appUrl.replace('makex.app', 'fly.dev');
   const API_BASE = apiUrl + ':8001';
@@ -262,32 +259,22 @@ export async function POST(req: Request) {
         },
       }),
     },
-    onChunk: ({ chunk }) => {
-      if (chunk.type === 'text-delta') {
-        fullResponse += chunk.textDelta;
-      }
-    },
+    system: `
+    You are a helpful assistant that can read and write files. You can only write files in React Native.
+    You cannot install any packages.
+    You can also replace text in a file.
+    You can also delete a file.
+    You can also create a new file.
+    You can also read a file.
+
+    Don't say anything except calling the tools. 
+    Try to do it in minimum tool calls
+    `,
     onFinish: async (result) => {
       // Save checkpoint after completing the response
-      try {
-        const checkpointResponse = await apiClient.post('/checkpoint/save', {
-          name: 'ai-assistant-checkpoint',
-          message: 'Checkpoint after AI assistant changes'
-        });
-        
-        console.log('checkpointResponse', checkpointResponse);
-        // Store the commit hash from the response
-        commitHash = checkpointResponse.commit || checkpointResponse.current_commit;
-      } catch (error) {
-        console.error('Failed to save checkpoint:', error);
-      }
-
       const inputTokens = result.usage.promptTokens;
-      const outputTokens = result.usage.completionTokens;
       const inputCost = inputTokens * 0.000003;
-      const outputCost = outputTokens * 0.000015;
 
-      
       // Insert user's last message into chat history
       await supabase.from('app_chat_history').insert({
         app_id: appId,
@@ -301,24 +288,6 @@ export async function POST(req: Request) {
         cost: inputCost,
         session_id: sessionId,
         message_id: lastUserMessage.id,
-
-      });
-      
-      // Insert assistant's response into chat history
-      await supabase.from('app_chat_history').insert({
-        app_id: appId,
-        user_id: user.id,
-        content: fullResponse,
-        role: 'assistant',
-        model_used: modelName,
-        metadata: { 
-          streamed: true,
-        },
-        input_tokens_used: 0,
-        output_tokens_used: outputTokens,
-        cost: outputCost,
-        session_id: sessionId,
-        commit_hash: commitHash,
       });
     },
     maxSteps: 5, // allow up to 5 steps

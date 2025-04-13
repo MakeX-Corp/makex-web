@@ -26,7 +26,7 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
         if (!response.ok) throw new Error('Failed to fetch messages');
         const messages = await response.json();
         setInitialMessages(messages.map((msg: any) => ({
-          id: msg.id,
+          id: msg.message_id,
           role: msg.role,
           content: msg.content,
         })));
@@ -46,23 +46,7 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
 
   const { messages, input, handleInputChange, handleSubmit, addToolResult } = useChat({
     api: `/api/chat/`,
-    initialMessages: isLoading ? [] : initialMessages.length > 0 ? initialMessages : [
-      {
-        id: 'initial-message',
-        role: 'assistant',
-        content: `    
-    You are a helpful assistant that can read and write files. You can only write files in React Native.
-    You cannot install any packages.
-    You can also replace text in a file.
-    You can also delete a file.
-    You can also create a new file.
-    You can also read a file.
-
-    Don't say anything except calling the tools. 
-    Try to do it in minimum tool calls.
-    `,
-      }
-    ],
+    initialMessages: isLoading ? [] : initialMessages.length > 0 ? initialMessages : [],
     headers: {
       Authorization: 'Bearer ' + authToken,
     },
@@ -77,8 +61,28 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
       console.log("toolCall", toolCall);
       addToolResult({ toolCallId: toolCall.toolCallId, result: "Test" });
     },
-    onFinish: () => {
-      console.log("onFinish", messages);
+    onFinish: async (message, options) => {
+      // Save the AI message
+      try {
+        await fetch('/api/chat/ai-message-save', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + authToken,
+          },
+          body: JSON.stringify({
+            sessionId,
+            appId,
+            appUrl,
+            outputTokens: options.usage.completionTokens,
+            messageId: message.id,
+            content: message.content,
+          }),
+        });
+      } catch (error) {
+        console.error('Error saving AI message:', error);
+      }
+      
       if (onResponseComplete) {
         onResponseComplete();
       }

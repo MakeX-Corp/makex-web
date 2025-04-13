@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from('app_chat_history')
     .select('commit_hash')
-    .eq('id', messageId)
+    .eq('message_id', messageId)
     .eq('user_id', user.id)
     .eq('session_id', sessionId)
     .single();
