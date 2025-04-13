@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, Terminal } from "lucide-react";
 import { useEffect, useState } from "react";
-import { generateId } from 'ai';
 
 
 export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }: { appId: string, appUrl: string, authToken: string, sessionId: string, onResponseComplete?: () => void }) {
@@ -29,6 +28,7 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
           id: msg.message_id,
           role: msg.role,
           content: msg.content,
+          parts: msg.metadata.parts,
         })));
         setIsLoading(false);
         console.log("messages", messages);
@@ -63,6 +63,8 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
     },
     onFinish: async (message, options) => {
       // Save the AI message
+      console.log("message", message);
+      console.log("options", options);
       try {
         await fetch('/api/chat/ai-message-save', {
           method: 'POST',
@@ -74,9 +76,8 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
             sessionId,
             appId,
             appUrl,
-            outputTokens: options.usage.completionTokens,
-            messageId: message.id,
-            content: message.content,
+            options,
+            message,
           }),
         });
       } catch (error) {
@@ -173,9 +174,9 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
-          messages.map(message => (
+          messages.map((message, index) => (
             <div 
-              key={message.id} 
+              key={message.id || `message-${index}`} 
               className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
             >
               <Card className={`max-w-[80%] ${
