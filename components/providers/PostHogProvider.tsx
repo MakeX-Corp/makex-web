@@ -3,6 +3,7 @@
 import { useEffect, Suspense } from "react";
 import posthog from "posthog-js";
 import { usePathname, useSearchParams } from "next/navigation";
+import { PostHogProvider as Provider } from "posthog-js/react";
 
 // Completely disable PostHog logging
 if (typeof window !== "undefined") {
@@ -52,6 +53,24 @@ function PostHogContent() {
       });
     }
   }, [pathname, searchParams]);
+
+  useEffect(() => {
+    // Check that PostHog is loaded
+    if (typeof window !== "undefined") {
+      posthog.capture("$pageview");
+    }
+
+    // Suppress PostHog debug messages in console
+    const originalError = console.error;
+    console.error = function(this: typeof console, ...args: Parameters<typeof console.error>) {
+      if (typeof args[0] === "string" && args[0].includes("[PostHog")) return;
+      originalError.apply(this, args);
+    };
+
+    return () => {
+      console.error = originalError;
+    };
+  }, []);
 
   return null;
 }
