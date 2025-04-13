@@ -23,8 +23,10 @@ export default function Dashboard() {
   const [userApps, setUserApps] = useState<UserApp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [deletingAppIds, setDeletingAppIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const router = useRouter();
+
   const handleManageSubscription = async () => {
     try {
       const decodedToken = getAuthToken();
@@ -116,6 +118,9 @@ export default function Dashboard() {
 
   const handleDeleteApp = async (appId: string) => {
     try {
+      // Set this app as deleting to show skeleton
+      setDeletingAppIds((prev) => new Set([...prev, appId]));
+
       const decodedToken = getAuthToken();
 
       if (!decodedToken) {
@@ -149,6 +154,13 @@ export default function Dashboard() {
           error instanceof Error
             ? error.message
             : "An error occurred while deleting the app",
+      });
+    } finally {
+      // Remove this app from the deleting set
+      setDeletingAppIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(appId);
+        return newSet;
       });
     }
   };
@@ -262,35 +274,39 @@ export default function Dashboard() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {userApps.map((app) => (
-            <Card key={app.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-4">
-                <h2 className="font-semibold mb-2">{app.app_name}</h2>
-                <p className="text-sm text-muted-foreground">
-                  Created: {new Date(app.created_at).toLocaleDateString()}
-                </p>
-                {app.app_url && (
-                  <p className="text-sm text-muted-foreground truncate">
-                    URL: {app.app_url}
+          {userApps.map((app) =>
+            deletingAppIds.has(app.id) ? (
+              <AppCardSkeleton key={app.id} />
+            ) : (
+              <Card key={app.id} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  <h2 className="font-semibold mb-2">{app.app_name}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Created: {new Date(app.created_at).toLocaleDateString()}
                   </p>
-                )}
-                <div className="mt-4 space-y-2">
-                  <Link href={`/ai-editor/${app.id}`}>
-                    <Button variant="outline" className="w-full">
-                      Edit App
+                  {app.app_url && (
+                    <p className="text-sm text-muted-foreground truncate">
+                      URL: {app.app_url}
+                    </p>
+                  )}
+                  <div className="mt-4 space-y-2">
+                    <Link href={`/ai-editor/${app.id}`}>
+                      <Button variant="outline" className="w-full">
+                        Edit App
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => handleDeleteApp(app.id)}
+                    >
+                      Delete App
                     </Button>
-                  </Link>
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    onClick={() => handleDeleteApp(app.id)}
-                  >
-                    Delete App
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          )}
         </div>
       )}
     </div>

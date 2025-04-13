@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse } from "next/server";
 import { createFileBackendApiClient } from "@/utils/file-backend-api-client";
+import { checkDailyMessageLimit } from "@/utils/check-daily-limit";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
@@ -81,31 +82,17 @@ export async function POST(req: Request) {
   if (userResult instanceof NextResponse) return userResult;
   const { supabase, user } = userResult;
 
-  // Check daily message limit using existing table
-  const today = new Date().toISOString().split("T")[0];
-  const { count, error: countError } = await supabase
-    .from("app_chat_history")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .eq("role", "user")
-    .gte("created_at", today)
-    .lt(
-      "created_at",
-      new Date(new Date(today).getTime() + 24 * 60 * 60 * 1000).toISOString()
-    );
-
-  if (countError) {
-    return NextResponse.json(
-      { error: "Failed to check message limit" },
-      { status: 500 }
-    );
-  }
-
+  // Check daily message limit using the new utility function
   const MAX_DAILY_MESSAGES = parseInt(process.env.MAX_DAILY_MESSAGES || "20");
-  if (count && count >= MAX_DAILY_MESSAGES) {
+  const limitCheck = await checkDailyMessageLimit(
+    supabase,
+    user,
+    MAX_DAILY_MESSAGES
+  );
+  if (limitCheck.error) {
     return NextResponse.json(
-      { error: "Daily message limit reached. Please try again tomorrow." },
-      { status: 429 }
+      { error: limitCheck.error },
+      { status: limitCheck.status }
     );
   }
 
