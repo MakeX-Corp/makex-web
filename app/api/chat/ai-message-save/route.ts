@@ -11,17 +11,16 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const {
-      content,
       appUrl, 
       appId, 
       sessionId,
-      outputTokens,
-      messageId,
+      options,
+      message,
     } = body;
 
     console.log("===============AI MESSAGE SAVE===================");
-    console.log("messageId", messageId);
-    console.log("content", content);
+    console.log("message", message);
+    console.log("options", options);
     console.log("================================================");
 
     const apiUrl = appUrl.replace('makex.app', 'fly.dev');
@@ -45,25 +44,23 @@ export async function POST(request: Request) {
           }
 
     // Calculate cost based on output tokens
-    const outputCost = outputTokens * 0.000015;
+    const outputCost = options.usage.completionTokens * 0.000015;
 
 
     // Insert assistant's message into chat history
     await supabase.from('app_chat_history').insert({
       app_id: appId,
       user_id: user.id, // Use authenticated user's ID
-      content: content,
+      content: message.content,
       role: 'assistant',
       model_used: 'claude-3-5-sonnet-latest',
-      metadata: { 
-        streamed: true,
-      },
+      metadata: message,
       input_tokens_used: 0,
-      output_tokens_used: outputTokens,
+      output_tokens_used: options.usage.completionTokens,
       cost: outputCost,
       session_id: sessionId,
       commit_hash: commitHash,
-      message_id: messageId,
+      message_id: message.id,
     });
 
     return NextResponse.json({ success: true });

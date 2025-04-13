@@ -4,9 +4,8 @@ import { useChat } from '@ai-sdk/react'
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Terminal } from "lucide-react";
 import { useEffect, useState } from "react";
-import { generateId } from 'ai';
 
 
 export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }: { appId: string, appUrl: string, authToken: string, sessionId: string, onResponseComplete?: () => void }) {
@@ -29,6 +28,7 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
           id: msg.message_id,
           role: msg.role,
           content: msg.content,
+          parts: msg.metadata.parts,
         })));
         setIsLoading(false);
         console.log("messages", messages);
@@ -63,6 +63,8 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
     },
     onFinish: async (message, options) => {
       // Save the AI message
+      console.log("message", message);
+      console.log("options", options);
       try {
         await fetch('/api/chat/ai-message-save', {
           method: 'POST',
@@ -74,9 +76,8 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
             sessionId,
             appId,
             appUrl,
-            outputTokens: options.usage.completionTokens,
-            messageId: message.id,
-            content: message.content,
+            options,
+            message,
           }),
         });
       } catch (error) {
@@ -104,15 +105,30 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
         return <div className="text-sm">{part.text}</div>;
       case 'tool-invocation':
         return (
-          <div className="bg-slate-100 rounded p-2 my-2">
-            <div className="font-medium">Tool: {part.toolInvocation.toolName}</div>
-            <div className="text-sm">
+          <div className="bg-muted/50 rounded-md p-3 my-2 border border-border">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+              <Terminal className="h-4 w-4" />
+              <span>Tool: {part.toolInvocation.toolName}</span>
+            </div>
+            <div className="text-sm space-y-2">
               {part.toolInvocation.state === 'result' ? (
                 <>
-                  <div>Result: {JSON.stringify(part.toolInvocation.result)}</div>
+                  <div className="text-muted-foreground">Result:</div>
+                  <pre className="bg-muted rounded-md p-2 overflow-x-auto">
+                    <code className="text-foreground">
+                      {JSON.stringify(part.toolInvocation.result, null, 2)}
+                    </code>
+                  </pre>
                 </>
               ) : (
-                <div>Args: {JSON.stringify(part.toolInvocation.args)}</div>
+                <>
+                  <div className="text-muted-foreground">Arguments:</div>
+                  <pre className="bg-muted rounded-md p-2 overflow-x-auto">
+                    <code className="text-foreground">
+                      {JSON.stringify(part.toolInvocation.args, null, 2)}
+                    </code>
+                  </pre>
+                </>
               )}
             </div>
           </div>
@@ -150,7 +166,7 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50">
+    <div className="flex flex-col h-full bg-background">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {isLoading ? (
@@ -158,9 +174,9 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
-          messages.map(message => (
+          messages.map((message, index) => (
             <div 
-              key={message.id} 
+              key={message.id || `message-${index}`} 
               className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
             >
               <Card className={`max-w-[80%] ${
@@ -180,7 +196,7 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
               </Card>
               {message.role === 'assistant' && (
                 <button 
-                  className="text-[10px] text-gray-400 hover:text-gray-600 mt-0.5 flex items-center gap-1"
+                  className="text-[10px] text-muted-foreground hover:text-foreground mt-0.5 flex items-center gap-1"
                   onClick={() => handleRestore(message.id)}
                   disabled={restoringMessageId !== null}
                 >
@@ -194,7 +210,7 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
       </div>
       
       {/* Input area - fixed at bottom */}
-      <div className="border-t p-4 bg-white">
+      <div className="border-t border-border p-4 bg-background">
         <form onSubmit={handleSubmit} className="flex gap-2">
           <Input
             value={input}
