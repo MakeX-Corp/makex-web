@@ -89,6 +89,10 @@ export async function POST(req: Request) {
   const modelName = 'claude-3-5-sonnet-latest';
   const apiClient = createFileBackendApiClient(API_BASE);
 
+  // Get the file tree first
+  const fileTreeResponse = await apiClient.get('/file-tree', { path: '.' });
+  const fileTree = fileTreeResponse.data;
+
   const result = streamText({
     model: anthropic(modelName),
     messages,
@@ -154,28 +158,13 @@ export async function POST(req: Request) {
       }),
 
       installPackages: tool({
-        description: 'Install npm/yarn packages',
+        description: 'Install yarn packages',
         parameters: z.object({
           packages: z.array(z.string()).describe('List of packages to install in an array'),
         }),
         execute: async ({ packages }) => {
           try {
             const data = await apiClient.post('/install/packages', { packages });
-            return { success: true, data };
-          } catch (error: any) {
-            return { success: false, error: error.message || 'Unknown error occurred' };
-          }
-        },
-      }),
-
-      executeCommand: tool({
-        description: 'Execute a yarn/npm/npx command',
-        parameters: z.object({
-          command: z.string().describe('The command to execute (only yarn, npm, or npx commands allowed)'),
-        }),
-        execute: async ({ command }) => {
-          try {
-            const data = await apiClient.post('/execute/command', { command });
             return { success: true, data };
           } catch (error: any) {
             return { success: false, error: error.message || 'Unknown error occurred' };
@@ -258,6 +247,21 @@ export async function POST(req: Request) {
           }
         },
       }),
+
+      getFileTree: tool({
+        description: 'Get the directory tree structure',
+        parameters: z.object({
+          path: z.string().describe('The path to get the directory tree from').default('.'),
+        }),
+        execute: async ({ path }) => {
+          try {
+            const response = await apiClient.get('/file-tree', { path });
+            return { success: true, data: response.data };
+          } catch (error: any) {
+            return { success: false, error: error.message || 'Unknown error occurred' };
+          }
+        },
+      }),
     },
     system: `
     You are a helpful assistant that can read and write files. You can only write files in React Native.
@@ -266,6 +270,10 @@ export async function POST(req: Request) {
     You can also delete a file.
     You can also create a new file.
     You can also read a file.
+    Make sure you always link changes or whatever you do to App.js if needed so user can easily see the changes.
+
+    Current file tree structure:
+    ${JSON.stringify(fileTree, null, 2)}
 
     Make sure to delet the file which seems redundant to you
     You need to say what you are doing in 3 bullet points or less every time you are returning a response
