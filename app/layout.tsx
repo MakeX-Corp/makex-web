@@ -58,8 +58,8 @@ export default function RootLayout({
         <PostHogProvider>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
             <main className="flex-1">{children}</main>
