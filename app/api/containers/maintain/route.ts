@@ -136,7 +136,7 @@ async function createVolume(appName: string, region: string) {
         }
 
         console.log(`[Volume Creation] Successfully created and verified volume:`, createdVolume);
-        return response.data;
+        return createdVolume;
     } catch (error) {
         if (axios.isAxiosError(error)) {
             console.error('[Volume Creation] Detailed error:', {
@@ -236,12 +236,15 @@ export async function GET(request: Request) {
             );
 
             // Create machine with config
+            console.log(`Creating volume for app: ${appName}`);
+            const volume = await createVolume(appName, 'dfw'); // You can adjust the region as needed
+
             const machineConfig = {
                 config: {
                     image: 'registry.fly.io/expo-fast:latest',
                     mounts: [
                         {
-                            volume: "data",
+                            volume: volume.id,
                             path: "/app/DemoApp"
                         }
                     ],
@@ -281,9 +284,6 @@ export async function GET(request: Request) {
                     }
                 },
             };
-
-            console.log(`Creating volume for app: ${appName}`);
-            const volume = await createVolume(appName, 'dfw'); // You can adjust the region as needed
 
             const machines = await createMachines(appName, machineConfig, 1);
             const machineId = machines[0]?.id; // Get the machine ID from the first machine
