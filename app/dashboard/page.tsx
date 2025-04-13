@@ -125,7 +125,7 @@ export default function Dashboard() {
           throw new Error(errorData.error);
         }
 
-        throw new Error(errorData.error || "Failed to create app");
+        //throw new Error(errorData.error || "Failed to create app");
       }
 
       const newApp = await response.json();
@@ -294,12 +294,12 @@ export default function Dashboard() {
       {limitError && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Container Limit Reached</AlertTitle>
+          <AlertTitle>App Limit Reached</AlertTitle>
           <AlertDescription>
-            You have reached your maximum limit of {limitError.maxAllowed}{" "}
-            container{limitError.maxAllowed !== 1 ? "s" : ""}. Please delete an
-            existing app before creating a new one, or upgrade your subscription
-            for more containers.
+            You have reached your maximum limit of {limitError.maxAllowed} app
+            {limitError.maxAllowed !== 1 ? "s" : ""}. Please delete an existing
+            app before creating a new one, or upgrade your subscription for more
+            apps.
           </AlertDescription>
           <Button
             variant="outline"
@@ -348,12 +348,12 @@ export default function Dashboard() {
                   )}
                   <div className="mt-4 space-y-2">
                     <Link href={`/ai-editor/${app.id}`}>
-                      <Button variant="outline" className="w-full">
+                      <Button variant="default" className="w-full">
                         Edit App
                       </Button>
                     </Link>
                     <Button
-                      variant="destructive"
+                      variant="outline"
                       className="w-full"
                       onClick={() => handleDeleteApp(app.id)}
                     >

@@ -148,10 +148,6 @@ export function SessionsSidebar({
                           <span className="truncate">
                             {session.title || "New Chat"}
                           </span>
-                          {isCreatingSession &&
-                            session.id === currentSessionId && (
-                              <Loader2 className="h-3 w-3 animate-spin ml-1" />
-                            )}
                         </div>
                         <div
                           className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer hover:text-destructive"
