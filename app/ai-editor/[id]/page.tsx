@@ -340,16 +340,16 @@ export default function AppEditor() {
                 {viewMode === "mobile" ? (
                   <div className="h-full w-full flex items-center justify-center">
                     <MobileMockup>
-                      <div className="flex flex-col h-full w-full">
+                      <div className="h-full w-full">
                         <iframe
                           key={iframeKey}
                           src={app.app_url || ""}
-                          className="w-full h-full rounded-md"
+                          className="w-full h-full"
                           style={{
                             border: "none",
-                            borderRadius: "8px",
                             backgroundColor: "white",
-                            minHeight: "500px",
+                            borderRadius: "32px",
+                            display: "block"
                           }}
                         />
                       </div>

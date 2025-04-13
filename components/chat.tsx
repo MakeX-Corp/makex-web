@@ -6,10 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { generateId } from 'ai';
+
 
 export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }: { appId: string, appUrl: string, authToken: string, sessionId: string, onResponseComplete?: () => void }) {
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [restoringMessageId, setRestoringMessageId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -23,7 +26,7 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
         if (!response.ok) throw new Error('Failed to fetch messages');
         const messages = await response.json();
         setInitialMessages(messages.map((msg: any) => ({
-          id: msg.id,
+          id: msg.message_id,
           role: msg.role,
           content: msg.content,
         })));
@@ -43,23 +46,7 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
 
   const { messages, input, handleInputChange, handleSubmit, addToolResult } = useChat({
     api: `/api/chat/`,
-    initialMessages: isLoading ? [] : initialMessages.length > 0 ? initialMessages : [
-      {
-        id: 'initial-message',
-        role: 'assistant',
-        content: `    
-    You are a helpful assistant that can read and write files. You can only write files in React Native.
-    You cannot install any packages.
-    You can also replace text in a file.
-    You can also delete a file.
-    You can also create a new file.
-    You can also read a file.
-
-    Don't say anything except calling the tools. 
-    Try to do it in minimum tool calls.
-    `,
-      }
-    ],
+    initialMessages: isLoading ? [] : initialMessages.length > 0 ? initialMessages : [],
     headers: {
       Authorization: 'Bearer ' + authToken,
     },
@@ -74,7 +61,28 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
       console.log("toolCall", toolCall);
       addToolResult({ toolCallId: toolCall.toolCallId, result: "Test" });
     },
-    onFinish: () => {
+    onFinish: async (message, options) => {
+      // Save the AI message
+      try {
+        await fetch('/api/chat/ai-message-save', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + authToken,
+          },
+          body: JSON.stringify({
+            sessionId,
+            appId,
+            appUrl,
+            outputTokens: options.usage.completionTokens,
+            messageId: message.id,
+            content: message.content,
+          }),
+        });
+      } catch (error) {
+        console.error('Error saving AI message:', error);
+      }
+      
       if (onResponseComplete) {
         onResponseComplete();
       }
@@ -114,6 +122,33 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
     }
   };
 
+  const handleRestore = async (messageId: string) => {
+    try {
+      setRestoringMessageId(messageId);
+      const response = await fetch('/api/code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + authToken,
+        },
+        body: JSON.stringify({
+          messageId,
+          appUrl,
+          sessionId,
+        }),
+      });
+
+      console.log("response", response);
+
+      if (!response.ok) throw new Error('Failed to restore checkpoint');
+    } catch (error) {
+      console.error('Error restoring checkpoint:', error);
+    } finally {
+      onResponseComplete?.();
+      setRestoringMessageId(null);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-50">
       {/* Messages area */}
@@ -126,7 +161,7 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
           messages.map(message => (
             <div 
               key={message.id} 
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
             >
               <Card className={`max-w-[80%] ${
                 message.role === 'user' 
@@ -143,6 +178,16 @@ export function Chat({ appId, appUrl, authToken, sessionId, onResponseComplete }
                   )}
                 </CardContent>
               </Card>
+              {message.role === 'assistant' && (
+                <button 
+                  className="text-[10px] text-gray-400 hover:text-gray-600 mt-0.5 flex items-center gap-1"
+                  onClick={() => handleRestore(message.id)}
+                  disabled={restoringMessageId !== null}
+                >
+                  {restoringMessageId === message.id && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+                  Restore Checkpoint
+                </button>
+              )}
             </div>
           ))
         )}

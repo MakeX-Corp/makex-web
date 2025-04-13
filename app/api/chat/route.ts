@@ -74,7 +74,7 @@ export async function POST(req: Request) {
   const { messages, appUrl, appId, sessionId } = await req.json();
   // Get the last user message
   const lastUserMessage = messages[messages.length - 1];
-  
+    
   // get appUrl from query params
   let apiUrl = appUrl.replace('makex.app', 'fly.dev');
   const API_BASE = apiUrl + ':8001';
@@ -84,6 +84,7 @@ export async function POST(req: Request) {
   const { supabase, user } = userResult
 
   let fullResponse = '';
+  let commitHash = '';
 
   const modelName = 'claude-3-5-sonnet-latest';
   const apiClient = createFileBackendApiClient(API_BASE);
@@ -258,19 +259,22 @@ export async function POST(req: Request) {
         },
       }),
     },
-    onChunk: ({ chunk }) => {
-      if (chunk.type === 'text-delta') {
-        fullResponse += chunk.textDelta;
-      }
-    },
+    system: `
+    You are a helpful assistant that can read and write files. You can only write files in React Native.
+    You cannot install any packages.
+    You can also replace text in a file.
+    You can also delete a file.
+    You can also create a new file.
+    You can also read a file.
+
+    Don't say anything except calling the tools. 
+    Try to do it in minimum tool calls
+    `,
     onFinish: async (result) => {
-
+      // Save checkpoint after completing the response
       const inputTokens = result.usage.promptTokens;
-      const outputTokens = result.usage.completionTokens;
       const inputCost = inputTokens * 0.000003;
-      const outputCost = outputTokens * 0.000015;
 
-      
       // Insert user's last message into chat history
       await supabase.from('app_chat_history').insert({
         app_id: appId,
@@ -283,21 +287,7 @@ export async function POST(req: Request) {
         output_tokens_used: 0,
         cost: inputCost,
         session_id: sessionId,
-
-      });
-      
-      // Insert assistant's response into chat history
-      await supabase.from('app_chat_history').insert({
-        app_id: appId,
-        user_id: user.id,
-        content: fullResponse,
-        role: 'assistant',
-        model_used: modelName,
-        metadata: { streamed: true },
-        input_tokens_used: 0,
-        output_tokens_used: outputTokens,
-        cost: outputCost,
-        session_id: sessionId,
+        message_id: lastUserMessage.id,
       });
     },
     maxSteps: 5, // allow up to 5 steps
