@@ -1,4 +1,4 @@
-import { Plus, MessageSquare, ArrowLeft, Trash2 } from "lucide-react"
+import { Plus, MessageSquare, ArrowLeft, Trash2, Loader2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -9,60 +9,65 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-} from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useRouter } from "next/navigation"
+} from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
 
 interface Session {
-  id: string
-  title: string
-  created_at: string
+  id: string;
+  title: string;
+  created_at: string;
 }
 
 interface SessionsSidebarProps {
-  appId: string
-  authToken: string
-  sessions: Session[]
-  setSessions: (sessions: Session[]) => void
-  loading: boolean
-  onCreateSession: () => Promise<void>
-  currentSessionId: string | null
-  setCurrentSessionId: (sessionId: string | null) => void
+  appId: string;
+  authToken: string;
+  sessions: Session[];
+  setSessions: (sessions: Session[]) => void;
+  loading: boolean;
+  onCreateSession: () => Promise<void>;
+  currentSessionId: string | null;
+  setCurrentSessionId: (sessionId: string | null) => void;
+  isCreatingSession?: boolean; // New prop to indicate session creation status
 }
 
-export function SessionsSidebar({ 
-  appId, 
-  authToken, 
-  sessions, 
-  setSessions, 
-  loading, 
+export function SessionsSidebar({
+  appId,
+  authToken,
+  sessions,
+  setSessions,
+  loading,
   onCreateSession,
   currentSessionId,
-  setCurrentSessionId
+  setCurrentSessionId,
+  isCreatingSession = false, // Default to false if not provided
 }: SessionsSidebarProps) {
-  const router = useRouter()
+  const router = useRouter();
 
   const handleSessionClick = (sessionId: string) => {
-    setCurrentSessionId(sessionId)
-    router.push(`/ai-editor/${appId}?session=${sessionId}`)
-  }
+    setCurrentSessionId(sessionId);
+    router.push(`/ai-editor/${appId}?session=${sessionId}`);
+  };
 
-  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent triggering the session click
+  const handleDeleteSession = async (
+    sessionId: string,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation(); // Prevent triggering the session click
     try {
       const response = await fetch(`/api/sessions?sessionId=${sessionId}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
+          Authorization: `Bearer ${authToken}`,
+        },
       });
 
       if (response.ok) {
         // Remove the deleted session from the list
-        setSessions(sessions.filter(session => session.id !== sessionId));
-        
+        setSessions(sessions.filter((session) => session.id !== sessionId));
+
         // If the deleted session was the current one, clear the current session
         if (currentSessionId === sessionId) {
           setCurrentSessionId(null);
@@ -70,9 +75,9 @@ export function SessionsSidebar({
         }
       }
     } catch (error) {
-      console.error('Error deleting session:', error);
+      console.error("Error deleting session:", error);
     }
-  }
+  };
 
   return (
     <SidebarProvider>
@@ -84,7 +89,7 @@ export function SessionsSidebar({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => router.push("/dashboard")}
                   className="h-8 w-8 p-0 hover:bg-transparent"
                   aria-label="Back to home"
                 >
@@ -96,9 +101,14 @@ export function SessionsSidebar({
                 variant="ghost"
                 size="sm"
                 onClick={onCreateSession}
-                className="h-8 w-8 p-0"
+                disabled={isCreatingSession}
+                className="h-8 w-8 p-0 relative"
               >
-                <Plus className="h-4 w-4" />
+                {isCreatingSession ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
               </Button>
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -116,17 +126,32 @@ export function SessionsSidebar({
                     </div>
                   </>
                 ) : !sessions || sessions.length === 0 ? (
-                  <div key="empty" className="px-4 py-2 text-sm text-muted-foreground">No sessions yet</div>
+                  <div
+                    key="empty"
+                    className="px-4 py-2 text-sm text-muted-foreground"
+                  >
+                    No sessions yet
+                  </div>
                 ) : (
                   sessions.map((session) => (
                     <SidebarMenuItem key={session.id}>
-                      <SidebarMenuButton 
+                      <SidebarMenuButton
                         onClick={() => handleSessionClick(session.id)}
-                        className={`flex items-center justify-between group ${session.id === currentSessionId ? "bg-primary/40 hover:bg-primary/15" : ""}`}
+                        className={`flex items-center justify-between group ${
+                          session.id === currentSessionId
+                            ? "bg-primary/40 hover:bg-primary/15"
+                            : ""
+                        }`}
                       >
                         <div className="flex items-center gap-2">
                           <MessageSquare className="h-4 w-4" />
-                          <span className="truncate">{session.title || 'New Chat'}</span>
+                          <span className="truncate">
+                            {session.title || "New Chat"}
+                          </span>
+                          {isCreatingSession &&
+                            session.id === currentSessionId && (
+                              <Loader2 className="h-3 w-3 animate-spin ml-1" />
+                            )}
                         </div>
                         <div
                           className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer hover:text-destructive"
@@ -144,5 +169,5 @@ export function SessionsSidebar({
         </SidebarContent>
       </Sidebar>
     </SidebarProvider>
-  )
-} 
+  );
+}
