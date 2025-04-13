@@ -179,7 +179,9 @@ export default function AppEditor() {
   }
 
   if (!app) {
-    return <div className="container mx-auto p-8 text-foreground">App not found</div>;
+    return (
+      <div className="container mx-auto p-8 text-foreground">App not found</div>
+    );
   }
 
   const exportCode = async () => {
@@ -244,7 +246,9 @@ export default function AppEditor() {
         {/* App Details Header */}
         <div className="p-4 bg-background border-b border-border flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Edit App: {app.app_name}</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              Edit App: {app.app_name}
+            </h1>
             <div className="text-sm text-muted-foreground flex items-center">
               <span>
                 Created: {new Date(app.created_at).toLocaleDateString()}
@@ -354,7 +358,7 @@ export default function AppEditor() {
                             border: "none",
                             backgroundColor: "white",
                             borderRadius: "32px",
-                            display: "block"
+                            display: "block",
                           }}
                         />
                       </div>
