@@ -12,6 +12,7 @@ import { QRCodeDisplay } from "@/components/qr-code";
 import { SessionsSidebar } from "@/components/sessions-sidebar";
 import { getAuthToken } from "@/utils/client/auth";
 import { AppEditorSkeleton } from "@/app/components/AppEditorSkeleton";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface AppDetails {
   id: string;
@@ -178,7 +179,7 @@ export default function AppEditor() {
   }
 
   if (!app) {
-    return <div className="container mx-auto p-8">App not found</div>;
+    return <div className="container mx-auto p-8 text-foreground">App not found</div>;
   }
 
   const exportCode = async () => {
@@ -221,10 +222,11 @@ export default function AppEditor() {
     } finally {
     }
   };
+
   return (
     <>
       {/* Sessions Sidebar */}
-      <div className="w-64 h-screen border-r bg-background">
+      <div className="w-64 h-screen border-r border-border bg-background">
         <SessionsSidebar
           appId={appId}
           authToken={authToken || ""}
@@ -240,10 +242,10 @@ export default function AppEditor() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* App Details Header */}
-        <div className="p-4 bg-white border-b flex justify-between items-center">
+        <div className="p-4 bg-background border-b border-border flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold">Edit App: {app.app_name}</h1>
-            <div className="text-sm text-gray-600 flex items-center">
+            <h1 className="text-2xl font-bold text-foreground">Edit App: {app.app_name}</h1>
+            <div className="text-sm text-muted-foreground flex items-center">
               <span>
                 Created: {new Date(app.created_at).toLocaleDateString()}
               </span>
@@ -264,14 +266,17 @@ export default function AppEditor() {
               )}
             </div>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => exportCode()}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Export Code
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button
+              variant="outline"
+              onClick={() => exportCode()}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export Code
+            </Button>
+          </div>
         </div>
 
         {/* Main Content Area */}
@@ -290,16 +295,16 @@ export default function AppEditor() {
           </Card>
 
           {/* Preview Section */}
-          <Card className="w-1/2 bg-zinc-50">
+          <Card className="w-1/2 bg-card">
             <CardContent className="relative h-full flex flex-col p-4">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 border rounded-lg p-1 bg-white">
+                <div className="flex items-center gap-2 border rounded-lg p-1 bg-background">
                   <button
                     onClick={() => setViewMode("mobile")}
                     className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
                       viewMode === "mobile"
-                        ? "bg-zinc-100 text-zinc-900"
-                        : "text-zinc-500 hover:text-zinc-900"
+                        ? "bg-muted text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     Mockup
@@ -308,8 +313,8 @@ export default function AppEditor() {
                     onClick={() => setViewMode("qr")}
                     className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
                       viewMode === "qr"
-                        ? "bg-zinc-100 text-zinc-900"
-                        : "text-zinc-500 hover:text-zinc-900"
+                        ? "bg-muted text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     View in Mobile
@@ -319,8 +324,8 @@ export default function AppEditor() {
                   <div
                     className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
                       isContainerLoading
-                        ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                        : "bg-green-100 text-green-700 border border-green-300"
+                        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700"
+                        : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 border border-green-300 dark:border-green-700"
                     }`}
                   >
                     <div
@@ -357,9 +362,7 @@ export default function AppEditor() {
                   </div>
                 ) : (
                   <div className="h-full w-full rounded-lg p-4 overflow-auto flex items-center justify-center">
-                    <QRCodeDisplay
-                      url={(app.app_url || "").replace("https://", "exp://")}
-                    />
+                    <QRCodeDisplay url={app.app_url || ""} />
                   </div>
                 )}
               </div>

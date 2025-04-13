@@ -2,7 +2,9 @@ import type React from "react";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
+import { ThemeProvider } from "@/components/theme-provider";
 import { PostHogProvider } from "@/components/providers/PostHogProvider";
+import { Footer } from "./components/footer";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -40,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="overflow-x-hidden">
+    <html lang="en" className="overflow-x-hidden" suppressHydrationWarning>
       <head>
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -54,28 +56,16 @@ export default function RootLayout({
       </head>
       <body className="overflow-x-hidden antialiased min-h-screen flex flex-col">
         <PostHogProvider>
-          <main className="flex-1">{children}</main>
-          <footer className="py-8 border-t mt-auto">
-            <div className="container mx-auto px-4">
-              <div className="flex flex-col md:flex-row justify-between items-center">
-                <div className="text-sm text-muted-foreground">
-                  © 2025 MakeX
-                </div>
-                <div className="flex gap-6 text-sm text-muted-foreground">
-                  <a href="/terms" className="hover:text-foreground">
-                    Terms
-                  </a>
-                  <a href="/privacy" className="hover:text-foreground">
-                    Privacy
-                  </a>
-                  <a href="/refund" className="hover:text-foreground">
-                    Refund Policy
-                  </a>
-                </div>
-              </div>
-            </div>
-          </footer>
-          <Analytics />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <Analytics />
+          </ThemeProvider>
         </PostHogProvider>
       </body>
     </html>

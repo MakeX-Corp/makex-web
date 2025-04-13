@@ -4,29 +4,6 @@ import { useEffect, Suspense } from "react";
 import posthog from "posthog-js";
 import { usePathname, useSearchParams } from "next/navigation";
 
-// Completely disable PostHog logging
-if (typeof window !== "undefined") {
-  // Save original console methods
-  const originalLog = console.log;
-  const originalWarn = console.warn;
-  const originalError = console.error;
-
-  // Override console methods to filter PostHog logs
-  console.log = function (...args) {
-    if (typeof args[0] === "string" && args[0].includes("[PostHog")) return;
-    originalLog.apply(console, args);
-  };
-
-  console.warn = function (...args) {
-    if (typeof args[0] === "string" && args[0].includes("[PostHog")) return;
-    originalWarn.apply(console, args);
-  };
-
-  console.error = function (...args) {
-    if (typeof args[0] === "string" && args[0].includes("[PostHog")) return;
-    originalError.apply(console, args);
-  };
-}
 
 function PostHogContent() {
   const pathname = usePathname();

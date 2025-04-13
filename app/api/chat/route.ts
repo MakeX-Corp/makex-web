@@ -267,7 +267,8 @@ export async function POST(req: Request) {
     You can also create a new file.
     You can also read a file.
 
-    Don't say anything except calling the tools. 
+    Make sure to delet the file which seems redundant to you
+    You need to say what you are doing in 3 bullet points or less every time you are returning a response
     Try to do it in minimum tool calls
     `,
     onFinish: async (result) => {
