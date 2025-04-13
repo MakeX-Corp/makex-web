@@ -9,6 +9,10 @@ import Link from "next/link";
 import { getAuthToken } from "@/utils/client/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { DiscordSupportButton } from "@/components/support-button";
+
 interface UserApp {
   id: string;
   user_id: string;
@@ -18,12 +22,21 @@ interface UserApp {
   updated_at: string;
 }
 
+interface ContainerLimitError {
+  error: string;
+  currentCount: number;
+  maxAllowed: number;
+}
+
 // This is a child component that will be rendered inside the SubscriptionAuthWrapper
 export default function Dashboard() {
   const [userApps, setUserApps] = useState<UserApp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [deletingAppIds, setDeletingAppIds] = useState<Set<string>>(new Set());
+  const [limitError, setLimitError] = useState<ContainerLimitError | null>(
+    null
+  );
   const { toast } = useToast();
   const router = useRouter();
 
@@ -82,6 +95,9 @@ export default function Dashboard() {
 
   const handleCreateApp = async () => {
     try {
+      // Clear any previous limit errors
+      setLimitError(null);
+
       const decodedToken = getAuthToken();
 
       if (!decodedToken) {
@@ -97,12 +113,28 @@ export default function Dashboard() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create app");
+        const errorData = await response.json();
+
+        // Check if this is a container limit error
+        if (
+          response.status === 400 &&
+          errorData.currentCount !== undefined &&
+          errorData.maxAllowed !== undefined
+        ) {
+          setLimitError(errorData as ContainerLimitError);
+          throw new Error(errorData.error);
+        }
+
+        throw new Error(errorData.error || "Failed to create app");
       }
 
       const newApp = await response.json();
       setUserApps((prev) => [...prev, newApp]);
+
+      toast({
+        title: "Success",
+        description: "New app created successfully!",
+      });
     } catch (error) {
       console.error("Error creating app:", error);
       toast({
@@ -140,6 +172,11 @@ export default function Dashboard() {
       }
 
       setUserApps((prev) => prev.filter((app) => app.id !== appId));
+
+      // Clear any limit errors if they exist
+      if (limitError) {
+        setLimitError(null);
+      }
 
       toast({
         title: "Success",
@@ -254,6 +291,26 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {limitError && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Container Limit Reached</AlertTitle>
+          <AlertDescription>
+            You have reached your maximum limit of {limitError.maxAllowed}{" "}
+            container{limitError.maxAllowed !== 1 ? "s" : ""}. Please delete an
+            existing app before creating a new one, or upgrade your subscription
+            for more containers.
+          </AlertDescription>
+          <Button
+            variant="outline"
+            className="mt-2"
+            onClick={() => setLimitError(null)}
+          >
+            Dismiss
+          </Button>
+        </Alert>
+      )}
+
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(3)].map((_, index) => (
@@ -309,6 +366,8 @@ export default function Dashboard() {
           )}
         </div>
       )}
+
+      <DiscordSupportButton />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 import { getSupabaseWithUser } from "@/utils/server/auth";
+import { checkActiveContainer } from "@/utils/check-container-limit"; // Import the function
 
 // ────────────────────────────────────────────────────────────────────────────────
 // POST /api/app – allocate a container to the authenticated user
@@ -11,10 +12,15 @@ export async function POST(request: Request) {
   if (result instanceof NextResponse) return result;
   const { supabase, user } = result;
 
+  // Check active container limit
+  const activeContainersResult = await checkActiveContainer(supabase, user.id);
+  if (activeContainersResult instanceof NextResponse)
+    return activeContainersResult;
+
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_KEY!
-);
+  );
 
   // Get one available container from the pool using admin because the user doesn't have access to the table
   const { data: container, error: containerError } = await supabaseAdmin
