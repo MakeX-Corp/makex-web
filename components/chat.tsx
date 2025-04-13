@@ -4,8 +4,8 @@ import { useChat } from "@ai-sdk/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Terminal } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Send, Loader2, Terminal, AlertTriangle } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
 
 export function Chat({
   appId,
@@ -13,21 +13,106 @@ export function Chat({
   authToken,
   sessionId,
   onResponseComplete,
+  onSessionError,
 }: {
   appId: string;
   appUrl: string;
   authToken: string;
   sessionId: string;
   onResponseComplete?: () => void;
+  onSessionError?: (error: string) => void;
 }) {
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
     null
   );
+  const [sessionReady, setSessionReady] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState("");
+  const [sessionCheckAttempts, setSessionCheckAttempts] = useState(0);
+  const maxSessionCheckAttempts = 10;
+  const sessionCheckRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check if session exists and is ready
+  const checkSessionReady = async () => {
+    if (!sessionId || !appId) return;
+
+    try {
+      const response = await fetch(
+        `/api/chat?sessionId=${sessionId}&appId=${appId}`,
+        {
+          headers: {
+            Authorization: "Bearer " + authToken,
+          },
+        }
+      );
+
+      if (response.ok) {
+        setSessionReady(true);
+        if (sessionCheckRef.current) {
+          clearInterval(sessionCheckRef.current);
+          sessionCheckRef.current = null;
+        }
+        return true;
+      }
+
+      // Increment attempts
+      setSessionCheckAttempts((prev) => {
+        const newAttempts = prev + 1;
+        if (newAttempts >= maxSessionCheckAttempts) {
+          if (sessionCheckRef.current) {
+            clearInterval(sessionCheckRef.current);
+            sessionCheckRef.current = null;
+          }
+          if (onSessionError) {
+            onSessionError("Session creation timed out. Please try again.");
+          }
+        }
+        return newAttempts;
+      });
+
+      return false;
+    } catch (error) {
+      console.error("Error checking session:", error);
+      return false;
+    }
+  };
+
+  // Effect to set up session check interval
+  useEffect(() => {
+    if (sessionId && appId && !sessionReady && !sessionCheckRef.current) {
+      // Check immediately
+      checkSessionReady();
+
+      // Then set up interval (starting with shorter intervals, increasing over time)
+      sessionCheckRef.current = setInterval(() => {
+        const currentAttempt = sessionCheckAttempts;
+        // Exponential backoff: 200ms, 400ms, 800ms, etc.
+        const delay = Math.min(200 * Math.pow(2, currentAttempt), 3000);
+
+        setTimeout(async () => {
+          const ready = await checkSessionReady();
+          if (ready && pendingMessage) {
+            // If we have a pending message and session is ready, submit it
+            handleManualSubmit(pendingMessage);
+            setPendingMessage("");
+          }
+        }, delay);
+      }, 1000);
+    }
+
+    return () => {
+      if (sessionCheckRef.current) {
+        clearInterval(sessionCheckRef.current);
+        sessionCheckRef.current = null;
+      }
+    };
+  }, [sessionId, appId, sessionReady]);
 
   useEffect(() => {
     const fetchMessages = async () => {
+      if (!sessionId || !appId) return;
+
       try {
         setIsLoading(true);
         const response = await fetch(
@@ -38,7 +123,16 @@ export function Chat({
             },
           }
         );
-        if (!response.ok) throw new Error("Failed to fetch messages");
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            // Session not found - it might be newly created
+            setIsLoading(false);
+            return;
+          }
+          throw new Error("Failed to fetch messages");
+        }
+
         const messages = await response.json();
         setInitialMessages(
           messages.map((msg: any) => ({
@@ -48,8 +142,8 @@ export function Chat({
             parts: msg.metadata.parts,
           }))
         );
+        setSessionReady(true);
         setIsLoading(false);
-        console.log("messages", messages);
       } catch (error) {
         console.error("Error fetching messages:", error);
         setIsLoading(false);
@@ -85,8 +179,6 @@ export function Chat({
       },
       onFinish: async (message, options) => {
         // Save the AI message
-        console.log("message", message);
-        console.log("options", options);
         try {
           await fetch("/api/chat/ai-message-save", {
             method: "POST",
@@ -111,6 +203,30 @@ export function Chat({
         }
       },
     });
+
+  // Handle manual submission with session readiness check
+  const handleManualSubmit = (messageText: string) => {
+    if (!sessionReady) {
+      setPendingMessage(messageText);
+      return;
+    }
+
+    // Use the existing handleSubmit function
+    const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+    handleSubmit(fakeEvent);
+  };
+
+  // Wrapper for the form submission
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!sessionReady) {
+      setPendingMessage(input);
+      return;
+    }
+
+    handleSubmit(e);
+  };
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -176,8 +292,6 @@ export function Chat({
         }),
       });
 
-      console.log("response", response);
-
       if (!response.ok) throw new Error("Failed to restore checkpoint");
     } catch (error) {
       console.error("Error restoring checkpoint:", error);
@@ -189,6 +303,15 @@ export function Chat({
 
   return (
     <div className="flex flex-col h-full bg-background">
+      {/* Session not ready warning */}
+      {!sessionReady && sessionCheckAttempts > 2 && (
+        <div className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 p-2 rounded-md mb-2 flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4" />
+          <span className="text-sm">Preparing your chat session...</span>
+          {pendingMessage && <span className="text-xs">(Message pending)</span>}
+        </div>
+      )}
+
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {isLoading ? (
@@ -235,21 +358,50 @@ export function Chat({
             </div>
           ))
         )}
+
+        {/* Pending message indicator */}
+        {pendingMessage &&
+          !messages.some((m) => m.content === pendingMessage) && (
+            <div className="flex flex-col items-end">
+              <Card className="max-w-[80%] bg-primary/70 text-primary-foreground">
+                <CardContent className="p-4">
+                  <div className="text-sm flex items-center gap-2">
+                    <span>{pendingMessage}</span>
+                    <Loader2 className="h-3 w-3 animate-spin opacity-70" />
+                  </div>
+                </CardContent>
+              </Card>
+              <div className="text-[10px] text-muted-foreground mt-0.5">
+                Waiting for session...
+              </div>
+            </div>
+          )}
       </div>
 
       {/* Input area - fixed at bottom */}
       <div className="border-t border-border p-4 bg-background">
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleFormSubmit} className="flex gap-2">
           <Input
             value={input}
             onChange={handleInputChange}
             placeholder="Type your message..."
             className="flex-1"
+            disabled={sessionCheckAttempts >= maxSessionCheckAttempts}
           />
-          <Button type="submit" size="icon">
+          <Button
+            type="submit"
+            size="icon"
+            disabled={sessionCheckAttempts >= maxSessionCheckAttempts}
+          >
             <Send className="h-4 w-4" />
           </Button>
         </form>
+
+        {sessionCheckAttempts >= maxSessionCheckAttempts && (
+          <div className="text-red-500 text-xs mt-1">
+            Session creation timed out. Please try creating a new session.
+          </div>
+        )}
       </div>
     </div>
   );

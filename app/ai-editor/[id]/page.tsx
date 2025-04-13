@@ -6,13 +6,14 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import MobileMockup from "@/components/mobile-mockup";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, ExternalLink, Download } from "lucide-react";
+import { RefreshCw, ExternalLink, Download, AlertCircle } from "lucide-react";
 import { Chat } from "@/components/chat";
 import { QRCodeDisplay } from "@/components/qr-code";
 import { SessionsSidebar } from "@/components/sessions-sidebar";
 import { getAuthToken } from "@/utils/client/auth";
 import { AppEditorSkeleton } from "@/app/components/AppEditorSkeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AppDetails {
   id: string;
@@ -46,6 +47,8 @@ export default function AppEditor() {
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isSessionsLoading, setIsSessionsLoading] = useState(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -152,8 +155,15 @@ export default function AppEditor() {
     setIframeKey((prev) => prev + 1);
   };
 
+  // Enhanced session creation with retry mechanism
   const handleCreateSession = async () => {
+    if (isCreatingSession) return;
+
+    setIsCreatingSession(true);
+    setSessionError(null);
+
     try {
+      // 1. Create the session
       const response = await fetch("/api/sessions", {
         method: "POST",
         headers: {
@@ -162,16 +172,68 @@ export default function AppEditor() {
         },
         body: JSON.stringify({ appId }),
       });
-      const newSession: Session = await response.json();
-      if (newSession) {
+
+      if (!response.ok) {
+        throw new Error("Failed to create session");
+      }
+
+      const newSession = await response.json();
+
+      if (newSession && newSession.id) {
+        // 2. Verify the session exists with a validation check
+        let sessionConfirmed = false;
+        let retryCount = 0;
+        const maxRetries = 3;
+
+        while (!sessionConfirmed && retryCount < maxRetries) {
+          // Wait with exponential backoff (300ms, 600ms, 1200ms)
+          await new Promise((r) =>
+            setTimeout(r, 300 * Math.pow(2, retryCount))
+          );
+
+          try {
+            // Instead of a separate verification endpoint that doesn't exist,
+            // we'll use the existing /api/chat endpoint to check if the session exists
+            const verifyResponse = await fetch(
+              `/api/chat?sessionId=${newSession.id}&appId=${appId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${authToken}`,
+                },
+              }
+            );
+
+            if (verifyResponse.ok) {
+              sessionConfirmed = true;
+            }
+          } catch (error) {
+            console.warn(
+              `Session verification attempt ${retryCount + 1} failed`
+            );
+          }
+
+          retryCount++;
+        }
+
+        // 3. Update state and UI
         setSessions((prev) => [newSession, ...prev]);
         setCurrentSessionId(newSession.id);
-        // Update URL with new session ID
+
+        // 4. Update URL with new session ID
         router.push(`/ai-editor/${appId}?session=${newSession.id}`);
+      } else {
+        throw new Error("Invalid session data received");
       }
     } catch (error) {
       console.error("Error creating new session:", error);
+      setSessionError("Failed to create session. Please try again.");
+    } finally {
+      setIsCreatingSession(false);
     }
+  };
+
+  const handleSessionError = (error: string) => {
+    setSessionError(error);
   };
 
   if (isLoading) {
@@ -221,7 +283,6 @@ export default function AppEditor() {
     } catch (error) {
       console.error("Error exporting app:", error);
       alert("Failed to export app. Please try again.");
-    } finally {
     }
   };
 
@@ -238,6 +299,7 @@ export default function AppEditor() {
           onCreateSession={handleCreateSession}
           currentSessionId={currentSessionId}
           setCurrentSessionId={setCurrentSessionId}
+          isCreatingSession={isCreatingSession}
         />
       </div>
 
@@ -283,18 +345,49 @@ export default function AppEditor() {
           </div>
         </div>
 
+        {/* Session Error Alert */}
+        {sessionError && (
+          <Alert variant="destructive" className="m-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{sessionError}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Main Content Area */}
         <div className="flex-1 p-4 gap-4 flex overflow-hidden">
           {/* Chat Window */}
           <Card className="flex-1">
             <CardContent className="p-4 h-full">
-              <Chat
-                appId={appId}
-                appUrl={app.app_url || ""}
-                authToken={authToken || ""}
-                sessionId={currentSessionId || ""}
-                onResponseComplete={handleRefresh}
-              />
+              {currentSessionId ? (
+                <Chat
+                  appId={appId}
+                  appUrl={app.app_url || ""}
+                  authToken={authToken || ""}
+                  sessionId={currentSessionId}
+                  onResponseComplete={handleRefresh}
+                  onSessionError={handleSessionError}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center flex-col gap-4 text-muted-foreground">
+                  <p>
+                    Select a session from the sidebar or create a new one to
+                    start chatting
+                  </p>
+                  <Button
+                    onClick={handleCreateSession}
+                    disabled={isCreatingSession}
+                  >
+                    {isCreatingSession ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create New Session"
+                    )}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
