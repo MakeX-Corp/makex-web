@@ -280,7 +280,7 @@ export async function GET(request: Request) {
                     guest: {
                         cpu_kind: 'shared',
                         cpus: 2,
-                        memory_mb: 2048
+                        memory_mb: 4096
                     }
                 },
             };

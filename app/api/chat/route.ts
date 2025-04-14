@@ -102,6 +102,10 @@ export async function POST(req: Request) {
   const modelName = "claude-3-5-sonnet-latest";
   const apiClient = createFileBackendApiClient(API_BASE);
 
+  // Get the file tree first
+  const fileTreeResponse = await apiClient.get('/file-tree', { path: '.' });
+  const fileTree = fileTreeResponse.data;
+
   const result = streamText({
     model: anthropic(modelName),
     messages,
@@ -182,7 +186,7 @@ export async function POST(req: Request) {
       }),
 
       installPackages: tool({
-        description: "Install npm/yarn packages",
+        description: 'Install yarn packages',
         parameters: z.object({
           packages: z
             .array(z.string())
@@ -193,28 +197,6 @@ export async function POST(req: Request) {
             const data = await apiClient.post("/install/packages", {
               packages,
             });
-            return { success: true, data };
-          } catch (error: any) {
-            return {
-              success: false,
-              error: error.message || "Unknown error occurred",
-            };
-          }
-        },
-      }),
-
-      executeCommand: tool({
-        description: "Execute a yarn/npm/npx command",
-        parameters: z.object({
-          command: z
-            .string()
-            .describe(
-              "The command to execute (only yarn, npm, or npx commands allowed)"
-            ),
-        }),
-        execute: async ({ command }) => {
-          try {
-            const data = await apiClient.post("/execute/command", { command });
             return { success: true, data };
           } catch (error: any) {
             return {
@@ -314,14 +296,46 @@ export async function POST(req: Request) {
           }
         },
       }),
+
+      getFileTree: tool({
+        description: 'Get the directory tree structure',
+        parameters: z.object({
+          path: z.string().describe('The path to get the directory tree from').default('.'),
+        }),
+        execute: async ({ path }) => {
+          try {
+            const response = await apiClient.get('/file-tree', { path });
+            return { success: true, data: response.data };
+          } catch (error: any) {
+            return {
+              success: false,
+              error: error.message || "Unknown error occurred",
+            };
+          }
+        },
+      }),
     },
     system: `
-    You are a helpful assistant that can read and write files. You can only write files in React Native.
+    You are a senior software engineer who is an expert in React Native and Expo. 
+    You can only write files in React Native.
     You cannot install any packages.
     You can also replace text in a file.
     You can also delete a file.
     You can also create a new file.
     You can also read a file.
+
+    Use jsx syntax.
+
+    Current file tree structure:
+    ${JSON.stringify(fileTree, null, 2)}
+
+    The initial render of the app is in app/index.jsx
+
+    Make sure you always link changes or whatever you do to app/index.jsx because that is the initial render of the app. So user can see the changes.
+
+    Keep in mind user cannot upload images,  sounds or anything else. He can only talk to you and you are the programmer.
+
+    Make sure you understand the user's request and the file tree structure. and make the changes to the correct files.
 
     Make sure to delet the file which seems redundant to you
     You need to say what you are doing in 3 bullet points or less every time you are returning a response
@@ -347,7 +361,7 @@ export async function POST(req: Request) {
         message_id: lastUserMessage.id,
       });
     },
-    maxSteps: 5, // allow up to 5 steps
+    maxSteps: 30, // allow up to 5 steps
   });
 
   return result.toDataStreamResponse({
