@@ -12,9 +12,9 @@ import { QRCodeDisplay } from "@/components/qr-code";
 import { SessionsSidebar } from "@/components/sessions-sidebar";
 import { getAuthToken } from "@/utils/client/auth";
 import { AppEditorSkeleton } from "@/app/components/AppEditorSkeleton";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DiscordSupportButton } from "@/components/support-button";
+import { SupabaseConnect } from "@/components/supabase-connect";
 
 interface AppDetails {
   id: string;
@@ -24,6 +24,7 @@ interface AppDetails {
   machine_id: string | null;
   created_at: string;
   updated_at: string;
+  supabase_project: { name?: string; id: string };
 }
 
 interface Session {
@@ -334,31 +335,11 @@ export default function AppEditor() {
         <div className="p-4 bg-background border-b border-border flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              Edit App: {app.app_name}
+              {app.app_name}
             </h1>
-            <div className="text-sm text-muted-foreground flex items-center">
-              <span>
-                Created: {new Date(app.created_at).toLocaleDateString()}
-              </span>
-              {app.app_url && (
-                <div className="ml-4 flex items-center gap-2">
-                  <span>URL: {app.app_url}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      app.app_url && window.open(app.app_url, "_blank")
-                    }
-                    className="h-6 px-2 flex items-center gap-1"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
+            <SupabaseConnect supabase_project={app.supabase_project} />
             <Button
               variant="outline"
               onClick={handleResetApp}
@@ -461,6 +442,16 @@ export default function AppEditor() {
                   >
                     View in Mobile
                   </button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      app.app_url && window.open(app.app_url, "_blank")
+                    }
+                    className="h-6 px-2 flex items-center gap-1"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
                 </div>
                 <div className="flex items-center gap-2">
                   <div
