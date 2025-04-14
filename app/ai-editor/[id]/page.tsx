@@ -15,6 +15,7 @@ import { AppEditorSkeleton } from "@/app/components/AppEditorSkeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DiscordSupportButton } from "@/components/support-button";
 import { SupabaseConnect } from "@/components/supabase-connect";
+import { MobileView } from "@/components/mobile-view";
 
 interface AppDetails {
   id: string;
@@ -52,13 +53,19 @@ export default function AppEditor() {
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+
   const supabase = createClientComponentClient();
 
   useEffect(() => {
     setAuthToken(getAuthToken());
+    const checkIsMobile = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    checkIsMobile();
+    window.addEventListener("resize", checkIsMobile);
+    return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
-
-
 
   const handleResetApp = async () => {
     try {
@@ -74,7 +81,7 @@ export default function AppEditor() {
       });
 
       if (!response.ok) throw new Error("Failed to reset state");
-      
+
       // Call onResponseComplete instead of reloading
       handleRefresh();
     } catch (error) {
@@ -264,6 +271,10 @@ export default function AppEditor() {
 
   if (isLoading) {
     return <AppEditorSkeleton />;
+  }
+
+  if (isMobileView) {
+    return <MobileView />;
   }
 
   if (!app) {
