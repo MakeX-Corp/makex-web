@@ -218,7 +218,7 @@ export function Chat({
       appId,
       sessionId,
     },
-    maxSteps: 5,
+    maxSteps: 30,
     onToolCall: async ({ toolCall }) => {
       // When a tool is called, ensure waiting indicator stays visible
       setIsWaitingForResponse(true);
