@@ -237,11 +237,11 @@ export async function GET(request: Request) {
 
             // Create machine with config
             console.log(`Creating volume for app: ${appName}`);
-            const volume = await createVolume(appName, 'sjc'); // You can adjust the region as needed
+            const volume = await createVolume(appName, 'dfw'); // You can adjust the region as needed
 
             const machineConfig = {
                 config: {
-                    region: 'sjc',
+                    region: 'dfw',
                     image: 'registry.fly.io/expo-fast:latest',
                     mounts: [
                         {
