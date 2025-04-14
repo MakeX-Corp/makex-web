@@ -50,12 +50,36 @@ export default function AppEditor() {
   const [isSessionsLoading, setIsSessionsLoading] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
     setAuthToken(getAuthToken());
   }, []);
 
+
+
+  const handleResetApp = async () => {
+    try {
+      const response = await fetch("/api/code/reset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + authToken,
+        },
+        body: JSON.stringify({
+          appId,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to reset state");
+      
+      // Call onResponseComplete instead of reloading
+      handleRefresh();
+    } catch (error) {
+      console.error("Error resetting state:", error);
+    }
+  };
   const wakeContainer = async (appName: string, machineId: string) => {
     setIsContainerLoading(true);
     let timeout = 0;
@@ -335,6 +359,25 @@ export default function AppEditor() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <Button
+              variant="outline"
+              onClick={handleResetApp}
+              disabled={isResetting}
+              className="flex items-center gap-2"
+            >
+              {isResetting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Resetting...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  Reset App
+                </>
+              )}
+            </Button>
+
             <Button
               variant="outline"
               onClick={() => exportCode()}

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { checkActiveContainer } from "@/utils/check-container-limit"; // Import the function
+import { createFileBackendApiClient } from "@/utils/file-backend-api-client";
 
 // ────────────────────────────────────────────────────────────────────────────────
 // POST /api/app – allocate a container to the authenticated user
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SERVICE_KEY!
   );
 
+
   // Get one available container from the pool using admin because the user doesn't have access to the table
   const { data: container, error: containerError } = await supabaseAdmin
     .from("available_containers")
@@ -33,6 +35,43 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "No available containers" },
       { status: 404 }
+    );
+  }
+
+    console.log("container", container);
+
+    // get initial commit by doing /checkpoint/save
+    const API_BASE = container.app_url.replace("makex.app", "fly.dev") + ":8001";
+    const fileBackendClient = createFileBackendApiClient(API_BASE);
+    const saveCheckpointResponse = await fileBackendClient.post(
+      "/checkpoint/save",
+      {
+        name: "ai-assistant-checkpoint",
+        message: "Checkpoint after AI assistant changes",
+      }
+    );
+
+  console.log("saveCheckpointResponse", saveCheckpointResponse);
+
+
+    // Insert into user_apps
+    const { data: userApp, error: createError } = await supabase
+    .from("user_apps")
+    .insert({
+      user_id: user.id,
+      app_name: container.app_name,
+      app_url: container.app_url,
+      machine_id: container.machine_id,
+      initial_commit: saveCheckpointResponse.current_commit || saveCheckpointResponse.commit,
+    })
+    .select()
+    .single();
+
+  if (createError) {
+    // Ideally rollback the previous delete (requires a Postgres function or RPC)
+    return NextResponse.json(
+      { error: "Failed to create user app" },
+      { status: 500 }
     );
   }
 
@@ -49,25 +88,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Insert into user_apps
-  const { data: userApp, error: createError } = await supabase
-    .from("user_apps")
-    .insert({
-      user_id: user.id,
-      app_name: container.app_name,
-      app_url: container.app_url,
-      machine_id: container.machine_id,
-    })
-    .select()
-    .single();
-
-  if (createError) {
-    // Ideally rollback the previous delete (requires a Postgres function or RPC)
-    return NextResponse.json(
-      { error: "Failed to create user app" },
-      { status: 500 }
-    );
-  }
 
   return NextResponse.json(userApp);
 }
