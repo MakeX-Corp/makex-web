@@ -339,7 +339,7 @@ export default function AppEditor() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <SupabaseConnect supabase_project={app.supabase_project} />
+            {/* <SupabaseConnect supabase_project={app.supabase_project} /> */}
             <Button
               variant="outline"
               onClick={handleResetApp}

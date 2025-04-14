@@ -74,6 +74,8 @@ export async function POST(request: Request) {
 
     const project = await response.json();
 
+    project.db_pass = db_password;
+
     //u update user_apps table with the supabase_project json
     const { data, error } = await supabase
       .from("user_apps")
