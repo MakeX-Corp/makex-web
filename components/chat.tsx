@@ -4,8 +4,15 @@ import { useChat } from "@ai-sdk/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Terminal, AlertTriangle } from "lucide-react";
+import { Send, Loader2, Terminal, AlertTriangle, Lock } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 export function Chat({
   appId,
@@ -30,8 +37,36 @@ export function Chat({
   const [sessionReady, setSessionReady] = useState(false);
   const [pendingMessage, setPendingMessage] = useState("");
   const [sessionCheckAttempts, setSessionCheckAttempts] = useState(0);
+  const [limitReached, setLimitReached] = useState(false);
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [remainingMessages, setRemainingMessages] = useState<number | null>(
+    null
+  );
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const maxSessionCheckAttempts = 10;
   const sessionCheckRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check daily message limit
+  const checkMessageLimit = async () => {
+    try {
+      const response = await fetch("/api/chat/limits", {
+        headers: {
+          Authorization: "Bearer " + authToken,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRemainingMessages(data.remaining);
+
+        if (data.remaining <= 0) {
+          setLimitReached(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking message limit:", error);
+    }
+  };
 
   // Check if session exists and is ready
   const checkSessionReady = async () => {
@@ -77,6 +112,11 @@ export function Chat({
       return false;
     }
   };
+
+  // Check message limit on initial load
+  useEffect(() => {
+    checkMessageLimit();
+  }, []);
 
   // Effect to set up session check interval
   useEffect(() => {
@@ -155,61 +195,111 @@ export function Chat({
     }
   }, [sessionId, appId]);
 
-  const { messages, input, handleInputChange, handleSubmit, addToolResult } =
-    useChat({
-      api: `/api/chat/`,
-      initialMessages: isLoading
-        ? []
-        : initialMessages.length > 0
-        ? initialMessages
-        : [],
-      headers: {
-        Authorization: "Bearer " + authToken,
-      },
-      body: {
-        appUrl,
-        appId,
-        sessionId,
-      },
-      maxSteps: 5,
-      onToolCall: async ({ toolCall }) => {
-        // Handle tool calls here
-        console.log("toolCall", toolCall);
-        addToolResult({ toolCallId: toolCall.toolCallId, result: "Test" });
-      },
-      onFinish: async (message, options) => {
-        // Save the AI message
-        try {
-          await fetch("/api/chat/ai-message-save", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + authToken,
-            },
-            body: JSON.stringify({
-              sessionId,
-              appId,
-              appUrl,
-              options,
-              message,
-            }),
-          });
-        } catch (error) {
-          console.error("Error saving AI message:", error);
-        }
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    addToolResult,
+    error,
+    isLoading: isChatLoading,
+  } = useChat({
+    api: `/api/chat/`,
+    initialMessages: isLoading
+      ? []
+      : initialMessages.length > 0
+      ? initialMessages
+      : [],
+    headers: {
+      Authorization: "Bearer " + authToken,
+    },
+    body: {
+      appUrl,
+      appId,
+      sessionId,
+    },
+    maxSteps: 5,
+    onToolCall: async ({ toolCall }) => {
+      // Handle tool calls here
+      console.log("toolCall", toolCall);
+      addToolResult({ toolCallId: toolCall.toolCallId, result: "Test" });
+    },
+    onResponse: async (response) => {
+      // Check if we hit the rate limit
+      if (response.status === 429) {
+        setLimitReached(true);
+        setLimitModalOpen(true);
+        // Update remaining messages to 0
+        setRemainingMessages(0);
+        return;
+      }
+      // Set waiting to false once response starts
+      setIsWaitingForResponse(false);
+    },
+    onFinish: async (message, options) => {
+      // Save the AI message
+      try {
+        await fetch("/api/chat/ai-message-save", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + authToken,
+          },
+          body: JSON.stringify({
+            sessionId,
+            appId,
+            appUrl,
+            options,
+            message,
+          }),
+        });
 
-        if (onResponseComplete) {
-          onResponseComplete();
-        }
-      },
-    });
+        // Update message limit after successful message
+        checkMessageLimit();
+      } catch (error) {
+        console.error("Error saving AI message:", error);
+      }
+
+      if (onResponseComplete) {
+        onResponseComplete();
+      }
+    },
+  });
+
+  // Handle errors - check for 429 (rate limit)
+  useEffect(() => {
+    if (error) {
+      console.error("Chat error:", error);
+      // Check if the error is a rate limit error
+      if (
+        error.message &&
+        (error.message.includes("429") ||
+          error.message.includes("rate limit") ||
+          error.message.includes("Daily message limit"))
+      ) {
+        setLimitReached(true);
+        setLimitModalOpen(true);
+        setRemainingMessages(0);
+      }
+      // Reset waiting state if there's an error
+      setIsWaitingForResponse(false);
+    }
+  }, [error]);
 
   // Handle manual submission with session readiness check
   const handleManualSubmit = (messageText: string) => {
+    if (limitReached) {
+      setLimitModalOpen(true);
+      return;
+    }
+
     if (!sessionReady) {
       setPendingMessage(messageText);
       return;
     }
+
+    // Set waiting indicator when submitting
+    setIsWaitingForResponse(true);
 
     // Use the existing handleSubmit function
     const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
@@ -220,10 +310,18 @@ export function Chat({
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (limitReached) {
+      setLimitModalOpen(true);
+      return;
+    }
+
     if (!sessionReady) {
       setPendingMessage(input);
       return;
     }
+
+    // Set waiting indicator when submitting
+    setIsWaitingForResponse(true);
 
     handleSubmit(e);
   };
@@ -234,7 +332,7 @@ export function Chat({
     if (messagesContainer) {
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isWaitingForResponse]);
 
   // Helper function to render message parts
   const renderMessagePart = (part: any) => {
@@ -302,7 +400,50 @@ export function Chat({
   };
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-background relative">
+      {/* Message limit modal */}
+      <Dialog open={limitModalOpen} onOpenChange={setLimitModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-red-500" />
+              Daily Message Limit Reached
+            </DialogTitle>
+            <DialogDescription>
+              You've reached your daily message limit. Please try again tomorrow
+              when your limit resets.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Your limit will reset at midnight
+          </p>
+        </DialogContent>
+      </Dialog>
+
+      {/* Limit reached overlay */}
+      {limitReached && (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center gap-4 p-6">
+          <div className="rounded-full bg-red-100 dark:bg-red-900/30 p-3">
+            <Lock className="h-8 w-8 text-red-500 dark:text-red-400" />
+          </div>
+          <h3 className="text-xl font-semibold">Message Limit Reached</h3>
+          <p className="text-center text-muted-foreground max-w-md">
+            You've used all your daily messages. Your limit will reset at
+            midnight.
+          </p>
+        </div>
+      )}
+
+      {/* Messages counter */}
+      {remainingMessages !== null && !limitReached && (
+        <div className="px-4 py-2 border-b border-border bg-muted/30 text-xs text-muted-foreground flex justify-end">
+          <span>
+            {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
+            remaining today
+          </span>
+        </div>
+      )}
+
       {/* Session not ready warning */}
       {!sessionReady && sessionCheckAttempts > 2 && (
         <div className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 p-2 rounded-md mb-2 flex items-center gap-2">
@@ -319,63 +460,89 @@ export function Chat({
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
-          messages.map((message, index) => (
-            <div
-              key={message.id || `message-${index}`}
-              className={`flex flex-col ${
-                message.role === "user" ? "items-end" : "items-start"
-              }`}
-            >
-              <Card
-                className={`max-w-[80%] ${
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-card text-card-foreground"
+          <>
+            {messages.map((message, index) => (
+              <div
+                key={message.id || `message-${index}`}
+                className={`flex flex-col ${
+                  message.role === "user" ? "items-end" : "items-start"
                 }`}
               >
-                <CardContent className="p-4">
-                  {message.parts?.length ? (
-                    message.parts.map((part, i) => (
-                      <div key={i}>{renderMessagePart(part)}</div>
-                    ))
-                  ) : (
-                    <div className="text-sm">{message.content}</div>
-                  )}
-                </CardContent>
-              </Card>
-              {message.role === "assistant" && (
-                <button
-                  className="text-[10px] text-muted-foreground hover:text-foreground mt-0.5 flex items-center gap-1"
-                  onClick={() => handleRestore(message.id)}
-                  disabled={restoringMessageId !== null}
+                <Card
+                  className={`max-w-[80%] ${
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-card-foreground"
+                  }`}
                 >
-                  {restoringMessageId === message.id && (
-                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                  )}
-                  Restore Checkpoint
-                </button>
-              )}
-            </div>
-          ))
-        )}
-
-        {/* Pending message indicator */}
-        {pendingMessage &&
-          !messages.some((m) => m.content === pendingMessage) && (
-            <div className="flex flex-col items-end">
-              <Card className="max-w-[80%] bg-primary/70 text-primary-foreground">
-                <CardContent className="p-4">
-                  <div className="text-sm flex items-center gap-2">
-                    <span>{pendingMessage}</span>
-                    <Loader2 className="h-3 w-3 animate-spin opacity-70" />
-                  </div>
-                </CardContent>
-              </Card>
-              <div className="text-[10px] text-muted-foreground mt-0.5">
-                Waiting for session...
+                  <CardContent className="p-4">
+                    {message.parts?.length ? (
+                      message.parts.map((part, i) => (
+                        <div key={i}>{renderMessagePart(part)}</div>
+                      ))
+                    ) : (
+                      <div className="text-sm">{message.content}</div>
+                    )}
+                  </CardContent>
+                </Card>
+                {message.role === "assistant" && (
+                  <button
+                    className="text-[10px] text-muted-foreground hover:text-foreground mt-0.5 flex items-center gap-1"
+                    onClick={() => handleRestore(message.id)}
+                    disabled={restoringMessageId !== null || limitReached}
+                  >
+                    {restoringMessageId === message.id && (
+                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                    )}
+                    Restore Checkpoint
+                  </button>
+                )}
               </div>
-            </div>
-          )}
+            ))}
+
+            {/* Waiting for AI response indicator (three dots) */}
+            {isWaitingForResponse && (
+              <div className="flex flex-col items-start">
+                <Card className="max-w-[80%] bg-card text-card-foreground">
+                  <CardContent className="p-4">
+                    <div className="flex space-x-1">
+                      <div
+                        className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      ></div>
+                      <div
+                        className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      ></div>
+                      <div
+                        className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce"
+                        style={{ animationDelay: "600ms" }}
+                      ></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Pending message indicator */}
+            {pendingMessage &&
+              !messages.some((m) => m.content === pendingMessage) && (
+                <div className="flex flex-col items-end">
+                  <Card className="max-w-[80%] bg-primary/70 text-primary-foreground">
+                    <CardContent className="p-4">
+                      <div className="text-sm flex items-center gap-2">
+                        <span>{pendingMessage}</span>
+                        <Loader2 className="h-3 w-3 animate-spin opacity-70" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    Waiting for session...
+                  </div>
+                </div>
+              )}
+          </>
+        )}
       </div>
 
       {/* Input area - fixed at bottom */}
@@ -384,16 +551,33 @@ export function Chat({
           <Input
             value={input}
             onChange={handleInputChange}
-            placeholder="Type your message..."
+            placeholder={
+              limitReached
+                ? "Daily message limit reached"
+                : "Type your message..."
+            }
             className="flex-1"
-            disabled={sessionCheckAttempts >= maxSessionCheckAttempts}
+            disabled={
+              sessionCheckAttempts >= maxSessionCheckAttempts ||
+              limitReached ||
+              isWaitingForResponse
+            }
           />
           <Button
             type="submit"
             size="icon"
-            disabled={sessionCheckAttempts >= maxSessionCheckAttempts}
+            disabled={
+              sessionCheckAttempts >= maxSessionCheckAttempts ||
+              limitReached ||
+              isWaitingForResponse ||
+              !input.trim()
+            }
           >
-            <Send className="h-4 w-4" />
+            {isWaitingForResponse ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </form>
 

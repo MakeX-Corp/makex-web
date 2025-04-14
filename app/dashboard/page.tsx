@@ -9,6 +9,10 @@ import Link from "next/link";
 import { getAuthToken } from "@/utils/client/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { DiscordSupportButton } from "@/components/support-button";
+
 interface UserApp {
   id: string;
   user_id: string;
@@ -18,13 +22,24 @@ interface UserApp {
   updated_at: string;
 }
 
+interface ContainerLimitError {
+  error: string;
+  currentCount: number;
+  maxAllowed: number;
+}
+
 // This is a child component that will be rendered inside the SubscriptionAuthWrapper
 export default function Dashboard() {
   const [userApps, setUserApps] = useState<UserApp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [deletingAppIds, setDeletingAppIds] = useState<Set<string>>(new Set());
+  const [limitError, setLimitError] = useState<ContainerLimitError | null>(
+    null
+  );
   const { toast } = useToast();
   const router = useRouter();
+
   const handleManageSubscription = async () => {
     try {
       const decodedToken = getAuthToken();
@@ -80,6 +95,9 @@ export default function Dashboard() {
 
   const handleCreateApp = async () => {
     try {
+      // Clear any previous limit errors
+      setLimitError(null);
+
       const decodedToken = getAuthToken();
 
       if (!decodedToken) {
@@ -95,12 +113,28 @@ export default function Dashboard() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create app");
+        const errorData = await response.json();
+
+        // Check if this is a container limit error
+        if (
+          response.status === 400 &&
+          errorData.currentCount !== undefined &&
+          errorData.maxAllowed !== undefined
+        ) {
+          setLimitError(errorData as ContainerLimitError);
+          throw new Error(errorData.error);
+        }
+
+        throw new Error(errorData.error || "Failed to create app");
       }
 
       const newApp = await response.json();
       setUserApps((prev) => [...prev, newApp]);
+
+      toast({
+        title: "Success",
+        description: "New app created successfully!",
+      });
     } catch (error) {
       console.error("Error creating app:", error);
       toast({
@@ -116,6 +150,9 @@ export default function Dashboard() {
 
   const handleDeleteApp = async (appId: string) => {
     try {
+      // Set this app as deleting to show skeleton
+      setDeletingAppIds((prev) => new Set([...prev, appId]));
+
       const decodedToken = getAuthToken();
 
       if (!decodedToken) {
@@ -136,6 +173,11 @@ export default function Dashboard() {
 
       setUserApps((prev) => prev.filter((app) => app.id !== appId));
 
+      // Clear any limit errors if they exist
+      if (limitError) {
+        setLimitError(null);
+      }
+
       toast({
         title: "Success",
         description: "App deleted successfully",
@@ -149,6 +191,13 @@ export default function Dashboard() {
           error instanceof Error
             ? error.message
             : "An error occurred while deleting the app",
+      });
+    } finally {
+      // Remove this app from the deleting set
+      setDeletingAppIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(appId);
+        return newSet;
       });
     }
   };
@@ -242,6 +291,26 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {limitError && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Container Limit Reached</AlertTitle>
+          <AlertDescription>
+            You have reached your maximum limit of {limitError.maxAllowed}{" "}
+            container{limitError.maxAllowed !== 1 ? "s" : ""}. Please delete an
+            existing app before creating a new one, or upgrade your subscription
+            for more containers.
+          </AlertDescription>
+          <Button
+            variant="outline"
+            className="mt-2"
+            onClick={() => setLimitError(null)}
+          >
+            Dismiss
+          </Button>
+        </Alert>
+      )}
+
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(3)].map((_, index) => (
@@ -262,37 +331,43 @@ export default function Dashboard() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {userApps.map((app) => (
-            <Card key={app.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-4">
-                <h2 className="font-semibold mb-2">{app.app_name}</h2>
-                <p className="text-sm text-muted-foreground">
-                  Created: {new Date(app.created_at).toLocaleDateString()}
-                </p>
-                {app.app_url && (
-                  <p className="text-sm text-muted-foreground truncate">
-                    URL: {app.app_url}
+          {userApps.map((app) =>
+            deletingAppIds.has(app.id) ? (
+              <AppCardSkeleton key={app.id} />
+            ) : (
+              <Card key={app.id} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  <h2 className="font-semibold mb-2">{app.app_name}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Created: {new Date(app.created_at).toLocaleDateString()}
                   </p>
-                )}
-                <div className="mt-4 space-y-2">
-                  <Link href={`/ai-editor/${app.id}`}>
-                    <Button variant="outline" className="w-full">
-                      Edit App
+                  {app.app_url && (
+                    <p className="text-sm text-muted-foreground truncate">
+                      URL: {app.app_url}
+                    </p>
+                  )}
+                  <div className="mt-4 space-y-2">
+                    <Link href={`/ai-editor/${app.id}`}>
+                      <Button variant="outline" className="w-full">
+                        Edit App
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => handleDeleteApp(app.id)}
+                    >
+                      Delete App
                     </Button>
-                  </Link>
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    onClick={() => handleDeleteApp(app.id)}
-                  >
-                    Delete App
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          )}
         </div>
       )}
+
+      <DiscordSupportButton />
     </div>
   );
 }
