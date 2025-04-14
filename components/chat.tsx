@@ -220,8 +220,11 @@ export function Chat({
     },
     maxSteps: 5,
     onToolCall: async ({ toolCall }) => {
-      // Handle tool calls here
+      // When a tool is called, ensure waiting indicator stays visible
+      setIsWaitingForResponse(true);
+
       console.log("toolCall", toolCall);
+      // Your existing tool call handling
       addToolResult({ toolCallId: toolCall.toolCallId, result: "Test" });
     },
     onResponse: async (response) => {
@@ -233,8 +236,9 @@ export function Chat({
         setRemainingMessages(0);
         return;
       }
-      // Set waiting to false once response starts
-      setIsWaitingForResponse(false);
+
+      // Do NOT set waiting to false here
+      // We'll keep the waiting indicator until onFinish
     },
     onFinish: async (message, options) => {
       // Save the AI message
@@ -259,6 +263,9 @@ export function Chat({
       } catch (error) {
         console.error("Error saving AI message:", error);
       }
+
+      // Only remove the waiting indicator when everything is complete
+      setIsWaitingForResponse(false);
 
       if (onResponseComplete) {
         onResponseComplete();

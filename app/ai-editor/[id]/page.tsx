@@ -14,6 +14,7 @@ import { getAuthToken } from "@/utils/client/auth";
 import { AppEditorSkeleton } from "@/app/components/AppEditorSkeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DiscordSupportButton } from "@/components/support-button";
 
 interface AppDetails {
   id: string;
@@ -466,6 +467,7 @@ export default function AppEditor() {
             </CardContent>
           </Card>
         </div>
+        <DiscordSupportButton />
       </div>
     </>
   );
