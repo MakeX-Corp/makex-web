@@ -32,6 +32,8 @@ interface ContainerLimitError {
 export default function Dashboard() {
   const [userApps, setUserApps] = useState<UserApp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreatingApp, setIsCreatingApp] = useState(false);
+  const [editingAppId, setEditingAppId] = useState<string | null>(null);
   const [deletingAppIds, setDeletingAppIds] = useState<Set<string>>(new Set());
   const [limitError, setLimitError] = useState<ContainerLimitError | null>(
     null
@@ -113,6 +115,7 @@ export default function Dashboard() {
 
   const handleCreateApp = async () => {
     try {
+      setIsCreatingApp(true);
       // Clear any previous limit errors
       setLimitError(null);
 
@@ -163,6 +166,8 @@ export default function Dashboard() {
             ? error.message
             : "An error occurred while creating the app",
       });
+    } finally {
+      setIsCreatingApp(false);
     }
   };
 
@@ -296,9 +301,20 @@ export default function Dashboard() {
               "Manage Subscription"
             )}
           </Button>
-          <Button onClick={handleCreateApp} disabled={isLoading}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create New App
+          <Button
+            onClick={handleCreateApp}
+            disabled={isLoading || isCreatingApp}
+          >
+            {isCreatingApp ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New App
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -335,9 +351,20 @@ export default function Dashboard() {
             <p className="text-muted-foreground mb-4">
               You haven't created any apps yet
             </p>
-            <Button onClick={handleCreateApp}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Your First App
+            <Button
+              onClick={handleCreateApp}
+              disabled={isLoading || isCreatingApp}
+            >
+              {isCreatingApp ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First App
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>
@@ -360,8 +387,19 @@ export default function Dashboard() {
                   )}
                   <div className="mt-4 space-y-2">
                     <Link href={`/ai-editor/${app.id}`}>
-                      <Button variant="default" className="w-full">
-                        Edit App
+                      <Button
+                        variant="default"
+                        className="w-full"
+                        onClick={() => setEditingAppId(app.id)}
+                        disabled={editingAppId === app.id}
+                      >
+                        {editingAppId === app.id ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          </>
+                        ) : (
+                          "Edit App"
+                        )}
                       </Button>
                     </Link>
                     <Button
