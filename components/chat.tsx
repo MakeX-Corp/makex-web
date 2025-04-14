@@ -185,10 +185,6 @@ export function Chat({
 
       // Only remove the waiting indicator when everything is complete
       setIsWaitingForResponse(false);
-
-      if (onResponseComplete) {
-        onResponseComplete();
-      }
     },
   });
 
