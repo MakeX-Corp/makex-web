@@ -220,8 +220,11 @@ export function Chat({
     },
     maxSteps: 5,
     onToolCall: async ({ toolCall }) => {
-      // Handle tool calls here
+      // When a tool is called, ensure waiting indicator stays visible
+      setIsWaitingForResponse(true);
+
       console.log("toolCall", toolCall);
+      // Your existing tool call handling
       addToolResult({ toolCallId: toolCall.toolCallId, result: "Test" });
     },
     onResponse: async (response) => {
@@ -233,8 +236,9 @@ export function Chat({
         setRemainingMessages(0);
         return;
       }
-      // Set waiting to false once response starts
-      setIsWaitingForResponse(false);
+
+      // Do NOT set waiting to false here
+      // We'll keep the waiting indicator until onFinish
     },
     onFinish: async (message, options) => {
       // Save the AI message
@@ -259,6 +263,9 @@ export function Chat({
       } catch (error) {
         console.error("Error saving AI message:", error);
       }
+
+      // Only remove the waiting indicator when everything is complete
+      setIsWaitingForResponse(false);
 
       if (onResponseComplete) {
         onResponseComplete();
@@ -434,25 +441,6 @@ export function Chat({
         </div>
       )}
 
-      {/* Messages counter */}
-      {remainingMessages !== null && !limitReached && (
-        <div className="px-4 py-2 border-b border-border bg-muted/30 text-xs text-muted-foreground flex justify-end">
-          <span>
-            {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
-            remaining today
-          </span>
-        </div>
-      )}
-
-      {/* Session not ready warning */}
-      {!sessionReady && sessionCheckAttempts > 2 && (
-        <div className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 p-2 rounded-md mb-2 flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4" />
-          <span className="text-sm">Preparing your chat session...</span>
-          {pendingMessage && <span className="text-xs">(Message pending)</span>}
-        </div>
-      )}
-
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {isLoading ? (
@@ -580,6 +568,15 @@ export function Chat({
             )}
           </Button>
         </form>
+
+        {remainingMessages !== null && !limitReached && (
+          <div className="text-xs text-muted-foreground flex justify-end mt-2">
+            <span>
+              {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
+              remaining today
+            </span>
+          </div>
+        )}
 
         {sessionCheckAttempts >= maxSessionCheckAttempts && (
           <div className="text-red-500 text-xs mt-1">
