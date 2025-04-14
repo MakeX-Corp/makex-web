@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
@@ -32,23 +32,39 @@ interface ContainerLimitError {
 export default function Dashboard() {
   const [userApps, setUserApps] = useState<UserApp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [customerId, setCustomerId] = useState<string | null>(null);
   const [deletingAppIds, setDeletingAppIds] = useState<Set<string>>(new Set());
   const [limitError, setLimitError] = useState<ContainerLimitError | null>(
     null
   );
+  const [isManagingSubscription, setIsManagingSubscription] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
   const handleManageSubscription = async () => {
     try {
+      setIsManagingSubscription(true);
       const decodedToken = getAuthToken();
 
       if (!decodedToken) {
         throw new Error("No authentication token found");
       }
+
+      // First fetch subscription data to get customer ID
+      const subscriptionResponse = await fetch("/api/subscription", {
+        headers: {
+          Authorization: `Bearer ${decodedToken}`,
+        },
+      });
+
+      if (!subscriptionResponse.ok) {
+        const error = await subscriptionResponse.json();
+        throw new Error(error.error || "Failed to fetch subscription data");
+      }
+
+      const subscriptionData = await subscriptionResponse.json();
+
       // If we don't have a customer ID, redirect to pricing
-      if (!customerId) {
+      if (!subscriptionData.customerId) {
         router.push("/pricing");
         return;
       }
@@ -61,7 +77,7 @@ export default function Dashboard() {
           Authorization: `Bearer ${decodedToken}`,
         },
         body: JSON.stringify({
-          customerId: customerId,
+          customerId: subscriptionData.customerId,
         }),
       });
 
@@ -90,6 +106,8 @@ export default function Dashboard() {
       });
       // Fallback to pricing page on error
       router.push("/pricing");
+    } finally {
+      setIsManagingSubscription(false);
     }
   };
 
@@ -227,22 +245,6 @@ export default function Dashboard() {
         const apps = await appsResponse.json();
         console.log(apps);
         setUserApps(apps);
-
-        // Fetch subscription data to get customer ID
-        const subscriptionResponse = await fetch("/api/subscription", {
-          headers: {
-            Authorization: `Bearer ${decodedToken}`,
-          },
-        });
-
-        if (subscriptionResponse.ok) {
-          const subscriptionData = await subscriptionResponse.json();
-          // Save the customer ID for later use
-          console.log(subscriptionData);
-          if (subscriptionData && subscriptionData.customerId) {
-            setCustomerId(subscriptionData.customerId);
-          }
-        }
       } catch (error) {
         console.error("Error fetching initial data:", error);
         toast({
@@ -281,8 +283,18 @@ export default function Dashboard() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">My Apps</h1>
         <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={handleManageSubscription}>
-            Manage Subscription
+          <Button
+            variant="outline"
+            onClick={handleManageSubscription}
+            disabled={isManagingSubscription}
+          >
+            {isManagingSubscription ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              </>
+            ) : (
+              "Manage Subscription"
+            )}
           </Button>
           <Button onClick={handleCreateApp} disabled={isLoading}>
             <Plus className="h-4 w-4 mr-2" />
