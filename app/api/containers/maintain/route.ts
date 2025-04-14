@@ -18,9 +18,9 @@ const createAppMutation = `
   }
 `;
 
-const allocateIpv4Mutation = `
+const allocateIpv6Mutation = `
   mutation($appId: ID!) {
-    allocateIpAddress(input: { appId: $appId, type: v4 }) {
+    allocateIpAddress(input: { appId: $appId, type: v6 }) {
       ipAddress {
         id
         address
@@ -198,8 +198,6 @@ export async function GET(request: Request) {
         // Create exactly the number of needed containers
         for (let i = 0; i < neededContainers; i++) {
             const appName = generateContainerName();
-            const appUrl = `https://${appName}.fly.dev`;
-
             // Create app and allocate IP
             const appResponse = await axios.post(
                 FLY_API_URL,
@@ -221,10 +219,10 @@ export async function GET(request: Request) {
             const appId = appResponse.data?.data?.createApp?.app?.id;
 
             // Allocate IPv4
-            await axios.post(
+            const ipv4Response = await axios.post(
                 FLY_API_URL,
                 {
-                    query: allocateIpv4Mutation,
+                    query: allocateIpv6Mutation,
                     variables: { appId }
                 },
                 {
@@ -234,6 +232,8 @@ export async function GET(request: Request) {
                     }
                 }
             );
+            
+            console.log(`[IPv4 Allocation] Success response:`, ipv4Response.data);
 
             // Create machine with config
             console.log(`Creating volume for app: ${appName}`);
