@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Lock, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
@@ -12,7 +12,9 @@ import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { DiscordSupportButton } from "@/components/support-button";
-
+import { Input } from "@/components/ui/input";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+const INVITE_CODE_REQUIRED = true;
 interface UserApp {
   id: string;
   user_id: string;
@@ -28,7 +30,6 @@ interface ContainerLimitError {
   maxAllowed: number;
 }
 
-// This is a child component that will be rendered inside the SubscriptionAuthWrapper
 export default function Dashboard() {
   const [userApps, setUserApps] = useState<UserApp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,8 +40,107 @@ export default function Dashboard() {
     null
   );
   const [isManagingSubscription, setIsManagingSubscription] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+  const [inviteCodeVerified, setInviteCodeVerified] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const supabase = createClientComponentClient();
+
+  const verifyInviteCode = async () => {
+    if (!inviteCode.trim()) return;
+
+    setInviteError(null);
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("Not authenticated");
+      }
+
+      // Check if invite code exists and is valid
+      const { data, error } = await supabase
+        .from("invite_codes")
+        .select("*")
+        .eq("code", inviteCode)
+        .single();
+
+      if (error || !data) {
+        setInviteError("Invalid invite code");
+        return;
+      }
+
+      // Check if code is already used
+      if (data.user_id) {
+        setInviteError("This invite code has already been used");
+        return;
+      }
+
+      // Assign the invite code to this user
+      const { error: updateError } = await supabase
+        .from("invite_codes")
+        .update({ user_id: user.id })
+        .eq("code", inviteCode);
+
+      if (updateError) {
+        throw new Error("Failed to verify invite code");
+      }
+
+      // Success! Invite code verified
+      setInviteCodeVerified(true);
+      setIsLoading(true);
+
+      // Now fetch user apps
+      fetchUserApps();
+    } catch (error) {
+      console.error("Error verifying invite code:", error);
+      setInviteError(
+        error instanceof Error
+          ? error.message
+          : "An error occurred while verifying the invite code"
+      );
+    }
+  };
+
+  const fetchUserApps = async () => {
+    try {
+      const decodedToken = getAuthToken();
+
+      if (!decodedToken) {
+        throw new Error("No authentication token found");
+      }
+
+      // Fetch user apps
+      const appsResponse = await fetch("/api/app", {
+        headers: {
+          Authorization: `Bearer ${decodedToken}`,
+        },
+      });
+
+      if (!appsResponse.ok) {
+        const error = await appsResponse.json();
+        throw new Error(error.error || "Failed to fetch apps");
+      }
+
+      const apps = await appsResponse.json();
+      setUserApps(apps);
+    } catch (error) {
+      console.error("Error fetching user apps:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred while fetching apps",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleManageSubscription = async () => {
     try {
@@ -224,8 +324,6 @@ export default function Dashboard() {
       });
     }
   };
-
-  // Fetch initial user apps and subscription data
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -233,6 +331,34 @@ export default function Dashboard() {
 
         if (!decodedToken) {
           throw new Error("No authentication token found");
+        }
+        // If invite code system is enabled, check verification first
+        if (INVITE_CODE_REQUIRED) {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+
+          if (!user) {
+            router.push("/login");
+            return;
+          }
+
+          // Check if this user already has a verified invite code
+          const { data } = await supabase
+            .from("invite_codes")
+            .select("*")
+            .eq("user_id", user.id)
+            .single();
+
+          // If no verified code, stop loading and show invite input
+          if (!data) {
+            setInviteCodeVerified(false);
+            setIsLoading(false);
+            return;
+          }
+
+          // Code verified, continue to load apps
+          setInviteCodeVerified(true);
         }
 
         // Fetch user apps
@@ -248,7 +374,6 @@ export default function Dashboard() {
         }
 
         const apps = await appsResponse.json();
-        console.log(apps);
         setUserApps(apps);
       } catch (error) {
         console.error("Error fetching initial data:", error);
@@ -267,7 +392,6 @@ export default function Dashboard() {
 
     fetchInitialData();
   }, []);
-
   // Add this new component for the skeleton loading state
   const AppCardSkeleton = () => (
     <Card className="hover:shadow-lg transition-shadow">
@@ -282,6 +406,65 @@ export default function Dashboard() {
       </CardContent>
     </Card>
   );
+
+  // If the invite code hasn't been verified yet, show the invite code screen
+  if (!inviteCodeVerified && !isLoading) {
+    return (
+      <div className="container mx-auto p-8 flex items-center justify-center min-h-[80vh]">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8">
+            <div className="flex flex-col items-center mb-6">
+              <Lock className="h-12 w-12 text-primary mb-4" />
+              <h1 className="text-2xl font-bold text-center">
+                Access Required
+              </h1>
+              <p className="text-muted-foreground text-center mt-2">
+                Enter your invite code to access the dashboard
+              </p>
+            </div>
+
+            {inviteError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{inviteError}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="inviteCode" className="text-sm font-medium">
+                  Invite Code
+                </label>
+                <Input
+                  id="inviteCode"
+                  placeholder="Enter your invite code"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      verifyInviteCode();
+                    }
+                  }}
+                />
+              </div>
+
+              <Button
+                className="w-full"
+                onClick={verifyInviteCode}
+                disabled={!inviteCode.trim()}
+              >
+                Verify Invite Code
+              </Button>
+
+              <p className="text-sm text-muted-foreground text-center mt-4">
+                Need an invite code? Contact support for assistance.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-8">
