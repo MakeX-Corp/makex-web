@@ -4,8 +4,8 @@ import { useChat } from "@ai-sdk/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Terminal, AlertTriangle, Lock } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { Send, Loader2, Terminal, Lock } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -34,17 +34,12 @@ export function Chat({
   const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
     null
   );
-  const [sessionReady, setSessionReady] = useState(false);
-  const [pendingMessage, setPendingMessage] = useState("");
-  const [sessionCheckAttempts, setSessionCheckAttempts] = useState(0);
   const [limitReached, setLimitReached] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
   const [remainingMessages, setRemainingMessages] = useState<number | null>(
     null
   );
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
-  const maxSessionCheckAttempts = 10;
-  const sessionCheckRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check daily message limit
   const checkMessageLimit = async () => {
@@ -68,87 +63,12 @@ export function Chat({
     }
   };
 
-  // Check if session exists and is ready
-  const checkSessionReady = async () => {
-    if (!sessionId || !appId) return;
-
-    try {
-      const response = await fetch(
-        `/api/chat?sessionId=${sessionId}&appId=${appId}`,
-        {
-          headers: {
-            Authorization: "Bearer " + authToken,
-          },
-        }
-      );
-
-      if (response.ok) {
-        setSessionReady(true);
-        if (sessionCheckRef.current) {
-          clearInterval(sessionCheckRef.current);
-          sessionCheckRef.current = null;
-        }
-        return true;
-      }
-
-      // Increment attempts
-      setSessionCheckAttempts((prev) => {
-        const newAttempts = prev + 1;
-        if (newAttempts >= maxSessionCheckAttempts) {
-          if (sessionCheckRef.current) {
-            clearInterval(sessionCheckRef.current);
-            sessionCheckRef.current = null;
-          }
-          if (onSessionError) {
-            onSessionError("Session creation timed out. Please try again.");
-          }
-        }
-        return newAttempts;
-      });
-
-      return false;
-    } catch (error) {
-      console.error("Error checking session:", error);
-      return false;
-    }
-  };
-
   // Check message limit on initial load
   useEffect(() => {
     checkMessageLimit();
   }, []);
 
-  // Effect to set up session check interval
-  useEffect(() => {
-    if (sessionId && appId && !sessionReady && !sessionCheckRef.current) {
-      // Check immediately
-      checkSessionReady();
-
-      // Then set up interval (starting with shorter intervals, increasing over time)
-      sessionCheckRef.current = setInterval(() => {
-        const currentAttempt = sessionCheckAttempts;
-        // Exponential backoff: 200ms, 400ms, 800ms, etc.
-        const delay = Math.min(200 * Math.pow(2, currentAttempt), 3000);
-
-        setTimeout(async () => {
-          const ready = await checkSessionReady();
-          if (ready && pendingMessage) {
-            // If we have a pending message and session is ready, submit it
-            handleManualSubmit(pendingMessage);
-            setPendingMessage("");
-          }
-        }, delay);
-      }, 1000);
-    }
-
-    return () => {
-      if (sessionCheckRef.current) {
-        clearInterval(sessionCheckRef.current);
-        sessionCheckRef.current = null;
-      }
-    };
-  }, [sessionId, appId, sessionReady]);
-
+  // Fetch initial messages for the session
   useEffect(() => {
     const fetchMessages = async () => {
       if (!sessionId || !appId) return;
@@ -170,6 +90,10 @@ export function Chat({
             setIsLoading(false);
             return;
           }
+
+          if (onSessionError) {
+            onSessionError("Failed to fetch messages");
+          }
           throw new Error("Failed to fetch messages");
         }
 
@@ -182,7 +106,6 @@ export function Chat({
             parts: msg.metadata.parts,
           }))
         );
-        setSessionReady(true);
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching messages:", error);
@@ -193,7 +116,7 @@ export function Chat({
     if (sessionId && appId) {
       fetchMessages();
     }
-  }, [sessionId, appId]);
+  }, [sessionId, appId, onSessionError]);
 
   const {
     messages,
@@ -222,7 +145,6 @@ export function Chat({
     onToolCall: async ({ toolCall }) => {
       // When a tool is called, ensure waiting indicator stays visible
       setIsWaitingForResponse(true);
-
       console.log("toolCall", toolCall);
       // Your existing tool call handling
       addToolResult({ toolCallId: toolCall.toolCallId, result: "Test" });
@@ -236,9 +158,6 @@ export function Chat({
         setRemainingMessages(0);
         return;
       }
-
-      // Do NOT set waiting to false here
-      // We'll keep the waiting indicator until onFinish
     },
     onFinish: async (message, options) => {
       // Save the AI message
@@ -293,27 +212,7 @@ export function Chat({
     }
   }, [error]);
 
-  // Handle manual submission with session readiness check
-  const handleManualSubmit = (messageText: string) => {
-    if (limitReached) {
-      setLimitModalOpen(true);
-      return;
-    }
-
-    if (!sessionReady) {
-      setPendingMessage(messageText);
-      return;
-    }
-
-    // Set waiting indicator when submitting
-    setIsWaitingForResponse(true);
-
-    // Use the existing handleSubmit function
-    const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
-    handleSubmit(fakeEvent);
-  };
-
-  // Wrapper for the form submission
+  // Handle form submission
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -322,14 +221,8 @@ export function Chat({
       return;
     }
 
-    if (!sessionReady) {
-      setPendingMessage(input);
-      return;
-    }
-
     // Set waiting indicator when submitting
     setIsWaitingForResponse(true);
-
     handleSubmit(e);
   };
 
@@ -357,8 +250,11 @@ export function Chat({
               {part.toolInvocation.state === "result" ? (
                 <>
                   <div className="text-muted-foreground">Result:</div>
-                  <pre className="bg-muted rounded-md p-2 overflow-x-auto">
-                    <code className="text-foreground">
+                  <pre className="bg-muted rounded-md p-2 overflow-x-auto max-w-full">
+                    <code
+                      className="text-foreground whitespace-pre-wrap break-all"
+                      style={{ wordBreak: "break-word" }}
+                    >
                       {JSON.stringify(part.toolInvocation.result, null, 2)}
                     </code>
                   </pre>
@@ -366,8 +262,11 @@ export function Chat({
               ) : (
                 <>
                   <div className="text-muted-foreground">Arguments:</div>
-                  <pre className="bg-muted rounded-md p-2 overflow-x-auto">
-                    <code className="text-foreground">
+                  <pre className="bg-muted rounded-md p-2 overflow-x-auto max-w-full">
+                    <code
+                      className="text-foreground whitespace-pre-wrap break-all"
+                      style={{ wordBreak: "break-word" }}
+                    >
                       {JSON.stringify(part.toolInvocation.args, null, 2)}
                     </code>
                   </pre>
@@ -511,24 +410,6 @@ export function Chat({
                 </Card>
               </div>
             )}
-
-            {/* Pending message indicator */}
-            {pendingMessage &&
-              !messages.some((m) => m.content === pendingMessage) && (
-                <div className="flex flex-col items-end">
-                  <Card className="max-w-[80%] bg-primary/70 text-primary-foreground">
-                    <CardContent className="p-4">
-                      <div className="text-sm flex items-center gap-2">
-                        <span>{pendingMessage}</span>
-                        <Loader2 className="h-3 w-3 animate-spin opacity-70" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">
-                    Waiting for session...
-                  </div>
-                </div>
-              )}
           </>
         )}
       </div>
@@ -545,20 +426,13 @@ export function Chat({
                 : "Type your message..."
             }
             className="flex-1"
-            disabled={
-              sessionCheckAttempts >= maxSessionCheckAttempts ||
-              limitReached ||
-              isWaitingForResponse
-            }
+            disabled={limitReached || isWaitingForResponse || isLoading}
           />
           <Button
             type="submit"
             size="icon"
             disabled={
-              sessionCheckAttempts >= maxSessionCheckAttempts ||
-              limitReached ||
-              isWaitingForResponse ||
-              !input.trim()
+              limitReached || isWaitingForResponse || !input.trim() || isLoading
             }
           >
             {isWaitingForResponse ? (
@@ -575,12 +449,6 @@ export function Chat({
               {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
               remaining today
             </span>
-          </div>
-        )}
-
-        {sessionCheckAttempts >= maxSessionCheckAttempts && (
-          <div className="text-red-500 text-xs mt-1">
-            Session creation timed out. Please try creating a new session.
           </div>
         )}
       </div>
