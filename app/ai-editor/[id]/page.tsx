@@ -58,7 +58,7 @@ export default function AppEditor() {
   useEffect(() => {
     setAuthToken(getAuthToken());
     const checkIsMobile = () => {
-      setIsMobileView(window.innerWidth < 1024);
+      setIsMobileView(window.innerWidth < 768);
     };
     checkIsMobile();
     window.addEventListener("resize", checkIsMobile);
