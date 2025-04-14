@@ -122,10 +122,10 @@ export default function Dashboard() {
           errorData.maxAllowed !== undefined
         ) {
           setLimitError(errorData as ContainerLimitError);
-          throw new Error(errorData.error);
+          return;
         }
 
-        //throw new Error(errorData.error || "Failed to create app");
+        throw new Error(errorData.error || "Failed to create app");
       }
 
       const newApp = await response.json();
