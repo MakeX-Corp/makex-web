@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, Terminal, Lock } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +41,25 @@ export function Chat({
   );
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
 
+  // Refs for tracking API calls - specific to this component instance
+  const limitsApiCalled = useRef(false);
+  const messagesApiCalled = useRef(false);
+
+  // Keep track of the current session/app for proper reset
+  const currentSessionId = useRef(sessionId);
+  const currentAppId = useRef(appId);
+
+  // Reset tracking if session/app changes
+  if (
+    currentSessionId.current !== sessionId ||
+    currentAppId.current !== appId
+  ) {
+    limitsApiCalled.current = false;
+    messagesApiCalled.current = false;
+    currentSessionId.current = sessionId;
+    currentAppId.current = appId;
+  }
+
   // Check daily message limit
   const checkMessageLimit = async () => {
     try {
@@ -63,18 +82,49 @@ export function Chat({
     }
   };
 
-  // Check message limit on initial load
+  // Initial limits check - separate useEffect
   useEffect(() => {
-    checkMessageLimit();
-  }, []);
+    const fetchLimits = async () => {
+      if (limitsApiCalled.current) {
+        return;
+      }
 
-  // Fetch initial messages for the session
-  useEffect(() => {
-    const fetchMessages = async () => {
-      if (!sessionId || !appId) return;
+      limitsApiCalled.current = true;
 
       try {
-        setIsLoading(true);
+        const response = await fetch("/api/chat/limits", {
+          headers: {
+            Authorization: "Bearer " + authToken,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setRemainingMessages(data.remaining);
+
+          if (data.remaining <= 0) {
+            setLimitReached(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking limits:", error);
+      }
+    };
+
+    fetchLimits();
+  }, [authToken]);
+
+  // Fetch initial messages - separate useEffect
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!sessionId || !appId || messagesApiCalled.current) {
+        return;
+      }
+
+      messagesApiCalled.current = true;
+      setIsLoading(true);
+
+      try {
         const response = await fetch(
           `/api/chat?sessionId=${sessionId}&appId=${appId}`,
           {
@@ -106,17 +156,15 @@ export function Chat({
             parts: msg.metadata.parts,
           }))
         );
-        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching messages:", error);
+      } finally {
         setIsLoading(false);
       }
     };
 
-    if (sessionId && appId) {
-      fetchMessages();
-    }
-  }, [sessionId, appId, onSessionError]);
+    fetchMessages();
+  }, [sessionId, appId, authToken, onSessionError]);
 
   const {
     messages,
@@ -182,7 +230,9 @@ export function Chat({
       } catch (error) {
         console.error("Error saving AI message:", error);
       }
-
+      if (onResponseComplete) {
+        onResponseComplete();
+      }
       // Only remove the waiting indicator when everything is complete
       setIsWaitingForResponse(false);
     },
