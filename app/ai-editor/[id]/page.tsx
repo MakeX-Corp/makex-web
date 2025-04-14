@@ -404,6 +404,7 @@ export default function AppEditor() {
             <CardContent className="p-4 h-full">
               {currentSessionId ? (
                 <Chat
+                  key={currentSessionId}
                   appId={appId}
                   appUrl={app.app_url || ""}
                   authToken={authToken || ""}
