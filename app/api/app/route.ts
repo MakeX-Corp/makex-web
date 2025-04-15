@@ -23,7 +23,6 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SERVICE_KEY!
   );
 
-
   // Get one available container from the pool using admin because the user doesn't have access to the table
   const { data: container, error: containerError } = await supabaseAdmin
     .from("available_containers")
@@ -38,31 +37,37 @@ export async function POST(request: Request) {
     );
   }
 
-    console.log("container", container);
+  console.log("container", container);
 
-    // get initial commit by doing /checkpoint/save
-    const API_BASE = container.app_url.replace("makex.app", "fly.dev") + ":8001";
-    const fileBackendClient = createFileBackendApiClient(API_BASE);
-    const saveCheckpointResponse = await fileBackendClient.post(
-      "/checkpoint/save",
-      {
-        name: "ai-assistant-checkpoint",
-        message: "Checkpoint after AI assistant changes",
-      }
-    );
+  const appUrl = new URL(container.app_url);
+  console.log("API_BASE", appUrl);
+  const hostname = appUrl.hostname.replace("makex.app", "fly.dev");
+  console.log("hostname", hostname);
+  const API_BASE = `${hostname}:8001`;
+  console.log("API_BASE", API_BASE);
+
+  const fileBackendClient = createFileBackendApiClient(API_BASE);
+  console.log("fileBackendClient", fileBackendClient);
+  const saveCheckpointResponse = await fileBackendClient.post(
+    "/checkpoint/save",
+    {
+      name: "ai-assistant-checkpoint",
+      message: "Checkpoint after AI assistant changes",
+    }
+  );
 
   console.log("saveCheckpointResponse", saveCheckpointResponse);
 
-
-    // Insert into user_apps
-    const { data: userApp, error: createError } = await supabase
+  // Insert into user_apps
+  const { data: userApp, error: createError } = await supabase
     .from("user_apps")
     .insert({
       user_id: user.id,
       app_name: container.app_name,
       app_url: container.app_url,
       machine_id: container.machine_id,
-      initial_commit: saveCheckpointResponse.current_commit || saveCheckpointResponse.commit,
+      initial_commit:
+        saveCheckpointResponse.current_commit || saveCheckpointResponse.commit,
     })
     .select()
     .single();
@@ -87,7 +92,6 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-
 
   return NextResponse.json(userApp);
 }
