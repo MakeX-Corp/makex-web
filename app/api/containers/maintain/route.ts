@@ -23,7 +23,7 @@ const CREATE_APP = `
 
 const ALLOC_IP = `
   mutation ($appId: ID!) {
-    allocateIpAddress(input: { appId: $appId, type: v6 }) {
+    allocateIpAddress(input: { appId: $appId, type: v4 }) {
       ipAddress { id address }
     }
   }
