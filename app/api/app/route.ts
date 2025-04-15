@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   console.log("API_BASE", appUrl);
   const hostname = appUrl.hostname.replace("makex.app", "fly.dev");
   console.log("hostname", hostname);
-  const API_BASE = `${hostname}:8001`;
+  const API_BASE = `https://${hostname}:8001`;
   console.log("API_BASE", API_BASE);
 
   const fileBackendClient = createFileBackendApiClient(API_BASE);
