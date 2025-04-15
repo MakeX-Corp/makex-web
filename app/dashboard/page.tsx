@@ -93,7 +93,7 @@ export default function Dashboard() {
         console.error("Error updating invite code:", error);
         throw new Error("Failed to update invite code");
       }
-    
+
       // Success! Invite code verified
       setInviteCodeVerified(true);
       setIsLoading(true);
@@ -477,7 +477,7 @@ export default function Dashboard() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">My Apps</h1>
         <div className="flex items-center gap-4">
-          <Button
+          {/*<Button
             variant="outline"
             onClick={handleManageSubscription}
             disabled={isManagingSubscription}
@@ -489,7 +489,7 @@ export default function Dashboard() {
             ) : (
               "Manage Subscription"
             )}
-          </Button>
+          </Button>*/}
           <Button
             onClick={handleCreateApp}
             disabled={isLoading || isCreatingApp}
