@@ -305,51 +305,6 @@ export function Chat({
     }
   };
 
-  /*
-  // Handle form submission with image
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (limitReached) {
-      setLimitModalOpen(true);
-      return;
-    }
-
-    // Set waiting indicator when submitting
-    setIsWaitingForResponse(true);
-
-    try {
-      // If there's an image, include it as an attachment
-      if (selectedImage) {
-        // Create an attachment object
-        const imageAttachment = {
-          name: selectedImage.name,
-          contentType: selectedImage.type,
-          url: await getBase64(selectedImage),
-        };
-
-        // Submit with the attachment
-        handleSubmit(e, {
-          experimental_attachments: [imageAttachment],
-        });
-
-        // Clean up after submitting
-        setSelectedImage(null);
-        setImagePreview(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-      } else {
-        // Regular text submission
-        handleSubmit(e);
-      }
-    } catch (error) {
-      console.error("Error processing message with image:", error);
-      setIsWaitingForResponse(false);
-    }
-  };
-*/
-
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
