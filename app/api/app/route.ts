@@ -48,13 +48,20 @@ export async function POST(request: Request) {
 
   const fileBackendClient = createFileBackendApiClient(API_BASE);
   console.log("fileBackendClient", fileBackendClient);
-  const saveCheckpointResponse = await fileBackendClient.post(
-    "/checkpoint/save",
-    {
+  let saveCheckpointResponse;
+  try {
+    saveCheckpointResponse = await fileBackendClient.post("/checkpoint/save", {
       name: "ai-assistant-checkpoint",
       message: "Checkpoint after AI assistant changes",
-    }
-  );
+    });
+    console.log("saveCheckpointResponse", saveCheckpointResponse);
+  } catch (error) {
+    console.error("Failed to save checkpoint:", error);
+    return NextResponse.json(
+      { error: "Failed to communicate with container" },
+      { status: 500 }
+    );
+  }
 
   console.log("saveCheckpointResponse", saveCheckpointResponse);
 
