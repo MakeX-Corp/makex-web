@@ -80,15 +80,20 @@ export default function Dashboard() {
       }
 
       // Assign the invite code to this user
-      const { error: updateError } = await supabase
-        .from("invite_codes")
-        .update({ user_id: user.id })
-        .eq("code", inviteCode);
+      try {
+        const { data: updateData, error: updateError } = await supabase
+          .from("invite_codes")
+          .update({ user_id: user.id })
+          .eq("code", inviteCode)
+          .select();
 
-      if (updateError) {
-        throw new Error("Failed to verify invite code");
+        console.log(updateData);
+        console.log(updateError);
+      } catch (error) {
+        console.error("Error updating invite code:", error);
+        throw new Error("Failed to update invite code");
       }
-
+    
       // Success! Invite code verified
       setInviteCodeVerified(true);
       setIsLoading(true);
@@ -457,11 +462,12 @@ export default function Dashboard() {
               </Button>
 
               <p className="text-sm text-muted-foreground text-center mt-4">
-                Need an invite code? Contact support for assistance.
+                Need an invite code? Join Discord !
               </p>
             </div>
           </CardContent>
         </Card>
+        <DiscordSupportButton />
       </div>
     );
   }
