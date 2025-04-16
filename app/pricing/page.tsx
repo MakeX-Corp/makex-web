@@ -11,9 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { initPaddle } from "@/utils/paddle-client";
-import { getAuthToken, decodeToken } from "@/utils/client/auth";
 import { useToast } from "@/components/ui/use-toast";
-
+import { useSubscription } from "@/hooks/use-subscription";
 interface PlanProps {
   name: string;
   description: string;
@@ -37,12 +36,7 @@ const plans: PlanProps[] = [
     description: "For professionals who need more power",
     price: "29",
     interval: "month",
-    features: [
-      "10 apps",
-      "Advanced AI editing",
-      "Priority support",
-      "Custom domains",
-    ],
+    features: ["10 apps", "Advanced AI editing", "Priority support"],
     priceId: process.env.NEXT_PUBLIC_PADDLE_PRO_ID || "",
   },
   {
@@ -50,27 +44,28 @@ const plans: PlanProps[] = [
     description: "For large organizations with complex needs",
     price: "199",
     interval: "month",
-    features: ["Unlimited apps", "Advanced AI editing", "Priority support"],
+    features: [
+      "Unlimited apps",
+      "Advanced AI editing",
+      "Priority support",
+      "Custom domains",
+    ],
     priceId: process.env.NEXT_PUBLIC_PADDLE_ENTERPRISE_ID || "",
   },
 ];
 
 export default function PricingPage() {
-  const [loading, setLoading] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-
+  const {
+    hasActiveSubscription,
+    pendingCancellation,
+    loading,
+    error,
+    userId,
+    planName,
+    subscriptionId,
+  } = useSubscription();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const token = getAuthToken();
-    if (token) {
-      const decoded = decodeToken(token);
-      if (decoded && decoded.sub) {
-        setUserId(decoded.sub);
-      }
-    }
-  }, []);
-
+  const [isLoading, setIsLoading] = useState<string | null>(null);
   const handleCheckout = async (priceId: string) => {
     const paddle = await initPaddle();
     if (!paddle) {
@@ -83,13 +78,7 @@ export default function PricingPage() {
     }
 
     try {
-      setLoading(priceId);
-      const token = getAuthToken();
-
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
+      setIsLoading(priceId);
 
       if (!userId) {
         toast({
@@ -99,21 +88,47 @@ export default function PricingPage() {
         });
         return;
       }
-
-      const checkout = paddle.Checkout.open({
-        items: [
-          {
-            priceId: priceId,
-            quantity: 1,
+      if (hasActiveSubscription) {
+        // Handle upgrade/downgrade for existing subscription
+        const updateResponse = await fetch("/api/subscription/update", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        ],
-        customData: {
-          userId: userId,
-        },
-        settings: {
-          successUrl: `${window.location.origin}/dashboard`,
-        },
-      });
+          body: JSON.stringify({
+            subscriptionId: subscriptionId,
+            priceId: priceId,
+            userId: userId,
+          }),
+        });
+        const result = await updateResponse.json();
+
+        if (result.success) {
+          toast({
+            title: "Success",
+            description: "Your subscription has been updated.",
+          });
+          // Redirect to dashboard or success page
+          window.location.href = `${window.location.origin}/dashboard`;
+        } else {
+          throw new Error(result.error || "Failed to update subscription");
+        }
+      } else {
+        const checkout = paddle.Checkout.open({
+          items: [
+            {
+              priceId: priceId,
+              quantity: 1,
+            },
+          ],
+          customData: {
+            userId: userId,
+          },
+          settings: {
+            successUrl: `${window.location.origin}/dashboard`,
+          },
+        });
+      }
     } catch (error) {
       console.error("Checkout error:", error);
       toast({
@@ -125,7 +140,7 @@ export default function PricingPage() {
             : "Failed to initiate checkout",
       });
     } finally {
-      setLoading(null);
+      setIsLoading(null);
     }
   };
   return (
@@ -164,9 +179,9 @@ export default function PricingPage() {
               <Button
                 className="w-full"
                 onClick={() => handleCheckout(plan.priceId)}
-                disabled={loading === plan.priceId}
+                disabled={isLoading === plan.priceId}
               >
-                {loading === plan.priceId ? "Processing..." : "Subscribe"}
+                {isLoading === plan.priceId ? "Processing..." : "Subscribe"}
               </Button>
             </CardFooter>
           </Card>

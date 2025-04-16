@@ -54,6 +54,7 @@ export async function GET(request: Request) {
       expiresAt: subscription?.current_period_end || null,
       planId: subscription?.price_id || null,
       customerId: subscription?.customer_id || null,
+      userId: user.id,
     });
   } catch (error) {
     console.error("Error fetching subscription:", error);

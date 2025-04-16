@@ -27,6 +27,20 @@ export default function ProfileSettings() {
   const supabase = createClientComponentClient();
   const router = useRouter();
 
+  const getPlanName = (planId: string | null) => {
+    if (!planId) return "Free";
+    switch (planId) {
+      case process.env.NEXT_PUBLIC_PADDLE_STARTER_ID:
+        return "Starter";
+      case process.env.NEXT_PUBLIC_PADDLE_PRO_ID:
+        return "Pro";
+      case process.env.NEXT_PUBLIC_PADDLE_ENTERPRISE_ID:
+        return "Enterprise";
+      default:
+        return "Free";
+    }
+  };
+
   useEffect(() => {
     const getUser = async () => {
       try {
@@ -195,7 +209,9 @@ export default function ProfileSettings() {
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
                 Current Plan:{" "}
-                {subscriptionData?.hasActiveSubscription ? "Pro" : "Free"}
+                {subscriptionData?.hasActiveSubscription
+                  ? getPlanName(subscriptionData.planId)
+                  : "Free"}
                 {subscriptionData?.pendingCancellation &&
                   " (Cancelling at period end)"}
               </p>
