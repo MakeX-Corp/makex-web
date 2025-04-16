@@ -10,6 +10,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -47,6 +48,25 @@ export default function Login() {
       setError(error.message);
       setLoading(false);
     }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError("Please enter your email address");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setResetSent(true);
+    }
+    setLoading(false);
   };
 
   return (
@@ -101,7 +121,21 @@ export default function Login() {
                 className="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                 required
               />
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={loading}
+                className="text-sm text-primary hover:underline mt-2"
+              >
+                Forgot password?
+              </button>
             </div>
+
+            {resetSent && (
+              <div className="bg-green-500/10 text-green-500 text-sm p-3 rounded-lg">
+                Password reset instructions have been sent to your email.
+              </div>
+            )}
 
             <button
               type="submit"
