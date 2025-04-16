@@ -2,6 +2,7 @@ import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse } from "next/server";
 import { uniqueNamesGenerator, Config, adjectives, colors, animals } from 'unique-names-generator';
 import crypto from 'crypto';
+import { EnvVarManager } from "@/utils/env-var-manager";
 
 export async function POST(request: Request) {
   try {
@@ -76,17 +77,51 @@ export async function POST(request: Request) {
 
     project.db_pass = db_password;
 
-    //u update user_apps table with the supabase_project json
+    // Fetch the project's API keys
+    const apiKeysResponse = await fetch(`https://api.supabase.com/v1/projects/${project.id}/api-keys`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${userIntegration.access_token}`,
+        "Accept": "application/json"
+      }
+    });
+
+    if (!apiKeysResponse.ok) {
+      console.error("Failed to fetch API keys:", await apiKeysResponse.text());
+      return NextResponse.json(
+        { error: "Failed to fetch project API keys" },
+        { status: apiKeysResponse.status }
+      );
+    }
+
+    const apiKeys = await apiKeysResponse.json();
+    project.api_keys = apiKeys;
+
+    //update user_apps table with the supabase_project json
     const { data, error } = await supabase
       .from("user_apps")
       .update({ supabase_project: project })
       .eq("user_id", user.id)
-      .eq("id", appId);
+      .eq("id", appId)
+      .select('app_url')
+      .single();
 
-    console.log("data", data);  
-    console.log("error", error);
+    if (error) {
+      console.error("Error updating user_apps table:", error);
+      return NextResponse.json(
+        { error: "Failed to update user_apps table" },
+        { status: 500 }
+      );
+    }
 
-    console.log("project", project);
+    // update the env vars inteh conatiner using env-var-manager
+    const API_BASE_URL = data?.app_url?.replace("makex.app", "fly.dev")+ ":8001";
+    const PROJECT_URL= `https://${project.id}.supabase.co`;
+    const envVarManager = new EnvVarManager(API_BASE_URL!);
+    await envVarManager.add("EXPO_PUBLIC_SUPABASE_URL", PROJECT_URL);
+    await envVarManager.add("EXPO_PUBLIC_SUPABASE_ANON_KEY", project.api_keys[0].api_key);
+    await envVarManager.add("EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY", project.api_keys[1].api_key);
+
     return NextResponse.json(project);
   } catch (error) {
     console.error("Create project error:", error);

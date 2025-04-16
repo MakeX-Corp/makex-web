@@ -5,6 +5,7 @@ import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse } from "next/server";
 import { createFileBackendApiClient } from "@/utils/file-backend-api-client";
 import { checkDailyMessageLimit } from "@/utils/check-daily-limit";
+import { DatabaseTool } from "@/utils/db-tools";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
@@ -70,7 +71,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { messages, appUrl, appId, sessionId } = await req.json();
+  const { messages, appUrl, appId, sessionId, supabase_project } = await req.json();
   // Get the last user message
   const lastUserMessage = messages[messages.length - 1];
 
@@ -101,6 +102,28 @@ export async function POST(req: Request) {
 
   const modelName = "claude-3-5-sonnet-latest";
   const apiClient = createFileBackendApiClient(API_BASE);
+  const dbTool = new DatabaseTool();
+  let tableInfo = [];
+  let connectionUri = "";
+  
+  if (supabase_project) {
+    connectionUri = `postgresql://postgres.${supabase_project.id}:${supabase_project.db_pass}@aws-0-us-east-1.pooler.supabase.com:6543/postgres`;
+    console.log(connectionUri);
+    const tableInfo = await dbTool.execute(connectionUri, `
+      SELECT 
+        table_name, 
+        column_name, 
+        data_type
+      FROM 
+        information_schema.columns 
+      WHERE 
+        table_schema = 'public' 
+      ORDER BY 
+        table_name, ordinal_position;
+    `);
+    console.log(tableInfo);
+  }
+  
 
   // Get the file tree first
   const fileTreeResponse = await apiClient.get('/file-tree', { path: '.' });
@@ -315,6 +338,19 @@ export async function POST(req: Request) {
         },
       }),
 
+      runSql: tool({
+        description: 'Run a sql query',
+        parameters: z.object({
+          query: z.string().describe('The sql query to run'),
+        }),
+        execute: async ({ query }) => { 
+          console.log(connectionUri);
+          console.log(query);
+          const result = await dbTool.execute(connectionUri, query);
+          return { success: true, data: result };
+        },
+      }),
+      
       
     },
     system: `
@@ -325,6 +361,7 @@ export async function POST(req: Request) {
     You can also delete a file.
     You can also create a new file.
     You can also read a file.
+    If you need to make changes to the database, you can use the runSql tool. Make sure you read the table info by running sql query and then make changes by running sql query.
 
     Use jsx syntax.
 
@@ -342,6 +379,7 @@ export async function POST(req: Request) {
     Make sure to delet the file which seems redundant to you
     You need to say what you are doing in 3 bullet points or less every time you are returning a response
     Try to do it in minimum tool calls
+  
     `,
     onFinish: async (result) => {
       // Save checkpoint after completing the response

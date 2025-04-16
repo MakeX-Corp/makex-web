@@ -115,7 +115,7 @@ export async function GET(request: Request) {
       .from("user_apps")
       .select("*")
       .eq("user_id", user.id)
-      .or("status.is.null,status.neq.deleted");
+      .or("status.is.null");
 
     if (error) {
       return NextResponse.json(
