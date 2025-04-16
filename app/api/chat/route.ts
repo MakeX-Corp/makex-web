@@ -1,13 +1,11 @@
 import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
-import { streamText, tool } from "ai";
-import { z } from "zod";
+import { streamText } from "ai";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse } from "next/server";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { checkDailyMessageLimit } from "@/utils/server/check-daily-limit";
-import { DatabaseTool } from "@/utils/server/db-tools";
 import { createTools } from "@/utils/server/tool-factory";
-
+import { getPrompt } from "@/utils/server/prompt";
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
 
@@ -72,16 +70,14 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { messages, appUrl, appId, sessionId, supabase_project } = await req.json();
+  const { messages, appUrl, appId, sessionId, supabase_project } =
+    await req.json();
   // Get the last user message
   const lastUserMessage = messages[messages.length - 1];
   // Get the user API client
   const userResult = await getSupabaseWithUser(req);
   if (userResult instanceof NextResponse) return userResult;
   const { supabase, user } = userResult;
-  // Get appUrl from query params
-  let apiUrl = appUrl.replace("makex.app", "fly.dev");
-  const API_BASE = apiUrl + ":8001";
 
   // Check daily message limit using the new utility function
   const MAX_DAILY_MESSAGES = parseInt(process.env.MAX_DAILY_MESSAGES || "20");
@@ -97,6 +93,7 @@ export async function POST(req: Request) {
     );
   }
   let imageUrl = null;
+
   // Check if the last user message has an image and upload it
   if (lastUserMessage?.experimental_attachments?.length > 0) {
     try {
@@ -189,14 +186,12 @@ export async function POST(req: Request) {
     }
   }
 
-  const apiClient = createFileBackendApiClient(API_BASE);
-  const dbTool = new DatabaseTool();
+  const apiClient = createFileBackendApiClient(appUrl);
   let connectionUri = undefined;
-  
+
   if (supabase_project) {
     connectionUri = `postgresql://postgres.${supabase_project.id}:${supabase_project.db_pass}@aws-0-us-east-1.pooler.supabase.com:6543/postgres`;
   }
-  
 
   // Get the file tree first
   const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
@@ -205,7 +200,7 @@ export async function POST(req: Request) {
   const modelName = "claude-3-5-sonnet-latest";
 
   const tools = createTools({
-    apiUrl: API_BASE,
+    apiUrl: appUrl,
     connectionUri: connectionUri,
   });
 

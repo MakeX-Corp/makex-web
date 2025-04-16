@@ -21,26 +21,21 @@ export async function POST(request: Request) {
     console.log("===============AI MESSAGE SAVE===================");
     console.log("message", message);
     console.log("options", options);
-    console.log("================================================");
+    console.log("================================================");    let commitHash = null;
 
-    const apiUrl = appUrl.replace('makex.app', 'fly.dev');
-    const API_BASE = apiUrl + ':8001';
-
-    let commitHash = null;
-
-    const apiClient = createFileBackendApiClient(API_BASE);
+    const apiClient = createFileBackendApiClient(appUrl);
         // Save checkpoint after completing the response
         try {
             const checkpointResponse = await apiClient.post('/checkpoint/save', {
               name: 'ai-assistant-checkpoint',
               message: 'Checkpoint after AI assistant changes'
             });
-            
             console.log('checkpointResponse', checkpointResponse);
             // Store the commit hash from the response
             commitHash = checkpointResponse.commit || checkpointResponse.current_commit;
           } catch (error) {
             console.error('Failed to save checkpoint:', error);
+            throw error;
           }
 
     // Calculate cost based on output tokens

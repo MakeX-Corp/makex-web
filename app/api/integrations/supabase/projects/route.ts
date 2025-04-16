@@ -115,9 +115,8 @@ export async function POST(request: Request) {
     }
 
     // update the env vars inteh conatiner using env-var-manager
-    const API_BASE_URL = data?.app_url?.replace("makex.app", "fly.dev")+ ":8001";
     const PROJECT_URL= `https://${project.id}.supabase.co`;
-    const envVarManager = new EnvVarManager(API_BASE_URL!);
+    const envVarManager = new EnvVarManager(data?.app_url!);
     await envVarManager.add("EXPO_PUBLIC_SUPABASE_URL", PROJECT_URL);
     await envVarManager.add("EXPO_PUBLIC_SUPABASE_ANON_KEY", project.api_keys[0].api_key);
     await envVarManager.add("EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY", project.api_keys[1].api_key);

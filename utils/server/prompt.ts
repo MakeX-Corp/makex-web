@@ -1,4 +1,4 @@
-const getPrompt = (fileTree: any, connectionUri: string | undefined) => {
+export const getPrompt = (fileTree: any, connectionUri: string | undefined) => {
   return `You are a senior software engineer who is an expert in React Native and Expo. 
     You can only write files in React Native.
     You cannot install any packages.

@@ -36,18 +36,10 @@ export async function POST(request: Request) {
       { status: 404 }
     );
   }
+  
+  const appUrl = container.app_url;
+  const fileBackendClient = createFileBackendApiClient(appUrl);
 
-  console.log("container", container);
-
-  const appUrl = new URL(container.app_url);
-  console.log("API_BASE", appUrl);
-  const hostname = appUrl.hostname.replace("makex.app", "fly.dev");
-  console.log("hostname", hostname);
-  const API_BASE = `https://${hostname}:8001`;
-  console.log("API_BASE", API_BASE);
-
-  const fileBackendClient = createFileBackendApiClient(API_BASE);
-  console.log("fileBackendClient", fileBackendClient);
   let saveCheckpointResponse;
   try {
     saveCheckpointResponse = await fileBackendClient.post("/checkpoint/save", {
