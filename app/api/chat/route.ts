@@ -74,14 +74,13 @@ export async function POST(req: Request) {
   const { messages, appUrl, appId, sessionId, supabase_project } = await req.json();
   // Get the last user message
   const lastUserMessage = messages[messages.length - 1];
-
-  // get appUrl from query params
-  let apiUrl = appUrl.replace("makex.app", "fly.dev");
-  const API_BASE = apiUrl + ":8001";
-
+  // Get the user API client
   const userResult = await getSupabaseWithUser(req);
   if (userResult instanceof NextResponse) return userResult;
   const { supabase, user } = userResult;
+  // Get appUrl from query params
+  let apiUrl = appUrl.replace("makex.app", "fly.dev");
+  const API_BASE = apiUrl + ":8001";
 
   // Check daily message limit using the new utility function
   const MAX_DAILY_MESSAGES = parseInt(process.env.MAX_DAILY_MESSAGES || "20");
@@ -96,11 +95,98 @@ export async function POST(req: Request) {
       { status: limitCheck.status }
     );
   }
+  let imageUrl = null;
+  // Check if the last user message has an image and upload it
+  if (lastUserMessage?.experimental_attachments?.length > 0) {
+    try {
+      console.log("Found image attachment in message, attempting to upload...");
+      const imageAttachment = lastUserMessage.experimental_attachments[0];
 
-  let fullResponse = "";
-  let commitHash = "";
+      // Validate it's a base64 image
+      if (
+        !imageAttachment.url ||
+        !imageAttachment.url.startsWith("data:image/")
+      ) {
+        console.log("Image is not a valid base64 string, skipping upload");
+      } else {
+        // Extract content type and data from base64
+        const contentTypeMatch = imageAttachment.url.match(
+          /^data:([^;]+);base64,/
+        );
+        if (!contentTypeMatch) {
+          throw new Error("Invalid base64 image format");
+        }
 
-  const modelName = "claude-3-5-sonnet-latest";
+        const contentType = contentTypeMatch[1];
+        const base64Data = imageAttachment.url.replace(
+          /^data:[^;]+;base64,/,
+          ""
+        );
+
+        // Validate base64 data
+        if (!base64Data || base64Data.trim() === "") {
+          throw new Error("Empty base64 data");
+        }
+
+        const buffer = Buffer.from(base64Data, "base64");
+
+        // Ensure file extension matches RLS policy
+        let fileExt = contentType.split("/")[1] || "png";
+        // Normalize extension to ensure it matches policy
+        if (
+          fileExt === "jpg" ||
+          fileExt === "jpeg" ||
+          fileExt === "png" ||
+          fileExt === "gif"
+        ) {
+          // Extension is already valid
+        } else if (fileExt === "svg+xml") {
+          fileExt = "png"; // Convert SVG to allowed type
+        } else {
+          fileExt = "png"; // Default to png for unsupported types
+        }
+
+        // Use same path structure as test upload
+        const timestamp = Date.now();
+        const randomId = Math.random().toString(36).substring(2, 10);
+        const filename = `${sessionId}/${timestamp}-${randomId}.${fileExt}`;
+
+        console.log(
+          `Attempting to upload image to path: ${filename}, content type: ${contentType}, extension: ${fileExt}`
+        );
+
+        // Upload to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("chat-images")
+          .upload(filename, buffer, {
+            contentType: contentType,
+            upsert: true,
+          });
+
+        if (uploadError) {
+          console.error("Supabase upload error:", JSON.stringify(uploadError));
+          throw uploadError;
+        }
+
+        console.log("Upload successful:", uploadData);
+
+        // Get public URL for the uploaded file
+        const { data: publicUrlData } = supabase.storage
+          .from("chat-images")
+          .getPublicUrl(filename);
+
+        if (!publicUrlData || !publicUrlData.publicUrl) {
+          throw new Error("Failed to get public URL");
+        }
+
+        imageUrl = publicUrlData.publicUrl;
+        console.log("Image uploaded successfully to:", imageUrl);
+      }
+    } catch (error) {
+      console.error("Error uploading image to storage:", error);
+      // Continue with original message if upload fails
+    }
+  }
   const apiClient = createFileBackendApiClient(API_BASE);
   const dbTool = new DatabaseTool();
   let tableInfo = [];
@@ -126,12 +212,35 @@ export async function POST(req: Request) {
   
 
   // Get the file tree first
-  const fileTreeResponse = await apiClient.get('/file-tree', { path: '.' });
+  const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
   const fileTree = fileTreeResponse.data;
 
+  const modelName = "claude-3-5-sonnet-latest";
+
+  const formattedMessages = messages.map((message: any) => {
+    // If message has attachments, format them as image parts
+    if (message.experimental_attachments?.length) {
+      return {
+        role: message.role,
+        content: [
+          { type: "text", text: message.content || "" },
+          ...message.experimental_attachments.map((attachment: any) => ({
+            type: "image",
+            image: attachment.url,
+          })),
+        ],
+      };
+    }
+
+    // Regular text message
+    return {
+      role: message.role,
+      content: message.content,
+    };
+  });
   const result = streamText({
     model: anthropic(modelName),
-    messages,
+    messages: formattedMessages,
     tools: {
       readFile: tool({
         description: "Read contents of a file",
@@ -209,7 +318,7 @@ export async function POST(req: Request) {
       }),
 
       installPackages: tool({
-        description: 'Install yarn packages',
+        description: "Install yarn packages",
         parameters: z.object({
           packages: z
             .array(z.string())
@@ -321,13 +430,16 @@ export async function POST(req: Request) {
       }),
 
       getFileTree: tool({
-        description: 'Get the directory tree structure',
+        description: "Get the directory tree structure",
         parameters: z.object({
-          path: z.string().describe('The path to get the directory tree from').default('.'),
+          path: z
+            .string()
+            .describe("The path to get the directory tree from")
+            .default("."),
         }),
         execute: async ({ path }) => {
           try {
-            const response = await apiClient.get('/file-tree', { path });
+            const response = await apiClient.get("/file-tree", { path });
             return { success: true, data: response.data };
           } catch (error: any) {
             return {
@@ -372,11 +484,11 @@ export async function POST(req: Request) {
 
     Make sure you always link changes or whatever you do to app/index.jsx because that is the initial render of the app. So user can see the changes.
 
-    Keep in mind user cannot upload images,  sounds or anything else. He can only talk to you and you are the programmer.
+    Keep in mind user cannot upload images, sounds or anything else. He can only talk to you and you are the programmer.
 
     Make sure you understand the user's request and the file tree structure. and make the changes to the correct files.
 
-    Make sure to delet the file which seems redundant to you
+    Make sure to delete the file which seems redundant to you
     You need to say what you are doing in 3 bullet points or less every time you are returning a response
     Try to do it in minimum tool calls
   
@@ -385,7 +497,6 @@ export async function POST(req: Request) {
       // Save checkpoint after completing the response
       const inputTokens = result.usage.promptTokens;
       const inputCost = inputTokens * 0.000003;
-
       // Insert user's last message into chat history
       await supabase.from("app_chat_history").insert({
         app_id: appId,
@@ -393,7 +504,7 @@ export async function POST(req: Request) {
         content: lastUserMessage.content,
         role: "user",
         model_used: modelName,
-        metadata: { streamed: false },
+        metadata: { streamed: false, imageUrl: imageUrl || null }, //save image url in the metadata
         input_tokens_used: inputTokens,
         output_tokens_used: 0,
         cost: inputCost,
@@ -401,9 +512,8 @@ export async function POST(req: Request) {
         message_id: lastUserMessage.id,
       });
     },
-    maxSteps: 30, // allow up to 5 steps
+    maxSteps: 30, // allow up to 30 steps
   });
-
   return result.toDataStreamResponse({
     sendReasoning: true,
   });

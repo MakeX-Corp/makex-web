@@ -1,35 +1,36 @@
-import { ReactNode } from 'react'
+import { ReactNode } from "react";
 
 interface MobileMockupProps {
-  children: ReactNode
-  className?: string
+  children: ReactNode;
+  className?: string;
 }
 
-export default function MobileMockup({ children, className = '' }: MobileMockupProps) {
+export default function MobileMockup({
+  children,
+  className = "",
+}: MobileMockupProps) {
   return (
-    <div className={`relative ${className}`}>
-      <div className="relative w-[292.6px] h-[595.65px] rounded-[44px] bg-black p-[12px] shadow-2xl">
-        {/* Notch */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[27.5px] w-[165px] bg-black rounded-b-[14px] z-20" />
-        
-        {/* Screen */}
-        <div className="relative h-full w-full rounded-[32px] overflow-hidden bg-white">
-          <div className="flex h-full flex-col">
-
-            {/* App Content */}
-            <div className="flex-grow overflow-hidden">
-              {children}
-            </div>
-          </div>
-        </div>
+    <div className={`flex items-center justify-center ${className}`}>
+      <div className="relative">
+        <div className="absolute top-[90px] left-0 w-[4px] h-[30px] bg-black rounded-l-md shadow-lg"></div>
+        <div className="absolute top-[135px] left-0 w-[4px] h-[30px] bg-black rounded-l-md shadow-lg"></div>
 
         {/* Power Button */}
-        <div className="absolute right-[-2px] top-[120px] w-[3px] h-[30px] bg-neutral-800 rounded-l-sm" />
-        
-        {/* Volume Buttons */}
-        <div className="absolute left-[-2px] top-[100px] w-[3px] h-[30px] bg-neutral-800 rounded-r-sm" />
-        <div className="absolute left-[-2px] top-[140px] w-[3px] h-[60px] bg-neutral-800 rounded-r-sm" />
+        <div className="absolute top-[90px] right-0 w-[4px] h-[45px] bg-black rounded-r-md shadow-lg"></div>
+
+        {/* Phone Container */}
+        <div className="relative w-[300px] h-[600px] rounded-[48px] mx-[4px]">
+          <div className="absolute inset-0 rounded-[48px] overflow-hidden">
+            {children}
+          </div>
+
+          {/* Phone border overlay */}
+          <div className="absolute inset-0 rounded-[48px] border-[10px] border-black pointer-events-none" />
+
+          {/* iPhone Notch */}
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[120px] h-[25px] bg-black rounded-b-[14px] pointer-events-none"></div>
+        </div>
       </div>
     </div>
-  )
+  );
 }

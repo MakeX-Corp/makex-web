@@ -4,8 +4,15 @@ import { useChat } from "@ai-sdk/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Terminal, Lock } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import {
+  Send,
+  Loader2,
+  Terminal,
+  Lock,
+  Image as ImageIcon,
+  X,
+} from "lucide-react";
+import { useEffect, useState, useRef, ChangeEvent } from "react";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +49,9 @@ export function Chat({
     null
   );
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Refs for tracking API calls - specific to this component instance
   const limitsApiCalled = useRef(false);
@@ -150,12 +160,23 @@ export function Chat({
         }
 
         const messages = await response.json();
+        console.log("messages", messages);
         setInitialMessages(
           messages.map((msg: any) => ({
             id: msg.message_id,
             role: msg.role,
             content: msg.content,
             parts: msg.metadata.parts,
+            //imageUrl: msg.metadata.imageUrl || null,
+            experimental_attachments: msg.metadata.imageUrl
+              ? [
+                  {
+                    url: msg.metadata.imageUrl,
+                    contentType: "image/jpeg",
+                    name: "image",
+                  },
+                ]
+              : undefined,
           }))
         );
       } catch (error) {
@@ -176,6 +197,7 @@ export function Chat({
     addToolResult,
     error,
     isLoading: isChatLoading,
+    setMessages,
   } = useChat({
     api: `/api/chat/`,
     initialMessages: isLoading
@@ -212,6 +234,7 @@ export function Chat({
     },
     onFinish: async (message, options) => {
       // Save the AI message
+      console.log("onFinish", message, options);
       try {
         await fetch("/api/chat/ai-message-save", {
           method: "POST",
@@ -261,8 +284,31 @@ export function Chat({
     }
   }, [error]);
 
-  // Handle form submission
-  const handleFormSubmit = (e: React.FormEvent) => {
+  // Handle image selection
+  const handleImageSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedImage(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove selected image
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (limitReached) {
@@ -270,9 +316,54 @@ export function Chat({
       return;
     }
 
+    // Don't proceed if there's nothing to send
+    if (!input.trim() && !selectedImage) {
+      return;
+    }
+
     // Set waiting indicator when submitting
     setIsWaitingForResponse(true);
-    handleSubmit(e);
+
+    try {
+      // If there's an image
+      if (selectedImage) {
+        // Create the image attachment
+        const imageBase64 = await getBase64(selectedImage);
+        const imageAttachment = {
+          name: selectedImage.name,
+          contentType: selectedImage.type,
+          url: imageBase64,
+        };
+
+        // Submit with the attachment - let useChat handle it
+        handleSubmit(e, {
+          experimental_attachments: [imageAttachment],
+        });
+
+        // Clean up after submitting
+        setSelectedImage(null);
+        setImagePreview(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } else {
+        // Regular text submission
+        handleSubmit(e);
+      }
+    } catch (error) {
+      console.error("Error processing message with image:", error);
+      setIsWaitingForResponse(false);
+    }
+  };
+
+  // Helper function to convert File to base64
+  const getBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
   };
 
   // Auto-scroll to bottom when messages change
@@ -412,6 +503,21 @@ export function Chat({
                   }`}
                 >
                   <CardContent className="p-4">
+                    {/* Display image if it exists */}
+                    {message?.experimental_attachments && (
+                      <div className="mb-3">
+                        <img
+                          src={message?.experimental_attachments[0].url}
+                          alt="Uploaded image"
+                          className="w-full rounded border border-border shadow-sm"
+                          style={{
+                            cursor: "pointer",
+                            maxHeight: "300px",
+                            objectFit: "contain",
+                          }}
+                        />
+                      </div>
+                    )}
                     {message.parts?.length ? (
                       message.parts.map((part, i) => (
                         <div key={i}>{renderMessagePart(part)}</div>
@@ -465,6 +571,25 @@ export function Chat({
 
       {/* Input area - fixed at bottom */}
       <div className="border-t border-border p-4 bg-background">
+        {/* Image preview area */}
+        {imagePreview && (
+          <div className="mb-3 relative">
+            <div className="relative inline-block">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="h-20 rounded-md object-cover border border-border"
+              />
+              <button
+                onClick={handleRemoveImage}
+                className="absolute -top-2 -right-2 bg-foreground text-background rounded-full p-1 hover:bg-muted-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleFormSubmit} className="flex gap-2">
           <Input
             value={input}
@@ -477,11 +602,38 @@ export function Chat({
             className="flex-1"
             disabled={limitReached || isWaitingForResponse || isLoading}
           />
+
+          {/* File input for image (hidden) */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageSelect}
+            disabled={limitReached || isWaitingForResponse || isLoading}
+          />
+
+          {/* Image upload button */}
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={limitReached || isWaitingForResponse || isLoading}
+            title="Upload an image"
+          >
+            <ImageIcon className="h-4 w-4" />
+          </Button>
+
+          {/* Send button */}
           <Button
             type="submit"
             size="icon"
             disabled={
-              limitReached || isWaitingForResponse || !input.trim() || isLoading
+              limitReached ||
+              isWaitingForResponse ||
+              (!input.trim() && !selectedImage) ||
+              isLoading
             }
           >
             {isWaitingForResponse ? (
