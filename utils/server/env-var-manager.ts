@@ -10,14 +10,16 @@ export class EnvVarManager {
   private apiClient: ReturnType<typeof createFileBackendApiClient>;
   private envVars: Map<string, string>;
 
-  constructor(baseURL: string) {
+  private constructor(baseURL: string, envVars: Map<string, string>) {
     this.apiClient = createFileBackendApiClient(baseURL);
-    this.envVars = new Map();
-    this.loadEnvVars().catch(error => {
-      console.warn('Initial environment variables load failed:', error);
-      // Initialize with empty map if load fails
-      this.envVars = new Map();
-    });
+    this.envVars = envVars;
+  }
+
+  public static async create(baseURL: string): Promise<EnvVarManager> {
+    const envVars = new Map<string, string>();
+    const instance = new EnvVarManager(baseURL, envVars);
+    await instance.loadEnvVars();
+    return instance;
   }
 
   private async loadEnvVars(): Promise<void> {
@@ -45,7 +47,7 @@ export class EnvVarManager {
         }
       }
     } catch (error) {
-      console.warn('Error loading environment variables:', error);
+      console.warn('Error loading environment variables:');
       // Try to create the .env file if it doesn't exist
       try {
         await this.apiClient.post('/file', {

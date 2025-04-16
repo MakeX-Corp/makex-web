@@ -191,6 +191,7 @@ export async function POST(req: Request) {
 
   if (supabase_project) {
     connectionUri = `postgresql://postgres.${supabase_project.id}:${supabase_project.db_pass}@aws-0-us-east-1.pooler.supabase.com:6543/postgres`;
+    console.log("connectionUri chat", connectionUri);
   }
 
   // Get the file tree first
@@ -202,6 +203,7 @@ export async function POST(req: Request) {
   const tools = createTools({
     apiUrl: appUrl,
     connectionUri: connectionUri,
+
   });
 
   const formattedMessages = messages.map((message: any) => {

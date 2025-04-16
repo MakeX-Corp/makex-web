@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { uniqueNamesGenerator, Config, adjectives, colors, animals } from 'unique-names-generator';
 import crypto from 'crypto';
 import { EnvVarManager } from "@/utils/server/env-var-manager";
+import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 
 export async function POST(request: Request) {
   try {
@@ -116,10 +117,19 @@ export async function POST(request: Request) {
 
     // update the env vars inteh conatiner using env-var-manager
     const PROJECT_URL= `https://${project.id}.supabase.co`;
-    const envVarManager = new EnvVarManager(data?.app_url!);
+    const envVarManager = await EnvVarManager.create(data?.app_url!);
     await envVarManager.add("EXPO_PUBLIC_SUPABASE_URL", PROJECT_URL);
     await envVarManager.add("EXPO_PUBLIC_SUPABASE_ANON_KEY", project.api_keys[0].api_key);
     await envVarManager.add("EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY", project.api_keys[1].api_key);
+
+    // Install supabase-js package
+    const fileBackendClient = createFileBackendApiClient(data?.app_url!);
+    const installPackagesResponse = await fileBackendClient.post("/install/packages", {
+      packages: ["@supabase/supabase-js"]
+    });
+
+    console.log("installPackagesResponse", installPackagesResponse);
+    
 
     return NextResponse.json(project);
   } catch (error) {
