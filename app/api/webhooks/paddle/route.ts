@@ -128,16 +128,23 @@ async function handleSubscriptionCreated(event: any, supabase: any) {
 async function handleSubscriptionUpdated(event: any, supabase: any) {
   try {
     // Update subscription record
+    console.log("event", event);
     const { error } = await supabase
       .from("subscriptions")
       .update({
         status: event.status,
         price_id: event.items[0].price?.id,
         quantity: event.items[0].quantity || 1,
-        cancel_at_period_end: event.cancel_at_period_end || false,
-        canceled_at: event.canceled_at,
-        current_period_start: event.current_billing_period.starts_at,
-        current_period_end: event.current_billing_period.ends_at,
+        cancel_at_period_end:
+          event.scheduled_change?.action === "cancel"
+            ? true
+            : event.cancel_at_period_end || false,
+        canceled_at:
+          event.scheduled_change?.action === "cancel"
+            ? event.scheduled_change?.effective_at
+            : event.canceled_at,
+        current_period_start: event.current_billing_period?.starts_at,
+        current_period_end: event.current_billing_period?.ends_at,
       })
       .eq("id", event.id);
 
@@ -151,6 +158,7 @@ async function handleSubscriptionUpdated(event: any, supabase: any) {
 async function handleSubscriptionCanceled(event: any, supabase: any) {
   try {
     // Update subscription to canceled status
+    console.log("event", event);
     const { error } = await supabase
       .from("subscriptions")
       .update({

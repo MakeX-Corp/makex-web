@@ -15,31 +15,19 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { getAuthToken } from "@/utils/client/auth";
+import { useSubscription } from "@/hooks/use-subscription";
 
 export default function ProfileSettings() {
   const [email, setEmail] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
-  const [subscriptionData, setSubscriptionData] = useState<{
-    hasActiveSubscription: boolean;
-    pendingCancellation: boolean;
-    planId: string | null;
-  } | null>(null);
   const supabase = createClientComponentClient();
   const router = useRouter();
-
-  const getPlanName = (planId: string | null) => {
-    if (!planId) return "Free";
-    switch (planId) {
-      case process.env.NEXT_PUBLIC_PADDLE_STARTER_ID:
-        return "Starter";
-      case process.env.NEXT_PUBLIC_PADDLE_PRO_ID:
-        return "Pro";
-      case process.env.NEXT_PUBLIC_PADDLE_ENTERPRISE_ID:
-        return "Enterprise";
-      default:
-        return "Free";
-    }
-  };
+  const {
+    hasActiveSubscription,
+    pendingCancellation,
+    planName,
+    loading: subscriptionLoading,
+  } = useSubscription();
 
   useEffect(() => {
     const getUser = async () => {
@@ -49,25 +37,6 @@ export default function ProfileSettings() {
         } = await supabase.auth.getUser();
         if (user) {
           setEmail(user.email || "");
-
-          // Fetch subscription data
-          const decodedToken = getAuthToken();
-          if (decodedToken) {
-            const subscriptionResponse = await fetch("/api/subscription", {
-              headers: {
-                Authorization: `Bearer ${decodedToken}`,
-              },
-            });
-
-            if (subscriptionResponse.ok) {
-              const data = await subscriptionResponse.json();
-              setSubscriptionData({
-                hasActiveSubscription: data.hasActiveSubscription,
-                pendingCancellation: data.pendingCancellation,
-                planId: data.planId,
-              });
-            }
-          }
         }
       } finally {
         setIsLoading(false);
@@ -145,7 +114,8 @@ export default function ProfileSettings() {
       setIsManagingSubscription(false);
     }
   };
-  if (isLoading) {
+
+  if (isLoading || subscriptionLoading) {
     return (
       <div className="w-full max-w-2xl px-4">
         <Card className="w-full">
@@ -208,12 +178,8 @@ export default function ProfileSettings() {
             <h3 className="text-sm font-medium">Subscription</h3>
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                Current Plan:{" "}
-                {subscriptionData?.hasActiveSubscription
-                  ? getPlanName(subscriptionData.planId)
-                  : "Free"}
-                {subscriptionData?.pendingCancellation &&
-                  " (Cancelling at period end)"}
+                Current Plan: {planName}
+                {pendingCancellation && " (Cancelling at period end)"}
               </p>
               <Button
                 variant="outline"

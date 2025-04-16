@@ -11,28 +11,30 @@ export async function POST(request: Request) {
     );
   }
 
-  console.log("subscriptionId", subscriptionId);
   try {
     // Call Paddle API to update the subscription
-    const response = await fetch(
-      `https://sandbox-api.paddle.com/subscriptions/${subscriptionId}`,
-      {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${process.env.PADDLE_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          items: [
-            {
-              price_id: priceId,
-              quantity: 1,
-            },
-          ],
-          proration_billing_mode: "prorated_immediately", // You can change this as needed
-        }),
-      }
-    );
+    let url = "";
+    if (process.env.NODE_ENV === "production") {
+      url = `https://api.paddle.com/subscriptions/${subscriptionId}`;
+    } else {
+      url = `https://sandbox-api.paddle.com/subscriptions/${subscriptionId}`;
+    }
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${process.env.PADDLE_SECRET_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        items: [
+          {
+            price_id: priceId,
+            quantity: 1,
+          },
+        ],
+        proration_billing_mode: "prorated_immediately", // You can change this as needed
+      }),
+    });
     console.log("response", response);
     if (!response.ok) {
       const errorData = await response.json();

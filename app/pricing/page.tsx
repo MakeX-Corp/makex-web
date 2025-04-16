@@ -13,6 +13,9 @@ import { Check } from "lucide-react";
 import { initPaddle } from "@/utils/paddle-client";
 import { useToast } from "@/components/ui/use-toast";
 import { useSubscription } from "@/hooks/use-subscription";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cp } from "fs";
+
 interface PlanProps {
   name: string;
   description: string;
@@ -54,6 +57,37 @@ const plans: PlanProps[] = [
   },
 ];
 
+const PricingSkeleton = () => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      {[1, 2, 3].map((i) => (
+        <Card key={i} className="flex flex-col">
+          <CardHeader>
+            <Skeleton className="h-8 w-24 mb-2" />
+            <Skeleton className="h-4 w-full" />
+          </CardHeader>
+          <CardContent className="flex-grow">
+            <div className="mb-6">
+              <Skeleton className="h-10 w-20" />
+            </div>
+            <ul className="space-y-2">
+              {[1, 2, 3, 4].map((j) => (
+                <li key={j} className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4 rounded-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="h-10 w-full" />
+          </CardFooter>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
 export default function PricingPage() {
   const {
     hasActiveSubscription,
@@ -66,7 +100,9 @@ export default function PricingPage() {
   } = useSubscription();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<string | null>(null);
+
   const handleCheckout = async (priceId: string) => {
+    console.log("priceId", priceId);
     const paddle = await initPaddle();
     if (!paddle) {
       toast({
@@ -79,7 +115,7 @@ export default function PricingPage() {
 
     try {
       setIsLoading(priceId);
-
+      console.log("userId", userId);
       if (!userId) {
         toast({
           variant: "destructive",
@@ -89,6 +125,7 @@ export default function PricingPage() {
         return;
       }
       if (hasActiveSubscription) {
+        console.log("hasActiveSubscription", hasActiveSubscription);
         // Handle upgrade/downgrade for existing subscription
         const updateResponse = await fetch("/api/subscription/update", {
           method: "POST",
@@ -114,6 +151,7 @@ export default function PricingPage() {
           throw new Error(result.error || "Failed to update subscription");
         }
       } else {
+        console.log("priceId", priceId);
         const checkout = paddle.Checkout.open({
           items: [
             {
@@ -143,6 +181,24 @@ export default function PricingPage() {
       setIsLoading(null);
     }
   };
+
+  // Check if button should be disabled for the current plan
+  const isButtonDisabled = (priceId: string) => {
+    // Find the current plan based on planName
+    const currentPlan = plans.find((plan) => plan.name === planName);
+
+    // Disable the button for the current plan
+    if (
+      hasActiveSubscription &&
+      currentPlan &&
+      currentPlan.priceId === priceId
+    ) {
+      return true;
+    }
+
+    return isLoading === priceId;
+  };
+
   return (
     <div className="container mx-auto py-16 px-4">
       <div className="text-center mb-12">
@@ -154,39 +210,49 @@ export default function PricingPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        {plans.map((plan) => (
-          <Card key={plan.name} className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-2xl">{plan.name}</CardTitle>
-              <p className="text-muted-foreground">{plan.description}</p>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <div className="mb-6">
-                <span className="text-4xl font-bold">${plan.price}</span>
-                <span className="text-muted-foreground">/{plan.interval}</span>
-              </div>
-              <ul className="space-y-2">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-primary" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Button
-                className="w-full"
-                onClick={() => handleCheckout(plan.priceId)}
-                disabled={isLoading === plan.priceId}
-              >
-                {isLoading === plan.priceId ? "Processing..." : "Subscribe"}
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+      {loading ? (
+        <PricingSkeleton />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {plans.map((plan) => (
+            <Card key={plan.name} className="flex flex-col">
+              <CardHeader>
+                <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                <p className="text-muted-foreground">{plan.description}</p>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <div className="mb-6">
+                  <span className="text-4xl font-bold">${plan.price}</span>
+                  <span className="text-muted-foreground">
+                    /{plan.interval}
+                  </span>
+                </div>
+                <ul className="space-y-2">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-primary" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  className="w-full"
+                  onClick={() => handleCheckout(plan.priceId)}
+                  disabled={isButtonDisabled(plan.priceId)}
+                >
+                  {isLoading === plan.priceId
+                    ? "Processing..."
+                    : hasActiveSubscription && planName === plan.name
+                    ? "Current Plan"
+                    : "Subscribe"}
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

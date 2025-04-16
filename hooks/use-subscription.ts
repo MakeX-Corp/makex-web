@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { getAuthToken } from "@/utils/client/auth";
+import { getAuthToken, getUserIdFromToken } from "@/utils/client/auth";
 
 interface Subscription {
   id: string;
@@ -64,8 +64,12 @@ export function useSubscription(): UseSubscriptionReturn {
       const token = getAuthToken();
       if (!token) {
         setError("Authentication required");
+        setUserId(null);
         return;
       }
+
+      const tokenUserId = getUserIdFromToken(token);
+      setUserId(tokenUserId);
 
       const response = await fetch("/api/subscription", {
         headers: {
@@ -82,7 +86,6 @@ export function useSubscription(): UseSubscriptionReturn {
       setSubscription(data.subscription);
       setHasActiveSubscription(data.hasActiveSubscription);
       setPendingCancellation(data.pendingCancellation);
-      setUserId(data.userId);
       setError(null);
     } catch (err) {
       const errorMessage =

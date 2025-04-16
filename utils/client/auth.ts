@@ -35,3 +35,13 @@ export const decodeToken = (token: string): any => {
     return null;
   }
 };
+
+export const getUserIdFromToken = (token: string): string | null => {
+  try {
+    const decodedToken = decodeToken(token);
+    return decodedToken?.sub || null;
+  } catch (error) {
+    console.error("Error getting user ID from token:", error);
+    return null;
+  }
+};
