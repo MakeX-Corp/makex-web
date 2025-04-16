@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { getDailyMessageCount } from "@/utils/check-daily-limit";
+import { getDailyMessageCount } from "@/utils/server/check-daily-limit";
 
 export async function GET(req: Request) {
   try {

@@ -2,7 +2,7 @@ import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse } from "next/server";
 import { uniqueNamesGenerator, Config, adjectives, colors, animals } from 'unique-names-generator';
 import crypto from 'crypto';
-import { EnvVarManager } from "@/utils/env-var-manager";
+import { EnvVarManager } from "@/utils/server/env-var-manager";
 
 export async function POST(request: Request) {
   try {

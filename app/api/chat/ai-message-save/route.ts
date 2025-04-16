@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseWithUser } from '@/utils/server/auth';
-import { createFileBackendApiClient } from '@/utils/file-backend-api-client';
+import { createFileBackendApiClient } from '@/utils/server/file-backend-api-client';
 
 export async function POST(request: Request) {
   try {

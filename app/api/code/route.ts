@@ -1,6 +1,6 @@
 import { getSupabaseWithUser } from '@/utils/server/auth';
 import { NextResponse } from 'next/server';
-import { createFileBackendApiClient } from '@/utils/file-backend-api-client';
+import { createFileBackendApiClient } from '@/utils/server/file-backend-api-client';
 
 // Add this function to handle checkpoint restore
 export async function POST(request: Request) {

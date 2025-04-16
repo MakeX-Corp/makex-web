@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
-import { initPaddle } from "@/utils/paddle-client";
+import { initPaddle } from "@/utils/server/paddle-client";
 import { getAuthToken, decodeToken } from "@/utils/client/auth";
 import { useToast } from "@/components/ui/use-toast";
 

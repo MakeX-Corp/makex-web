@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { checkActiveContainer } from "@/utils/check-container-limit"; // Import the function
-import { createFileBackendApiClient } from "@/utils/file-backend-api-client";
+import { checkActiveContainer } from "@/utils/server/check-container-limit"; // Import the function
+import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 
 // ────────────────────────────────────────────────────────────────────────────────
 // POST /api/app – allocate a container to the authenticated user
