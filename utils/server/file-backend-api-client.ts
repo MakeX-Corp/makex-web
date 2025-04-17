@@ -7,6 +7,10 @@ if (!API_KEY) {
 }
 
 export const createFileBackendApiClient = (baseURL: string) => {
+  // if base url contains makex.app then replace it with fly.dev and add :8001 to the end
+  if (baseURL.includes("makex.app")) {
+    baseURL = baseURL.replace("makex.app", "fly.dev") + ":8001";
+  }
   const client = axios.create({
     baseURL,
     headers: {
@@ -19,6 +23,19 @@ export const createFileBackendApiClient = (baseURL: string) => {
     get: async (url: string, params?: any) => {
       const response = await client.get(url, { params });
       return response.data;
+    },
+    getFile: async (url: string, params?: any) => {
+      const response = await client.get(url, { 
+        params,
+        responseType: 'arraybuffer',
+        headers: {
+          'X-API-Key': API_KEY,
+        }
+      });
+      return {
+        data: response.data,
+        headers: response.headers,
+      };
     },
     post: async (url: string, data?: any) => {
       const response = await client.post(url, data);

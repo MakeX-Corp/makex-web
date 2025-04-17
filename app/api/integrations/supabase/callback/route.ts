@@ -76,6 +76,8 @@ export async function GET(request: Request) {
       },
     });
 
+    console.log("orgResponse", orgResponse);
+
     if (!orgResponse.ok) {
       const error = await orgResponse.json();
       console.error("Organisation fetch error:", error);
@@ -96,7 +98,7 @@ export async function GET(request: Request) {
         .eq("user_id", user.id)
         .eq("integration_type", "supabase");
 
-    if (userIntegration) {
+    if (userIntegration && userIntegration.length > 0) {
       // update the row
       const { data, error } = await supabase
         .from("user_integrations")

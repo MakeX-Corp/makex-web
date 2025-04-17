@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
+import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 
 export async function POST(req: Request) {
   try {
@@ -9,30 +10,24 @@ export async function POST(req: Request) {
     const userResult = await getSupabaseWithUser(req);
     if (userResult instanceof NextResponse) return userResult;
     const { user } = userResult;
-    let apiUrl = appUrl.replace("makex.app", "fly.dev");
-    const API_BASE = apiUrl + ":8001/export-code";
 
     try {
-      const response = await fetch(API_BASE, {
-        method: "GET",
-        headers: {
-          "X-API-Key": process.env.FILE_BACKEND_API_KEY || "",
-        },
+      const client = createFileBackendApiClient(appUrl);
+      const { data, headers } = await client.getFile("/export-code");
+
+      // Convert Axios headers to a format compatible with Response
+      const responseHeaders = new Headers();
+      Object.entries(headers).forEach(([key, value]) => {
+        if (value) {
+          responseHeaders.set(key, String(value));
+        }
       });
-      if (!response.ok) {
-        throw new Error(
-          `Export failed: ${response.status} ${response.statusText}`
-        );
-      }
+      responseHeaders.set("Content-Type", "application/zip");
+      responseHeaders.set("Content-Disposition", 'attachment; filename="export.zip"');
 
-      const buffer = await response.arrayBuffer();
-
-      return new Response(buffer, {
+      return new Response(data, {
         status: 200,
-        headers: {
-          "Content-Type": "application/zip",
-          "Content-Disposition": 'attachment; filename="export.zip"',
-        },
+        headers: responseHeaders,
       });
     } catch (error: any) {
       console.error("Export error:", error);

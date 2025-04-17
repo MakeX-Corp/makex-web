@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { checkActiveContainer } from "@/utils/check-container-limit"; // Import the function
-import { createFileBackendApiClient } from "@/utils/file-backend-api-client";
+import { checkActiveContainer } from "@/utils/server/check-container-limit"; // Import the function
+import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 
 // ────────────────────────────────────────────────────────────────────────────────
 // POST /api/app – allocate a container to the authenticated user
@@ -36,18 +36,10 @@ export async function POST(request: Request) {
       { status: 404 }
     );
   }
+  
+  const appUrl = container.app_url;
+  const fileBackendClient = createFileBackendApiClient(appUrl);
 
-  console.log("container", container);
-
-  const appUrl = new URL(container.app_url);
-  console.log("API_BASE", appUrl);
-  const hostname = appUrl.hostname.replace("makex.app", "fly.dev");
-  console.log("hostname", hostname);
-  const API_BASE = `https://${hostname}:8001`;
-  console.log("API_BASE", API_BASE);
-
-  const fileBackendClient = createFileBackendApiClient(API_BASE);
-  console.log("fileBackendClient", fileBackendClient);
   let saveCheckpointResponse;
   try {
     saveCheckpointResponse = await fileBackendClient.post("/checkpoint/save", {
@@ -115,7 +107,7 @@ export async function GET(request: Request) {
       .from("user_apps")
       .select("*")
       .eq("user_id", user.id)
-      .or("status.is.null,status.neq.deleted");
+      .or("status.is.null");
 
     if (error) {
       return NextResponse.json(
