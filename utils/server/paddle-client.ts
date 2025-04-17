@@ -7,7 +7,7 @@ export function initPaddle() {
 
   try {
     return initializePaddle({
-      environment: (process.env.PADDLE_ENV as Environments) || "sandbox",
+      environment: "production",
       token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN || "",
     });
   } catch (error) {
