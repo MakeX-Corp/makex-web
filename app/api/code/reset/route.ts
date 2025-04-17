@@ -1,6 +1,6 @@
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse } from "next/server";
-import { createFileBackendApiClient } from "@/utils/file-backend-api-client";
+import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 
 // Add this function to handle checkpoint restore
 export async function POST(request: Request) {
@@ -17,8 +17,7 @@ export async function POST(request: Request) {
     .single();
 
   // Transform the URL similar to chat route
-  let apiUrl = data.app_url.replace("makex.app", "fly.dev");
-  const API_BASE = apiUrl + ":8001";
+  
 
   if (error) {
     return NextResponse.json(
@@ -28,7 +27,7 @@ export async function POST(request: Request) {
   }
 
   console.log("data", data);
-  const fileBackendClient = createFileBackendApiClient(API_BASE);
+  const fileBackendClient = createFileBackendApiClient(data.app_url);
 
   try {
     const responseData = await fileBackendClient.post("/checkpoint/restore", {

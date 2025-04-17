@@ -13,9 +13,10 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
   const { theme } = useTheme();
 
   useEffect(() => {
+    let expoUrl = url.replace("https://", "exp://");
     const generateQR = async () => {
       try {
-        const dataUrl = await QRCode.toDataURL(url, {
+        const dataUrl = await QRCode.toDataURL(expoUrl, {
           width: 256,
           margin: 1,
           color: {
@@ -28,7 +29,6 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
         console.error('Error generating QR code:', err);
       }
     };
-
     if (url) {
       generateQR();
     }

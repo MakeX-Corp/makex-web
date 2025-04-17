@@ -39,7 +39,6 @@ export default function Dashboard() {
   const [limitError, setLimitError] = useState<ContainerLimitError | null>(
     null
   );
-  const [isManagingSubscription, setIsManagingSubscription] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
   const [inviteCodeVerified, setInviteCodeVerified] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
@@ -144,77 +143,6 @@ export default function Dashboard() {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleManageSubscription = async () => {
-    try {
-      setIsManagingSubscription(true);
-      const decodedToken = getAuthToken();
-
-      if (!decodedToken) {
-        throw new Error("No authentication token found");
-      }
-
-      // First fetch subscription data to get customer ID
-      const subscriptionResponse = await fetch("/api/subscription", {
-        headers: {
-          Authorization: `Bearer ${decodedToken}`,
-        },
-      });
-
-      if (!subscriptionResponse.ok) {
-        const error = await subscriptionResponse.json();
-        throw new Error(error.error || "Failed to fetch subscription data");
-      }
-
-      const subscriptionData = await subscriptionResponse.json();
-
-      // If we don't have a customer ID, redirect to pricing
-      if (!subscriptionData.customerId) {
-        router.push("/pricing");
-        return;
-      }
-
-      // Fetch customer session with customer ID
-      const response = await fetch("/api/customer-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${decodedToken}`,
-        },
-        body: JSON.stringify({
-          customerId: subscriptionData.customerId,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to manage subscription");
-      }
-
-      const data = await response.json();
-
-      // Redirect to the subscription portal URL returned from the API
-      if (data.url) {
-        window.open(data.url, "_blank");
-      } else {
-        router.push("/pricing");
-      }
-    } catch (error) {
-      console.error("Error managing subscription:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An error occurred while managing your subscription",
-      });
-      // Fallback to pricing page on error
-      router.push("/pricing");
-    } finally {
-      setIsManagingSubscription(false);
     }
   };
 
@@ -477,19 +405,6 @@ export default function Dashboard() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">My Apps</h1>
         <div className="flex items-center gap-4">
-          {/*<Button
-            variant="outline"
-            onClick={handleManageSubscription}
-            disabled={isManagingSubscription}
-          >
-            {isManagingSubscription ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              </>
-            ) : (
-              "Manage Subscription"
-            )}
-          </Button>*/}
           <Button
             onClick={handleCreateApp}
             disabled={isLoading || isCreatingApp}

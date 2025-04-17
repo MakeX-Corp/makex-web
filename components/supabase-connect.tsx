@@ -10,6 +10,7 @@ export function SupabaseConnect({ supabase_project }: { supabase_project: { name
   const [loading, setLoading] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
   const [isFetching, setIsFetching] = useState(true)
+  const [createdProject, setCreatedProject] = useState<{ name?: string; id: string } | null>(null)
   const router = useRouter()
 
   const handleCreateProject = async () => {
@@ -32,8 +33,7 @@ export function SupabaseConnect({ supabase_project }: { supabase_project: { name
       }
 
       const project = await response.json()
-      // You can handle the project creation success here
-      console.log('Project created:', project)
+      setCreatedProject(project)
     } catch (error) {
       console.error('Error creating project:', error)
     } finally {
@@ -98,9 +98,9 @@ export function SupabaseConnect({ supabase_project }: { supabase_project: { name
 
   return (
     <div className="flex flex-col gap-2">
-      {supabase_project ? (
+      {supabase_project || createdProject ? (
         <Button
-          onClick={() => window.open(`https://supabase.com/dashboard/project/${supabase_project.id}`, '_blank')}
+          onClick={() => window.open(`https://supabase.com/dashboard/project/${(supabase_project || createdProject)?.id}`, '_blank')}
           className="w-full flex items-center gap-2"
           variant="outline"
         >
@@ -111,7 +111,7 @@ export function SupabaseConnect({ supabase_project }: { supabase_project: { name
             height={20}
           />
           <span className="text-sm font-medium">
-            {supabase_project?.name || 'Supabase Project'}
+            {(supabase_project || createdProject)?.name || 'Supabase Project'}
           </span>
         </Button>
       ) : isConnected ? (

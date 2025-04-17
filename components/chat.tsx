@@ -26,6 +26,7 @@ export function Chat({
   appUrl,
   authToken,
   sessionId,
+  supabase_project,
   onResponseComplete,
   onSessionError,
 }: {
@@ -33,6 +34,7 @@ export function Chat({
   appUrl: string;
   authToken: string;
   sessionId: string;
+  supabase_project?: any;
   onResponseComplete?: () => void;
   onSessionError?: (error: string) => void;
 }) {
@@ -210,6 +212,7 @@ export function Chat({
       appUrl,
       appId,
       sessionId,
+      supabase_project,
     },
     maxSteps: 30,
     onToolCall: async ({ toolCall }) => {

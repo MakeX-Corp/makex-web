@@ -1,6 +1,6 @@
 import { getSupabaseWithUser } from '@/utils/server/auth';
 import { NextResponse } from 'next/server';
-import { createFileBackendApiClient } from '@/utils/file-backend-api-client';
+import { createFileBackendApiClient } from '@/utils/server/file-backend-api-client';
 
 // Add this function to handle checkpoint restore
 export async function POST(request: Request) {
@@ -10,10 +10,6 @@ export async function POST(request: Request) {
   console.log("appUrl", appUrl);
   console.log("sessionId", sessionId);
   
-  // Transform the URL similar to chat route
-  let apiUrl = appUrl.replace('makex.app', 'fly.dev');
-  const API_BASE = apiUrl + ':8001';
-
   // query supabase app_chat_history to get the commit hash
   const userResult = await getSupabaseWithUser(request)
   if (userResult instanceof NextResponse) return userResult
@@ -34,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   console.log("data", data);
-  const fileBackendClient = createFileBackendApiClient(API_BASE);
+  const fileBackendClient = createFileBackendApiClient(appUrl);
   
   
   try {

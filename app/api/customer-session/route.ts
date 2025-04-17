@@ -5,16 +5,19 @@ export async function POST(request: NextRequest) {
     // Parse the request body properly
     const body = await request.json();
     const customerId = body.customerId;
-    const response = await fetch(
-      `https://sandbox-api.paddle.com/customers/${customerId}/portal-sessions`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.PADDLE_SECRET_KEY}`,
-        },
-      }
-    );
+    let url = "";
+    if (process.env.PADDLE_ENV === "production") {
+      url = `https://api.paddle.com/customers/${customerId}/portal-sessions`;
+    } else {
+      url = `https://sandbox-api.paddle.com/customers/${customerId}/portal-sessions`;
+    }
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.PADDLE_SECRET_KEY}`,
+      },
+    });
     if (!response.ok) {
       const errorData = await response.json();
       return NextResponse.json(

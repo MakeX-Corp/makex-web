@@ -350,7 +350,7 @@ export default function AppEditor() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            {/* <SupabaseConnect supabase_project={app.supabase_project} /> */}
+            <SupabaseConnect supabase_project={app.supabase_project} />
             <Button
               variant="outline"
               onClick={handleResetApp}
@@ -403,6 +403,7 @@ export default function AppEditor() {
                   sessionId={currentSessionId}
                   onResponseComplete={handleRefresh}
                   onSessionError={handleSessionError}
+                  supabase_project={app.supabase_project || ""}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center flex-col gap-4 text-muted-foreground">

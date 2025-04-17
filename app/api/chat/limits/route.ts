@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { getDailyMessageCount } from "@/utils/check-daily-limit";
+import { getMessageLimit } from "@/utils/server/check-daily-limit";
+import { getDailyMessageCount } from "@/utils/server/check-daily-limit";
 
 export async function GET(req: Request) {
   try {
@@ -15,15 +16,20 @@ export async function GET(req: Request) {
 
     if (countError) {
       return NextResponse.json(
-        { error: "Failed to fetch message limit" },
+        { error: "Failed to fetch message count" },
         { status: 500 }
       );
     }
 
-    const MAX_DAILY_MESSAGES = parseInt(process.env.MAX_DAILY_MESSAGES || "20");
-    const remaining = MAX_DAILY_MESSAGES - (count || 0);
+    const maxDailyMessages = await getMessageLimit(supabase, user.id);
+    console.log("maxDailyMessages", maxDailyMessages);
+    const remaining = maxDailyMessages - (count || 0);
 
-    return NextResponse.json({ remaining });
+    return NextResponse.json({
+      remaining,
+      total: maxDailyMessages,
+      used: count || 0,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: "Internal Server Error" },
