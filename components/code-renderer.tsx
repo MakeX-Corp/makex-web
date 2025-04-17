@@ -14,6 +14,7 @@ export default function CodeRenderer({ content, language = 'javascript' }: CodeR
 
   return (
     <div className="rounded-md overflow-hidden w-full max-w-full">
+      {/* @ts-ignore */}
       <SyntaxHighlighter
         language={language}
         style={style}
