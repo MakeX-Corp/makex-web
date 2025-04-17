@@ -195,10 +195,7 @@ export function Chat({
     input,
     handleInputChange,
     handleSubmit,
-    addToolResult,
     error,
-    isLoading: isChatLoading,
-    setMessages,
   } = useChat({
     api: `/api/chat/`,
     initialMessages: isLoading
@@ -216,14 +213,8 @@ export function Chat({
       supabase_project,
     },
     maxSteps: 30,
-    onToolCall: async ({ toolCall }) => {
-      // When a tool is called, ensure waiting indicator stays visible
-      setIsWaitingForResponse(true);
-      console.log("toolCall", toolCall);
-      // Your existing tool call handling
-      addToolResult({ toolCallId: toolCall.toolCallId, result: "Test" });
-    },
     onResponse: async (response) => {
+      console.log("response", response);
       // Check if we hit the rate limit
       if (response.status === 429) {
         setLimitReached(true);
@@ -381,7 +372,7 @@ export function Chat({
       case "text":
         return <div className="text-sm">{part.text}</div>;
       case "tool-invocation":
-        return <ToolInvocation part={part} />;
+        return <div> {part.toolInvocation.toolName}</div>
       default:
         return null;
     }
@@ -487,7 +478,8 @@ export function Chat({
                     )}
                     {message.parts?.length ? (
                       message.parts.map((part, i) => (
-                        <div key={i}>{renderMessagePart(part)}</div>
+                        <div key={i}>
+                          {renderMessagePart(part)}</div>
                       ))
                     ) : (
                       <div className="text-sm">{message.content}</div>

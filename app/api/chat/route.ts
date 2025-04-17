@@ -231,6 +231,7 @@ export async function POST(req: Request) {
     model: anthropic(modelName),
     messages: formattedMessages,
     tools: tools,
+    toolCallStreaming: true,
     system: getPrompt(fileTree, connectionUri),
     onFinish: async (result) => {
       // Save checkpoint after completing the response
