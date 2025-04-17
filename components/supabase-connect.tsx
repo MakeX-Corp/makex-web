@@ -6,11 +6,10 @@ import { useRouter } from 'next/navigation'
 import { getAuthToken } from "@/utils/client/auth"
 import Image from 'next/image'
 
-export function SupabaseConnect({ supabase_project }: { supabase_project: { name?: string; id: string } }) {
+export function SupabaseConnect({ supabaseProject, setSupabaseProject }: { supabaseProject: any, setSupabaseProject: any }) {
   const [loading, setLoading] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
   const [isFetching, setIsFetching] = useState(true)
-  const [createdProject, setCreatedProject] = useState<{ name?: string; id: string } | null>(null)
   const router = useRouter()
 
   const handleCreateProject = async () => {
@@ -33,7 +32,7 @@ export function SupabaseConnect({ supabase_project }: { supabase_project: { name
       }
 
       const project = await response.json()
-      setCreatedProject(project)
+      setSupabaseProject(project)
     } catch (error) {
       console.error('Error creating project:', error)
     } finally {
@@ -42,7 +41,6 @@ export function SupabaseConnect({ supabase_project }: { supabase_project: { name
   }
 
   useEffect(() => {
-    console.log('supabase_project', supabase_project)
     const fetchUserIntegrations = async () => {
       try {
         const authToken = await getAuthToken()
@@ -98,9 +96,9 @@ export function SupabaseConnect({ supabase_project }: { supabase_project: { name
 
   return (
     <div className="flex flex-col gap-2">
-      {supabase_project || createdProject ? (
+      {supabaseProject ? (
         <Button
-          onClick={() => window.open(`https://supabase.com/dashboard/project/${(supabase_project || createdProject)?.id}`, '_blank')}
+          onClick={() => window.open(`https://supabase.com/dashboard/project/${supabaseProject?.id}`, '_blank')}
           className="w-full flex items-center gap-2"
           variant="outline"
         >
@@ -111,7 +109,7 @@ export function SupabaseConnect({ supabase_project }: { supabase_project: { name
             height={20}
           />
           <span className="text-sm font-medium">
-            {(supabase_project || createdProject)?.name || 'Supabase Project'}
+            {supabaseProject?.name || 'Supabase Project'}
           </span>
         </Button>
       ) : isConnected ? (
