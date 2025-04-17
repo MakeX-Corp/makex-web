@@ -14,6 +14,13 @@ import { AlertCircle } from "lucide-react";
 import { DiscordSupportButton } from "@/components/support-button";
 import { Input } from "@/components/ui/input";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 const INVITE_CODE_REQUIRED = true;
 interface UserApp {
   id: string;
@@ -424,23 +431,25 @@ export default function Dashboard() {
       </div>
 
       {limitError && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>App Limit Reached</AlertTitle>
-          <AlertDescription>
-            You have reached your maximum limit of {limitError.maxAllowed} app
-            {limitError.maxAllowed !== 1 ? "s" : ""}. Please delete an existing
-            app before creating a new one, or upgrade your subscription for more
-            apps.
-          </AlertDescription>
-          <Button
-            variant="outline"
-            className="mt-2"
-            onClick={() => setLimitError(null)}
-          >
-            Dismiss
-          </Button>
-        </Alert>
+        <Dialog open={!!limitError} onOpenChange={() => setLimitError(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>App Limit Reached</DialogTitle>
+              <DialogDescription>
+                You have reached your maximum limit of {limitError.maxAllowed}{" "}
+                app
+                {limitError.maxAllowed !== 1 ? "s" : ""}. Please delete an
+                existing app before creating a new one, or upgrade your
+                subscription for more apps.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-2">
+              <Button asChild>
+                <Link href="/pricing">View Pricing Plans</Link>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {isLoading ? (
