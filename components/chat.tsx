@@ -66,14 +66,19 @@ export function Chat({
 
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
 
-  // Use our custom hook for image handling
+  // Use our custom hook for image handling with drag and drop
   const {
     selectedImage,
     imagePreview,
+    isDragging,
     handleImageSelect,
     handleRemoveImage,
     resetImage,
     fileInputRef,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragOver,
+    handleDrop,
   } = useImageUpload();
 
   // Refs for tracking API calls - specific to this component instance
@@ -382,7 +387,23 @@ export function Chat({
   };
 
   return (
-    <div className="flex flex-col h-full bg-background relative">
+    <div
+      className="flex flex-col h-full bg-background relative"
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay indicator - now covering the entire chat interface */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm z-20 flex items-center justify-center border-2 border-dashed border-primary rounded-lg">
+          <div className="text-center p-6 bg-background rounded-lg shadow-lg">
+            <ImageIcon className="h-12 w-12 text-primary mx-auto mb-4" />
+            <p className="text-lg font-medium">Drop your image here</p>
+          </div>
+        </div>
+      )}
+
       {/* Message limit modal */}
       <Dialog open={limitModalOpen} onOpenChange={setLimitModalOpen}>
         <DialogContent>
@@ -514,7 +535,7 @@ export function Chat({
             placeholder={
               limitReached
                 ? "Daily message limit reached"
-                : "Type your message..."
+                : "Type your message or drop an image anywhere..."
             }
             className="flex-1"
             disabled={limitReached || isWaitingForResponse || isLoading}
