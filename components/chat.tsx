@@ -10,6 +10,7 @@ import {
   Lock,
   Image as ImageIcon,
   X,
+  Check,
 } from "lucide-react";
 import { useEffect, useState, useRef, ChangeEvent } from "react";
 import {
@@ -372,7 +373,7 @@ export function Chat({
       case "text":
         return <div className="text-sm">{part.text}</div>;
       case "tool-invocation":
-        return <div> {part.toolInvocation.toolName}</div>
+        return <ToolInvocation part={part} />;
       default:
         return null;
     }
@@ -500,30 +501,6 @@ export function Chat({
                 )}
               </div>
             ))}
-
-            {/* Waiting for AI response indicator (three dots) */}
-            {isWaitingForResponse && (
-              <div className="flex flex-col items-start">
-                <Card className="max-w-[80%] bg-card text-card-foreground">
-                  <CardContent className="p-4">
-                    <div className="flex space-x-1">
-                      <div
-                        className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce"
-                        style={{ animationDelay: "0ms" }}
-                      ></div>
-                      <div
-                        className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce"
-                        style={{ animationDelay: "300ms" }}
-                      ></div>
-                      <div
-                        className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce"
-                        style={{ animationDelay: "600ms" }}
-                      ></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
           </>
         )}
       </div>
