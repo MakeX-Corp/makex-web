@@ -5,6 +5,9 @@ import crypto from 'crypto';
 import { EnvVarManager } from "@/utils/server/env-var-manager";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 
+
+export const maxDuration = 300;
+
 export async function POST(request: Request) {
   try {
     // Verify user authentication
