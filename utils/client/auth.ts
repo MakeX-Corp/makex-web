@@ -45,3 +45,13 @@ export const getUserIdFromToken = (token: string): string | null => {
     return null;
   }
 };
+
+export const getUserEmailFromToken = (token: string): string | null => {
+  try {
+    const decodedToken = decodeToken(token);
+    return decodedToken?.email || null;
+  } catch (error) {
+    console.error("Error getting user email from token:", error);
+    return null;
+  }
+};

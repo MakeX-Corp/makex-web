@@ -1,7 +1,6 @@
-// app/reset-password/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -87,77 +86,80 @@ export default function ResetPassword() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background/95 to-background/90">
-      <main className="flex-1 flex items-center justify-center relative z-10">
-        <div className="w-full max-w-md px-8 py-12">
-          <h1 className="text-4xl font-bold tracking-tight mb-8 bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-500">
-            Reset Password
-          </h1>
+      <Suspense fallback={<div>Loading...</div>}>
+        <main className="flex-1 flex items-center justify-center relative z-10">
+          <div className="w-full max-w-md px-8 py-12">
+            <h1 className="text-4xl font-bold tracking-tight mb-8 bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-500">
+              Reset Password
+            </h1>
 
-          {success ? (
-            <div className="bg-green-500/10 text-green-500 text-sm p-3 rounded-lg">
-              Your password has been successfully reset. Redirecting to login...
-            </div>
-          ) : (
-            <>
-              {error && (
-                <div className="bg-red-500/10 text-red-500 text-sm p-3 rounded-lg mb-4">
-                  {error}
-                </div>
-              )}
-
-              {!verified ? (
-                <div className="bg-yellow-500/10 text-yellow-500 text-sm p-3 rounded-lg">
-                  Verifying your reset link...
-                </div>
-              ) : (
-                <form onSubmit={handlePasswordReset} className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="password"
-                      className="block text-sm font-medium text-muted-foreground mb-2"
-                    >
-                      New Password
-                    </label>
-                    <input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      required
-                    />
+            {success ? (
+              <div className="bg-green-500/10 text-green-500 text-sm p-3 rounded-lg">
+                Your password has been successfully reset. Redirecting to
+                login...
+              </div>
+            ) : (
+              <>
+                {error && (
+                  <div className="bg-red-500/10 text-red-500 text-sm p-3 rounded-lg mb-4">
+                    {error}
                   </div>
+                )}
 
-                  <div>
-                    <label
-                      htmlFor="confirmPassword"
-                      className="block text-sm font-medium text-muted-foreground mb-2"
-                    >
-                      Confirm Password
-                    </label>
-                    <input
-                      id="confirmPassword"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      required
-                    />
+                {!verified ? (
+                  <div className="bg-yellow-500/10 text-yellow-500 text-sm p-3 rounded-lg">
+                    Verifying your reset link...
                   </div>
+                ) : (
+                  <form onSubmit={handlePasswordReset} className="space-y-4">
+                    <div>
+                      <label
+                        htmlFor="password"
+                        className="block text-sm font-medium text-muted-foreground mb-2"
+                      >
+                        New Password
+                      </label>
+                      <input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        required
+                      />
+                    </div>
 
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-primary text-white rounded-xl py-2 font-medium disabled:opacity-50 mt-6 hover:bg-primary/90 transition-colors"
-                  >
-                    {loading ? "Resetting..." : "Reset Password"}
-                  </button>
-                </form>
-              )}
-            </>
-          )}
-        </div>
-      </main>
+                    <div>
+                      <label
+                        htmlFor="confirmPassword"
+                        className="block text-sm font-medium text-muted-foreground mb-2"
+                      >
+                        Confirm Password
+                      </label>
+                      <input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-primary text-white rounded-xl py-2 font-medium disabled:opacity-50 mt-6 hover:bg-primary/90 transition-colors"
+                    >
+                      {loading ? "Resetting..." : "Reset Password"}
+                    </button>
+                  </form>
+                )}
+              </>
+            )}
+          </div>
+        </main>
+      </Suspense>
     </div>
   );
 }

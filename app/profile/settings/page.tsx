@@ -3,7 +3,7 @@
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -16,41 +16,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { getAuthToken } from "@/utils/client/auth";
 import { useSubscription } from "@/hooks/use-subscription";
-
+import { Loader2 } from "lucide-react";
 export default function ProfileSettings() {
-  const [email, setEmail] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClientComponentClient();
   const router = useRouter();
   const {
-    hasActiveSubscription,
     pendingCancellation,
     planName,
     loading: subscriptionLoading,
+    customerId,
+    email,
   } = useSubscription();
 
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user) {
-          setEmail(user.email || "");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    getUser();
-  }, [supabase]);
-
+  const [isManagingSubscription, setIsManagingSubscription] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const handleSignOut = async () => {
+    setIsSigningOut(true);
+    const supabase = createClientComponentClient();
     await supabase.auth.signOut();
     router.push("/");
   };
-
-  const [isManagingSubscription, setIsManagingSubscription] = useState(false);
   const handleManageSubscription = async () => {
     try {
       setIsManagingSubscription(true);
@@ -60,22 +44,8 @@ export default function ProfileSettings() {
         throw new Error("No authentication token found");
       }
 
-      // First fetch subscription data to get customer ID
-      const subscriptionResponse = await fetch("/api/subscription", {
-        headers: {
-          Authorization: `Bearer ${decodedToken}`,
-        },
-      });
-
-      if (!subscriptionResponse.ok) {
-        const error = await subscriptionResponse.json();
-        throw new Error(error.error || "Failed to fetch subscription data");
-      }
-
-      const subscriptionData = await subscriptionResponse.json();
-
       // If we don't have a customer ID, redirect to pricing
-      if (!subscriptionData.customerId) {
+      if (!customerId) {
         router.push("/pricing");
         return;
       }
@@ -88,7 +58,7 @@ export default function ProfileSettings() {
           Authorization: `Bearer ${decodedToken}`,
         },
         body: JSON.stringify({
-          customerId: subscriptionData.customerId,
+          customerId,
         }),
       });
 
@@ -107,15 +77,20 @@ export default function ProfileSettings() {
       }
     } catch (error) {
       console.error("Error managing subscription:", error);
-
-      // Fallback to pricing page on error
       router.push("/pricing");
     } finally {
       setIsManagingSubscription(false);
     }
   };
 
-  if (isLoading || subscriptionLoading) {
+  if (isSigningOut) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-10 w-10 animate-spin" />
+      </div>
+    );
+  }
+  if (subscriptionLoading) {
     return (
       <div className="w-full max-w-2xl px-4">
         <Card className="w-full">

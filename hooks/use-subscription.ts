@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { getAuthToken, getUserIdFromToken } from "@/utils/client/auth";
+import {
+  getAuthToken,
+  getUserIdFromToken,
+  getUserEmailFromToken,
+} from "@/utils/client/auth";
 
 interface Subscription {
   id: string;
@@ -31,6 +35,8 @@ interface UseSubscriptionReturn {
   userId: string | null;
   planName: string;
   subscriptionId: string | null;
+  customerId: string | null;
+  email: string | null;
   refetch: () => Promise<void>;
 }
 
@@ -57,6 +63,7 @@ export function useSubscription(): UseSubscriptionReturn {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchSubscription = async () => {
@@ -70,7 +77,8 @@ export function useSubscription(): UseSubscriptionReturn {
 
       const tokenUserId = getUserIdFromToken(token);
       setUserId(tokenUserId);
-
+      const userEmail = getUserEmailFromToken(token);
+      setUserEmail(userEmail);
       const response = await fetch("/api/subscription", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -125,6 +133,8 @@ export function useSubscription(): UseSubscriptionReturn {
     userId,
     planName: getPlanName(subscription?.price_id || null),
     subscriptionId: subscription?.id || null,
+    customerId: subscription?.customer_id || null,
+    email: userEmail,
     refetch: fetchSubscription,
   };
 }
