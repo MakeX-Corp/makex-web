@@ -102,8 +102,9 @@ export default function AppEditor() {
       const statusData = await statusResponse.json();
 
       if (statusData.state === "started") {
-        // mark the badge as started
+        // Container is already started, no need to refresh
         console.log("Container is already started");
+        return;
       }
 
       if (statusData.state === "stopped") {
@@ -126,7 +127,10 @@ export default function AppEditor() {
         const data = await response.json();
         if (data.ok) {
           await new Promise((resolve) => setTimeout(resolve, timeout));
-          handleRefresh();
+          // Only refresh if the container was actually started
+          if (statusData.state !== "started") {
+            handleRefresh();
+          }
         }
       }
     } catch (error) {
@@ -171,16 +175,18 @@ export default function AppEditor() {
 
         setSupabaseProject(data?.supabase_project);
 
-
-
         if (error) throw error;
+        
+        // Set app data immediately without waiting for container
+        setApp(data);
+        setIsLoading(false);
+        
+        // Start container wake-up process in background
         if (data.machine_id) {
           wakeContainer(data.app_name, data.machine_id);
         }
-        setApp(data);
       } catch (error) {
         console.error("Error fetching app details:", error);
-      } finally {
         setIsLoading(false);
       }
     };
