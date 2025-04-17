@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,9 +26,18 @@ import ToolInvocation from "@/components/tool-render";
 // Add the ThreeDotsLoader component
 const ThreeDotsLoader = () => (
   <div className="flex justify-center items-center space-x-1 py-2">
-    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+    <div
+      className="w-2 h-2 bg-primary rounded-full animate-bounce"
+      style={{ animationDelay: "0ms" }}
+    ></div>
+    <div
+      className="w-2 h-2 bg-primary rounded-full animate-bounce"
+      style={{ animationDelay: "150ms" }}
+    ></div>
+    <div
+      className="w-2 h-2 bg-primary rounded-full animate-bounce"
+      style={{ animationDelay: "300ms" }}
+    ></div>
   </div>
 );
 
@@ -58,7 +68,7 @@ export function Chat({
   const [remainingMessages, setRemainingMessages] = useState<number | null>(
     null
   );
-  
+
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -200,13 +210,7 @@ export function Chat({
     fetchMessages();
   }, [sessionId, appId, authToken, onSessionError]);
 
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    error,
-  } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, error } = useChat({
     api: `/api/chat/`,
     initialMessages: isLoading
       ? []
@@ -445,6 +449,9 @@ export function Chat({
             You've used all your daily messages. Your limit will reset at
             midnight.
           </p>
+          <Button asChild>
+            <Link href="/pricing">Upgrade</Link>
+          </Button>
         </div>
       )}
 
@@ -488,8 +495,7 @@ export function Chat({
                     )}
                     {message.parts?.length ? (
                       message.parts.map((part, i) => (
-                        <div key={i}>
-                          {renderMessagePart(part)}</div>
+                        <div key={i}>{renderMessagePart(part)}</div>
                       ))
                     ) : (
                       <div className="text-sm">{message.content}</div>
@@ -518,7 +524,7 @@ export function Chat({
       {/* Input area - fixed at bottom */}
       <div className="border-t border-border p-4 bg-background">
         {/* Add the 3-dot loader */}
-        
+
         {/* Image preview area */}
         {imagePreview && (
           <div className="mb-3 relative">
