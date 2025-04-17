@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import {
   Send,
   Loader2,
-  Terminal,
   Lock,
   Image as ImageIcon,
   X,
@@ -20,6 +19,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import ToolInvocation from "@/components/tool-render";
+
 
 export function Chat({
   appId,
@@ -374,47 +375,13 @@ export function Chat({
     }
   }, [messages, isWaitingForResponse]);
 
-  // Helper function to render message parts
+  // Update the renderMessagePart function
   const renderMessagePart = (part: any) => {
     switch (part.type) {
       case "text":
         return <div className="text-sm">{part.text}</div>;
       case "tool-invocation":
-        return (
-          <div className="bg-muted/50 rounded-md p-3 my-2 border border-border">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
-              <Terminal className="h-4 w-4" />
-              <span>Tool: {part.toolInvocation.toolName}</span>
-            </div>
-            <div className="text-sm space-y-2">
-              {part.toolInvocation.state === "result" ? (
-                <>
-                  <div className="text-muted-foreground">Result:</div>
-                  <pre className="bg-muted rounded-md p-2 overflow-x-auto max-w-full">
-                    <code
-                      className="text-foreground whitespace-pre-wrap break-all"
-                      style={{ wordBreak: "break-word" }}
-                    >
-                      {JSON.stringify(part.toolInvocation.result, null, 2)}
-                    </code>
-                  </pre>
-                </>
-              ) : (
-                <>
-                  <div className="text-muted-foreground">Arguments:</div>
-                  <pre className="bg-muted rounded-md p-2 overflow-x-auto max-w-full">
-                    <code
-                      className="text-foreground whitespace-pre-wrap break-all"
-                      style={{ wordBreak: "break-word" }}
-                    >
-                      {JSON.stringify(part.toolInvocation.args, null, 2)}
-                    </code>
-                  </pre>
-                </>
-              )}
-            </div>
-          </div>
-        );
+        return <ToolInvocation part={part} />;
       default:
         return null;
     }
