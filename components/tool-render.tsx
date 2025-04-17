@@ -69,7 +69,7 @@ export default function ToolInvocation({ part }: { part: any }) {
                 ) : (
                   toolName === 'readFile' || toolName === 'writeFile' ? (
                     <div className="relative">
-                      <code className="text-foreground whitespace-pre-wrap break-all">
+                      <code className="text-foreground whitespace-pre-wrap break-all overflow-wrap break-word">
                         {toolName === 'readFile' 
                           ? typeof part.toolInvocation.result.data === 'string' 
                             ? part.toolInvocation.result.data 
@@ -111,7 +111,7 @@ export default function ToolInvocation({ part }: { part: any }) {
                       )}
                     </div>
                   ) : (
-                    <code className="text-foreground whitespace-pre-wrap break-all">
+                    <code className="text-foreground whitespace-pre-wrap break-all overflow-wrap break-word">
                       {JSON.stringify(part.toolInvocation.result.data, null, 2)}
                     </code>
                   )

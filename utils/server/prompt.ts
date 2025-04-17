@@ -28,7 +28,7 @@ export const getPrompt = (fileTree: any, connectionUri: string | undefined) => {
     Make sure you understand the user's request and the file tree structure. and make the changes to the correct files.
 
     Make sure to delete the file which seems redundant to you
-    Just say at the start in 2 points what are you gonna do and then continuosly call tools to achieve the goal
+    Say as minimum as possible outside the tool calls just basic stuff one line if really needed else use minimum words
     Try to do it in minimum tool calls but goal is to be correct and write beautiful code
     `;
 };
