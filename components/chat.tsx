@@ -321,24 +321,45 @@ export function Chat({
     try {
       // If there are images
       if (selectedImages.length > 0) {
-        // Create the image attachments
-        const imageAttachments = await Promise.all(
-          selectedImages.map(async (img) => {
-            const imageBase64 = await getBase64(img);
-            return {
-              name: img.name,
-              contentType: img.type,
-              url: imageBase64,
-            };
-          })
-        );
+        // For UI display only
+        const imageAttachments = imagePreviews.map((preview, index) => ({
+          name: selectedImages[index].name || `image-${index}.jpg`,
+          contentType: "image/jpeg",
+          url: preview,
+        }));
 
-        // Submit with the attachments
-        handleSubmit(e, {
-          experimental_attachments: imageAttachments,
+        // Create properly formatted content for Claude
+        // Claude expects each image to be a separate part in the array
+        const messageContent = [];
+
+        // Add text content first (if any)
+        if (input.trim()) {
+          messageContent.push({ type: "text", text: input });
+        }
+
+        // Add each image as a separate part
+        imagePreviews.forEach((preview) => {
+          messageContent.push({
+            type: "image",
+            image: preview,
+          });
         });
 
-        // Clean up after submitting
+        // Submit the message with both formats
+        handleSubmit(e, {
+          experimental_attachments: imageAttachments, // For UI display
+          body: {
+            appUrl,
+            appId,
+            sessionId,
+            supabase_project,
+            // Use the array of message parts
+            multiModal: true, // Flag to indicate we're using the multimodal format
+            messageParts: messageContent,
+          },
+        });
+
+        // Important: Clear the image state right away
         resetImages();
       } else {
         // Regular text submission
@@ -365,6 +386,19 @@ export function Chat({
         return <div className="text-sm">{part.text}</div>;
       case "tool-invocation":
         return <ToolInvocation part={part} />;
+      case "image":
+        return (
+          <img
+            src={part.image}
+            alt="Image in message"
+            className="rounded border border-border shadow-sm mt-2 mb-2"
+            style={{
+              cursor: "pointer",
+              maxHeight: "200px",
+              objectFit: "contain",
+            }}
+          />
+        );
       default:
         return null;
     }

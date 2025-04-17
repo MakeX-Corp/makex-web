@@ -8,8 +8,59 @@ export function useImageUpload() {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Process multiple files
-  const processFiles = (files: File[]) => {
+  // Resize and optimize image while preserving transparency
+  const optimizeImage = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Max dimensions (reduce to save bandwidth)
+          const maxWidth = 800;
+          const maxHeight = 800;
+
+          let width = img.width;
+          let height = img.height;
+
+          // Calculate new dimensions if needed
+          if (width > maxWidth || height > maxHeight) {
+            if (width > height) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            // Don't fill with white background to preserve transparency
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw the image directly
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Use PNG format to preserve transparency
+            const optimizedBase64 = canvas.toDataURL("image/png", 0.9);
+            resolve(optimizedBase64);
+          } else {
+            // Fallback if canvas context isn't available
+            resolve(e.target?.result as string);
+          }
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Process multiple files with optimization
+  const processFiles = async (files: File[]) => {
     // Filter to only include images
     const imageFiles = files.filter((file) => file.type.startsWith("image/"));
 
@@ -18,21 +69,15 @@ export function useImageUpload() {
     // Add to existing selection
     setSelectedImages((prev) => [...prev, ...imageFiles]);
 
-    // Create previews for all new files
-    const newPreviews: string[] = [];
-
-    imageFiles.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        newPreviews.push(reader.result as string);
-
-        // Only update state once all previews are created
-        if (newPreviews.length === imageFiles.length) {
-          setImagePreviews((prev) => [...prev, ...newPreviews]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    // Create optimized previews
+    for (const file of imageFiles) {
+      try {
+        const optimizedImage = await optimizeImage(file);
+        setImagePreviews((prev) => [...prev, optimizedImage]);
+      } catch (err) {
+        console.error("Error processing image:", err);
+      }
+    }
   };
 
   // Handle image selection from file input
