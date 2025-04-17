@@ -87,27 +87,35 @@ export async function POST(req: Request) {
       { status: limitCheck.status }
     );
   }
-  let imageUrl = null;
 
-  // Check if the last user message has an image and upload it
+  // Store multiple image URLs
+  let imageUrls: string[] = [];
+
+  // Check if the last user message has image attachments and upload them
   if (lastUserMessage?.experimental_attachments?.length > 0) {
     try {
-      console.log("Found image attachment in message, attempting to upload...");
-      const imageAttachment = lastUserMessage.experimental_attachments[0];
+      console.log(
+        `Found ${lastUserMessage.experimental_attachments.length} image attachments in message, attempting to upload...`
+      );
 
-      // Validate it's a base64 image
-      if (
-        !imageAttachment.url ||
-        !imageAttachment.url.startsWith("data:image/")
-      ) {
-        console.log("Image is not a valid base64 string, skipping upload");
-      } else {
+      // Process each attachment
+      for (const imageAttachment of lastUserMessage.experimental_attachments) {
+        // Validate it's a base64 image
+        if (
+          !imageAttachment.url ||
+          !imageAttachment.url.startsWith("data:image/")
+        ) {
+          console.log("Image is not a valid base64 string, skipping upload");
+          continue;
+        }
+
         // Extract content type and data from base64
         const contentTypeMatch = imageAttachment.url.match(
           /^data:([^;]+);base64,/
         );
         if (!contentTypeMatch) {
-          throw new Error("Invalid base64 image format");
+          console.log("Invalid base64 image format, skipping");
+          continue;
         }
 
         const contentType = contentTypeMatch[1];
@@ -118,7 +126,8 @@ export async function POST(req: Request) {
 
         // Validate base64 data
         if (!base64Data || base64Data.trim() === "") {
-          throw new Error("Empty base64 data");
+          console.log("Empty base64 data, skipping");
+          continue;
         }
 
         const buffer = Buffer.from(base64Data, "base64");
@@ -158,7 +167,7 @@ export async function POST(req: Request) {
 
         if (uploadError) {
           console.error("Supabase upload error:", JSON.stringify(uploadError));
-          throw uploadError;
+          continue; // Skip this image but continue with others
         }
 
         console.log("Upload successful:", uploadData);
@@ -169,18 +178,21 @@ export async function POST(req: Request) {
           .getPublicUrl(filename);
 
         if (!publicUrlData || !publicUrlData.publicUrl) {
-          throw new Error("Failed to get public URL");
+          console.log("Failed to get public URL for image");
+          continue;
         }
 
-        imageUrl = publicUrlData.publicUrl;
-        console.log("Image uploaded successfully to:", imageUrl);
+        // Add URL to our array
+        imageUrls.push(publicUrlData.publicUrl);
+        console.log("Image uploaded successfully to:", publicUrlData.publicUrl);
       }
+
+      console.log(`Successfully uploaded ${imageUrls.length} images`);
     } catch (error) {
-      console.error("Error uploading image to storage:", error);
+      console.error("Error uploading images to storage:", error);
       // Continue with original message if upload fails
     }
   }
-
   const apiClient = createFileBackendApiClient(appUrl);
   let connectionUri = undefined;
 
@@ -198,7 +210,6 @@ export async function POST(req: Request) {
   const tools = createTools({
     apiUrl: appUrl,
     connectionUri: connectionUri,
-
   });
 
   const formattedMessages = messages.map((message: any) => {
@@ -222,6 +233,7 @@ export async function POST(req: Request) {
       content: message.content,
     };
   });
+
   const result = streamText({
     model: anthropic(modelName),
     messages: formattedMessages,
@@ -239,7 +251,13 @@ export async function POST(req: Request) {
         content: lastUserMessage.content,
         role: "user",
         model_used: modelName,
-        metadata: { streamed: false, imageUrl: imageUrl || null }, //save image url in the metadata
+        metadata: {
+          streamed: false,
+          // Store all image URLs in the metadata
+          imageUrls: imageUrls.length > 0 ? imageUrls : null,
+          // For backward compatibility
+          imageUrl: imageUrls.length === 1 ? imageUrls[0] : null,
+        },
         input_tokens_used: inputTokens,
         output_tokens_used: 0,
         cost: inputCost,
@@ -249,6 +267,7 @@ export async function POST(req: Request) {
     },
     maxSteps: 30, // allow up to 30 steps
   });
+
   return result.toDataStreamResponse({
     sendReasoning: true,
   });

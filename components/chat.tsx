@@ -66,14 +66,14 @@ export function Chat({
 
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
 
-  // Use our custom hook for image handling with drag and drop
+  // Use our updated custom hook for handling multiple images
   const {
-    selectedImage,
-    imagePreview,
+    selectedImages,
+    imagePreviews,
     isDragging,
     handleImageSelect,
     handleRemoveImage,
-    resetImage,
+    resetImages,
     fileInputRef,
     handleDragEnter,
     handleDragLeave,
@@ -195,8 +195,13 @@ export function Chat({
             role: msg.role,
             content: msg.content,
             parts: msg.metadata.parts,
-            //imageUrl: msg.metadata.imageUrl || null,
-            experimental_attachments: msg.metadata.imageUrl
+            experimental_attachments: msg.metadata.imageUrls
+              ? msg.metadata.imageUrls.map((url: string) => ({
+                  url: url,
+                  contentType: "image/jpeg",
+                  name: "image",
+                }))
+              : msg.metadata.imageUrl
               ? [
                   {
                     url: msg.metadata.imageUrl,
@@ -306,7 +311,7 @@ export function Chat({
     }
 
     // Don't proceed if there's nothing to send
-    if (!input.trim() && !selectedImage) {
+    if (!input.trim() && selectedImages.length === 0) {
       return;
     }
 
@@ -314,29 +319,33 @@ export function Chat({
     setIsWaitingForResponse(true);
 
     try {
-      // If there's an image
-      if (selectedImage) {
-        // Create the image attachment
-        const imageBase64 = await getBase64(selectedImage);
-        const imageAttachment = {
-          name: selectedImage.name,
-          contentType: selectedImage.type,
-          url: imageBase64,
-        };
+      // If there are images
+      if (selectedImages.length > 0) {
+        // Create the image attachments
+        const imageAttachments = await Promise.all(
+          selectedImages.map(async (img) => {
+            const imageBase64 = await getBase64(img);
+            return {
+              name: img.name,
+              contentType: img.type,
+              url: imageBase64,
+            };
+          })
+        );
 
-        // Submit with the attachment - let useChat handle it
+        // Submit with the attachments
         handleSubmit(e, {
-          experimental_attachments: [imageAttachment],
+          experimental_attachments: imageAttachments,
         });
 
         // Clean up after submitting
-        resetImage();
+        resetImages();
       } else {
         // Regular text submission
         handleSubmit(e);
       }
     } catch (error) {
-      console.error("Error processing message with image:", error);
+      console.error("Error processing message with images:", error);
       setIsWaitingForResponse(false);
     }
   };
@@ -399,7 +408,7 @@ export function Chat({
         <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm z-20 flex items-center justify-center border-2 border-dashed border-primary rounded-lg">
           <div className="text-center p-6 bg-background rounded-lg shadow-lg">
             <ImageIcon className="h-12 w-12 text-primary mx-auto mb-4" />
-            <p className="text-lg font-medium">Drop your image here</p>
+            <p className="text-lg font-medium">Drop your images here</p>
           </div>
         </div>
       )}
@@ -463,19 +472,24 @@ export function Chat({
                   }`}
                 >
                   <CardContent className="p-4">
-                    {/* Display image if it exists */}
+                    {/* Display multiple images if they exist */}
                     {message?.experimental_attachments && (
-                      <div className="mb-3">
-                        <img
-                          src={message?.experimental_attachments[0].url}
-                          alt="Uploaded image"
-                          className="w-full rounded border border-border shadow-sm"
-                          style={{
-                            cursor: "pointer",
-                            maxHeight: "300px",
-                            objectFit: "contain",
-                          }}
-                        />
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {message.experimental_attachments.map(
+                          (attachment, i) => (
+                            <img
+                              key={i}
+                              src={attachment.url}
+                              alt={`Uploaded image ${i + 1}`}
+                              className="rounded border border-border shadow-sm"
+                              style={{
+                                cursor: "pointer",
+                                height: "150px",
+                                objectFit: "cover",
+                              }}
+                            />
+                          )
+                        )}
                       </div>
                     )}
                     {message.parts?.length ? (
@@ -509,22 +523,24 @@ export function Chat({
 
       {/* Input area - fixed at bottom */}
       <div className="border-t border-border p-4 bg-background">
-        {/* Image preview area */}
-        {imagePreview && (
-          <div className="mb-3 relative">
-            <div className="relative inline-block">
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="h-20 rounded-md object-cover border border-border"
-              />
-              <button
-                onClick={handleRemoveImage}
-                className="absolute -top-2 -right-2 bg-foreground text-background rounded-full p-1 hover:bg-muted-foreground"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
+        {/* Image previews area */}
+        {imagePreviews.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {imagePreviews.map((preview, index) => (
+              <div key={index} className="relative inline-block">
+                <img
+                  src={preview}
+                  alt={`Preview ${index + 1}`}
+                  className="h-20 rounded-md object-cover border border-border"
+                />
+                <button
+                  onClick={() => handleRemoveImage(index)}
+                  className="absolute -top-2 -right-2 bg-foreground text-background rounded-full p-1 hover:bg-muted-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
           </div>
         )}
 
@@ -535,17 +551,18 @@ export function Chat({
             placeholder={
               limitReached
                 ? "Daily message limit reached"
-                : "Type your message or drop an image anywhere..."
+                : "Type your message or drop images anywhere..."
             }
             className="flex-1"
             disabled={limitReached || isWaitingForResponse || isLoading}
           />
 
-          {/* File input for image (hidden) */}
+          {/* File input for images (hidden) */}
           <input
             type="file"
             ref={fileInputRef}
             accept="image/*"
+            multiple
             className="hidden"
             onChange={handleImageSelect}
             disabled={limitReached || isWaitingForResponse || isLoading}
@@ -558,7 +575,7 @@ export function Chat({
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
             disabled={limitReached || isWaitingForResponse || isLoading}
-            title="Upload an image"
+            title="Upload images"
           >
             <ImageIcon className="h-4 w-4" />
           </Button>
@@ -570,7 +587,7 @@ export function Chat({
             disabled={
               limitReached ||
               isWaitingForResponse ||
-              (!input.trim() && !selectedImage) ||
+              (!input.trim() && selectedImages.length === 0) ||
               isLoading
             }
           >
