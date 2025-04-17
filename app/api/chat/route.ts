@@ -81,12 +81,7 @@ export async function POST(req: Request) {
   const API_BASE = apiUrl + ":8001";
 
   // Check daily message limit using the new utility function
-  const MAX_DAILY_MESSAGES = parseInt(process.env.MAX_DAILY_MESSAGES || "20");
-  const limitCheck = await checkDailyMessageLimit(
-    supabase,
-    user,
-    MAX_DAILY_MESSAGES
-  );
+  const limitCheck = await checkDailyMessageLimit(supabase, user);
   if (limitCheck.error) {
     return NextResponse.json(
       { error: limitCheck.error },

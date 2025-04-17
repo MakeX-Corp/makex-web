@@ -45,7 +45,7 @@ export default function ProfileSettings() {
       }
 
       // If we don't have a customer ID, redirect to pricing
-      if (!customerId) {
+      if (!customerId || planName === "Free") {
         router.push("/pricing");
         return;
       }
@@ -156,14 +156,29 @@ export default function ProfileSettings() {
                 Current Plan: {planName}
                 {pendingCancellation && " (Cancelling at period end)"}
               </p>
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={handleManageSubscription}
-                disabled={isManagingSubscription}
-              >
-                Manage Subscription
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 justify-start"
+                  onClick={handleManageSubscription}
+                  disabled={isManagingSubscription}
+                >
+                  {isManagingSubscription
+                    ? "Loading..."
+                    : "Manage Subscription"}
+                </Button>
+
+                {planName === "Free" ||
+                  (planName === "Starter" && (
+                    <Button
+                      variant="default"
+                      className="flex-1"
+                      onClick={() => router.push("/pricing")}
+                    >
+                      Upgrade Plan
+                    </Button>
+                  ))}
+              </div>
             </div>
           </div>
 

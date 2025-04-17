@@ -27,33 +27,44 @@ interface PlanProps {
 
 const plans: PlanProps[] = [
   {
+    name: "Free",
+    description: "For people just starting out",
+    price: "0",
+    interval: "month",
+    features: [
+      "1 app",
+      "10 messages a day",
+      "Slower app start times",
+      "Standard support",
+    ],
+    priceId: "",
+  },
+  {
     name: "Starter",
     description: "Perfect for individuals starting with AI app creation",
-    price: "10",
+    price: "19",
     interval: "month",
-    features: ["3 apps", "Basic AI editing", "Standard support"],
+    features: [
+      "3 apps",
+      "100 messages a day",
+      "Basic AI editing",
+      "Faster app start times",
+    ],
     priceId: process.env.NEXT_PUBLIC_PADDLE_STARTER_ID || "",
   },
   {
     name: "Pro",
     description: "For professionals who need more power",
-    price: "29",
-    interval: "month",
-    features: ["10 apps", "Advanced AI editing", "Priority support"],
-    priceId: process.env.NEXT_PUBLIC_PADDLE_PRO_ID || "",
-  },
-  {
-    name: "Enterprise",
-    description: "For large organizations with complex needs",
-    price: "199",
+    price: "49",
     interval: "month",
     features: [
       "Unlimited apps",
+      "200 messages a day",
       "Advanced AI editing",
+      "Faster app start times",
       "Priority support",
-      "Custom domains",
     ],
-    priceId: process.env.NEXT_PUBLIC_PADDLE_ENTERPRISE_ID || "",
+    priceId: process.env.NEXT_PUBLIC_PADDLE_PRO_ID || "",
   },
 ];
 
@@ -237,17 +248,19 @@ export default function PricingPage() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button
-                  className="w-full"
-                  onClick={() => handleCheckout(plan.priceId)}
-                  disabled={isButtonDisabled(plan.priceId)}
-                >
-                  {isLoading === plan.priceId
-                    ? "Processing..."
-                    : hasActiveSubscription && planName === plan.name
-                    ? "Current Plan"
-                    : "Subscribe"}
-                </Button>
+                {plan?.name !== "Free" && (
+                  <Button
+                    className="w-full"
+                    onClick={() => handleCheckout(plan.priceId)}
+                    disabled={isButtonDisabled(plan.priceId)}
+                  >
+                    {isLoading === plan.priceId
+                      ? "Processing..."
+                      : hasActiveSubscription && planName === plan.name
+                      ? "Current Plan"
+                      : "Subscribe"}
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           ))}

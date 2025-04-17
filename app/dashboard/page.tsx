@@ -39,7 +39,6 @@ export default function Dashboard() {
   const [limitError, setLimitError] = useState<ContainerLimitError | null>(
     null
   );
-  const [isManagingSubscription, setIsManagingSubscription] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
   const [inviteCodeVerified, setInviteCodeVerified] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);

@@ -102,6 +102,7 @@ async function handleSubscriptionCreated(event: any, supabase: any) {
     console.error("No userId found in subscription data");
     return;
   }
+  console.log("userId", userId);
   try {
     // Insert subscription record
     const { error } = await supabase.from("subscriptions").insert({

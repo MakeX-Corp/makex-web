@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   try {
     // Call Paddle API to update the subscription
     let url = "";
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.PADDLE_ENV === "production") {
       url = `https://api.paddle.com/subscriptions/${subscriptionId}`;
     } else {
       url = `https://sandbox-api.paddle.com/subscriptions/${subscriptionId}`;

@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const customerId = body.customerId;
     let url = "";
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.PADDLE_ENV === "production") {
       url = `https://api.paddle.com/customers/${customerId}/portal-sessions`;
     } else {
       url = `https://sandbox-api.paddle.com/customers/${customerId}/portal-sessions`;
