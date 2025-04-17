@@ -6,7 +6,6 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
@@ -46,6 +45,9 @@ export function SessionsSidebar({
   isCreatingSession = false,
 }: SessionsSidebarProps) {
   const router = useRouter();
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(
+    null
+  );
 
   const handleSessionClick = (sessionId: string) => {
     setCurrentSessionId(sessionId);
@@ -57,6 +59,10 @@ export function SessionsSidebar({
     e: React.MouseEvent
   ) => {
     e.stopPropagation(); // Prevent triggering the session click
+
+    // Set the deleting session ID
+    setDeletingSessionId(sessionId);
+
     try {
       const response = await fetch(`/api/sessions?sessionId=${sessionId}`, {
         method: "DELETE",
@@ -77,6 +83,9 @@ export function SessionsSidebar({
       }
     } catch (error) {
       console.error("Error deleting session:", error);
+    } finally {
+      // Clear the deleting session ID
+      setDeletingSessionId(null);
     }
   };
 
@@ -174,7 +183,11 @@ export function SessionsSidebar({
                           role="button"
                           tabIndex={0}
                         >
-                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                          {deletingSessionId === session.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                          )}
                         </div>
                       </div>
                     </SidebarMenuItem>
