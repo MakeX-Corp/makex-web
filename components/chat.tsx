@@ -22,6 +22,14 @@ import {
 } from "@/components/ui/dialog";
 import ToolInvocation from "@/components/tool-render";
 
+// Add the ThreeDotsLoader component
+const ThreeDotsLoader = () => (
+  <div className="flex justify-center items-center space-x-1 py-2">
+    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+  </div>
+);
 
 export function Chat({
   appId,
@@ -50,6 +58,7 @@ export function Chat({
   const [remainingMessages, setRemainingMessages] = useState<number | null>(
     null
   );
+  
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -505,8 +514,11 @@ export function Chat({
         )}
       </div>
 
+      {isWaitingForResponse && <ThreeDotsLoader />}
       {/* Input area - fixed at bottom */}
       <div className="border-t border-border p-4 bg-background">
+        {/* Add the 3-dot loader */}
+        
         {/* Image preview area */}
         {imagePreview && (
           <div className="mb-3 relative">
