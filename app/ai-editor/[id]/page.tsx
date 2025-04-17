@@ -54,7 +54,7 @@ export default function AppEditor() {
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
-
+  const [supabaseProject, setSupabaseProject] = useState<string | null>(null);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -168,6 +168,10 @@ export default function AppEditor() {
           .select("*")
           .eq("id", appId)
           .single();
+
+        setSupabaseProject(data?.supabase_project);
+
+
 
         if (error) throw error;
         if (data.machine_id) {
@@ -350,7 +354,10 @@ export default function AppEditor() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <SupabaseConnect supabase_project={app.supabase_project} />
+            <SupabaseConnect
+              supabaseProject={supabaseProject}
+              setSupabaseProject={setSupabaseProject}
+            />
             <Button
               variant="outline"
               onClick={handleResetApp}
@@ -403,7 +410,7 @@ export default function AppEditor() {
                   sessionId={currentSessionId}
                   onResponseComplete={handleRefresh}
                   onSessionError={handleSessionError}
-                  supabase_project={app.supabase_project || ""}
+                  supabase_project={supabaseProject}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center flex-col gap-4 text-muted-foreground">
