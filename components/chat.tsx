@@ -5,15 +5,8 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Send,
-  Loader2,
-  Lock,
-  Image as ImageIcon,
-  X,
-  Check,
-} from "lucide-react";
-import { useEffect, useState, useRef, ChangeEvent } from "react";
+import { Send, Loader2, Lock, Image as ImageIcon, X } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +15,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import ToolInvocation from "@/components/tool-render";
+import { useImageUpload } from "@/hooks/use-image-upload";
+import { getBase64 } from "@/utils/image/image-utils";
 
 // Add the ThreeDotsLoader component
 const ThreeDotsLoader = () => (
@@ -70,9 +65,16 @@ export function Chat({
   );
 
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Use our custom hook for image handling
+  const {
+    selectedImage,
+    imagePreview,
+    handleImageSelect,
+    handleRemoveImage,
+    resetImage,
+    fileInputRef,
+  } = useImageUpload();
 
   // Refs for tracking API calls - specific to this component instance
   const limitsApiCalled = useRef(false);
@@ -290,30 +292,6 @@ export function Chat({
     }
   }, [error]);
 
-  // Handle image selection
-  const handleImageSelect = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setSelectedImage(file);
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Remove selected image
-  const handleRemoveImage = () => {
-    setSelectedImage(null);
-    setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -347,11 +325,7 @@ export function Chat({
         });
 
         // Clean up after submitting
-        setSelectedImage(null);
-        setImagePreview(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
+        resetImage();
       } else {
         // Regular text submission
         handleSubmit(e);
@@ -360,16 +334,6 @@ export function Chat({
       console.error("Error processing message with image:", error);
       setIsWaitingForResponse(false);
     }
-  };
-
-  // Helper function to convert File to base64
-  const getBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
   };
 
   // Auto-scroll to bottom when messages change
@@ -521,10 +485,9 @@ export function Chat({
       </div>
 
       {isWaitingForResponse && <ThreeDotsLoader />}
+
       {/* Input area - fixed at bottom */}
       <div className="border-t border-border p-4 bg-background">
-        {/* Add the 3-dot loader */}
-
         {/* Image preview area */}
         {imagePreview && (
           <div className="mb-3 relative">
