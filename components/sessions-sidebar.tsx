@@ -11,9 +11,10 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { SessionTitleEditor } from "@/components/session/session-title-editor";
 
 interface Session {
   id: string;
@@ -30,7 +31,7 @@ interface SessionsSidebarProps {
   onCreateSession: () => Promise<void>;
   currentSessionId: string | null;
   setCurrentSessionId: (sessionId: string | null) => void;
-  isCreatingSession?: boolean; // New prop to indicate session creation status
+  isCreatingSession?: boolean;
 }
 
 export function SessionsSidebar({
@@ -42,7 +43,7 @@ export function SessionsSidebar({
   onCreateSession,
   currentSessionId,
   setCurrentSessionId,
-  isCreatingSession = false, // Default to false if not provided
+  isCreatingSession = false,
 }: SessionsSidebarProps) {
   const router = useRouter();
 
@@ -77,6 +78,15 @@ export function SessionsSidebar({
     } catch (error) {
       console.error("Error deleting session:", error);
     }
+  };
+
+  // Add handler for updating session title
+  const handleTitleUpdate = (sessionId: string, newTitle: string) => {
+    setSessions(
+      sessions.map((session) =>
+        session.id === sessionId ? { ...session, title: newTitle } : session
+      )
+    );
   };
 
   return (
@@ -135,27 +145,38 @@ export function SessionsSidebar({
                 ) : (
                   sessions.map((session) => (
                     <SidebarMenuItem key={session.id}>
-                      <SidebarMenuButton
-                        onClick={() => handleSessionClick(session.id)}
-                        className={`flex items-center justify-between group ${
+                      <div
+                        className={`flex items-center justify-between group p-2 w-full gap-2 overflow-hidden rounded-md text-left text-sm hover:bg-accent/50 cursor-pointer ${
                           session.id === currentSessionId
                             ? "bg-primary/40 hover:bg-primary/15"
                             : ""
                         }`}
+                        onClick={() => handleSessionClick(session.id)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && handleSessionClick(session.id)
+                        }
                       >
-                        <div className="flex items-center gap-2">
-                          <MessageSquare className="h-4 w-4" />
-                          <span className="truncate">
-                            {session.title || "New Chat"}
-                          </span>
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <MessageSquare className="h-4 w-4 flex-shrink-0" />
+                          <SessionTitleEditor
+                            title={session.title}
+                            sessionId={session.id}
+                            authToken={authToken}
+                            onSave={handleTitleUpdate}
+                            isSelected={session.id === currentSessionId}
+                          />
                         </div>
                         <div
-                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer hover:text-destructive"
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer hover:text-destructive flex-shrink-0"
                           onClick={(e) => handleDeleteSession(session.id, e)}
+                          role="button"
+                          tabIndex={0}
                         >
                           <Trash2 className="h-4 w-4 text-muted-foreground" />
                         </div>
-                      </SidebarMenuButton>
+                      </div>
                     </SidebarMenuItem>
                   ))
                 )}
