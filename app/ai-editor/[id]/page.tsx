@@ -6,7 +6,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import MobileMockup from "@/components/mobile-mockup";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, ExternalLink, Download, AlertCircle } from "lucide-react";
+import { RefreshCw, ExternalLink, Download, AlertCircle, Loader2 } from "lucide-react";
 import { Chat } from "@/components/chat";
 import { QRCodeDisplay } from "@/components/qr-code";
 import { SessionsSidebar } from "@/components/sessions-sidebar";
@@ -52,9 +52,10 @@ export default function AppEditor() {
   const [isSessionsLoading, setIsSessionsLoading] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [supabaseProject, setSupabaseProject] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function AppEditor() {
 
   const handleResetApp = async () => {
     try {
+      setIsResetting(true);
       const response = await fetch("/api/code/reset", {
         method: "POST",
         headers: {
@@ -86,6 +88,8 @@ export default function AppEditor() {
       handleRefresh();
     } catch (error) {
       console.error("Error resetting state:", error);
+    } finally {
+      setIsResetting(false);
     }
   };
   const wakeContainer = async (appName: string, machineId: string) => {
@@ -294,6 +298,7 @@ export default function AppEditor() {
   }
 
   const exportCode = async () => {
+    setIsExporting(true);
     try {
       const response = await fetch("/api/app/export", {
         method: "POST",
@@ -330,6 +335,8 @@ export default function AppEditor() {
     } catch (error) {
       console.error("Error exporting app:", error);
       alert("Failed to export app. Please try again.");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -387,9 +394,19 @@ export default function AppEditor() {
               variant="outline"
               onClick={() => exportCode()}
               className="flex items-center gap-2"
+              disabled={isExporting}
             >
-              <Download className="h-4 w-4" />
-              Export Code
+              {isExporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Export Code
+                </>
+              )}
             </Button>
           </div>
         </div>
