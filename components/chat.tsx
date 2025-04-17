@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import {
   Send,
   Loader2,
-  Terminal,
   Lock,
   Image as ImageIcon,
   X,
+  Check,
 } from "lucide-react";
 import { useEffect, useState, useRef, ChangeEvent } from "react";
 import {
@@ -20,6 +20,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import ToolInvocation from "@/components/tool-render";
+
+// Add the ThreeDotsLoader component
+const ThreeDotsLoader = () => (
+  <div className="flex justify-center items-center space-x-1 py-2">
+    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+  </div>
+);
 
 export function Chat({
   appId,
@@ -48,6 +58,7 @@ export function Chat({
   const [remainingMessages, setRemainingMessages] = useState<number | null>(
     null
   );
+  
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -194,10 +205,7 @@ export function Chat({
     input,
     handleInputChange,
     handleSubmit,
-    addToolResult,
     error,
-    isLoading: isChatLoading,
-    setMessages,
   } = useChat({
     api: `/api/chat/`,
     initialMessages: isLoading
@@ -215,14 +223,8 @@ export function Chat({
       supabase_project,
     },
     maxSteps: 30,
-    onToolCall: async ({ toolCall }) => {
-      // When a tool is called, ensure waiting indicator stays visible
-      setIsWaitingForResponse(true);
-      console.log("toolCall", toolCall);
-      // Your existing tool call handling
-      addToolResult({ toolCallId: toolCall.toolCallId, result: "Test" });
-    },
     onResponse: async (response) => {
+      console.log("response", response);
       // Check if we hit the rate limit
       if (response.status === 429) {
         setLimitReached(true);
@@ -374,47 +376,13 @@ export function Chat({
     }
   }, [messages, isWaitingForResponse]);
 
-  // Helper function to render message parts
+  // Update the renderMessagePart function
   const renderMessagePart = (part: any) => {
     switch (part.type) {
       case "text":
         return <div className="text-sm">{part.text}</div>;
       case "tool-invocation":
-        return (
-          <div className="bg-muted/50 rounded-md p-3 my-2 border border-border">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
-              <Terminal className="h-4 w-4" />
-              <span>Tool: {part.toolInvocation.toolName}</span>
-            </div>
-            <div className="text-sm space-y-2">
-              {part.toolInvocation.state === "result" ? (
-                <>
-                  <div className="text-muted-foreground">Result:</div>
-                  <pre className="bg-muted rounded-md p-2 overflow-x-auto max-w-full">
-                    <code
-                      className="text-foreground whitespace-pre-wrap break-all"
-                      style={{ wordBreak: "break-word" }}
-                    >
-                      {JSON.stringify(part.toolInvocation.result, null, 2)}
-                    </code>
-                  </pre>
-                </>
-              ) : (
-                <>
-                  <div className="text-muted-foreground">Arguments:</div>
-                  <pre className="bg-muted rounded-md p-2 overflow-x-auto max-w-full">
-                    <code
-                      className="text-foreground whitespace-pre-wrap break-all"
-                      style={{ wordBreak: "break-word" }}
-                    >
-                      {JSON.stringify(part.toolInvocation.args, null, 2)}
-                    </code>
-                  </pre>
-                </>
-              )}
-            </div>
-          </div>
-        );
+        return <ToolInvocation part={part} />;
       default:
         return null;
     }
@@ -520,7 +488,8 @@ export function Chat({
                     )}
                     {message.parts?.length ? (
                       message.parts.map((part, i) => (
-                        <div key={i}>{renderMessagePart(part)}</div>
+                        <div key={i}>
+                          {renderMessagePart(part)}</div>
                       ))
                     ) : (
                       <div className="text-sm">{message.content}</div>
@@ -541,36 +510,15 @@ export function Chat({
                 )}
               </div>
             ))}
-
-            {/* Waiting for AI response indicator (three dots) */}
-            {isWaitingForResponse && (
-              <div className="flex flex-col items-start">
-                <Card className="max-w-[80%] bg-card text-card-foreground">
-                  <CardContent className="p-4">
-                    <div className="flex space-x-1">
-                      <div
-                        className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce"
-                        style={{ animationDelay: "0ms" }}
-                      ></div>
-                      <div
-                        className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce"
-                        style={{ animationDelay: "300ms" }}
-                      ></div>
-                      <div
-                        className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce"
-                        style={{ animationDelay: "600ms" }}
-                      ></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
           </>
         )}
       </div>
 
+      {isWaitingForResponse && <ThreeDotsLoader />}
       {/* Input area - fixed at bottom */}
       <div className="border-t border-border p-4 bg-background">
+        {/* Add the 3-dot loader */}
+        
         {/* Image preview area */}
         {imagePreview && (
           <div className="mb-3 relative">
