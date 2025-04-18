@@ -5,7 +5,6 @@ import {
   getUserIdFromToken,
   getUserEmailFromToken,
 } from "@/utils/client/auth";
-import posthog from "posthog-js";
 interface Subscription {
   id: string;
   user_id: string;
@@ -95,12 +94,13 @@ export function useSubscription(): UseSubscriptionReturn {
       setHasActiveSubscription(data.hasActiveSubscription);
       setPendingCancellation(data.pendingCancellation);
       setError(null);
+      /*
       posthog.identify(userEmail || "", {
         email: userEmail,
         subscription_status: data.hasActiveSubscription,
         subscription_plan: data.planId,
         customer_id: data.customerId,
-      });
+      });*/
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "An unknown error occurred";

@@ -6,7 +6,7 @@ import { Plus, Lock, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
-import { getAuthToken } from "@/utils/client/auth";
+import { getAuthToken, getUserEmailFromToken } from "@/utils/client/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import posthog from "posthog-js";
 const INVITE_CODE_REQUIRED = true;
 interface UserApp {
   id: string;
@@ -272,6 +273,16 @@ export default function Dashboard() {
         if (!decodedToken) {
           throw new Error("No authentication token found");
         }
+
+        const userEmail = getUserEmailFromToken(decodedToken);
+        if (userEmail) {
+          posthog.identify(userEmail, {
+            email: userEmail,
+            has_apps: userApps.length > 0,
+            app_count: userApps.length,
+          });
+        }
+
         // If invite code system is enabled, check verification first
         if (INVITE_CODE_REQUIRED) {
           const {
