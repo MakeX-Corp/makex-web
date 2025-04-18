@@ -1,4 +1,13 @@
-import { Plus, MessageSquare, ArrowLeft, Trash2, Loader2 } from "lucide-react";
+import {
+  Plus,
+  MessageSquare,
+  ArrowLeft,
+  Trash2,
+  Loader2,
+  Edit,
+  Check,
+  X,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
-import { SessionTitleEditor } from "@/components/session/session-title-editor";
+import { Input } from "@/components/ui/input";
 
 interface Session {
   id: string;
@@ -48,8 +57,14 @@ export function SessionsSidebar({
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(
     null
   );
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editedTitles, setEditedTitles] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
 
   const handleSessionClick = (sessionId: string) => {
+    // Don't navigate if we're editing
+    if (editingSessionId !== null) return;
+
     setCurrentSessionId(sessionId);
     router.push(`/ai-editor/${appId}?session=${sessionId}`);
   };
@@ -87,6 +102,70 @@ export function SessionsSidebar({
       // Clear the deleting session ID
       setDeletingSessionId(null);
     }
+  };
+
+  const handleEditSession = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the session click
+    setEditingSessionId(sessionId);
+    setEditedTitles({
+      ...editedTitles,
+      [sessionId]:
+        sessions.find((s) => s.id === sessionId)?.title || "New Chat",
+    });
+  };
+
+  const handleSaveTitle = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    const newTitle = editedTitles[sessionId];
+    const currentTitle =
+      sessions.find((s) => s.id === sessionId)?.title || "New Chat";
+
+    // Don't update if title hasn't changed
+    if (newTitle === currentTitle) {
+      setEditingSessionId(null);
+      return;
+    }
+
+    setIsLoading({ ...isLoading, [sessionId]: true });
+    try {
+      const response = await fetch(`/api/sessions/title`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          sessionId,
+          title: newTitle,
+        }),
+      });
+
+      if (response.ok) {
+        // Update the session title in the list
+        handleTitleUpdate(sessionId, newTitle);
+      } else {
+        console.error("Failed to update session title");
+      }
+    } catch (error) {
+      console.error("Error updating session title:", error);
+    } finally {
+      setIsLoading({ ...isLoading, [sessionId]: false });
+      setEditingSessionId(null);
+    }
+  };
+
+  const handleCancelEdit = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingSessionId(null);
+  };
+
+  // Handler for input change
+  const handleTitleInputChange = (sessionId: string, value: string) => {
+    setEditedTitles({
+      ...editedTitles,
+      [sessionId]: value,
+    });
   };
 
   // Add handler for updating session title
@@ -169,24 +248,108 @@ export function SessionsSidebar({
                       >
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <MessageSquare className="h-4 w-4 flex-shrink-0" />
-                          <SessionTitleEditor
-                            title={session.title}
-                            sessionId={session.id}
-                            authToken={authToken}
-                            onSave={handleTitleUpdate}
-                            isSelected={session.id === currentSessionId}
-                          />
-                        </div>
-                        <div
-                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer hover:text-destructive flex-shrink-0"
-                          onClick={(e) => handleDeleteSession(session.id, e)}
-                          role="button"
-                          tabIndex={0}
-                        >
-                          {deletingSessionId === session.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          {editingSessionId === session.id ? (
+                            <Input
+                              type="text"
+                              value={
+                                editedTitles[session.id] ||
+                                session.title ||
+                                "New Chat"
+                              }
+                              onChange={(e) =>
+                                handleTitleInputChange(
+                                  session.id,
+                                  e.target.value
+                                )
+                              }
+                              className="h-7 text-sm py-1"
+                              disabled={isLoading[session.id]}
+                              onClick={(e) => e.stopPropagation()} // Prevent session click
+                              onKeyDown={(e) => {
+                                e.stopPropagation();
+                                if (e.key === "Enter") {
+                                  handleSaveTitle(
+                                    session.id,
+                                    e as any as React.MouseEvent
+                                  );
+                                } else if (e.key === "Escape") {
+                                  handleCancelEdit(
+                                    session.id,
+                                    e as any as React.MouseEvent
+                                  );
+                                }
+                              }}
+                              autoFocus
+                            />
                           ) : (
-                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                            <span
+                              className={`truncate flex-1 ${
+                                session.id === currentSessionId
+                                  ? "font-medium"
+                                  : ""
+                              }`}
+                            >
+                              {session.title || "New Chat"}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center">
+                          {editingSessionId === session.id ? (
+                            // Show only save and cancel buttons when editing
+                            <div className="flex items-center">
+                              <div
+                                className="h-6 w-6 p-0 flex items-center justify-center cursor-pointer hover:text-green-500 flex-shrink-0 mr-1"
+                                onClick={(e) => handleSaveTitle(session.id, e)}
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Save session title"
+                              >
+                                {isLoading[session.id] ? (
+                                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                ) : (
+                                  <Check className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </div>
+                              <div
+                                className="h-6 w-6 p-0 flex items-center justify-center cursor-pointer hover:text-destructive flex-shrink-0"
+                                onClick={(e) => handleCancelEdit(session.id, e)}
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Cancel editing"
+                              >
+                                <X className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            </div>
+                          ) : (
+                            // Show edit and delete buttons when not editing
+                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div
+                                className="h-6 w-6 p-0 flex items-center justify-center cursor-pointer hover:text-blue-500 flex-shrink-0 mr-1"
+                                onClick={(e) =>
+                                  handleEditSession(session.id, e)
+                                }
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Edit session title"
+                              >
+                                <Edit className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <div
+                                className="h-6 w-6 p-0 flex items-center justify-center cursor-pointer hover:text-destructive flex-shrink-0"
+                                onClick={(e) =>
+                                  handleDeleteSession(session.id, e)
+                                }
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Delete session"
+                              >
+                                {deletingSessionId === session.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </div>
+                            </div>
                           )}
                         </div>
                       </div>
