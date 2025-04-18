@@ -5,15 +5,8 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Send,
-  Loader2,
-  Lock,
-  Image as ImageIcon,
-  X,
-  Check,
-} from "lucide-react";
-import { useEffect, useState, useRef, ChangeEvent } from "react";
+import { Send, Loader2, Lock, Image as ImageIcon, X } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +15,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import ToolInvocation from "@/components/tool-render";
+import { useImageUpload } from "@/hooks/use-image-upload";
+import { getBase64 } from "@/utils/image/image-utils";
 
 // Add the ThreeDotsLoader component
 const ThreeDotsLoader = () => (
@@ -70,9 +65,21 @@ export function Chat({
   );
 
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Use our updated custom hook for handling multiple images
+  const {
+    selectedImages,
+    imagePreviews,
+    isDragging,
+    handleImageSelect,
+    handleRemoveImage,
+    resetImages,
+    fileInputRef,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragOver,
+    handleDrop,
+  } = useImageUpload();
 
   // Refs for tracking API calls - specific to this component instance
   const limitsApiCalled = useRef(false);
@@ -188,8 +195,13 @@ export function Chat({
             role: msg.role,
             content: msg.content,
             parts: msg.metadata.parts,
-            //imageUrl: msg.metadata.imageUrl || null,
-            experimental_attachments: msg.metadata.imageUrl
+            experimental_attachments: msg.metadata.imageUrls
+              ? msg.metadata.imageUrls.map((url: string) => ({
+                  url: url,
+                  contentType: "image/jpeg",
+                  name: "image",
+                }))
+              : msg.metadata.imageUrl
               ? [
                   {
                     url: msg.metadata.imageUrl,
@@ -290,30 +302,6 @@ export function Chat({
     }
   }, [error]);
 
-  // Handle image selection
-  const handleImageSelect = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setSelectedImage(file);
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Remove selected image
-  const handleRemoveImage = () => {
-    setSelectedImage(null);
-    setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -323,7 +311,7 @@ export function Chat({
     }
 
     // Don't proceed if there's nothing to send
-    if (!input.trim() && !selectedImage) {
+    if (!input.trim() && selectedImages.length === 0) {
       return;
     }
 
@@ -331,45 +319,56 @@ export function Chat({
     setIsWaitingForResponse(true);
 
     try {
-      // If there's an image
-      if (selectedImage) {
-        // Create the image attachment
-        const imageBase64 = await getBase64(selectedImage);
-        const imageAttachment = {
-          name: selectedImage.name,
-          contentType: selectedImage.type,
-          url: imageBase64,
-        };
+      // If there are images
+      if (selectedImages.length > 0) {
+        // For UI display only
+        const imageAttachments = imagePreviews.map((preview, index) => ({
+          name: selectedImages[index].name || `image-${index}.jpg`,
+          contentType: "image/jpeg",
+          url: preview,
+        }));
 
-        // Submit with the attachment - let useChat handle it
-        handleSubmit(e, {
-          experimental_attachments: [imageAttachment],
+        // Create properly formatted content for Claude
+        // Claude expects each image to be a separate part in the array
+        const messageContent = [];
+
+        // Add text content first (if any)
+        if (input.trim()) {
+          messageContent.push({ type: "text", text: input });
+        }
+
+        // Add each image as a separate part
+        imagePreviews.forEach((preview) => {
+          messageContent.push({
+            type: "image",
+            image: preview,
+          });
         });
 
-        // Clean up after submitting
-        setSelectedImage(null);
-        setImagePreview(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
+        // Submit the message with both formats
+        handleSubmit(e, {
+          experimental_attachments: imageAttachments, // For UI display
+          body: {
+            appUrl,
+            appId,
+            sessionId,
+            supabase_project,
+            // Use the array of message parts
+            multiModal: true, // Flag to indicate we're using the multimodal format
+            messageParts: messageContent,
+          },
+        });
+
+        // Important: Clear the image state right away
+        resetImages();
       } else {
         // Regular text submission
         handleSubmit(e);
       }
     } catch (error) {
-      console.error("Error processing message with image:", error);
+      console.error("Error processing message with images:", error);
       setIsWaitingForResponse(false);
     }
-  };
-
-  // Helper function to convert File to base64
-  const getBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
   };
 
   // Auto-scroll to bottom when messages change
@@ -387,6 +386,19 @@ export function Chat({
         return <div className="text-sm">{part.text}</div>;
       case "tool-invocation":
         return <ToolInvocation part={part} />;
+      case "image":
+        return (
+          <img
+            src={part.image}
+            alt="Image in message"
+            className="rounded border border-border shadow-sm mt-2 mb-2"
+            style={{
+              cursor: "pointer",
+              maxHeight: "200px",
+              objectFit: "contain",
+            }}
+          />
+        );
       default:
         return null;
     }
@@ -418,7 +430,23 @@ export function Chat({
   };
 
   return (
-    <div className="flex flex-col h-full bg-background relative">
+    <div
+      className="flex flex-col h-full bg-background relative"
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay indicator - now covering the entire chat interface */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm z-20 flex items-center justify-center border-2 border-dashed border-primary rounded-lg">
+          <div className="text-center p-6 bg-background rounded-lg shadow-lg">
+            <ImageIcon className="h-12 w-12 text-primary mx-auto mb-4" />
+            <p className="text-lg font-medium">Drop your images here</p>
+          </div>
+        </div>
+      )}
+
       {/* Message limit modal */}
       <Dialog open={limitModalOpen} onOpenChange={setLimitModalOpen}>
         <DialogContent>
@@ -478,19 +506,24 @@ export function Chat({
                   }`}
                 >
                   <CardContent className="p-4">
-                    {/* Display image if it exists */}
+                    {/* Display multiple images if they exist */}
                     {message?.experimental_attachments && (
-                      <div className="mb-3">
-                        <img
-                          src={message?.experimental_attachments[0].url}
-                          alt="Uploaded image"
-                          className="w-full rounded border border-border shadow-sm"
-                          style={{
-                            cursor: "pointer",
-                            maxHeight: "300px",
-                            objectFit: "contain",
-                          }}
-                        />
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {message.experimental_attachments.map(
+                          (attachment, i) => (
+                            <img
+                              key={i}
+                              src={attachment.url}
+                              alt={`Uploaded image ${i + 1}`}
+                              className="rounded border border-border shadow-sm"
+                              style={{
+                                cursor: "pointer",
+                                height: "150px",
+                                objectFit: "cover",
+                              }}
+                            />
+                          )
+                        )}
                       </div>
                     )}
                     {message.parts?.length ? (
@@ -521,26 +554,27 @@ export function Chat({
       </div>
 
       {isWaitingForResponse && <ThreeDotsLoader />}
+
       {/* Input area - fixed at bottom */}
       <div className="border-t border-border p-4 bg-background">
-        {/* Add the 3-dot loader */}
-
-        {/* Image preview area */}
-        {imagePreview && (
-          <div className="mb-3 relative">
-            <div className="relative inline-block">
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="h-20 rounded-md object-cover border border-border"
-              />
-              <button
-                onClick={handleRemoveImage}
-                className="absolute -top-2 -right-2 bg-foreground text-background rounded-full p-1 hover:bg-muted-foreground"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
+        {/* Image previews area */}
+        {imagePreviews.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {imagePreviews.map((preview, index) => (
+              <div key={index} className="relative inline-block">
+                <img
+                  src={preview}
+                  alt={`Preview ${index + 1}`}
+                  className="h-20 rounded-md object-cover border border-border"
+                />
+                <button
+                  onClick={() => handleRemoveImage(index)}
+                  className="absolute -top-2 -right-2 bg-foreground text-background rounded-full p-1 hover:bg-muted-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
           </div>
         )}
 
@@ -551,17 +585,18 @@ export function Chat({
             placeholder={
               limitReached
                 ? "Daily message limit reached"
-                : "Type your message..."
+                : "Type your message or drop images anywhere..."
             }
             className="flex-1"
             disabled={limitReached || isWaitingForResponse || isLoading}
           />
 
-          {/* File input for image (hidden) */}
+          {/* File input for images (hidden) */}
           <input
             type="file"
             ref={fileInputRef}
             accept="image/*"
+            multiple
             className="hidden"
             onChange={handleImageSelect}
             disabled={limitReached || isWaitingForResponse || isLoading}
@@ -574,7 +609,7 @@ export function Chat({
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
             disabled={limitReached || isWaitingForResponse || isLoading}
-            title="Upload an image"
+            title="Upload images"
           >
             <ImageIcon className="h-4 w-4" />
           </Button>
@@ -586,7 +621,7 @@ export function Chat({
             disabled={
               limitReached ||
               isWaitingForResponse ||
-              (!input.trim() && !selectedImage) ||
+              (!input.trim() && selectedImages.length === 0) ||
               isLoading
             }
           >

@@ -6,10 +6,16 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import MobileMockup from "@/components/mobile-mockup";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, ExternalLink, Download, AlertCircle, Loader2 } from "lucide-react";
+import {
+  RefreshCw,
+  ExternalLink,
+  Download,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
 import { Chat } from "@/components/chat";
 import { QRCodeDisplay } from "@/components/qr-code";
-import { SessionsSidebar } from "@/components/sessions-sidebar";
+import { SessionsSidebar } from "@/components/session/session-sidebar";
 import { getAuthToken } from "@/utils/client/auth";
 import { AppEditorSkeleton } from "@/app/components/AppEditorSkeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -180,11 +186,11 @@ export default function AppEditor() {
         setSupabaseProject(data?.supabase_project);
 
         if (error) throw error;
-        
+
         // Set app data immediately without waiting for container
         setApp(data);
         setIsLoading(false);
-        
+
         // Start container wake-up process in background
         if (data.machine_id) {
           wakeContainer(data.app_name, data.machine_id);
