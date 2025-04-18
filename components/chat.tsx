@@ -18,6 +18,36 @@ import ToolInvocation from "@/components/tool-render";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { getBase64 } from "@/utils/image/image-utils";
 
+async function updateSessionTitle(
+  userMessage: string,
+  aiResponse: string,
+  sessionId: string,
+  authToken: string,
+  callback?: (sessionId: string, title: string) => void
+) {
+  try {
+    // 2. Update the session title in the database
+    const updateResponse = await fetch(`/api/sessions/title`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({
+        sessionId,
+        isAiGenerated: true,
+        content: userMessage + " " + aiResponse,
+      }),
+    });
+    if (!updateResponse.ok) {
+      throw new Error("Failed to update title");
+    }
+  } catch (error) {
+    console.error("Error updating session title:", error);
+    return null;
+  }
+}
+
 // Add the ThreeDotsLoader component
 const ThreeDotsLoader = () => (
   <div className="flex justify-center items-center space-x-1 py-2">
@@ -269,6 +299,18 @@ export function Chat({
           }),
         });
 
+        if (messages.length === 0) {
+          // Get the user's message and the AI's response
+          const userMessage = messages[0]?.content;
+          const aiMessage = message?.content;
+          // Call the updateSessionTitle function
+          await updateSessionTitle(
+            userMessage,
+            aiMessage,
+            sessionId,
+            authToken
+          );
+        }
         // Update message limit after successful message
         checkMessageLimit();
       } catch (error) {
