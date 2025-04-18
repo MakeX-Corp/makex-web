@@ -251,11 +251,7 @@ export function SessionsSidebar({
                           {editingSessionId === session.id ? (
                             <Input
                               type="text"
-                              value={
-                                editedTitles[session.id] ||
-                                session.title ||
-                                "New Chat"
-                              }
+                              value={editedTitles[session.id] || ""}
                               onChange={(e) =>
                                 handleTitleInputChange(
                                   session.id,
