@@ -9,9 +9,7 @@ export default function AppNotFound() {
   
   const handleRefresh = () => {
     setIsRefreshing(true);
-    if (top) {
-      top.location.reload();
-    }
+    window.top?.location.reload();
   };
 
   return (
