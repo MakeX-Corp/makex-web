@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from '@supabase/supabase-js';
-import { Sandbox } from '@e2b/code-interpreter';
+import { createClient } from "@supabase/supabase-js";
+import { Sandbox } from "@e2b/code-interpreter";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 
@@ -35,8 +35,6 @@ export async function GET(request: Request) {
     const now = new Date();
     const stoppedApps = [];
 
-
-
     // Process each active app
     for (const app of activeApps) {
       try {
@@ -49,22 +47,34 @@ export async function GET(request: Request) {
           .limit(1)
           .single();
 
-        if (messageError && messageError.code !== 'PGRST116') {
-          console.error(`Error fetching latest message for app ${app.id}:`, messageError);
+        if (messageError && messageError.code !== "PGRST116") {
+          console.error(
+            `Error fetching latest message for app ${app.id}:`,
+            messageError
+          );
           continue;
         }
 
-        // Skip if no message history (new app without chat)
-
-        // Check if last message was more than 5 minutes ago
-        const lastMessageTime = new Date(latestMessage?.created_at || new Date());
+        // For apps with no messages, use the app creation time
+        // Otherwise use the latest message time
+        let lastActivityTime;
         const currentTime = new Date();
-        const diffMinutes = 7 //Math.floor((currentTime.getTime() - lastMessageTime.getTime()) / (1000 * 60));
+        if (!latestMessage) {
+          // Use the app's created_at time for new apps with no messages
+          lastActivityTime = new Date(app.created_at);
+          console.log(
+            `No messages found for app ${app.app_name}, using app creation time: ${lastActivityTime}`
+          );
+        } else {
+          lastActivityTime = new Date(latestMessage.created_at);
+        }
 
-        console.log("currentTime.getTime()", currentTime.getTime())
-        console.log("lastMessageTime.getTime()", lastMessageTime.getTime())
-        console.log("diffMinutes", diffMinutes)
+        // Check if last activity was more than 5 minutes ago
+        const diffMinutes = Math.floor(
+          (currentTime.getTime() - lastActivityTime.getTime()) / (1000 * 60)
+        );
 
+        console.log(`App ${app.app_name} - last activity: ${lastActivityTime}, inactive for ${diffMinutes} minutes`);
 
         if (diffMinutes > 5) {
           // Export the code before killing the sandbox
@@ -72,73 +82,103 @@ export async function GET(request: Request) {
             if (app.api_url) {
               // Create a file backend client to interact with the sandbox
               const client = createFileBackendApiClient(app.api_url);
-              
+
               // Export the code as zip
               try {
-                const { data: codeZipBuffer } = await client.getFile("/export-code", {
-                  responseType: 'arraybuffer',
-                });
-                
+                const { data: codeZipBuffer } = await client.getFile(
+                  "/export-code",
+                  {
+                    responseType: "arraybuffer",
+                  }
+                );
+
                 // Log the file size
                 const fileSizeMB = codeZipBuffer.byteLength / (1024 * 1024);
-                console.log(`App ${app.app_name} export size: ${fileSizeMB.toFixed(2)}MB`);
-                
+                console.log(
+                  `App ${app.app_name} export size: ${fileSizeMB.toFixed(2)}MB`
+                );
+
                 // Create folder structure: user_id/app_name
                 const folderPath = `${app.user_id}/${app.app_name}`;
-                
+
                 // Upload to Supabase Storage
-                const { error: uploadError } = await supabase
-                  .storage
-                  .from('makex-apps')
+                const { error: uploadError } = await supabase.storage
+                  .from("makex-apps")
                   .upload(`${folderPath}/${app.app_name}.zip`, codeZipBuffer, {
-                    contentType: 'application/zip',
-                    upsert: true // Overwrite if exists
+                    contentType: "application/zip",
+                    upsert: true, // Overwrite if exists
                   });
-                  
+
                 if (uploadError) {
-                  console.error(`Error uploading app code for ${app.id}:`, uploadError);
+                  console.error(
+                    `Error uploading app code for ${app.id}:`,
+                    uploadError
+                  );
                 } else {
-                  console.log(`Successfully exported and saved code for app ${app.app_name}`);
+                  console.log(
+                    `Successfully exported and saved code for app ${app.app_name}`
+                  );
                 }
               } catch (exportRequestError) {
-                console.error(`Error requesting code export for app ${app.id}:`, exportRequestError);
+                console.error(
+                  `Error requesting code export for app ${app.id}:`,
+                  exportRequestError
+                );
               }
             }
           } catch (exportError) {
-            return NextResponse.json({ error: `Error exporting code for app ${app.id}:`, exportError }, { status: 500 });
+            return NextResponse.json(
+              { error: `Error exporting code for app ${app.id}:`, exportError },
+              { status: 500 }
+            );
           }
-          
+
           // Kill the sandbox container
           try {
             await Sandbox.kill(app.sandbox_id);
-            
+
             // Update sandbox status in the database
             const { error: updateError } = await supabase
               .from("user_apps")
-              .update({ sandbox_status: 'deleted' })
+              .update({ sandbox_status: "deleted" })
               .eq("id", app.id);
 
             if (updateError) {
-              console.error(`Error updating app status for ${app.id}:`, updateError);
+              console.error(
+                `Error updating app status for ${app.id}:`,
+                updateError
+              );
               continue;
             }
 
             // Remove Redis proxy records
             try {
-              await redisUrlSetter(app.app_name, 'https://makex.app', 'https://makex.app');
-              console.log(`Successfully removed Redis proxy records for ${app.app_name}`);
+              await redisUrlSetter(
+                app.app_name,
+                "https://makex.app",
+                "https://makex.app"
+              );
+              console.log(
+                `Successfully removed Redis proxy records for ${app.app_name}`
+              );
             } catch (redisError) {
-              console.error(`Error removing Redis proxy records for ${app.app_name}:`, redisError);
+              console.error(
+                `Error removing Redis proxy records for ${app.app_name}:`,
+                redisError
+              );
             }
 
             stoppedApps.push({
               id: app.id,
               app_name: app.app_name,
-              last_activity: lastMessageTime,
-              inactive_minutes: Math.floor(diffMinutes)
+              last_activity: lastActivityTime,
+              inactive_minutes: Math.floor(diffMinutes),
             });
           } catch (killError) {
-            console.error(`Error killing sandbox for app ${app.id}:`, killError);
+            console.error(
+              `Error killing sandbox for app ${app.id}:`,
+              killError
+            );
           }
         }
       } catch (appError) {
@@ -150,7 +190,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       message: `Auto-stop completed. Stopped ${stoppedApps.length} inactive apps.`,
-      stopped_apps: stoppedApps
+      stopped_apps: stoppedApps,
     });
   } catch (error) {
     console.error("Error in auto-stop routine:", error);
