@@ -1,7 +1,44 @@
 // File: app/api/sessions/title/route.js
 import { NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
+import { anthropic } from "@ai-sdk/anthropic";
+import { streamText } from "ai";
 
+const summarizeChat = async (content: string) => {
+  try {
+    if (!content || content.trim().length === 0) {
+      return "New Chat";
+    }
+
+    const result = await streamText({
+      model: anthropic("claude-3-haiku-20240307"),
+      messages: [
+        {
+          role: "user",
+          content: `Create a short title (3 words or fewer) for this conversation: ${content.substring(
+            0,
+            2000
+          )}`,
+        },
+      ],
+      system:
+        "Generate a short title (3 words or fewer) that captures the essence of this conversation. Respond with only the title.",
+      maxTokens: 30,
+    });
+
+    // Collect the full text from the stream
+    let title = "";
+    const textStream = await result.textStream;
+    for await (const chunk of textStream) {
+      title += chunk;
+    }
+
+    return title.trim() || "New Chat";
+  } catch (error) {
+    console.error("Error generating title:", error);
+    return "New Chat";
+  }
+};
 export async function PUT(request: Request) {
   try {
     const result = await getSupabaseWithUser(request);
@@ -10,7 +47,7 @@ export async function PUT(request: Request) {
     const { supabase, user } = result;
 
     // Get request body
-    const { sessionId, title } = await request.json();
+    const { sessionId, title, isAiGenerated, content } = await request.json();
 
     if (!sessionId) {
       return NextResponse.json(
@@ -19,13 +56,10 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Sanitize title - If empty, use "New Chat"
-    const sanitizedTitle = (title || "").trim() || "New Chat";
-
     // Verify the session belongs to the user
     const { data: session, error: sessionError } = await supabase
       .from("chat_sessions")
-      .select("id")
+      .select("id, title")
       .eq("id", sessionId)
       .eq("user_id", user.id)
       .single();
@@ -36,11 +70,25 @@ export async function PUT(request: Request) {
         { status: 404 }
       );
     }
+    //Make title if it is ai generated
+    let formattedTitle = "";
+    //@ts-ignore
+    if (
+      isAiGenerated &&
+      content &&
+      (session?.title === "New Chat" || !session?.title)
+    ) {
+      // summarizing the chat
+      formattedTitle = await summarizeChat(content);
+    } else {
+      // Sanitize title - If empty, use "New Chat"
+      formattedTitle = (title || "").trim() || "New Chat";
+    }
 
     // Update session title in database
     const { data, error } = await supabase
       .from("chat_sessions")
-      .update({ title: sanitizedTitle })
+      .update({ title: formattedTitle })
       .eq("id", sessionId)
       .select("id, title")
       .single();
