@@ -80,6 +80,13 @@ export async function POST(request: Request) {
       console.log("API host:", apiHost);
       console.log("Expo host:", expoHost);
 
+      await redisUrlSetter(
+        appName,
+        `https://${expoHost}`,
+        `https://${apiHost}`
+      );
+      console.log("Redis URLs set");
+
       try {
         console.log("Creating initial checkpoint for app:", appName);
         const fileBackendClient = createFileBackendApiClient(
@@ -116,12 +123,6 @@ export async function POST(request: Request) {
         }
 
         console.log("Setting Redis URLs for app:", appName);
-        await redisUrlSetter(
-          appName,
-          `https://${expoHost}`,
-          `https://${apiHost}`
-        );
-        console.log("Redis URLs set");
 
         console.log("Starting Expo app in the sandbox");
         await sbx.commands.run(
