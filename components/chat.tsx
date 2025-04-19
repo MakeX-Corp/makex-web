@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import ToolInvocation from "@/components/tool-render";
 import { useImageUpload } from "@/hooks/use-image-upload";
-import { getBase64 } from "@/utils/image/image-utils";
+import { updateSessionTitle } from "@/utils/session/session-utils";
 
 // Add the ThreeDotsLoader component
 const ThreeDotsLoader = () => (
@@ -44,6 +44,7 @@ export function Chat({
   supabase_project,
   onResponseComplete,
   onSessionError,
+  fetchSessions,
 }: {
   appId: string;
   apiUrl: string;
@@ -52,6 +53,7 @@ export function Chat({
   supabase_project?: any;
   onResponseComplete?: () => void;
   onSessionError?: (error: string) => void;
+  fetchSessions?: () => void;
 }) {
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -269,6 +271,22 @@ export function Chat({
           }),
         });
 
+        if (messages.length === 0) {
+          // Get the user's message and the AI's response
+          const userMessage = messages[0]?.content;
+          const aiMessage = message?.content;
+          // Call the updateSessionTitle function
+          await updateSessionTitle(
+            userMessage,
+            aiMessage,
+            sessionId,
+            authToken,
+            () => {
+              // Simply call fetchSessions as the callback
+              fetchSessions?.();
+            }
+          );
+        }
         // Update message limit after successful message
         checkMessageLimit();
       } catch (error) {

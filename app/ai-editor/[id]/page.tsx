@@ -333,7 +333,6 @@ export default function AppEditor() {
       setIsExporting(false);
     }
   };
-
   return (
     <>
       {/* Sessions Sidebar */}
@@ -428,6 +427,7 @@ export default function AppEditor() {
                   onResponseComplete={handleRefresh}
                   onSessionError={handleSessionError}
                   supabase_project={supabaseProject}
+                  fetchSessions={fetchSessions}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center flex-col gap-4 text-muted-foreground">
