@@ -242,7 +242,7 @@ export default function AppEditor() {
 
     try {
       setIsRecreatingSandbox(true);
-      const response = await fetch("/api/sandbox/recreate", {
+      const response = await fetch("/api/sandbox/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -250,12 +250,11 @@ export default function AppEditor() {
         },
         body: JSON.stringify({
           appId: app.id,
-          appName: app.app_name,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to recreate sandbox");
+        throw new Error(await response.text());
       }
 
       const sandboxData = await response.json();
@@ -295,7 +294,7 @@ export default function AppEditor() {
   const exportCode = async () => {
     setIsExporting(true);
     try {
-      const response = await fetch("/api/app/export", {
+      const response = await fetch("/api/code/export", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -366,25 +365,6 @@ export default function AppEditor() {
               supabaseProject={supabaseProject}
               setSupabaseProject={setSupabaseProject}
             />
-            <Button
-              variant="outline"
-              onClick={handleRecreateSandbox}
-              disabled={isRecreatingSandbox}
-              className="flex items-center gap-2"
-            >
-              {isRecreatingSandbox ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Recreating...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4" />
-                  Recreate Sandbox
-                </>
-              )}
-            </Button>
-
             <Button
               variant="outline"
               onClick={handleResetApp}
@@ -519,15 +499,7 @@ export default function AppEditor() {
               <div className="flex-1">
                 {viewMode === "mobile" ? (
                   <div className="h-full w-full flex items-center justify-center">
-                    <MobileMockup>
-                      <iframe
-                        key={iframeKey}
-                        src={app.app_url || ""}
-                        style={{
-                          height: "100%",
-                        }}
-                      />
-                    </MobileMockup>
+                    <MobileMockup appId={appId} appUrl={app.app_url || ""} iframeKey={iframeKey} authToken={authToken || ""} />
                   </div>
                 ) : (
                   <div className="h-full w-full rounded-lg p-4 overflow-auto flex items-center justify-center">

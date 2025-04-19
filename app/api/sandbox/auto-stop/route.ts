@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from '@supabase/supabase-js';
 import { Sandbox } from '@e2b/code-interpreter';
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
-import { createClient as createRedisClient } from 'redis';
+import { redisUrlSetter } from "@/utils/server/redis-client";
 
 // Supabase client setup
 const supabase = createClient(
@@ -35,12 +35,7 @@ export async function GET(request: Request) {
     const now = new Date();
     const stoppedApps = [];
 
-    // Setup Redis client
-    const redis = createRedisClient({
-      url: process.env.REDIS_URL,
-    });
-    await redis.connect();
-    console.log("Redis connected");
+
 
     // Process each active app
     for (const app of activeApps) {
@@ -64,7 +59,7 @@ export async function GET(request: Request) {
         // Check if last message was more than 5 minutes ago
         const lastMessageTime = new Date(latestMessage?.created_at || new Date());
         const currentTime = new Date();
-        const diffMinutes = Math.floor((currentTime.getTime() - lastMessageTime.getTime()) / (1000 * 60));
+        const diffMinutes = 7 //Math.floor((currentTime.getTime() - lastMessageTime.getTime()) / (1000 * 60));
 
         console.log("currentTime.getTime()", currentTime.getTime())
         console.log("lastMessageTime.getTime()", lastMessageTime.getTime())
@@ -130,8 +125,7 @@ export async function GET(request: Request) {
 
             // Remove Redis proxy records
             try {
-              await redis.set(`proxy:${app.app_name}.makex.app`, 'https://makex.app');
-              await redis.set(`proxy:api-${app.app_name}.makex.app`, 'https://makex.app');
+              await redisUrlSetter(app.app_name, 'https://makex.app', 'https://makex.app');
               console.log(`Successfully removed Redis proxy records for ${app.app_name}`);
             } catch (redisError) {
               console.error(`Error removing Redis proxy records for ${app.app_name}:`, redisError);
@@ -152,8 +146,6 @@ export async function GET(request: Request) {
       }
     }
 
-    // Disconnect from Redis
-    await redis.disconnect();
     console.log("Redis disconnected");
 
     return NextResponse.json({
