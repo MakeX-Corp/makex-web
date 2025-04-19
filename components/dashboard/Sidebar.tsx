@@ -7,12 +7,10 @@ import {
   Sun,
   Moon,
   X,
-  CreditCard,
-  HelpCircle,
-  MoreHorizontal,
   Search,
   Plus,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,11 +19,22 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useApp } from "@/context/AppContext";
+import { useTheme } from "next-themes";
 
+const DiscordIcon = () => {
+  return (
+    <svg
+      className="w-5 h-5"
+      fill="currentColor"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z" />
+    </svg>
+  );
+};
 export default function Sidebar() {
   const {
-    darkMode,
-    toggleDarkMode,
     sidebarVisible,
     toggleSidebar,
     apps,
@@ -35,12 +44,18 @@ export default function Sidebar() {
     subscription,
   } = useApp();
 
+  const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
 
   // Local state
   const [activeTab, setActiveTab] = useState("apps");
   const [appSearchTerm, setAppSearchTerm] = useState("");
+
+  // Toggle theme function
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   // Filter apps based on search
   const filteredApps = appSearchTerm
@@ -85,8 +100,8 @@ export default function Sidebar() {
     {
       id: "help",
       label: "Help & Support",
-      icon: <HelpCircle size={18} />,
-      path: "/dashboard/help",
+      icon: <DiscordIcon />,
+      path: "https://discord.gg/qVtpzPY2",
     },
   ];
 
@@ -105,45 +120,43 @@ export default function Sidebar() {
         className="fixed top-4 left-4 z-50 flex items-center justify-center"
         onClick={toggleSidebar}
       >
-        <div
-          className={`w-10 h-10 rounded-md flex items-center justify-center ${
-            darkMode ? "bg-[#ED64FC]" : "bg-[#ED64FC]"
-          } text-white font-bold text-xl shadow-md transition-all duration-300 hover:scale-105 active:scale-95`}
-        >
+        <div className="w-10 h-10 rounded-md flex items-center justify-center bg-[#ED64FC] text-white font-bold text-xl shadow-md transition-all duration-300 hover:scale-105 active:scale-95">
           <Image src="/logo.png" alt="MakeX Logo" width={24} height={24} />
         </div>
       </button>
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col ${
-          darkMode ? "bg-gray-900 text-white" : "bg-[#FDFAFF] text-gray-800"
-        } border-r ${
-          darkMode ? "border-gray-700" : "border-[#F5E1FC]"
-        } shadow-lg transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col bg-background text-foreground border-r border-border shadow-lg transition-transform duration-300 ease-in-out ${
           sidebarVisible ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Sidebar Header */}
-        <div className="p-4 flex justify-between items-center border-b border-[#F5E1FC] dark:border-gray-700">
+        <div className="p-4 flex justify-between items-center border-b border-border">
           <Link href="/dashboard" className="flex items-center space-x-3">
-            <div
-              className={`w-8 h-8 rounded-md flex items-center justify-center ${
-                darkMode ? "bg-[#ED64FC]" : "bg-[#ED64FC]"
-              } text-white transition-colors duration-300`}
-            >
+            <div className="w-8 h-8 rounded-md flex items-center justify-center bg-[#ED64FC] text-white transition-colors duration-300">
               <Image src="/logo.png" alt="MakeX Logo" width={20} height={20} />
             </div>
             <span className="font-semibold text-lg">MakeX</span>
           </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            className="transition-all duration-200 hover:rotate-90"
-          >
-            <X size={18} />
-          </Button>
+          <div className="flex items-center space-x-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="transition-all duration-200"
+            >
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="transition-all duration-200 hover:rotate-90"
+            >
+              <X size={18} />
+            </Button>
+          </div>
         </div>
 
         {/* Sidebar Tabs */}
@@ -177,185 +190,85 @@ export default function Sidebar() {
 
         {/* Content based on active tab */}
         <div className="flex-1 overflow-hidden">
-          {(activeTab === "apps" ||
-            pathname === "/dashboard" ||
-            pathname.startsWith("/dashboard/app/")) && (
-            <div className="flex flex-col h-full">
-              {/* App Search */}
-              <div className="px-3 pb-2">
-                <div className="relative">
-                  <Search
-                    size={16}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  />
-                  <Input
-                    type="text"
-                    placeholder="Search apps..."
-                    className="pl-9 h-9 transition-all duration-200 focus:ring-2 focus:ring-[#ED64FC]"
-                    value={appSearchTerm}
-                    onChange={(e) => setAppSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Apps List */}
-              <div className="px-3 py-2 overflow-auto flex-1">
-                <h3 className="px-3 text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2">
-                  My Apps
-                </h3>
-
-                {isLoading ? (
-                  <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                    Loading apps...
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    {filteredApps.length === 0 && (
-                      <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                        {appSearchTerm
-                          ? "No apps found"
-                          : "No apps created yet"}
-                      </div>
-                    )}
-
-                    {filteredApps.map((app) => (
-                      <div
-                        key={app.id}
-                        className={`flex items-center justify-between rounded-md px-3 py-2 cursor-pointer group transition-all duration-200 ${
-                          currentAppId === app.id
-                            ? darkMode
-                              ? "bg-gray-800"
-                              : "bg-[#F5E1FC]"
-                            : "hover:bg-[#FCF6FF] dark:hover:bg-gray-800"
-                        }`}
-                        onClick={() => handleAppClick(app.id)}
-                      >
-                        <div className="flex items-center overflow-hidden">
-                          <div
-                            className={`w-6 h-6 rounded flex items-center justify-center ${
-                              darkMode ? "bg-gray-700" : "bg-[#FCF6FF]"
-                            } mr-2 flex-shrink-0 transition-colors duration-200`}
-                          >
-                            <MessageCircle
-                              size={14}
-                              className={
-                                darkMode ? "text-[#ED64FC]" : "text-[#ED64FC]"
-                              }
-                            />
-                          </div>
-                          <div className="truncate">
-                            <div className="font-medium truncate">
-                              {app.app_name}
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                              {new Date(app.created_at).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
-                            currentAppId === app.id ? "opacity-100" : ""
-                          }`}
-                          onClick={(e) => handleDeleteApp(app.id, e)}
-                        >
-                          <Trash2 size={14} className="text-red-500" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+          <div className="flex flex-col h-full">
+            {/* App Search */}
+            <div className="px-3 pb-2">
+              <div className="relative">
+                <Search
+                  size={16}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  type="text"
+                  placeholder="Search apps..."
+                  className="pl-9 h-9 transition-all duration-200 focus:ring-2 focus:ring-[#ED64FC]"
+                  value={appSearchTerm}
+                  onChange={(e) => setAppSearchTerm(e.target.value)}
+                />
               </div>
             </div>
-          )}
 
-          {activeTab === "settings" && (
-            <div className="p-4">
-              <h3 className="font-medium mb-4">Subscription</h3>
+            {/* Apps List */}
+            <div className="px-3 py-2 overflow-auto flex-1">
+              <h3 className="px-3 text-xs font-medium uppercase text-muted-foreground mb-2">
+                My Apps
+              </h3>
+
               {isLoading ? (
-                <div className="text-sm">Loading subscription info...</div>
-              ) : subscription ? (
-                <div className="space-y-4">
-                  <div className="p-4 border rounded-md bg-[#F5E1FC] dark:bg-gray-800">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="font-semibold">
-                        {subscription.hasActiveSubscription
-                          ? "Active Plan"
-                          : "No Active Plan"}
-                      </div>
-                      <div
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          subscription.hasActiveSubscription
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-                        }`}
-                      >
-                        {subscription.subscription?.status || "inactive"}
-                      </div>
-                    </div>
-
-                    {subscription.hasActiveSubscription && (
-                      <>
-                        <div className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                          {subscription.pendingCancellation
-                            ? "Your subscription will end on"
-                            : "Next billing date"}
-                          :
-                          <div className="font-medium text-gray-900 dark:text-gray-100">
-                            {new Date(
-                              subscription.expiresAt || ""
-                            ).toLocaleDateString()}
-                          </div>
-                        </div>
-
-                        {subscription.pendingCancellation && (
-                          <div className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100 p-2 rounded-md">
-                            Your subscription will not renew automatically
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    className="w-full justify-between"
-                    onClick={() => router.push("/dashboard/billing/manage")}
-                  >
-                    <span>
-                      {subscription.hasActiveSubscription
-                        ? "Manage Subscription"
-                        : "Upgrade Plan"}
-                    </span>
-                    <CreditCard size={16} />
-                  </Button>
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  <Loader2 className="animate-spin" />
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="p-4 border rounded-md bg-[#FCF6FF] dark:bg-gray-800">
-                    <div className="font-semibold mb-2">No Subscription</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">
-                      You don't have an active subscription yet.
+                <div className="space-y-1">
+                  {filteredApps.length === 0 && (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">
+                      {appSearchTerm ? "No apps found" : "No apps created yet"}
                     </div>
-                  </div>
+                  )}
 
-                  <Button
-                    variant="default"
-                    className="w-full justify-between"
-                    onClick={() => router.push("/dashboard/billing/plans")}
-                  >
-                    <span>Upgrade to Pro</span>
-                    <CreditCard size={16} />
-                  </Button>
+                  {filteredApps.map((app) => (
+                    <div
+                      key={app.id}
+                      className={`flex items-center justify-between rounded-md px-3 py-2 cursor-pointer group transition-all duration-200 ${
+                        currentAppId === app.id
+                          ? "bg-accent"
+                          : "hover:bg-accent/50"
+                      }`}
+                      onClick={() => handleAppClick(app.id)}
+                    >
+                      <div className="flex items-center overflow-hidden">
+                        <div className="w-6 h-6 rounded flex items-center justify-center bg-muted mr-2 flex-shrink-0 transition-colors duration-200">
+                          <MessageCircle size={14} className="text-[#ED64FC]" />
+                        </div>
+                        <div className="truncate">
+                          <div className="font-medium truncate">
+                            {app.app_name}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {new Date(app.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
+                          currentAppId === app.id ? "opacity-100" : ""
+                        }`}
+                        onClick={(e) => handleDeleteApp(app.id, e)}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* Sidebar Footer */}
-        <div className="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-auto p-4 border-t border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <Avatar className="h-8 w-8 transition-transform duration-200 hover:scale-110">

@@ -17,17 +17,10 @@ import { Loader2, User, CreditCard, LogOut, Moon, Globe } from "lucide-react";
 import { getAuthToken } from "@/utils/client/auth";
 import { useApp } from "@/context/AppContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 
 export default function ProfileSettings() {
   const router = useRouter();
-  const {
-    subscription,
-    isLoading: subscriptionLoading,
-    darkMode,
-    toggleDarkMode,
-  } = useApp();
+  const { subscription, isLoading: subscriptionLoading } = useApp();
 
   // Derive values from the subscription data
   const pendingCancellation = subscription?.pendingCancellation || false;
@@ -180,15 +173,6 @@ export default function ProfileSettings() {
                   <CreditCard className="mr-2 h-4 w-4" />
                   Billing
                 </Button>
-                <Button
-                  variant={activeTab === "appearance" ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  size="sm"
-                  onClick={() => setActiveTab("appearance")}
-                >
-                  <Moon className="mr-2 h-4 w-4" />
-                  Appearance
-                </Button>
               </div>
 
               <Separator className="my-6" />
@@ -311,35 +295,6 @@ export default function ProfileSettings() {
                         "Manage Subscription"
                       )}
                     </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          {/* Appearance Tab */}
-          {activeTab === "appearance" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Appearance Settings</CardTitle>
-                <CardDescription>
-                  Customize the look and feel of the application
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Theme</h3>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="dark-mode">Dark Mode</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Switch between light and dark theme
-                      </p>
-                    </div>
-                    <Switch
-                      id="dark-mode"
-                      checked={darkMode}
-                      onCheckedChange={toggleDarkMode}
-                    />
                   </div>
                 </div>
               </CardContent>

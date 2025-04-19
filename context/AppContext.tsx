@@ -14,7 +14,6 @@ import {
   getUserEmailFromToken,
   getPlanName,
 } from "@/utils/client/auth";
-import { useTheme } from "next-themes";
 
 // Define app data interface based on the API response
 export interface AppData {
@@ -52,10 +51,6 @@ export interface SubscriptionData {
 
 // Define the context shape
 interface AppContextType {
-  // Theme
-  darkMode: boolean;
-  toggleDarkMode: () => void;
-
   // Sidebar
   sidebarVisible: boolean;
   toggleSidebar: () => void;
@@ -82,9 +77,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { toast } = useToast();
 
-  // Theme state
-  const [darkMode, setDarkMode] = useState(false);
-
   // Sidebar state
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
@@ -107,11 +99,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ? pathSegments[appIdIndex]
       : null;
 
-  // Toggle functions
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
-
+  // Toggle function for sidebar
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
   };
@@ -217,8 +205,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Context value
   const value = {
-    darkMode,
-    toggleDarkMode,
     sidebarVisible,
     toggleSidebar,
     apps,
