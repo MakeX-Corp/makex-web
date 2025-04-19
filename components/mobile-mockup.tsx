@@ -58,7 +58,7 @@ export default function MobileMockup({ appId,appUrl,iframeKey,authToken }: Mobil
         <div className="absolute top-[90px] right-0 w-[4px] h-[45px] bg-black rounded-r-md shadow-lg"></div>
 
         {/* Phone Container */}
-        <div className="relative w-[300px] h-[600px] rounded-[48px] mx-[4px]">
+        <div className="relative w-[300px] h-[580px] rounded-[48px] mx-[4px]">
           <div className="absolute inset-0 rounded-[48px] overflow-hidden">
             {isCreatingSandbox ? (
               <div className="flex items-center justify-center h-full">
