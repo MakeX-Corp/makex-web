@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import MobileMockup from "@/components/mobile-mockup";
