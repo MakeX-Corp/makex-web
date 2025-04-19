@@ -10,6 +10,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY as string
 );
 
+export const maxDuration = 300;
+
 // This route will be triggered by a cron job
 export async function GET(request: Request) {
   try {
@@ -32,7 +34,6 @@ export async function GET(request: Request) {
     }
 
     // Current time
-    const now = new Date();
     const stoppedApps = [];
 
     // Process each active app
@@ -76,7 +77,7 @@ export async function GET(request: Request) {
 
         console.log(`App ${app.app_name} - last activity: ${lastActivityTime}, inactive for ${diffMinutes} minutes`);
 
-        if (diffMinutes > 5) {
+        if (diffMinutes > 4) {
           // Export the code before killing the sandbox
           try {
             if (app.api_url) {
@@ -155,8 +156,8 @@ export async function GET(request: Request) {
             try {
               await redisUrlSetter(
                 app.app_name,
-                "https://makex.app",
-                "https://makex.app"
+                "https://makex.app/app-not-found",
+                "https://makex.app/app-not-found"
               );
               console.log(
                 `Successfully removed Redis proxy records for ${app.app_name}`

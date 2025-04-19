@@ -101,7 +101,7 @@ export async function DELETE(request: Request) {
     const sbxkill = await Sandbox.kill(app.sandbox_id) 
 
     // redis set te app url and api url to homepage
-    await redisUrlSetter(app.app_name, "https://makex.app", "https://makex.app");
+    await redisUrlSetter(app.app_name, "https://makex.app/app-not-found", "https://makex.app/app-not-found");
     
     const { error: updateError } = await supabase
       .from("user_apps")
