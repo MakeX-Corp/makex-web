@@ -82,9 +82,8 @@ export async function PUT(request: Request) {
       formattedTitle = await summarizeChat(content);
     } else {
       // Sanitize title - If empty, use "New Chat"
-      formattedTitle = (title || "").trim() || "New Chat";
+      formattedTitle = (title || "").trim() || session?.title;
     }
-
     // Update session title in database
     const { data, error } = await supabase
       .from("chat_sessions")
