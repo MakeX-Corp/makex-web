@@ -1,7 +1,7 @@
 {
     "crons": [
       {
-        "path": "/api/containers/maintain",
+        "path": "/api/sandbox/auto-stop",
         "schedule": "* * * * *"
       }
     ]

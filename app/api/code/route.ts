@@ -4,10 +4,10 @@ import { createFileBackendApiClient } from '@/utils/server/file-backend-api-clie
 
 // Add this function to handle checkpoint restore
 export async function POST(request: Request) {
-  const { messageId, appUrl, sessionId } = await request.json();
+  const { messageId, apiUrl, sessionId } = await request.json();
 
   console.log("message", messageId);
-  console.log("appUrl", appUrl);
+  console.log("apiUrl", apiUrl);
   console.log("sessionId", sessionId);
   
   // query supabase app_chat_history to get the commit hash
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   console.log("data", data);
-  const fileBackendClient = createFileBackendApiClient(appUrl);
+  const fileBackendClient = createFileBackendApiClient(apiUrl);
   
   
   try {

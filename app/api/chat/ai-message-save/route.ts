@@ -10,11 +10,11 @@ export async function POST(request: Request) {
     const { supabase, user } = userResult;
 
     const body = await request.json();
-    const { appUrl, appId, sessionId, options, message } = body;
+    const { apiUrl, appId, sessionId, options, message } = body;
 
     let commitHash = null;
 
-    const apiClient = createFileBackendApiClient(appUrl);
+    const apiClient = createFileBackendApiClient(apiUrl);
     // Save checkpoint after completing the response
     try {
       const checkpointResponse = await apiClient.post("/checkpoint/save", {
