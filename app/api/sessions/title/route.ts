@@ -73,13 +73,16 @@ export async function PUT(request: Request) {
     //Make title if it is ai generated
     let formattedTitle = "";
     //@ts-ignore
-    if (isAiGenerated && content && session?.title === "New Chat") {
+    if (
+      isAiGenerated &&
+      content &&
+      (session?.title === "New Chat" || !session?.title)
+    ) {
       // summarizing the chat
       formattedTitle = await summarizeChat(content);
     } else {
       // Sanitize title - If empty, use "New Chat"
-      console.log("should not be in ther");
-      formattedTitle = (title || "").trim() || "New Chat ff";
+      formattedTitle = (title || "").trim() || "New Chat";
     }
 
     // Update session title in database

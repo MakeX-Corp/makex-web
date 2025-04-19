@@ -23,7 +23,7 @@ async function updateSessionTitle(
   aiResponse: string,
   sessionId: string,
   authToken: string,
-  callback?: (sessionId: string, title: string) => void
+  callback?: () => void
 ) {
   try {
     // 2. Update the session title in the database
@@ -41,6 +41,11 @@ async function updateSessionTitle(
     });
     if (!updateResponse.ok) {
       throw new Error("Failed to update title");
+    }
+
+    // 2. Execute the callback if provided to update UI in parent component
+    if (callback && typeof callback === "function") {
+      callback();
     }
   } catch (error) {
     console.error("Error updating session title:", error);
@@ -74,6 +79,7 @@ export function Chat({
   supabase_project,
   onResponseComplete,
   onSessionError,
+  fetchSessions,
 }: {
   appId: string;
   appUrl: string;
@@ -82,6 +88,7 @@ export function Chat({
   supabase_project?: any;
   onResponseComplete?: () => void;
   onSessionError?: (error: string) => void;
+  fetchSessions?: () => void;
 }) {
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -308,7 +315,11 @@ export function Chat({
             userMessage,
             aiMessage,
             sessionId,
-            authToken
+            authToken,
+            () => {
+              // Simply call fetchSessions as the callback
+              fetchSessions?.();
+            }
           );
         }
         // Update message limit after successful message

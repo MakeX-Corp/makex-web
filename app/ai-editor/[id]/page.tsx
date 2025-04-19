@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import MobileMockup from "@/components/mobile-mockup";
@@ -345,7 +345,6 @@ export default function AppEditor() {
       setIsExporting(false);
     }
   };
-
   return (
     <>
       {/* Sessions Sidebar */}
@@ -440,6 +439,7 @@ export default function AppEditor() {
                   onResponseComplete={handleRefresh}
                   onSessionError={handleSessionError}
                   supabase_project={supabaseProject}
+                  fetchSessions={fetchSessions}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center flex-col gap-4 text-muted-foreground">
