@@ -50,7 +50,6 @@ export default function AppEditor() {
   );
   const [app, setApp] = useState<AppDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isContainerLoading, setIsContainerLoading] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
   const [viewMode, setViewMode] = useState<"mobile" | "qr">("mobile");
   const [authToken, setAuthToken] = useState<string | null>(null);
@@ -98,57 +97,6 @@ export default function AppEditor() {
       setIsResetting(false);
     }
   };
-  const wakeContainer = async (appName: string, machineId: string) => {
-    setIsContainerLoading(true);
-    let timeout = 0;
-    try {
-      // First check container status
-      const statusResponse = await fetch(
-        `/api/machines?app=${appName}&machineId=${machineId}&action=status`,
-        {
-          method: "POST",
-        }
-      );
-      const statusData = await statusResponse.json();
-
-      if (statusData.state === "started") {
-        // Container is already started, no need to refresh
-        console.log("Container is already started");
-        return;
-      }
-
-      if (statusData.state === "stopped") {
-        // mark the badge as stopped
-        console.log("Container is stopped");
-        timeout = 25000;
-      }
-      if (statusData.state === "suspended") {
-        // mark the badge as suspended
-        console.log("Container is suspended");
-        timeout = 25000;
-      } else {
-        // If not started, wake up the container
-        const response = await fetch(
-          `/api/machines?app=${appName}&machineId=${machineId}&action=wait&state=started`,
-          {
-            method: "POST",
-          }
-        );
-        const data = await response.json();
-        if (data.ok) {
-          await new Promise((resolve) => setTimeout(resolve, timeout));
-          // Only refresh if the container was actually started
-          if (statusData.state !== "started") {
-            handleRefresh();
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error managing container:", error);
-    } finally {
-      setIsContainerLoading(false);
-    }
-  };
 
   const fetchSessions = async () => {
     setIsSessionsLoading(true);
@@ -191,10 +139,6 @@ export default function AppEditor() {
         setApp(data);
         setIsLoading(false);
 
-        // Start container wake-up process in background
-        if (data.machine_id) {
-          wakeContainer(data.app_name, data.machine_id);
-        }
       } catch (error) {
         console.error("Error fetching app details:", error);
         setIsLoading(false);
@@ -502,20 +446,6 @@ export default function AppEditor() {
                   </Button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div
-                    className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
-                      isContainerLoading
-                        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700"
-                        : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 border border-green-300 dark:border-green-700"
-                    }`}
-                  >
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        isContainerLoading ? "bg-yellow-500" : "bg-green-500"
-                      }`}
-                    />
-                    {isContainerLoading ? "Starting..." : "Ready"}
-                  </div>
                   <Button size="icon" variant="ghost" onClick={handleRefresh}>
                     <RefreshCw className="h-4 w-4" />
                   </Button>

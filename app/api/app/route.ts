@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { checkActiveContainer } from "@/utils/server/check-container-limit"; // Import the function
-import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
+import { Sandbox } from '@e2b/code-interpreter'
+import { generateAppName } from "@/utils/server/app-name-generator";
+import { createClient } from 'redis';
+
 
 // ────────────────────────────────────────────────────────────────────────────────
 // POST /api/app – allocate a container to the authenticated user
@@ -12,87 +13,51 @@ export async function POST(request: Request) {
   const result = await getSupabaseWithUser(request);
   if (result instanceof NextResponse) return result;
   const { supabase, user } = result;
-
-  // Check active container limit
-  const activeContainersResult = await checkActiveContainer(supabase, user.id);
-  if (activeContainersResult instanceof NextResponse)
-    return activeContainersResult;
-
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_KEY!
-  );
-
-  // Get one available container from the pool using admin because the user doesn't have access to the table
-  const { data: container, error: containerError } = await supabaseAdmin
-    .from("available_containers")
-    .select("*")
-    .limit(1)
-    .single();
-
-  if (containerError || !container) {
-    return NextResponse.json(
-      { error: "No available containers" },
-      { status: 404 }
-    );
-  }
   
-  const appUrl = container.app_url;
-  const fileBackendClient = createFileBackendApiClient(appUrl);
 
-  let saveCheckpointResponse;
+  const sbx = await Sandbox.create('px2b0gc7d6r1svvz8g5t', { timeoutMs: 600_000 })
+  const apiHost = sbx.getHost(8001)
+  await sbx.commands.run(`cd /app/expo-app && export EXPO_PACKAGER_PROXY_URL=https://${apiHost} && yarn expo start --port 8000`, { background: true })
+  const expoHost = sbx.getHost(8000)
+  const appName = generateAppName()
+
+  // Connect to Redis
+  const redis = createClient({
+    url: process.env.REDIS_URL,
+  });
+  
+  await redis.connect();
+  
   try {
-    saveCheckpointResponse = await fileBackendClient.post("/checkpoint/save", {
-      name: "ai-assistant-checkpoint",
-      message: "Checkpoint after AI assistant changes",
-    });
-    console.log("saveCheckpointResponse", saveCheckpointResponse);
+    // Store mappings in Redis
+    await redis.set(`proxy:${appName}.makex.app`, `https://${expoHost}`);
+    await redis.set(`proxy:api-${appName}.makex.app`, `https://${apiHost}`);
+    
+    await redis.disconnect();
   } catch (error) {
-    console.error("Failed to save checkpoint:", error);
-    return NextResponse.json(
-      { error: "Failed to communicate with container" },
-      { status: 500 }
-    );
+    console.error('Redis error:', error);
   }
 
-  console.log("saveCheckpointResponse", saveCheckpointResponse);
-
-  // Insert into user_apps
-  const { data: userApp, error: createError } = await supabase
+  // Insert into Supabase user_apps table
+  const { data: insertedApp, error: insertError } = await supabase
     .from("user_apps")
     .insert({
       user_id: user.id,
-      app_name: container.app_name,
-      app_url: container.app_url,
-      machine_id: container.machine_id,
-      initial_commit:
-        saveCheckpointResponse.current_commit || saveCheckpointResponse.commit,
+      app_name: appName,
+      app_url: `https://${appName}.makex.app`,
+      api_url: `https://api-${appName}.makex.app`,
+      sandbox_id: sbx.sandboxId, 
+      sandbox_status: 'active'
     })
     .select()
     .single();
 
-  if (createError) {
-    // Ideally rollback the previous delete (requires a Postgres function or RPC)
-    return NextResponse.json(
-      { error: "Failed to create user app" },
-      { status: 500 }
-    );
+  if (insertError) {
+    console.error('Supabase insert error:', insertError);
+    return NextResponse.json({ error: "Failed to save app data" }, { status: 500 });
   }
 
-  // Delete it from the pool using admin because the user doesn't have access to the table
-  const { error: deleteError } = await supabaseAdmin
-    .from("available_containers")
-    .delete()
-    .match({ id: container.id });
-
-  if (deleteError) {
-    return NextResponse.json(
-      { error: "Failed to allocate container" },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json(userApp);
+  return NextResponse.json(insertedApp);
 }
 
 // GET /api/app - Get all apps for the authenticated user
@@ -156,79 +121,12 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "App not found" }, { status: 404 });
     }
 
-    // Delete from Fly.io first
-    try {
-      const flyToken = process.env.FLY_API_TOKEN;
-      const appName = app.app_name;
-
-      // First, list all machines for the app
-      const machinesResponse = await fetch(
-        `https://api.machines.dev/v1/apps/${appName}/machines`,
-        {
-          headers: {
-            Authorization: `Bearer ${flyToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!machinesResponse.ok) {
-        throw new Error(
-          `Failed to list machines: ${machinesResponse.statusText}`
-        );
-      }
-
-      const machines = await machinesResponse.json();
-
-      // Delete each machine with force=true
-      for (const machine of machines) {
-        const machineDeleteResponse = await fetch(
-          `https://api.machines.dev/v1/apps/${appName}/machines/${machine.id}?force=true`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${flyToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!machineDeleteResponse.ok) {
-          throw new Error(
-            `Failed to delete machine ${machine.id}: ${machineDeleteResponse.statusText}`
-          );
-        }
-      }
-
-      // After all machines are deleted, delete the app
-      const deleteResponse = await fetch(
-        `https://api.machines.dev/v1/apps/${appName}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${flyToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!deleteResponse.ok) {
-        throw new Error(
-          `Failed to delete app from Fly.io: ${deleteResponse.statusText}`
-        );
-      }
-    } catch (flyError) {
-      console.error("Error deleting from Fly.io:", flyError);
-      return NextResponse.json(
-        { error: "Failed to delete app from Fly.io" },
-        { status: 500 }
-      );
-    }
-
-    // If Fly.io deletion was successful, delete from Supabase
+    // kill the sandbox
+    const sbxkill = await Sandbox.kill(app.sandbox_id) 
+    
     const { error: updateError } = await supabase
       .from("user_apps")
-      .update({ status: "deleted" })
+      .update({ status: "deleted", sandbox_status: 'deleted' })
       .eq("id", appId)
       .eq("user_id", user.id);
 

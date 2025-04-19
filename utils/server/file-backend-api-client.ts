@@ -8,9 +8,9 @@ if (!API_KEY) {
 
 export const createFileBackendApiClient = (baseURL: string) => {
   // if base url contains makex.app then replace it with fly.dev and add :8001 to the end
-  if (baseURL.includes("makex.app")) {
-    baseURL = baseURL.replace("makex.app", "fly.dev") + ":8001";
-  }
+  
+  baseURL = 'https://api-hostile-tomato-zebra.makex.app'
+  console.log("baseURL", baseURL);
   const client = axios.create({
     baseURL,
     headers: {

@@ -108,7 +108,7 @@ export async function checkDailyMessageLimit(
     };
   }
 
-  const maxDailyMessages = await getMessageLimit(supabase, user.id);
+  const maxDailyMessages = 50000;
 
   if (count && count >= maxDailyMessages) {
     return {

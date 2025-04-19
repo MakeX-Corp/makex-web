@@ -1,5 +1,7 @@
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse } from "next/server";
+import { uniqueNamesGenerator, Config, adjectives, colors, animals } from 'unique-names-generator';
+
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
