@@ -20,8 +20,9 @@ export async function POST(request: Request) {
     const { appId } = body;
 
     if (!appId) {
+      console.log("appId is required");
       return NextResponse.json(
-        { error: "appId and app are required" },
+        { error: "appId is required" },
         { status: 400 }
       );
     }
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
       .single();
 
     if(appData.sandbox_status == "active"){
-      return NextResponse.json({ error: "Sandbox already exists" }, { status: 400 });
+      return NextResponse.json({ message: "Sandbox already exists" }, { status: 200 });
     }
 
     if (appError || !appData) {
@@ -56,11 +57,11 @@ export async function POST(request: Request) {
 
       sandboxId = sbx.sandboxId;
       const apiHost = sbx.getHost(8001);
+      const expoHost = sbx.getHost(8000);
       await sbx.commands.run(
-        `cd /app/expo-app && export EXPO_PACKAGER_PROXY_URL=https://${apiHost} && yarn expo start --port 8000`,
+        `cd /app/expo-app && export EXPO_PACKAGER_PROXY_URL=https://${expoHost} && yarn expo start --port 8000`,
         { background: true }
       );
-      const expoHost = sbx.getHost(8000);
 
       await redisUrlSetter(appName, `https://${expoHost}`, `https://${apiHost}`);
 
@@ -134,14 +135,15 @@ export async function POST(request: Request) {
 
       // Get hosts for the API and app
       const apiHost = sandbox.getHost(8001);
+      const expoHost = sandbox.getHost(8000);
+
 
       // Start the Expo app in the background
       const runResult = await sandbox.commands.run(
-        `cd /app/expo-app && sudo yarn && export EXPO_PACKAGER_PROXY_URL=https://${apiHost} && yarn expo start --port 8000`,
+        `cd /app/expo-app && sudo yarn && export EXPO_PACKAGER_PROXY_URL=https://${expoHost} && yarn expo start --port 8000`,
         { background: true }
       );
 
-      const expoHost = sandbox.getHost(8000);
       // Connect to Redis for proxy configuration
       await redisUrlSetter(appName, `https://${expoHost}`, `https://${apiHost}`);
 

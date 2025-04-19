@@ -186,8 +186,6 @@ export async function GET(request: Request) {
       }
     }
 
-    console.log("Redis disconnected");
-
     return NextResponse.json({
       message: `Auto-stop completed. Stopped ${stoppedApps.length} inactive apps.`,
       stopped_apps: stoppedApps,
