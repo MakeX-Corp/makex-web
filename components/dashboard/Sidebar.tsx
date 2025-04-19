@@ -360,16 +360,15 @@ export default function Sidebar() {
             <div className="flex items-center">
               <Avatar className="h-8 w-8 transition-transform duration-200 hover:scale-110">
                 <AvatarFallback className="bg-[#ED64FC] text-white text-sm">
-                  U
+                  {subscription?.email?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="ml-2">
-                <p className="text-sm font-medium">User Name</p>
+                <p className="text-sm font-medium">
+                  {subscription?.email || "User"}
+                </p>
               </div>
             </div>
-            <Button variant="ghost" size="icon">
-              <MoreHorizontal size={16} />
-            </Button>
           </div>
         </div>
       </aside>

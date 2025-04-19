@@ -9,7 +9,12 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
-import { getAuthToken } from "@/utils/client/auth";
+import {
+  getAuthToken,
+  getUserEmailFromToken,
+  getPlanName,
+} from "@/utils/client/auth";
+import { useTheme } from "next-themes";
 
 // Define app data interface based on the API response
 export interface AppData {
@@ -41,6 +46,8 @@ export interface SubscriptionData {
   planId: string | null;
   customerId: string | null;
   userId: string;
+  email: string;
+  planName: string;
 }
 
 // Define the context shape
@@ -171,6 +178,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await subscriptionResponse.json();
+      console.log("this is the data", data);
+      // Get email from token using the provided utility function
+      const email = getUserEmailFromToken(decodedToken) || "";
+      const planName = getPlanName(data.subscription?.planId || "");
+      data.email = email;
+      data.planName = planName;
+
+      console.log("this is the data ===d", data);
       setSubscription(data);
     } catch (error) {
       console.error("Error fetching subscription:", error);

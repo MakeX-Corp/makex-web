@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, MutableRefObject } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -70,16 +70,16 @@ export default function DashboardPage() {
   const router = useRouter();
   const [prompt, setPrompt] = useState("");
 
-  // References for animation
+  // Create refs with explicit typing
   const row1Ref = useRef<HTMLDivElement>(null);
   const row2Ref = useRef<HTMLDivElement>(null);
   const row3Ref = useRef<HTMLDivElement>(null);
 
   // Animation for moving suggestion pills
   useEffect(() => {
-    // Function to animate a row
+    // Modified the function to accept any ref type and handle null check inside
     const animateRow = (
-      rowRef: React.RefObject<HTMLDivElement>,
+      rowRef: { current: HTMLDivElement | null },
       direction: "left" | "right",
       speed: number
     ) => {

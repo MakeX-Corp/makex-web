@@ -13,28 +13,40 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
+import { Loader2, User, CreditCard, LogOut, Moon, Globe } from "lucide-react";
 import { getAuthToken } from "@/utils/client/auth";
-import { useSubscription } from "@/hooks/use-subscription";
-import { Loader2 } from "lucide-react";
+import { useApp } from "@/context/AppContext";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+
 export default function ProfileSettings() {
   const router = useRouter();
   const {
-    pendingCancellation,
-    planName,
-    loading: subscriptionLoading,
-    customerId,
-    email,
-  } = useSubscription();
+    subscription,
+    isLoading: subscriptionLoading,
+    darkMode,
+    toggleDarkMode,
+  } = useApp();
+
+  // Derive values from the subscription data
+  const pendingCancellation = subscription?.pendingCancellation || false;
+  const planName = subscription?.planName || "";
+  const customerId = subscription?.customerId || null;
+  const email = subscription?.email || "";
+  const initials = email ? email.substring(0, 2).toUpperCase() : "US";
 
   const [isManagingSubscription, setIsManagingSubscription] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [activeTab, setActiveTab] = useState("account");
+
   const handleSignOut = async () => {
     setIsSigningOut(true);
     const supabase = createClientComponentClient();
     await supabase.auth.signOut();
     router.push("/");
   };
+
   const handleManageSubscription = async () => {
     try {
       setIsManagingSubscription(true);
@@ -90,9 +102,10 @@ export default function ProfileSettings() {
       </div>
     );
   }
+
   if (subscriptionLoading) {
     return (
-      <div className="w-full max-w-2xl px-4">
+      <div className="w-full max-w-4xl px-4">
         <Card className="w-full">
           <CardHeader>
             <Skeleton className="h-8 w-48" />
@@ -123,80 +136,217 @@ export default function ProfileSettings() {
   }
 
   return (
-    <div className="w-full max-w-2xl px-4">
-      <div className="mb-4">
-        <Button
-          variant="ghost"
-          className="gap-2"
-          onClick={() => router.push("/dashboard")}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
-        </Button>
+    <div className="w-full max-w-6xl px-4 py-8">
+      <div className="mb-6 flex items-center gap-2">
+        <h1 className="text-2xl font-bold ml-4">Settings</h1>
       </div>
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>
-            Manage your account settings and preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Email</h3>
-            <p className="text-sm text-muted-foreground">{email}</p>
-          </div>
 
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium">Subscription</h3>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Current Plan: {planName}
-                {pendingCancellation && " (Cancelling at period end)"}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 justify-start"
-                  onClick={handleManageSubscription}
-                  disabled={isManagingSubscription}
-                >
-                  {isManagingSubscription
-                    ? "Loading..."
-                    : "Manage Subscription"}
-                </Button>
-
-                {planName === "Free" ||
-                  (planName === "Starter" && (
-                    <Button
-                      variant="default"
-                      className="flex-1"
-                      onClick={() => router.push("/pricing")}
-                    >
-                      Upgrade Plan
-                    </Button>
-                  ))}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        {/* Sidebar with avatar and tabs */}
+        <div className="md:col-span-3">
+          <Card>
+            <CardContent className="py-6">
+              <div className="flex flex-col items-center space-y-4 mb-6">
+                <Avatar className="h-20 w-20">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-center">
+                  <p className="font-medium">{email}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {planName} Plan
+                    {pendingCancellation && " (Cancelling)"}
+                  </p>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <Separator />
+              <div className="space-y-1">
+                <Button
+                  variant={activeTab === "account" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  size="sm"
+                  onClick={() => setActiveTab("account")}
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  Account
+                </Button>
+                <Button
+                  variant={activeTab === "billing" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  size="sm"
+                  onClick={() => setActiveTab("billing")}
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Billing
+                </Button>
+                <Button
+                  variant={activeTab === "appearance" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  size="sm"
+                  onClick={() => setActiveTab("appearance")}
+                >
+                  <Moon className="mr-2 h-4 w-4" />
+                  Appearance
+                </Button>
+              </div>
 
-          <div className="space-y-4">
-            <div className="flex justify-center">
+              <Separator className="my-6" />
+
               <Button
                 variant="outline"
-                className="w-full max-w-[200px]"
+                className="w-full justify-center"
+                size="sm"
                 onClick={handleSignOut}
               >
+                <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main content area */}
+        <div className="md:col-span-9">
+          {/* Account Tab */}
+          {activeTab === "account" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Information</CardTitle>
+                <CardDescription>
+                  Manage your account details and preferences
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Email Address</h3>
+                  <p className="text-sm text-muted-foreground">{email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    This is the email address associated with your account.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium">Account Type</h3>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{planName} Plan</p>
+                      <p className="text-xs text-muted-foreground">
+                        {pendingCancellation
+                          ? "Your subscription will be cancelled at the end of the current billing period."
+                          : planName === "Free"
+                          ? "Upgrade to access premium features."
+                          : "Access to all premium features."}
+                      </p>
+                    </div>
+                    <Button
+                      variant={planName === "Free" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => router.push("/pricing")}
+                    >
+                      {planName === "Free" ? "Upgrade" : "Change Plan"}
+                    </Button>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium">Language and Region</h3>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">English (US)</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Billing Tab */}
+          {activeTab === "billing" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Subscription & Billing</CardTitle>
+                <CardDescription>
+                  Manage your subscription and payment details
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium">Current Plan</h3>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <div>
+                        <p className="font-medium">{planName} Plan</p>
+                        <p className="text-sm text-muted-foreground">
+                          {pendingCancellation && "Cancelling at period end"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">
+                          {planName === "Free"
+                            ? "Free"
+                            : planName === "Starter"
+                            ? "$10/month"
+                            : "$20/month"}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="w-full mt-2"
+                      onClick={handleManageSubscription}
+                      disabled={isManagingSubscription}
+                    >
+                      {isManagingSubscription ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        "Manage Subscription"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {/* Appearance Tab */}
+          {activeTab === "appearance" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Appearance Settings</CardTitle>
+                <CardDescription>
+                  Customize the look and feel of the application
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium">Theme</h3>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="dark-mode">Dark Mode</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Switch between light and dark theme
+                      </p>
+                    </div>
+                    <Switch
+                      id="dark-mode"
+                      checked={darkMode}
+                      onCheckedChange={toggleDarkMode}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
