@@ -62,7 +62,7 @@ export async function GET(request: Request) {
         const currentTime = new Date();
         if (!latestMessage) {
           // Use the app's created_at time for new apps with no messages
-          lastActivityTime = new Date(app.created_at);
+          lastActivityTime = new Date(app.updated_at);
           console.log(
             `No messages found for app ${app.app_name}, using app creation time: ${lastActivityTime}`
           );
