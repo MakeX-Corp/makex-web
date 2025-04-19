@@ -1,16 +1,55 @@
-import { ReactNode } from "react";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface MobileMockupProps {
-  children: ReactNode;
-  className?: string;
+  appId: string;
+  appUrl: string;
+  authToken: string;
+  iframeKey: any;
 }
 
-export default function MobileMockup({
-  children,
-  className = "",
-}: MobileMockupProps) {
+export default function MobileMockup({ appId,appUrl,iframeKey,authToken }: MobileMockupProps) {
+
+  const [isCreatingSandbox, setIsCreatingSandbox] = useState(false);
+  
+  const handleCreateSandbox = async () => {
+    if (!appId) return; 
+
+    try {
+      setIsCreatingSandbox(true);
+      const response = await fetch("/api/sandbox/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          appId: appId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const sandboxData = await response.json();
+      console.log(sandboxData);
+
+    } catch (error) {
+      console.error("Error recreating sandbox:", error);
+    } finally {
+      setIsCreatingSandbox(false);
+    }
+  };
+
+  useEffect(() => {
+    handleCreateSandbox();
+  }, []);
+
+
+  
   return (
-    <div className={`flex items-center justify-center ${className}`}>
+    <div className={`flex items-center justify-center`}>
       <div className="relative">
         <div className="absolute top-[90px] left-0 w-[4px] h-[30px] bg-black rounded-l-md shadow-lg"></div>
         <div className="absolute top-[135px] left-0 w-[4px] h-[30px] bg-black rounded-l-md shadow-lg"></div>
@@ -21,7 +60,19 @@ export default function MobileMockup({
         {/* Phone Container */}
         <div className="relative w-[300px] h-[600px] rounded-[48px] mx-[4px]">
           <div className="absolute inset-0 rounded-[48px] overflow-hidden">
-            {children}
+            {isCreatingSandbox ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            ) : (
+              <iframe
+                key={iframeKey}
+                src={appUrl || ""}
+                style={{
+                  height: "100%",
+                }}
+              />
+            )}
           </div>
 
           {/* Phone border overlay */}

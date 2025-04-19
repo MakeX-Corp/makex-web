@@ -4,7 +4,7 @@ import { createFileBackendApiClient } from "@/utils/server/file-backend-api-clie
 
 export async function POST(req: Request) {
   try {
-    const { appUrl, appId } = await req.json();
+    const { apiUrl, appId } = await req.json();
 
     // Get user info and validate authentication
     const userResult = await getSupabaseWithUser(req);
@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const { user } = userResult;
 
     try {
-      const client = createFileBackendApiClient(appUrl);
+      const client = createFileBackendApiClient(apiUrl);
       const { data, headers } = await client.getFile("/export-code");
 
       // Convert Axios headers to a format compatible with Response

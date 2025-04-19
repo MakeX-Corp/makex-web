@@ -73,12 +73,12 @@ export async function POST(req: Request) {
   try {
     const {
       messages,
-      appUrl,
       appId,
       sessionId,
       supabase_project,
       messageParts,
       multiModal,
+      apiUrl,
     } = await req.json();
 
     // Get the last user message
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const apiClient = createFileBackendApiClient(appUrl);
+    const apiClient = createFileBackendApiClient(apiUrl);
     let connectionUri = undefined;
 
     if (supabase_project) {
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
     const modelName = "claude-3-5-sonnet-latest";
 
     const tools = createTools({
-      apiUrl: appUrl,
+      apiUrl: apiUrl,
       connectionUri: connectionUri,
     });
 

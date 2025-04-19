@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   }
 
   console.log("data", data);
-  const fileBackendClient = createFileBackendApiClient(data.app_url);
+  const fileBackendClient = createFileBackendApiClient(data.api_url);
 
   try {
     const responseData = await fileBackendClient.post("/checkpoint/restore", {
