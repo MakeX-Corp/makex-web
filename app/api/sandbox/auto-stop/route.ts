@@ -63,9 +63,13 @@ export async function GET(request: Request) {
 
         // Check if last message was more than 5 minutes ago
         const lastMessageTime = new Date(latestMessage?.created_at || new Date());
-        // const diffMinutes = Math.floor((now.getTime() - lastMessageTime.getTime()) / (1000 * 60));
+        const currentTime = new Date();
+        const diffMinutes = Math.floor((currentTime.getTime() - lastMessageTime.getTime()) / (1000 * 60));
 
-        const diffMinutes = 6
+        console.log("currentTime.getTime()", currentTime.getTime())
+        console.log("lastMessageTime.getTime()", lastMessageTime.getTime())
+        console.log("diffMinutes", diffMinutes)
+
 
         if (diffMinutes > 5) {
           // Export the code before killing the sandbox
