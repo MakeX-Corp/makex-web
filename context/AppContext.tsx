@@ -44,7 +44,7 @@ export interface SubscriptionData {
 }
 
 // Define the context shape
-interface DashboardContextType {
+interface AppContextType {
   // Theme
   darkMode: boolean;
   toggleDarkMode: () => void;
@@ -68,12 +68,10 @@ interface DashboardContextType {
 }
 
 // Create the context
-const DashboardContext = createContext<DashboardContextType | undefined>(
-  undefined
-);
+const AppContext = createContext<AppContextType | undefined>(undefined);
 
 // Provider component
-export function DashboardProvider({ children }: { children: ReactNode }) {
+export function AppProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { toast } = useToast();
 
@@ -217,18 +215,14 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     refreshSubscription: fetchSubscription,
   };
 
-  return (
-    <DashboardContext.Provider value={value}>
-      {children}
-    </DashboardContext.Provider>
-  );
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
 // Custom hook to use the dashboard context
-export function useDashboard() {
-  const context = useContext(DashboardContext);
+export function useApp() {
+  const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error("useDashboard must be used within a DashboardProvider");
+    throw new Error("useApp must be used within a AppProvider");
   }
   return context;
 }

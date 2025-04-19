@@ -19,7 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useDashboard } from "@/context/DashboardContext";
+import Image from "next/image";
+import { useApp } from "@/context/AppContext";
 
 export default function Sidebar() {
   const {
@@ -32,7 +33,7 @@ export default function Sidebar() {
     currentAppId,
     isLoading,
     subscription,
-  } = useDashboard();
+  } = useApp();
 
   const pathname = usePathname();
   const router = useRouter();
@@ -50,17 +51,9 @@ export default function Sidebar() {
       )
     : apps;
 
-  // Handle creating a new app
-  const handleCreateApp = () => {
-    router.push("/dashboard/create-app");
-    if (window.innerWidth < 768) {
-      toggleSidebar();
-    }
-  };
-
   // Handle app selection
   const handleAppClick = (appId: string) => {
-    router.push(`/testing2/app/${appId}`);
+    router.push(`/dashboard/app/${appId}`);
     if (window.innerWidth < 768) {
       toggleSidebar();
     }
@@ -79,8 +72,8 @@ export default function Sidebar() {
   const sidebarTabs = [
     {
       id: "apps",
-      label: "My Apps",
-      icon: <MessageCircle size={18} />,
+      label: "Create",
+      icon: <Plus size={18} />,
       path: "/dashboard",
     },
     {
@@ -88,12 +81,6 @@ export default function Sidebar() {
       label: "Settings",
       icon: <Settings size={18} />,
       path: "/dashboard/settings",
-    },
-    {
-      id: "billing",
-      label: "Billing",
-      icon: <CreditCard size={18} />,
-      path: "/testing2/create-app",
     },
     {
       id: "help",
@@ -120,34 +107,34 @@ export default function Sidebar() {
       >
         <div
           className={`w-10 h-10 rounded-md flex items-center justify-center ${
-            darkMode ? "bg-indigo-600" : "bg-indigo-500"
+            darkMode ? "bg-[#ED64FC]" : "bg-[#ED64FC]"
           } text-white font-bold text-xl shadow-md transition-all duration-300 hover:scale-105 active:scale-95`}
         >
-          B
+          <Image src="/logo.png" alt="MakeX Logo" width={24} height={24} />
         </div>
       </button>
 
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col ${
-          darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-800"
+          darkMode ? "bg-gray-900 text-white" : "bg-[#FDFAFF] text-gray-800"
         } border-r ${
-          darkMode ? "border-gray-700" : "border-gray-200"
+          darkMode ? "border-gray-700" : "border-[#F5E1FC]"
         } shadow-lg transition-transform duration-300 ease-in-out ${
           sidebarVisible ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Sidebar Header */}
-        <div className="p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+        <div className="p-4 flex justify-between items-center border-b border-[#F5E1FC] dark:border-gray-700">
           <Link href="/dashboard" className="flex items-center space-x-3">
             <div
               className={`w-8 h-8 rounded-md flex items-center justify-center ${
-                darkMode ? "bg-indigo-600" : "bg-indigo-500"
-              } text-white font-bold text-lg transition-colors duration-300`}
+                darkMode ? "bg-[#ED64FC]" : "bg-[#ED64FC]"
+              } text-white transition-colors duration-300`}
             >
-              B
+              <Image src="/logo.png" alt="MakeX Logo" width={20} height={20} />
             </div>
-            <span className="font-semibold text-lg">Bolt</span>
+            <span className="font-semibold text-lg">MakeX</span>
           </Link>
           <Button
             variant="ghost"
@@ -169,7 +156,7 @@ export default function Sidebar() {
                     pathname === tab.path ||
                     (tab.id === "apps" &&
                       pathname.startsWith("/dashboard/app/"))
-                      ? "secondary"
+                      ? "default"
                       : "ghost"
                   }
                   className="w-full justify-start transition-all duration-200"
@@ -194,16 +181,6 @@ export default function Sidebar() {
             pathname === "/dashboard" ||
             pathname.startsWith("/dashboard/app/")) && (
             <div className="flex flex-col h-full">
-              {/* Create New App Button */}
-              <div className="p-3">
-                <Button
-                  onClick={handleCreateApp}
-                  className="w-full justify-start transition-all duration-200 hover:bg-indigo-600 hover:text-white"
-                >
-                  <Plus size={16} className="mr-2" /> New App
-                </Button>
-              </div>
-
               {/* App Search */}
               <div className="px-3 pb-2">
                 <div className="relative">
@@ -214,7 +191,7 @@ export default function Sidebar() {
                   <Input
                     type="text"
                     placeholder="Search apps..."
-                    className="pl-9 h-9 transition-all duration-200 focus:ring-2 focus:ring-indigo-500"
+                    className="pl-9 h-9 transition-all duration-200 focus:ring-2 focus:ring-[#ED64FC]"
                     value={appSearchTerm}
                     onChange={(e) => setAppSearchTerm(e.target.value)}
                   />
@@ -248,21 +225,21 @@ export default function Sidebar() {
                           currentAppId === app.id
                             ? darkMode
                               ? "bg-gray-800"
-                              : "bg-indigo-50"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                              : "bg-[#F5E1FC]"
+                            : "hover:bg-[#FCF6FF] dark:hover:bg-gray-800"
                         }`}
                         onClick={() => handleAppClick(app.id)}
                       >
                         <div className="flex items-center overflow-hidden">
                           <div
                             className={`w-6 h-6 rounded flex items-center justify-center ${
-                              darkMode ? "bg-gray-700" : "bg-gray-200"
+                              darkMode ? "bg-gray-700" : "bg-[#FCF6FF]"
                             } mr-2 flex-shrink-0 transition-colors duration-200`}
                           >
                             <MessageCircle
                               size={14}
                               className={
-                                darkMode ? "text-indigo-400" : "text-indigo-600"
+                                darkMode ? "text-[#ED64FC]" : "text-[#ED64FC]"
                               }
                             />
                           </div>
@@ -295,50 +272,12 @@ export default function Sidebar() {
 
           {activeTab === "settings" && (
             <div className="p-4">
-              <h3 className="font-medium mb-4">Settings</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">
-                    Theme
-                  </label>
-                  <Button
-                    variant="outline"
-                    onClick={toggleDarkMode}
-                    className="w-full justify-between transition-colors duration-300"
-                  >
-                    <span>{darkMode ? "Dark Mode" : "Light Mode"}</span>
-                    {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-                  </Button>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-1 block">
-                    API Key
-                  </label>
-                  <div className="flex">
-                    <Input
-                      type="password"
-                      value="sk-•••••••••••••••••••••"
-                      readOnly
-                      className="rounded-r-none"
-                    />
-                    <Button variant="outline" className="rounded-l-none">
-                      <Trash2 size={14} className="mr-1" /> Copy
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "billing" && (
-            <div className="p-4">
               <h3 className="font-medium mb-4">Subscription</h3>
               {isLoading ? (
                 <div className="text-sm">Loading subscription info...</div>
               ) : subscription ? (
                 <div className="space-y-4">
-                  <div className="p-4 border rounded-md bg-indigo-50 dark:bg-gray-800">
+                  <div className="p-4 border rounded-md bg-[#F5E1FC] dark:bg-gray-800">
                     <div className="flex justify-between items-center mb-2">
                       <div className="font-semibold">
                         {subscription.hasActiveSubscription
@@ -394,7 +333,7 @@ export default function Sidebar() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="p-4 border rounded-md bg-gray-50 dark:bg-gray-800">
+                  <div className="p-4 border rounded-md bg-[#FCF6FF] dark:bg-gray-800">
                     <div className="font-semibold mb-2">No Subscription</div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">
                       You don't have an active subscription yet.
@@ -420,7 +359,7 @@ export default function Sidebar() {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <Avatar className="h-8 w-8 transition-transform duration-200 hover:scale-110">
-                <AvatarFallback className="bg-indigo-500 text-white text-sm">
+                <AvatarFallback className="bg-[#ED64FC] text-white text-sm">
                   U
                 </AvatarFallback>
               </Avatar>

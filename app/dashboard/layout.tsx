@@ -2,7 +2,7 @@
 
 import React from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
-import { DashboardProvider } from "@/context/DashboardContext";
+import { AppProvider } from "@/context/AppContext";
 
 export default function DashboardLayout({
   children,
@@ -10,13 +10,13 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <DashboardProvider>
-      <DashboardContent>{children}</DashboardContent>
-    </DashboardProvider>
+    <AppProvider>
+      <AppContent>{children}</AppContent>
+    </AppProvider>
   );
 }
 
-function DashboardContent({ children }: { children: React.ReactNode }) {
+function AppContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Logo Button will be handled by Sidebar component */}
