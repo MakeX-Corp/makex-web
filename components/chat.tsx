@@ -38,7 +38,7 @@ const ThreeDotsLoader = () => (
 
 export function Chat({
   appId,
-  appUrl,
+  apiUrl,
   authToken,
   sessionId,
   supabase_project,
@@ -46,7 +46,7 @@ export function Chat({
   onSessionError,
 }: {
   appId: string;
-  appUrl: string;
+  apiUrl: string;
   authToken: string;
   sessionId: string;
   supabase_project?: any;
@@ -233,7 +233,7 @@ export function Chat({
       Authorization: "Bearer " + authToken,
     },
     body: {
-      appUrl,
+      apiUrl,
       appId,
       sessionId,
       supabase_project,
@@ -263,7 +263,7 @@ export function Chat({
           body: JSON.stringify({
             sessionId,
             appId,
-            appUrl,
+            apiUrl,
             options,
             message,
           }),
@@ -349,7 +349,7 @@ export function Chat({
         handleSubmit(e, {
           experimental_attachments: imageAttachments, // For UI display
           body: {
-            appUrl,
+            apiUrl,
             appId,
             sessionId,
             supabase_project,
@@ -415,7 +415,7 @@ export function Chat({
         },
         body: JSON.stringify({
           messageId,
-          appUrl,
+          apiUrl,
           sessionId,
         }),
       });

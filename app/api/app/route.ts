@@ -3,7 +3,7 @@ import { getSupabaseWithUser } from "@/utils/server/auth";
 import { Sandbox } from '@e2b/code-interpreter'
 import { generateAppName } from "@/utils/server/app-name-generator";
 import { createClient } from 'redis';
-
+import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 
 // ────────────────────────────────────────────────────────────────────────────────
 // POST /api/app – allocate a container to the authenticated user
@@ -38,6 +38,18 @@ export async function POST(request: Request) {
     console.error('Redis error:', error);
   }
 
+  let checkpointResponse = null;
+  try {
+    const fileBackendClient = createFileBackendApiClient(`https://api-${appName}.makex.app`);
+    checkpointResponse = await fileBackendClient.post("/checkpoint/save", {
+      name: "initial-checkpoint",
+      message: "Initial checkpoint",
+    });
+  } catch (error) {
+    console.error("Failed to save checkpoint:", error);
+    return NextResponse.json({ error: "Failed to save checkpoint" }, { status: 500 });
+  }
+
   // Insert into Supabase user_apps table
   const { data: insertedApp, error: insertError } = await supabase
     .from("user_apps")
@@ -47,7 +59,8 @@ export async function POST(request: Request) {
       app_url: `https://${appName}.makex.app`,
       api_url: `https://api-${appName}.makex.app`,
       sandbox_id: sbx.sandboxId, 
-      sandbox_status: 'active'
+      sandbox_status: 'active',
+      initial_commit: checkpointResponse.commit || checkpointResponse.current_commit,
     })
     .select()
     .single();

@@ -28,10 +28,13 @@ interface AppDetails {
   user_id: string;
   app_name: string;
   app_url: string | null;
+  api_url: string | null;
   machine_id: string | null;
   created_at: string;
   updated_at: string;
-  supabase_project: { name?: string; id: string };
+  sandbox_id: string | null;
+  sandbox_status: string | null;
+  supabase_project: any;
 }
 
 interface Session {
@@ -61,6 +64,7 @@ export default function AppEditor() {
   const [supabaseProject, setSupabaseProject] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isRecreatingSandbox, setIsRecreatingSandbox] = useState(false);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -135,10 +139,10 @@ export default function AppEditor() {
 
         if (error) throw error;
 
-        // Set app data immediately without waiting for container
+        // Removed automatic sandbox recreation
+        // Just set app data
         setApp(data);
         setIsLoading(false);
-
       } catch (error) {
         console.error("Error fetching app details:", error);
         setIsLoading(false);
@@ -146,7 +150,7 @@ export default function AppEditor() {
     };
 
     fetchAppDetails();
-  }, [appId]);
+  }, [appId, authToken]);
 
   const handleRefresh = () => {
     setIframeKey((prev) => prev + 1);
@@ -233,6 +237,47 @@ export default function AppEditor() {
     setSessionError(error);
   };
 
+  const handleRecreateSandbox = async () => {
+    if (!app) return;
+
+    try {
+      setIsRecreatingSandbox(true);
+      const response = await fetch("/api/sandbox/recreate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          appId: app.id,
+          appName: app.app_name,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to recreate sandbox");
+      }
+
+      const sandboxData = await response.json();
+      console.log(sandboxData);
+
+      // Refresh app data after recreation
+      const { data } = await supabase
+        .from("user_apps")
+        .select("*")
+        .eq("id", appId)
+        .single();
+
+      if (data) {
+        setApp(data);
+      }
+    } catch (error) {
+      console.error("Error recreating sandbox:", error);
+    } finally {
+      setIsRecreatingSandbox(false);
+    }
+  };
+
   if (isLoading) {
     return <AppEditorSkeleton />;
   }
@@ -257,7 +302,7 @@ export default function AppEditor() {
           Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
-          appUrl: app.app_url,
+          apiUrl: app.api_url,
           appId,
         }),
       });
@@ -323,6 +368,25 @@ export default function AppEditor() {
             />
             <Button
               variant="outline"
+              onClick={handleRecreateSandbox}
+              disabled={isRecreatingSandbox}
+              className="flex items-center gap-2"
+            >
+              {isRecreatingSandbox ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Recreating...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  Recreate Sandbox
+                </>
+              )}
+            </Button>
+
+            <Button
+              variant="outline"
               onClick={handleResetApp}
               disabled={isResetting}
               className="flex items-center gap-2"
@@ -378,7 +442,7 @@ export default function AppEditor() {
                 <Chat
                   key={currentSessionId}
                   appId={appId}
-                  appUrl={app.app_url || ""}
+                  apiUrl={app.api_url || ""}
                   authToken={authToken || ""}
                   sessionId={currentSessionId}
                   onResponseComplete={handleRefresh}
