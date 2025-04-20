@@ -70,6 +70,11 @@ export async function POST(request: Request) {
       console.log("Creating new sandbox for app:", appName);
       const sbx = await Sandbox.create("px2b0gc7d6r1svvz8g5t", {
         timeoutMs: 3600_000,
+        metadata: {
+          userId: user.id,
+          appId: appId,
+          appName: appName,
+        },
       });
 
       sandboxId = sbx.sandboxId;
@@ -144,6 +149,11 @@ export async function POST(request: Request) {
       console.log("Creating sandbox");
       const sandbox = await Sandbox.create("px2b0gc7d6r1svvz8g5t", {
         timeoutMs: 3600_000,
+        metadata: {
+          userId: user.id,
+          appId: appId,
+          appName: appName,
+        },
       });
 
       // Update sandbox ID in the database
