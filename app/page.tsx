@@ -239,7 +239,7 @@ export default function LandingPage() {
 
       {/* Discord Button */}
       <a
-        href="https://discord.gg/qVtpzPY2"
+        href="https://discord.gg/3EsUgb53Zp"
         target="_blank"
         rel="noopener noreferrer"
         className="absolute top-4 left-1/2 -translate-x-1/2 md:left-auto md:right-4 md:translate-x-0 z-50 flex items-center gap-2 px-4 py-2 bg-[#5865F2] text-white rounded-full hover:bg-[#4752C4] transition-colors shadow-lg"
