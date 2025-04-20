@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
-  Zap,
   ArrowRight,
   Code,
   Database,
@@ -13,7 +12,6 @@ import {
   ShoppingCart,
   MessageSquare,
   Calendar,
-  Lightbulb,
   Music,
   PenTool,
   Book,
@@ -133,9 +131,9 @@ export default function DashboardPage() {
     };
 
     // Start animations for each row with different speeds and directions
-    animateRow(row1Ref, "left", 0.5);
-    animateRow(row2Ref, "right", 0.3);
-    animateRow(row3Ref, "left", 0.4);
+    animateRow(row1Ref, "left", 0.3);
+    animateRow(row2Ref, "right", 0.2);
+    animateRow(row3Ref, "left", 0.3);
 
     // Cleanup
     return () => {
@@ -150,7 +148,7 @@ export default function DashboardPage() {
     }
     setIsCreating(true);
     try {
-      const redirectUrl = await createApp();
+      const redirectUrl = await createApp(prompt);
       router.push(redirectUrl);
     } catch (error) {
       console.error("Error creating app:", error);

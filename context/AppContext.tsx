@@ -65,7 +65,7 @@ interface AppContextType {
   subscription: SubscriptionData | null;
   refreshSubscription: () => Promise<void>;
 
-  createApp: () => Promise<string>; // Returns URL to redirect to
+  createApp: (prompt: string) => Promise<string>; // Returns URL to redirect to
   deleteApp: (appId: string) => Promise<void>;
   // Loading states
   isLoading: boolean;
@@ -105,7 +105,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
   };
-  const createApp = async (): Promise<string> => {
+  const createApp = async (prompt: string): Promise<string> => {
     const decodedToken = getAuthToken();
 
     if (!decodedToken) {
@@ -119,6 +119,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${decodedToken}`,
         },
+        body: JSON.stringify({ prompt }),
       });
 
       if (!response.ok) {
@@ -127,8 +128,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       const data = await response.json();
       // Refresh apps list after successful creation
-      await fetchApps();
-      return `/dashboard/app/${data.id}`;
+      // await fetchApps();
+      return data.redirectUrl;
     } catch (error) {
       console.error("Error creating app:", error);
       throw error;

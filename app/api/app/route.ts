@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from "@e2b/code-interpreter";
 import { generateAppName } from "@/utils/server/app-name-generator";
 import { redisUrlSetter } from "@/utils/server/redis-client";
+
+/*
 
 // ────────────────────────────────────────────────────────────────────────────────
 // POST /api/app – allocate a container to the authenticated user
@@ -34,6 +36,78 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(insertedApp);
+}*/
+
+export async function POST(request: Request) {
+  // Authenticate
+  const result = await getSupabaseWithUser(request);
+  if (result instanceof NextResponse) return result;
+  const { supabase, user } = result;
+
+  try {
+    // Get prompt from request body
+    const body = await request.json();
+    const { prompt } = body;
+
+    const appName = generateAppName();
+
+    // Begin transaction to ensure both app and session are created atomically
+    // Insert into Supabase user_apps table
+    /*
+    const { data: insertedApp, error: insertError } = await supabase
+      .from("user_apps")
+      .insert({
+        user_id: user.id,
+        app_name: appName,
+        app_url: `https://${appName}.makex.app`,
+        api_url: `https://api-${appName}.makex.app`,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Supabase insert error:", insertError);
+      return NextResponse.json(
+        { error: "Failed to save app data" },
+        { status: 500 }
+      );
+    }
+
+    // Create the session in the same transaction
+    const { data: session, error: sessionError } = await supabase
+      .from("chat_sessions")
+      .insert({
+        app_id: insertedApp.id,
+        user_id: user.id,
+        title: `New Chat`, // Default title
+        metadata: { initialPrompt: prompt }, // Store prompt in metadata
+      })
+      .select()
+      .single();
+
+    if (sessionError) {
+      console.error("Session creation error:", sessionError);
+      return NextResponse.json(
+        { error: "Failed to create session" },
+        { status: 500 }
+      );
+    }
+    */
+    const insertedApp = { id: "123" };
+    const session = { id: "123" };
+    // Return the app data along with session ID and redirect URL
+    return NextResponse.json({
+      ...insertedApp,
+      sessionId: session.id,
+      redirectUrl: `/workspace/${insertedApp.id}/${session.id}`,
+    });
+  } catch (error) {
+    console.error("Error in app creation:", error);
+    return NextResponse.json(
+      { error: "Failed to process request" },
+      { status: 500 }
+    );
+  }
 }
 
 // GET /api/app - Get all apps for the authenticated user
@@ -98,14 +172,18 @@ export async function DELETE(request: Request) {
     }
 
     // kill the sandbox
-    const sbxkill = await Sandbox.kill(app.sandbox_id) 
+    const sbxkill = await Sandbox.kill(app.sandbox_id);
 
     // redis set te app url and api url to homepage
-    await redisUrlSetter(app.app_name, "https://makex.app/app-not-found", "https://makex.app/app-not-found");
-    
+    await redisUrlSetter(
+      app.app_name,
+      "https://makex.app/app-not-found",
+      "https://makex.app/app-not-found"
+    );
+
     const { error: updateError } = await supabase
       .from("user_apps")
-      .update({ status: "deleted", sandbox_status: 'deleted' })
+      .update({ status: "deleted", sandbox_status: "deleted" })
       .eq("id", appId)
       .eq("user_id", user.id);
 
