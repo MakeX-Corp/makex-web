@@ -211,7 +211,7 @@ export function createTools(config: ToolConfig = {}) {
       execute: async ({ path }) => {
         try {
           const response = await apiClient.get("/file-tree", { path });
-          return { success: true, data: response.data };
+          return { success: true, data: response };
         } catch (error: any) {
           return {
             success: false,
