@@ -66,7 +66,7 @@ export function SessionsSidebar({
     if (editingSessionId !== null) return;
 
     setCurrentSessionId(sessionId);
-    router.push(`/ai-editor/${appId}?session=${sessionId}`);
+    router.push(`/dashboard/app/${appId}?session=${sessionId}`);
   };
 
   const handleDeleteSession = async (

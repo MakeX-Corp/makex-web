@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, MutableRefObject } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -28,8 +28,9 @@ import {
   Search,
   Briefcase,
   Image as ImageIcon,
+  Loader2,
 } from "lucide-react";
-
+import { useApp } from "@/context/AppContext";
 // Expanded app suggestion chips for multiple rows
 const APP_SUGGESTIONS = [
   { icon: <Layout size={14} />, label: "Landing page" },
@@ -66,9 +67,17 @@ const ROW_1 = APP_SUGGESTIONS.slice(0, 7);
 const ROW_2 = APP_SUGGESTIONS.slice(7, 14);
 const ROW_3 = APP_SUGGESTIONS.slice(14);
 
+const LoadingModal = () => {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+      <Loader2 className="h-10 w-10 animate-spin" />
+    </div>
+  );
+};
 export default function DashboardPage() {
   const router = useRouter();
-  const [prompt, setPrompt] = useState("");
+  const { createApp } = useApp();
+  const [isCreating, setIsCreating] = useState(false);
 
   // Create refs with explicit typing
   const row1Ref = useRef<HTMLDivElement>(null);
@@ -132,15 +141,19 @@ export default function DashboardPage() {
     };
   }, []);
 
-  const handleCreateApp = () => {
-    if (!prompt.trim()) return;
-    console.log("Creating app with prompt:", prompt);
-    // Here you would typically generate the app based on the prompt
+  const handleCreateApp = async () => {
+    setIsCreating(true);
+    try {
+      const redirectUrl = await createApp();
+      router.push(redirectUrl);
+    } catch (error) {
+      console.error("Error creating app:", error);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setPrompt(suggestion);
-  };
+  const handleSuggestionClick = (suggestion: string) => {};
 
   // Function to duplicate items for continuous scrolling effect
   const duplicateItemsForScrolling = (items: typeof APP_SUGGESTIONS) => {
@@ -151,6 +164,7 @@ export default function DashboardPage() {
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-2xl mx-auto">
         {/* Header with logo */}
+        {isCreating && <LoadingModal />}
         <div className="mb-10 text-center">
           <div className="mb-2">
             <Image
@@ -230,46 +244,45 @@ export default function DashboardPage() {
         </div>
 
         {/* Main prompt input */}
-        <div className="rounded-xl shadow-sm border overflow-hidden mb-6">
-          <div className="p-4">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe your app idea..."
-              className="w-full h-32 resize-none text-lg bg-transparent outline-none"
-            />
+        <div className="flex flex-col items-center space-y-6 mb-8">
+          <div className="w-full max-w-md text-center space-y-2">
+            <h2 className="text-xl font-medium">
+              Ready to build something amazing?
+            </h2>
+            <p className="text-muted-foreground">
+              Create a new app and start building with AI
+            </p>
           </div>
 
-          {/* Create button */}
-          <div className="p-4 border-t flex justify-between items-center">
-            <div className="text-sm">Press Enter to create</div>
-            <Button
-              onClick={handleCreateApp}
-              disabled={!prompt.trim()}
-              className="rounded-full px-5"
-            >
-              Create <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
+          <Button
+            onClick={handleCreateApp}
+            size="lg"
+            className="h-14 px-8 font-medium rounded-full shadow-md hover:shadow-lg transition-all transform hover:scale-105"
+          >
+            <Zap className="mr-2 h-5 w-5" />
+            Create New App
+          </Button>
         </div>
 
         {/* Example prompts */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Lightbulb size={16} />
-            <span className="text-sm">Examples:</span>
+        <div className="flex flex-col items-center w-full max-w-2xl mx-auto">
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb size={18} className="text-yellow-500" />
+            <span className="text-sm font-medium text-center">
+              Popular apps our users are building
+            </span>
           </div>
-          <div className="flex flex-col gap-3">
+
+          <div className="grid grid-cols-1 w-full gap-2">
             {EXAMPLE_PROMPTS.map((examplePrompt, index) => (
-              <div
+              <button
                 key={index}
-                onClick={() => setPrompt(examplePrompt)}
-                className="cursor-pointer"
+                className="w-full px-4 py-3 border bg-card hover:bg-accent/50 transition-colors"
               >
-                <div className="inline-block px-4 py-2 rounded-full border">
+                <span className="text-sm text-center block w-full">
                   {examplePrompt}
-                </div>
-              </div>
+                </span>
+              </button>
             ))}
           </div>
         </div>

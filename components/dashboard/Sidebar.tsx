@@ -38,10 +38,10 @@ export default function Sidebar() {
     sidebarVisible,
     toggleSidebar,
     apps,
-    setApps,
     currentAppId,
     isLoading,
     subscription,
+    deleteApp,
   } = useApp();
 
   const { theme, setTheme } = useTheme();
@@ -51,6 +51,7 @@ export default function Sidebar() {
   // Local state
   const [activeTab, setActiveTab] = useState("apps");
   const [appSearchTerm, setAppSearchTerm] = useState("");
+  const [deletingAppId, setDeletingAppId] = useState<string | null>(null);
 
   // Toggle theme function
   const toggleTheme = () => {
@@ -75,11 +76,22 @@ export default function Sidebar() {
   };
 
   // Handle app deletion
-  const handleDeleteApp = (appId: string, e: React.MouseEvent) => {
+  const handleDeleteApp = async (appId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setApps(apps.filter((app) => app.id !== appId));
-    if (currentAppId === appId) {
-      router.push("/dashboard");
+    setDeletingAppId(appId);
+
+    try {
+      await deleteApp(appId);
+
+      // Check if they're deleting the currently open app
+      if (pathname.includes(`/dashboard/app/${appId}`)) {
+        // Redirect to dashboard if they're deleting the current app
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      console.error("Error deleting app:", error);
+    } finally {
+      setDeletingAppId(null);
     }
   };
 
@@ -90,18 +102,21 @@ export default function Sidebar() {
       label: "Create",
       icon: <Plus size={18} />,
       path: "/dashboard",
+      isExternal: false,
     },
     {
       id: "settings",
       label: "Settings",
       icon: <Settings size={18} />,
       path: "/dashboard/settings",
+      isExternal: false,
     },
     {
       id: "help",
       label: "Help & Support",
       icon: <DiscordIcon />,
       path: "https://discord.gg/qVtpzPY2",
+      isExternal: true,
     },
   ];
 
@@ -162,29 +177,52 @@ export default function Sidebar() {
         {/* Sidebar Tabs */}
         <div className="p-2">
           <nav className="space-y-1">
-            {sidebarTabs.map((tab) => (
-              <Link key={tab.id} href={tab.path}>
-                <Button
-                  variant={
-                    pathname === tab.path ||
-                    (tab.id === "apps" &&
-                      pathname.startsWith("/dashboard/app/"))
-                      ? "default"
-                      : "ghost"
-                  }
-                  className="w-full justify-start transition-all duration-200"
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    if (window.innerWidth < 768) {
-                      toggleSidebar();
-                    }
-                  }}
+            {sidebarTabs.map((tab) =>
+              tab.isExternal ? (
+                <a
+                  key={tab.id}
+                  href={tab.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  <span className="mr-2">{tab.icon}</span>
-                  {tab.label}
-                </Button>
-              </Link>
-            ))}
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start transition-all duration-200"
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      if (window.innerWidth < 768) {
+                        toggleSidebar();
+                      }
+                    }}
+                  >
+                    <span className="mr-2">{tab.icon}</span>
+                    {tab.label}
+                  </Button>
+                </a>
+              ) : (
+                <Link key={tab.id} href={tab.path}>
+                  <Button
+                    variant={
+                      pathname === tab.path ||
+                      (tab.id === "apps" &&
+                        pathname.startsWith("/dashboard/app/"))
+                        ? "default"
+                        : "ghost"
+                    }
+                    className="w-full justify-start transition-all duration-200"
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      if (window.innerWidth < 768) {
+                        toggleSidebar();
+                      }
+                    }}
+                  >
+                    <span className="mr-2">{tab.icon}</span>
+                    {tab.label}
+                  </Button>
+                </Link>
+              )
+            )}
           </nav>
         </div>
 
@@ -257,7 +295,11 @@ export default function Sidebar() {
                         }`}
                         onClick={(e) => handleDeleteApp(app.id, e)}
                       >
-                        <Trash2 size={14} />
+                        {deletingAppId === app.id ? (
+                          <Loader2 className="animate-spin" />
+                        ) : (
+                          <Trash2 size={14} />
+                        )}
                       </Button>
                     </div>
                   ))}

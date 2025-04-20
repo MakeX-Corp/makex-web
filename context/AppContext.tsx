@@ -65,6 +65,8 @@ interface AppContextType {
   subscription: SubscriptionData | null;
   refreshSubscription: () => Promise<void>;
 
+  createApp: () => Promise<string>; // Returns URL to redirect to
+  deleteApp: (appId: string) => Promise<void>;
   // Loading states
   isLoading: boolean;
 }
@@ -102,6 +104,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Toggle function for sidebar
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
+  };
+  const createApp = async (): Promise<string> => {
+    const decodedToken = getAuthToken();
+
+    if (!decodedToken) {
+      throw new Error("No authentication token found");
+    }
+
+    try {
+      const response = await fetch("/api/app", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${decodedToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create app");
+      }
+
+      const data = await response.json();
+      // Refresh apps list after successful creation
+      await fetchApps();
+      return `/dashboard/app/${data.id}`;
+    } catch (error) {
+      console.error("Error creating app:", error);
+      throw error;
+    }
+  };
+  const deleteApp = async (appId: string) => {
+    const decodedToken = getAuthToken();
+    if (!decodedToken) {
+      throw new Error("No authentication token found");
+    }
+    try {
+      const response = await fetch(`/api/app?id=${appId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${decodedToken}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to delete app");
+      }
+      setApps((prev) => prev.filter((app) => app.id !== appId));
+    } catch (error) {
+      console.error("Error deleting app:", error);
+      throw error;
+    }
   };
 
   // Fetch apps from API with authentication
@@ -212,6 +264,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     currentAppId,
     subscription,
     isLoading,
+    createApp,
+    deleteApp,
     refreshApps: fetchApps, // Expose the fetch function for manual refresh
     refreshSubscription: fetchSubscription,
   };
