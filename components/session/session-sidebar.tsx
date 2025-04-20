@@ -180,20 +180,10 @@ export function SessionsSidebar({
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarContent>
+        <SidebarContent className="relative pt-5">
           <SidebarGroup>
             <SidebarGroupLabel className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => router.push("/dashboard")}
-                  className="h-8 w-8 p-0 hover:bg-transparent"
-                  aria-label="Back to home"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </div>
+              <div className="flex items-center"></div>
               <span>Chat Sessions</span>
               <Button
                 variant="ghost"

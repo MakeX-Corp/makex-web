@@ -115,7 +115,7 @@ export default function Sidebar() {
       id: "help",
       label: "Help & Support",
       icon: <DiscordIcon />,
-      path: "https://discord.gg/qVtpzPY2",
+      path: "https://discord.gg/3EsUgb53Zp",
       isExternal: true,
     },
   ];
@@ -230,7 +230,7 @@ export default function Sidebar() {
         <div className="flex-1 overflow-hidden">
           <div className="flex flex-col h-full">
             {/* App Search */}
-            <div className="px-3 pb-2">
+            <div className="px-3 pb-2 pt-4">
               <div className="relative">
                 <Search
                   size={16}
