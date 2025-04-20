@@ -29,6 +29,7 @@ import {
   Briefcase,
   Image as ImageIcon,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 // Expanded app suggestion chips for multiple rows
@@ -83,6 +84,7 @@ export default function DashboardPage() {
   const row1Ref = useRef<HTMLDivElement>(null);
   const row2Ref = useRef<HTMLDivElement>(null);
   const row3Ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Animation for moving suggestion pills
   useEffect(() => {
@@ -142,6 +144,10 @@ export default function DashboardPage() {
   }, []);
 
   const handleCreateApp = async () => {
+    if (!prompt.trim()) {
+      alert("Please enter a prompt");
+      return;
+    }
     setIsCreating(true);
     try {
       const redirectUrl = await createApp();
@@ -246,6 +252,30 @@ export default function DashboardPage() {
         </div>
 
         {/* Main prompt input */}
+        <div className="mb-6">
+          <div className="relative bg-white border rounded-lg shadow-sm overflow-hidden transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+            <textarea
+              ref={inputRef}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe your app idea in detail..."
+              className="w-full px-4 pt-4 pb-12 resize-none focus:outline-none text-base"
+              rows={1}
+              style={{ minHeight: "80px" }}
+            />
+            <div className="absolute bottom-0 right-0 p-2 flex items-center">
+              <Sparkles className="h-5 w-5 mr-2" />
+              <Button
+                onClick={handleCreateApp}
+                disabled={!prompt.trim()}
+                className=" text-white font-medium rounded-md px-4 py-2 flex items-center"
+              >
+                Create App
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
