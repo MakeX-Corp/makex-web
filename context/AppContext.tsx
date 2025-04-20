@@ -27,6 +27,17 @@ export interface AppData {
   status: string | null;
 }
 
+// Define session data interface
+export interface SessionData {
+  id: string;
+  app_id: string;
+  user_id: string;
+  title: string | null;
+  created_at: string;
+  metadata: any | null;
+  visible: boolean | null;
+}
+
 // Define subscription data interface based on the API response
 export interface SubscriptionData {
   subscription: {
@@ -61,12 +72,26 @@ interface AppContextType {
   currentAppId: string | null;
   refreshApps: () => Promise<void>;
 
+  // Sessions
+  sessions: SessionData[];
+  setSessions: React.Dispatch<React.SetStateAction<SessionData[]>>;
+  currentSessionId: string | null;
+  setCurrentSessionId: React.Dispatch<React.SetStateAction<string | null>>;
+  fetchSessions: (appId: string) => Promise<SessionData[]>;
+  createSession: (
+    appId: string,
+    title?: string,
+    metadata?: any
+  ) => Promise<SessionData>;
+  deleteSession: (sessionId: string) => Promise<void>;
+
   // Subscription
   subscription: SubscriptionData | null;
   refreshSubscription: () => Promise<void>;
 
   createApp: (prompt: string) => Promise<string>; // Returns URL to redirect to
   deleteApp: (appId: string) => Promise<void>;
+
   // Loading states
   isLoading: boolean;
 }
@@ -88,6 +113,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Sample apps data - will be replaced by API data on load
   const [apps, setApps] = useState<AppData[]>([]);
 
+  // Sessions state
+  const [sessions, setSessions] = useState<SessionData[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+
   // Initialize subscription state
   const [subscription, setSubscription] = useState<SubscriptionData | null>(
     null
@@ -95,16 +124,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Determine current app ID from path
   const pathSegments = pathname.split("/");
-  const appIdIndex = pathSegments.findIndex((segment) => segment === "app") + 1;
+  const appIdIndex =
+    pathSegments.findIndex((segment) => segment === "workspace") + 1;
   const currentAppId =
     appIdIndex > 0 && appIdIndex < pathSegments.length
       ? pathSegments[appIdIndex]
       : null;
 
+  console.log("currentAppId dsd", currentAppId);
+  console.log("apps ==", pathSegments[appIdIndex]);
+  console.log("pathSegments", pathSegments);
+  console.log("appIdIndex", appIdIndex);
+
   // Toggle function for sidebar
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
   };
+
+  // Create app function
   const createApp = async (prompt: string): Promise<string> => {
     const decodedToken = getAuthToken();
 
@@ -128,13 +165,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       const data = await response.json();
       // Refresh apps list after successful creation
-      // await fetchApps();
+      //await fetchApps();
       return data.redirectUrl;
     } catch (error) {
       console.error("Error creating app:", error);
       throw error;
     }
   };
+
+  // Delete app function
   const deleteApp = async (appId: string) => {
     const decodedToken = getAuthToken();
     if (!decodedToken) {
@@ -196,6 +235,136 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Function to fetch sessions for a specific app
+  const fetchSessions = async (appId: string): Promise<SessionData[]> => {
+    try {
+      const decodedToken = getAuthToken();
+
+      if (!decodedToken) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(`/api/sessions?appId=${appId}`, {
+        headers: {
+          Authorization: `Bearer ${decodedToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to fetch sessions");
+      }
+
+      const data = await response.json();
+      setSessions(data);
+      return data;
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred while fetching sessions",
+      });
+      return [];
+    }
+  };
+
+  // Function to create a new session
+  const createSession = async (
+    appId: string,
+    title?: string,
+    metadata?: any
+  ): Promise<SessionData> => {
+    try {
+      const decodedToken = getAuthToken();
+
+      if (!decodedToken) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch("/api/sessions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${decodedToken}`,
+        },
+        body: JSON.stringify({
+          appId,
+          title: title || null,
+          metadata: metadata || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create session");
+      }
+
+      const newSession = await response.json();
+      setSessions((prev) => [...prev, newSession]);
+
+      // Set the newly created session as the current one
+      setCurrentSessionId(newSession.id);
+
+      return newSession;
+    } catch (error) {
+      console.error("Error creating session:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred while creating a session",
+      });
+      throw error;
+    }
+  };
+
+  // Function to delete (soft-delete) a session
+  const deleteSession = async (sessionId: string): Promise<void> => {
+    try {
+      const decodedToken = getAuthToken();
+
+      if (!decodedToken) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(`/api/sessions?sessionId=${sessionId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${decodedToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to delete session");
+      }
+
+      // Update sessions state to remove the deleted session
+      setSessions((prev) => prev.filter((session) => session.id !== sessionId));
+
+      // If the deleted session was the current one, clear the current session
+      if (currentSessionId === sessionId) {
+        setCurrentSessionId(null);
+      }
+    } catch (error) {
+      console.error("Error deleting session:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred while deleting the session",
+      });
+    }
+  };
+
   // Function to fetch subscription data
   const fetchSubscription = async () => {
     setIsLoading(true);
@@ -248,13 +417,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const fetchInitialData = async () => {
       try {
         await Promise.all([fetchApps(), fetchSubscription()]);
+
+        // If we have a current app ID, load its sessions
+        if (currentAppId) {
+          await fetchSessions(currentAppId);
+        }
       } catch (error) {
         console.error("Error during initial data fetch:", error);
       }
     };
 
     fetchInitialData();
-  }, []);
+  }, [currentAppId]);
 
   // Context value
   const value = {
@@ -263,11 +437,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     apps,
     setApps,
     currentAppId,
+    sessions,
+    setSessions,
+    currentSessionId,
+    setCurrentSessionId,
+    fetchSessions,
+    createSession,
+    deleteSession,
     subscription,
     isLoading,
     createApp,
     deleteApp,
-    refreshApps: fetchApps, // Expose the fetch function for manual refresh
+    refreshApps: fetchApps,
     refreshSubscription: fetchSubscription,
   };
 

@@ -40,10 +40,3 @@ export function ChatInput({ onSendMessage, disabled = false }: ChatInputProps) {
     </form>
   );
 }
-// Types
-type Message = {
-  id: string;
-  content: string;
-  role: "user" | "assistant";
-  timestamp: string;
-};

@@ -46,7 +46,7 @@ export default function SessionPage({
 }: {
   params: { appId: string; sessionId: string };
 }) {
-  const [messages, setMessages] = useState<Message[]>(SAMPLE_MESSAGES);
+  const [messages, setMessages] = useState<any>(SAMPLE_MESSAGES);
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -78,7 +78,7 @@ export default function SessionPage({
       timestamp: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, newUserMessage]);
+    setMessages((prev: any) => [...prev, newUserMessage]);
 
     // Simulate assistant response after a short delay
     setTimeout(() => {
@@ -89,7 +89,7 @@ export default function SessionPage({
         timestamp: new Date().toISOString(),
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      setMessages((prev: any) => [...prev, assistantMessage]);
       setIsSending(false);
     }, 1000);
   };
@@ -99,7 +99,7 @@ export default function SessionPage({
       {/* Chat Section */}
       <div className="flex w-1/2 flex-col border-r">
         <div className="flex-1 overflow-y-auto p-4">
-          {messages.map((message) => (
+          {messages.map((message: any) => (
             <div
               key={message.id}
               className={`mb-4 rounded-lg p-3 ${

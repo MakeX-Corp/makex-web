@@ -135,7 +135,7 @@ export function AppSidebar() {
                 filteredApps.map((app) => (
                   <Link
                     key={app.id}
-                    href={`/dashboard/app/${app.id}`}
+                    href={`/workspace/${app.id}`}
                     className={cn(
                       "flex items-center py-1.5 px-2 text-sm rounded-md transition-colors font-medium",
                       pathname.includes(`/dashboard/app/${app.id}`)
