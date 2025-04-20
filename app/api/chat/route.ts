@@ -107,7 +107,7 @@ export async function POST(req: Request) {
 
     // Get the file tree
     const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
-    const fileTree = fileTreeResponse.data;
+    const fileTree = fileTreeResponse;
 
     const modelName = "claude-3-5-sonnet-latest";
 
@@ -159,6 +159,7 @@ export async function POST(req: Request) {
         };
       }
     });
+
 
     const result = streamText({
       model: anthropic(modelName),
