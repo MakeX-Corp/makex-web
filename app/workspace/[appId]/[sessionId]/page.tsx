@@ -161,7 +161,7 @@ export default function WorkspaceSessionPage({ params }: PageProps) {
       {/* Desktop view - side by side */}
       <div className="hidden lg:grid grid-cols-2 gap-4 h-full">
         {/* Left panel */}
-        <ChatInput onSendMessage={() => {}} />
+        <ChatInput onSendMessage={() => {}} sessionId={sessionId} />
 
         {/* Right panel */}
         <Preview />
@@ -191,7 +191,7 @@ export default function WorkspaceSessionPage({ params }: PageProps) {
             className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col"
           >
             <div className="flex-1">
-              <ChatInput onSendMessage={() => {}} />
+              <ChatInput onSendMessage={() => {}} sessionId={sessionId} />
             </div>
           </TabsContent>
 

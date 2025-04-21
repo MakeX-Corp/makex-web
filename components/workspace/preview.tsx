@@ -1,9 +1,74 @@
-import { Button } from "../ui/button";
-import { RefreshCw, ExternalLink } from "lucide-react";
-import { Card, CardContent } from "../ui/card";
+"use client";
+
 import { useState } from "react";
-import { QRCodeDisplay } from "@/components/qr-code";
-import MobileMockup from "@/components/mobile-mockup";
+import { RefreshCw, ExternalLink, Smartphone, QrCode } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+// These would be implemented in your application
+// Stub implementations for the example
+const QRCodeDisplay = ({ url }: { url: string }) => (
+  <div className="bg-white p-8 rounded-lg border flex flex-col items-center justify-center">
+    <div className="w-48 h-48 bg-gray-100 border-2 flex items-center justify-center relative">
+      {/* Simulated QR code grid */}
+      <div className="absolute inset-4 grid grid-cols-5 grid-rows-5 gap-1">
+        {Array(25)
+          .fill(0)
+          .map((_, i) => (
+            <div
+              key={i}
+              className={`bg-black rounded-sm ${
+                Math.random() > 0.7 ? "opacity-100" : "opacity-0"
+              }`}
+            ></div>
+          ))}
+      </div>
+    </div>
+    <p className="mt-4 text-sm text-center font-medium">
+      Scan to open app on your device
+    </p>
+    <p className="mt-1 text-xs text-center text-muted-foreground break-all max-w-[200px]">
+      {url}
+    </p>
+  </div>
+);
+
+const MobileMockup = ({
+  appId,
+  appUrl,
+  iframeKey,
+  authToken,
+}: {
+  appId: string;
+  appUrl: string;
+  iframeKey: string | null;
+  authToken: string;
+}) => (
+  <div className="relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] h-[600px] w-[300px] shadow-xl">
+    <div className="w-[148px] h-[18px] bg-gray-800 top-0 rounded-b-[1rem] left-1/2 -translate-x-1/2 absolute"></div>
+    <div className="h-[46px] w-[3px] bg-gray-800 absolute -left-[17px] top-[124px] rounded-l-lg"></div>
+    <div className="h-[46px] w-[3px] bg-gray-800 absolute -left-[17px] top-[178px] rounded-l-lg"></div>
+    <div className="h-[64px] w-[3px] bg-gray-800 absolute -right-[17px] top-[142px] rounded-r-lg"></div>
+    <div className="rounded-[2rem] overflow-hidden w-full h-full bg-white">
+      {appUrl ? (
+        <iframe
+          key={iframeKey || "default"}
+          src={appUrl}
+          className="w-full h-full border-0"
+          title="Mobile App Preview"
+        ></iframe>
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+          <div className="text-center p-4">
+            <Smartphone className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="text-sm font-medium">App preview will appear here</p>
+            <p className="text-xs mt-2">Start chatting to build your app</p>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+);
 
 interface AppDetails {
   id: string;
@@ -18,9 +83,10 @@ interface AppDetails {
   sandbox_status: string | null;
   supabase_project: any;
 }
-export const Preview = () => {
+
+export function Preview() {
   const [viewMode, setViewMode] = useState<"mobile" | "qr">("mobile");
-  const [app, setApp] = useState<AppDetails | null>({
+  const [app, setApp] = useState<AppDetails>({
     app_url: "https://example.com",
     api_url: "https://api.example.com",
     id: "123",
@@ -35,13 +101,22 @@ export const Preview = () => {
   });
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [iframeKey, setIframeKey] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = () => {
+    setIsRefreshing(true);
     setIframeKey(Math.random().toString(36).substring(2, 15));
+
+    // Simulate refresh delay
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1000);
   };
+
   const appId = "123";
+
   return (
-    <Card className="w-1/2 bg-card">
+    <Card className="h-full border rounded-md">
       <CardContent className="relative h-full flex flex-col p-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 border rounded-lg p-1 bg-background">
@@ -53,7 +128,8 @@ export const Preview = () => {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Mockup
+              <span className="hidden sm:inline">Mockup</span>
+              <Smartphone className="sm:hidden h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode("qr")}
@@ -63,7 +139,8 @@ export const Preview = () => {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              View in Mobile
+              <span className="hidden sm:inline">View in Mobile</span>
+              <QrCode className="sm:hidden h-4 w-4" />
             </button>
             <Button
               variant="ghost"
@@ -74,14 +151,19 @@ export const Preview = () => {
               <ExternalLink className="h-4 w-4" />
             </Button>
           </div>
-          <div className="flex items-center gap-2">
-            <Button size="icon" variant="ghost" onClick={handleRefresh}>
+          <div>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleRefresh}
+              className={isRefreshing ? "animate-spin" : ""}
+            >
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 overflow-auto">
           {viewMode === "mobile" ? (
             <div className="h-full w-full flex items-center justify-center">
               <MobileMockup
@@ -100,4 +182,4 @@ export const Preview = () => {
       </CardContent>
     </Card>
   );
-};
+}
