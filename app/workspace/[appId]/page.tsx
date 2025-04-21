@@ -37,6 +37,7 @@ export default function WorkspaceAppPage({ params }: PageProps) {
   const [loadingText, setLoadingText] = useState<string>(
     "Loading app sessions..."
   );
+  const [appName, setAppName] = useState<string>("");
 
   useEffect(() => {
     let isMounted = true;
@@ -47,8 +48,14 @@ export default function WorkspaceAppPage({ params }: PageProps) {
 
         if (isMounted) setLoadingText("Loading app sessions...");
 
-        // Get sessions for this app
-        const sessions = await getSessionsForApp(appId);
+        // Get sessions for this app (now also returns appName)
+        const { sessions, appName: fetchedAppName } = await getSessionsForApp(
+          appId
+        );
+
+        if (isMounted) {
+          setAppName(fetchedAppName || `App ${appId}`);
+        }
 
         if (!isMounted) return;
 
@@ -125,7 +132,9 @@ export default function WorkspaceAppPage({ params }: PageProps) {
       <div className="flex-1 flex items-center justify-center p-6">
         <Card className="w-full max-w-md mx-auto">
           <CardHeader>
-            <CardTitle>Loading Workspace</CardTitle>
+            <CardTitle>
+              {appName ? `Loading ${appName}` : "Loading Workspace"}
+            </CardTitle>
             <CardDescription>{loadingText}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center p-6">

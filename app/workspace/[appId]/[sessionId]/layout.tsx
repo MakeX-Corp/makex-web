@@ -36,6 +36,7 @@ export default function SessionLayout({
   const sessionId = (unwrappedParams as { sessionId: string }).sessionId;
 
   const [sessions, setSessions] = useState<SessionListItem[]>([]);
+  const [appName, setAppName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -47,10 +48,12 @@ export default function SessionLayout({
         setLoading(true);
 
         // Load all sessions for this app to display in the dropdown
-        const sessionsData = await getSessionsForApp(appId);
+        const { sessions: sessionsData, appName: fetchedAppName } =
+          await getSessionsForApp(appId);
 
         if (isMounted) {
           setSessions(sessionsData);
+          setAppName(fetchedAppName || `App ${appId}`); // Fallback if no name is returned
           setLoading(false);
         }
       } catch (err) {
@@ -72,15 +75,6 @@ export default function SessionLayout({
     };
   }, [appId]); // Only re-fetch when appId changes
 
-  // For the app display name
-  const getAppDisplayName = (id: string) => {
-    return id === "app1"
-      ? "Application One"
-      : id === "app2"
-      ? "Application Two"
-      : `App ${id}`;
-  };
-
   return (
     <div className="flex flex-col h-screen">
       {/* Top navigation bar */}
@@ -89,7 +83,7 @@ export default function SessionLayout({
           <div className="flex items-center space-x-4">
             <Laptop className="h-5 w-5 text-primary" />
             <h1 className="text-xl font-semibold">
-              {getAppDisplayName(appId)}
+              {loading ? <Skeleton className="h-6 w-36" /> : appName}
             </h1>
           </div>
 

@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     // Verify the app belongs to the user
     const { data: app, error: appError } = await supabase
       .from("user_apps")
-      .select("id")
+      .select("id, app_name")
       .eq("id", appId)
       .eq("user_id", user.id)
       .single();
@@ -51,7 +51,11 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json(sessions);
+    // Return both app name and sessions
+    return NextResponse.json({
+      appName: app.app_name || `App ${appId}`,
+      sessions: sessions,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: "Internal Server Error" },
