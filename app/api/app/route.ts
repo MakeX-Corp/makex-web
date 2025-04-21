@@ -3,6 +3,7 @@ import { getSupabaseWithUser } from "@/utils/server/auth";
 import { Sandbox } from '@e2b/code-interpreter'
 import { generateAppName } from "@/utils/server/app-name-generator";
 import { redisUrlSetter } from "@/utils/server/redis-client";
+import { createClient } from "@supabase/supabase-js";
 
 // ────────────────────────────────────────────────────────────────────────────────
 // POST /api/app – allocate a container to the authenticated user
@@ -44,11 +45,28 @@ export async function GET(request: Request) {
 
     const { supabase, user } = result;
 
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!
+    );
+
+    const { data } = await supabaseAdmin
+    .from("invite_codes")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
+    if (!data) {
+      return NextResponse.json({ error: "User is not authorized to access this resource" }, { status: 403 });
+    }
+
     const { data: apps, error } = await supabase
       .from("user_apps")
       .select("*")
       .eq("user_id", user.id)
       .or("status.is.null");
+
+  
 
     if (error) {
       return NextResponse.json(

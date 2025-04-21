@@ -13,7 +13,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { DiscordSupportButton } from "@/components/support-button";
 import { Input } from "@/components/ui/input";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import {
   Dialog,
   DialogContent,
@@ -52,7 +51,6 @@ export default function Dashboard() {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
-  const supabase = createClientComponentClient();
 
   const verifyInviteCode = async () => {
     if (!inviteCode.trim()) return;
@@ -60,45 +58,23 @@ export default function Dashboard() {
     setInviteError(null);
 
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const decodedToken = getAuthToken();
 
-      if (!user) {
-        throw new Error("Not authenticated");
-      }
+      const response = await fetch("/api/invite-codes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${decodedToken}`,
+        },
+        body: JSON.stringify({ inviteCode }),
+      });
+      const data = await response.json();
 
-      // Check if invite code exists and is valid
-      const { data, error } = await supabase
-        .from("invite_codes")
-        .select("*")
-        .eq("code", inviteCode)
-        .single();
-
-      if (error || !data) {
-        setInviteError("Invalid invite code");
+      if (response.status === 403 || response.status === 400) {
+        console.log("Invalid invite code");
+        setInviteCodeVerified(false);
+        setInviteError(data.error || "Invalid invite code");
         return;
-      }
-
-      // Check if code is already used
-      if (data.user_id) {
-        setInviteError("This invite code has already been used");
-        return;
-      }
-
-      // Assign the invite code to this user
-      try {
-        const { data: updateData, error: updateError } = await supabase
-          .from("invite_codes")
-          .update({ user_id: user.id })
-          .eq("code", inviteCode)
-          .select();
-
-        console.log(updateData);
-        console.log(updateError);
-      } catch (error) {
-        console.error("Error updating invite code:", error);
-        throw new Error("Failed to update invite code");
       }
 
       // Success! Invite code verified
@@ -134,21 +110,14 @@ export default function Dashboard() {
 
       if (!appsResponse.ok) {
         const error = await appsResponse.json();
-        throw new Error(error.error || "Failed to fetch apps");
       }
 
-      const apps = await appsResponse.json();
-      setUserApps(apps);
+      if (appsResponse.ok) {
+        const apps = await appsResponse.json();
+        setUserApps(apps);
+      }
     } catch (error) {
       console.error("Error fetching user apps:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An error occurred while fetching apps",
-      });
     } finally {
       setIsLoading(false);
     }
@@ -223,6 +192,8 @@ export default function Dashboard() {
         throw new Error("No authentication token found");
       }
 
+      console.log(decodedToken);
+
       const response = await fetch(`/api/app?id=${appId}`, {
         method: "DELETE",
         headers: {
@@ -283,35 +254,6 @@ export default function Dashboard() {
           });
         }
 
-        // If invite code system is enabled, check verification first
-        if (INVITE_CODE_REQUIRED) {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-
-          if (!user) {
-            router.push("/login");
-            return;
-          }
-
-          // Check if this user already has a verified invite code
-          const { data } = await supabase
-            .from("invite_codes")
-            .select("*")
-            .eq("user_id", user.id)
-            .single();
-
-          // If no verified code, stop loading and show invite input
-          if (!data) {
-            setInviteCodeVerified(false);
-            setIsLoading(false);
-            return;
-          }
-
-          // Code verified, continue to load apps
-          setInviteCodeVerified(true);
-        }
-
         // Fetch user apps
         const appsResponse = await fetch("/api/app", {
           headers: {
@@ -319,13 +261,22 @@ export default function Dashboard() {
           },
         });
 
-        if (!appsResponse.ok) {
-          const error = await appsResponse.json();
-          throw new Error(error.error || "Failed to fetch apps");
+        if (appsResponse.status === 403) {
+          setInviteCodeVerified(false);
+          return;
         }
 
-        const apps = await appsResponse.json();
-        setUserApps(apps);
+        if (!appsResponse.ok) {
+          const error = await appsResponse.json();
+          return;
+        }
+
+        setInviteCodeVerified(true);
+        setInviteError(null);
+        if (appsResponse.ok) {
+          const apps = await appsResponse.json();
+          setUserApps(apps);
+        }
       } catch (error) {
         console.error("Error fetching initial data:", error);
         toast({
