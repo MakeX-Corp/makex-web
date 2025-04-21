@@ -6,6 +6,7 @@ import {
   useContext,
   ReactNode,
   useEffect,
+  useCallback,
 } from "react";
 import { usePathname } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
@@ -85,6 +86,9 @@ interface AppContextType {
   ) => Promise<SessionData>;
   deleteSession: (sessionId: string) => Promise<void>;
 
+  // Track which app's sessions we've loaded
+  loadedAppSessions: string[];
+
   // Subscription
   subscription: SubscriptionData | null;
   refreshSubscription: () => Promise<void>;
@@ -94,6 +98,7 @@ interface AppContextType {
 
   // Loading states
   isLoading: boolean;
+  isLoadingSessions: boolean;
 }
 
 // Create the context
@@ -102,11 +107,19 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 // Helper function to extract app ID from path
 const getAppIdFromPath = (pathname: string): string | null => {
   const pathSegments = pathname.split("/");
-  const appIndex = pathSegments.findIndex((segment) => segment === "app") + 1;
+  const workspaceIndex = pathSegments.findIndex(
+    (segment) => segment === "workspace"
+  );
 
+  if (workspaceIndex !== -1 && workspaceIndex + 1 < pathSegments.length) {
+    return pathSegments[workspaceIndex + 1];
+  }
+
+  const appIndex = pathSegments.findIndex((segment) => segment === "app") + 1;
   if (appIndex > 0 && appIndex < pathSegments.length) {
     return pathSegments[appIndex];
   }
+
   return null;
 };
 
@@ -124,6 +137,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
   // Sample apps data - will be replaced by API data on load
   const [apps, setApps] = useState<AppData[]>([]);
@@ -131,6 +145,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Sessions state
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [loadedAppSessions, setLoadedAppSessions] = useState<string[]>([]);
 
   // Initialize subscription state
   const [subscription, setSubscription] = useState<SubscriptionData | null>(
@@ -237,32 +252,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Function to fetch sessions for a specific app with mutex protection
+  // Replace your existing fetchSessions function with this one:
+
+  // Mutex flag to prevent concurrent fetches for the same app
+  let isFetchingSessionsForApp: string | null = null;
+
+  // Function to fetch sessions for a specific app
   const fetchSessions = async (appId: string): Promise<SessionData[]> => {
-    // If we're already fetching sessions for this app, don't start another fetch
+    // If no app ID, return empty array
+    if (!appId) {
+      console.log("No app ID provided for fetching sessions");
+      return [];
+    }
+
+    // If already fetching for this app, wait for it to complete
     if (isFetchingSessionsForApp === appId) {
-      console.log(`Already fetching sessions for app ${appId}, waiting...`);
-
-      // Wait for the current fetch to complete
-      let attempts = 0;
-      while (isFetchingSessionsForApp === appId && attempts < 10) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        attempts++;
-      }
-
-      // If we already have sessions for this app, return them
-      const appSessions = sessions.filter(
-        (session) => session.app_id === appId
-      );
-      if (appSessions.length > 0) {
-        console.log(`Sessions for app ${appId} were loaded by another request`);
-        return appSessions;
-      }
+      console.log(`Already fetching sessions for app ${appId}`);
+      return sessions.filter((s) => s.app_id === appId);
     }
 
     try {
+      // Set mutex flag to prevent concurrent fetches
       isFetchingSessionsForApp = appId;
-      console.log(`Fetching sessions for app ${appId}`);
 
       const decodedToken = getAuthToken();
       if (!decodedToken) {
@@ -281,15 +292,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await response.json();
-      console.log(`Received ${data.length} sessions for app ${appId}`);
+      console.log(`Fetched ${data.length} sessions for app ${appId}`);
 
-      // Keep any existing sessions for other apps, replace just this app's sessions
-      setSessions((prev) => {
-        const otherAppSessions = prev.filter(
-          (session) => session.app_id !== appId
-        );
-        return [...otherAppSessions, ...data];
-      });
+      // Replace all sessions for this app ID
+      setSessions(data);
 
       return data;
     } catch (error) {
@@ -304,7 +310,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
       return [];
     } finally {
-      // Clear the mutex
+      // Clear mutex flag
       isFetchingSessionsForApp = null;
     }
   };
@@ -355,6 +361,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       isCreatingSession = true;
+      setIsLoadingSessions(true);
       console.log(
         `Creating new session for app ${appId} with title "${
           title || "Untitled"
@@ -395,6 +402,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return [...prev, newSession];
       });
 
+      // Mark this app's sessions as loaded if not already
+      setLoadedAppSessions((prev) => {
+        if (!prev.includes(appId)) {
+          return [...prev, appId];
+        }
+        return prev;
+      });
+
       // Set as current session
       setCurrentSessionId(newSession.id);
 
@@ -412,6 +427,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw error;
     } finally {
       isCreatingSession = false;
+      setIsLoadingSessions(false);
     }
   };
 
@@ -518,6 +534,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // No dependencies - only run once on mount
   }, []);
 
+  // Reset current session ID when app changes in URL
+  useEffect(() => {
+    // This doesn't fetch sessions, it just clears the current session
+    // when navigating between apps
+    const appIdFromPath = getAppIdFromPath(pathname);
+    if (appIdFromPath && currentSessionId) {
+      const currentSession = sessions.find((s) => s.id === currentSessionId);
+      if (currentSession && currentSession.app_id !== appIdFromPath) {
+        console.log("App changed in URL, clearing current session");
+        setCurrentSessionId(null);
+      }
+    }
+  }, [pathname, currentSessionId, sessions]);
+
   // Context value
   const value = {
     sidebarVisible,
@@ -532,8 +562,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     fetchSessions,
     createSession,
     deleteSession,
+    loadedAppSessions,
     subscription,
     isLoading,
+    isLoadingSessions,
     createApp,
     deleteApp,
     refreshApps: fetchApps,
