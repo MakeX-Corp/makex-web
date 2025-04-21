@@ -48,10 +48,6 @@ export function ChatInput({
 
   return (
     <Card className="flex flex-col h-full border rounded-md">
-      <CardHeader className="px-4 py-3 border-b">
-        <CardTitle className="text-base font-medium">Chat</CardTitle>
-      </CardHeader>
-
       <CardContent className="flex-1 p-4 overflow-y-auto">
         <div className="space-y-4">
           <div className="p-4 border rounded-md bg-muted/30">

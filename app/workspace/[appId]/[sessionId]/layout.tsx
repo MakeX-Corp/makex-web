@@ -1,3 +1,4 @@
+// workspace/[appId]/[sessionId]/layout.tsx
 "use client";
 
 import { ReactNode, use, useEffect, useState } from "react";
