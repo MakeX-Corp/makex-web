@@ -30,16 +30,24 @@ interface SessionSelectorProps {
 }
 
 export function SessionSelector({
-  sessions,
+  sessions: initialSessions,
   currentSessionId,
   appId,
 }: SessionSelectorProps) {
   const router = useRouter();
+  // Use local state to manage sessions to immediately reflect changes
+  const [sessions, setSessions] = useState<SessionListItem[]>(initialSessions);
   const [isEditingTitle, setIsEditingTitle] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Update local sessions when prop changes
+  useEffect(() => {
+    setSessions(initialSessions);
+  }, [initialSessions]);
 
   // Auto-focus input when editing starts
   useEffect(() => {
@@ -59,7 +67,6 @@ export function SessionSelector({
   // Handle changing sessions
   const handleSessionChange = (value: string) => {
     window.location.href = `/workspace/${appId}/${value}`;
-
     setIsOpen(false);
   };
 
@@ -90,6 +97,14 @@ export function SessionSelector({
         const success = await updateSessionTitle(sessionId, newTitle);
 
         if (success) {
+          // Update local state to reflect the change immediately
+          setSessions((prevSessions) =>
+            prevSessions.map((session) =>
+              session.id === sessionId
+                ? { ...session, title: newTitle }
+                : session
+            )
+          );
         } else {
           console.error("Failed to update session title");
         }
@@ -105,32 +120,39 @@ export function SessionSelector({
   // Delete session
   const handleDelete = async (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation();
-    if (confirm("Are you sure you want to delete this session?")) {
-      try {
-        // Use the deleteSession function from session-service
-        const success = await deleteSession(sessionId);
-        console.log("Session deleted:", success);
-        console.log("Current session ID:", currentSessionId);
-        console.log("App ID:", appId);
-        console.log("Sessions:", sessionId);
-        if (success) {
-          if (sessionId === currentSessionId) {
-            // If current session is deleted, redirect to a new session
-            window.location.href = `/workspace/${appId}/`;
-          } else {
-          }
-        } else {
-          console.error("Failed to delete session");
+    setIsDeleting(true);
+    try {
+      // Use the deleteSession function from session-service
+      const success = await deleteSession(sessionId);
+
+      if (success) {
+        // Update local state to remove the deleted session
+        setSessions((prevSessions) =>
+          prevSessions.filter((session) => session.id !== sessionId)
+        );
+
+        if (sessionId === currentSessionId) {
+          // If current session is deleted, redirect to a new session
+          window.location.href = `/workspace/${appId}/`;
         }
-      } catch (error) {
-        console.error("Error deleting session:", error);
+      } else {
+        console.error("Failed to delete session");
       }
+    } catch (error) {
+      console.error("Error deleting session:", error);
+    } finally {
+      setIsDeleting(false);
     }
   };
+
   const handleCreateNewSession = async () => {
-    const newSession = await createNewSession(appId);
-    if (newSession) {
-      window.location.href = `/workspace/${appId}/${newSession.id}`;
+    try {
+      const newSession = await createNewSession(appId);
+      if (newSession) {
+        window.location.href = `/workspace/${appId}/${newSession.id}`;
+      }
+    } catch (error) {
+      console.error("Error creating new session:", error);
     }
   };
 
@@ -251,8 +273,13 @@ export function SessionSelector({
                           size="icon"
                           className="h-6 w-6 text-muted-foreground hover:text-destructive"
                           onClick={(e) => handleDelete(e, session.id)}
+                          disabled={isDeleting}
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          {isDeleting ? (
+                            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
                         </Button>
                       </div>
                     </>

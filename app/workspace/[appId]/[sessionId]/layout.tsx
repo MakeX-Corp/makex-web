@@ -88,49 +88,62 @@ export default function SessionLayout({
           </div>
 
           <div className="flex items-center space-x-2">
-            {/* Placeholder for the three buttons that will be added later */}
+            {/* Buttons with skeleton states */}
             <div className="flex space-x-2">
-              <SupabaseConnect
-                supabaseProject={supabaseProject}
-                setSupabaseProject={setSupabaseProject}
-              />
-              <Button
-                variant="outline"
-                onClick={() => {}}
-                disabled={false}
-                className="flex items-center gap-2"
-              >
-                {false ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    Resetting...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4" />
-                    Reset App
-                  </>
-                )}
-              </Button>
+              {loading ? (
+                <Skeleton className="h-9 w-[140px]" /> // Skeleton for SupabaseConnect
+              ) : (
+                <SupabaseConnect
+                  supabaseProject={supabaseProject}
+                  setSupabaseProject={setSupabaseProject}
+                />
+              )}
 
-              <Button
-                variant="outline"
-                onClick={() => {}}
-                className="flex items-center gap-2"
-                disabled={false}
-              >
-                {false ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Exporting...
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-4 w-4" />
-                    Export Code
-                  </>
-                )}
-              </Button>
+              {loading ? (
+                <Skeleton className="h-9 w-[110px]" /> // Skeleton for Reset App button
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => {}}
+                  disabled={false}
+                  className="flex items-center gap-2"
+                >
+                  {false ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      Resetting...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4" />
+                      Reset App
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {loading ? (
+                <Skeleton className="h-9 w-[130px]" /> // Skeleton for Export Code button
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => {}}
+                  className="flex items-center gap-2"
+                  disabled={false}
+                >
+                  {false ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4" />
+                      Export Code
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
 
             {/* Error message if sessions fail to load */}

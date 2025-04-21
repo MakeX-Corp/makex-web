@@ -127,7 +127,7 @@ export function AppSidebar() {
       external: false,
     },
     {
-      href: "/pricing",
+      href: "/workspace/pricing",
       label: "Upgrade Plan",
       icon: CreditCard,
       external: false,
