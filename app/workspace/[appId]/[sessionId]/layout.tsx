@@ -1,14 +1,24 @@
 "use client";
 
 import { ReactNode, use, useEffect, useState } from "react";
-import { Smartphone } from "lucide-react";
 import { getSessionsForApp, SessionListItem } from "@/lib/session-service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SessionSelector } from "@/components/dashboard/session-selector";
 import { SupabaseConnect } from "@/components/supabase-connect";
-
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Download } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  RefreshCw,
+  Download,
+  MoreVertical,
+  Smartphone,
+  Database,
+} from "lucide-react";
 import { Loader2 } from "lucide-react";
 
 export default function SessionLayout({
@@ -65,8 +75,9 @@ export default function SessionLayout({
   return (
     <div className="flex flex-col h-screen dark:bg-gray-950">
       {/* Top navigation bar */}
-      <header className="border-b px-6 py-3 bg-background">
-        <div className="flex items-center justify-between">
+      <header className="border-b px-3 sm:px-6 py-3 bg-background">
+        {/* Desktop view with full button bar - only at larger screen sizes */}
+        <div className="hidden lg:flex items-center justify-between">
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-3">
               <Smartphone className="h-5 w-5 text-primary" />
@@ -75,7 +86,7 @@ export default function SessionLayout({
               </h1>
             </div>
 
-            {/* Session selector moved closer to app name */}
+            {/* Session selector on the same line for desktop */}
             {loading ? (
               <Skeleton className="h-9 w-[230px]" />
             ) : error ? null : (
@@ -88,72 +99,169 @@ export default function SessionLayout({
           </div>
 
           <div className="flex items-center space-x-2">
-            {/* Buttons with skeleton states */}
-            <div className="flex space-x-2">
-              {loading ? (
-                <Skeleton className="h-9 w-[140px]" /> // Skeleton for SupabaseConnect
-              ) : (
-                <SupabaseConnect
-                  supabaseProject={supabaseProject}
-                  setSupabaseProject={setSupabaseProject}
-                />
-              )}
+            {loading ? (
+              <Skeleton className="h-9 w-[140px]" />
+            ) : (
+              <SupabaseConnect
+                supabaseProject={supabaseProject}
+                setSupabaseProject={setSupabaseProject}
+              />
+            )}
 
-              {loading ? (
-                <Skeleton className="h-9 w-[110px]" /> // Skeleton for Reset App button
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => {}}
-                  disabled={false}
-                  className="flex items-center gap-2"
-                >
-                  {false ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      Resetting...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4" />
-                      Reset App
-                    </>
-                  )}
-                </Button>
-              )}
+            {loading ? (
+              <Skeleton className="h-9 w-[110px]" />
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => {}}
+                disabled={false}
+                className="flex items-center gap-2"
+              >
+                {false ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <span>Resetting...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    <span>Reset App</span>
+                  </>
+                )}
+              </Button>
+            )}
 
-              {loading ? (
-                <Skeleton className="h-9 w-[130px]" /> // Skeleton for Export Code button
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => {}}
-                  className="flex items-center gap-2"
-                  disabled={false}
-                >
-                  {false ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Exporting...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4" />
-                      Export Code
-                    </>
-                  )}
-                </Button>
-              )}
+            {loading ? (
+              <Skeleton className="h-9 w-[130px]" />
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => {}}
+                className="flex items-center gap-2"
+                disabled={false}
+              >
+                {false ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Exporting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    <span>Export Code</span>
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Medium layout - with dots but session selector inline */}
+        <div className="hidden md:flex lg:hidden items-center justify-between">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-3">
+              <Smartphone className="h-5 w-5 text-primary" />
+              <h1 className="text-xl font-semibold text-foreground">
+                {loading ? <Skeleton className="h-6 w-36" /> : appName}
+              </h1>
             </div>
 
-            {/* Error message if sessions fail to load */}
-            {error && (
+            {/* Session selector on the same line for medium screens */}
+            {loading ? (
+              <Skeleton className="h-9 w-[230px]" />
+            ) : error ? null : (
+              <SessionSelector
+                sessions={sessions}
+                currentSessionId={sessionId}
+                appId={appId}
+              />
+            )}
+          </div>
+
+          {/* Three dots even for medium screen sizes */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {!loading && (
+                <>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Reset App
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Code
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Database className="h-4 w-4 mr-2" />
+                    Supabase Connect
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Mobile view - stacked layout */}
+        <div className="flex flex-col space-y-3 md:hidden">
+          {/* App title and menu row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <Smartphone className="h-5 w-5 text-primary" />
+              <h1 className="text-lg sm:text-xl font-semibold text-foreground truncate max-w-[180px] sm:max-w-full">
+                {loading ? <Skeleton className="h-6 w-24 sm:w-36" /> : appName}
+              </h1>
+            </div>
+
+            {/* Mobile menu button */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {!loading && (
+                  <>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Reset App
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Code
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Database className="h-4 w-4 mr-2" />
+                      Supabase Connect
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Session selector on new line only for mobile/tablet */}
+          <div className="flex justify-start w-full">
+            {loading ? (
+              <Skeleton className="h-9 w-full max-w-xs" />
+            ) : error ? (
               <button
                 onClick={() => window.location.reload()}
-                className="text-sm px-3 py-1 rounded border border-destructive text-destructive hover:bg-destructive/10 transition-colors"
+                className="text-xs sm:text-sm px-2 sm:px-3 py-1 rounded border border-destructive text-destructive hover:bg-destructive/10 transition-colors"
               >
                 Failed to load sessions. Retry?
               </button>
+            ) : (
+              <SessionSelector
+                sessions={sessions}
+                currentSessionId={sessionId}
+                appId={appId}
+              />
             )}
           </div>
         </div>

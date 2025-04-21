@@ -1,25 +1,16 @@
-// workspace/[appId]/[sessionId]/page.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { use } from "react";
-import { AlertCircle, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { AlertCircle, Smartphone, MessageSquare } from "lucide-react";
 import { getSession, SessionData } from "@/lib/session-service";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Preview } from "@/components/workspace/preview";
 import { ChatInput } from "@/components/workspace/chat";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface PageProps {
   params: any;
@@ -38,8 +29,8 @@ export default function WorkspaceSessionPage({ params }: PageProps) {
     "loading" | "valid" | "invalid" | "error"
   >("loading");
 
-  // State for mobile/tablet panel view
-  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  // State for active tab/panel in mobile/tablet view
+  const [activeView, setActiveView] = useState<"chat" | "preview">("chat");
 
   // Load session data
   useEffect(() => {
@@ -85,13 +76,13 @@ export default function WorkspaceSessionPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <div className="flex-1 p-6 overflow-auto">
+      <div className="flex-1 p-4 overflow-auto">
         <div className="space-y-4">
-          <Skeleton className="h-8 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-8 w-full max-w-md" />
+          <Skeleton className="h-4 w-full max-w-xs" />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Skeleton className="h-64" />
-            <Skeleton className="h-64" />
+            <Skeleton className="h-64 hidden lg:block" />
           </div>
         </div>
       </div>
@@ -100,7 +91,7 @@ export default function WorkspaceSessionPage({ params }: PageProps) {
 
   if (error) {
     return (
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-4 sm:p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error Loading Session</AlertTitle>
@@ -122,7 +113,7 @@ export default function WorkspaceSessionPage({ params }: PageProps) {
 
   if (validationStatus === "invalid") {
     return (
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-4 sm:p-6">
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Session Not Found</AlertTitle>
@@ -138,10 +129,11 @@ export default function WorkspaceSessionPage({ params }: PageProps) {
               </code>
               .
             </p>
-            <div className="flex gap-3 mt-4">
+            <div className="flex flex-col sm:flex-row gap-3 mt-4">
               <Button
                 variant="default"
                 onClick={() => router.push(`/workspace/${appId}`)}
+                className="w-full sm:w-auto"
               >
                 Go to Available Sessions
               </Button>
@@ -152,6 +144,7 @@ export default function WorkspaceSessionPage({ params }: PageProps) {
                   const sessionId = `new-session-${Date.now()}`;
                   router.push(`/workspace/${appId}/${sessionId}`);
                 }}
+                className="w-full sm:w-auto"
               >
                 Create New Session
               </Button>
@@ -164,61 +157,54 @@ export default function WorkspaceSessionPage({ params }: PageProps) {
 
   // Render normal view for valid session
   return (
-    <>
-      {/* Main content - Desktop view: Grid, Mobile view: Sheet */}
-      <div className="flex-1 p-4 overflow-auto">
-        {/* For desktop/tablet view - side by side */}
-        <div className="hidden lg:grid grid-cols-2 gap-4 h-full">
-          {/* Left panel */}
-          <ChatInput onSendMessage={() => {}} />
+    <div className="flex-1 p-2 sm:p-4 overflow-auto h-full">
+      {/* Desktop view - side by side */}
+      <div className="hidden lg:grid grid-cols-2 gap-4 h-full">
+        {/* Left panel */}
+        <ChatInput onSendMessage={() => {}} />
 
-          {/* Right panel */}
-          <Preview />
-        </div>
-
-        {/* For mobile view - stacked with toggle */}
-        <div className="lg:hidden space-y-4">
-          {/* Left panel */}
-          <Card className="flex flex-col">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Left Component</CardTitle>
-                <Sheet open={rightPanelOpen} onOpenChange={setRightPanelOpen}>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      {rightPanelOpen ? (
-                        <PanelRightClose className="h-4 w-4" />
-                      ) : (
-                        <PanelRightOpen className="h-4 w-4" />
-                      )}
-                      <span className="ml-2">
-                        {rightPanelOpen
-                          ? "Hide Right Panel"
-                          : "Show Right Panel"}
-                      </span>
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent className="w-[80%] sm:w-[540px] p-0">
-                    <Card className="h-full border-0 flex flex-col">
-                      <CardHeader>
-                        <CardTitle>Right Component</CardTitle>
-                        <CardDescription>
-                          Edit your right panel content
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="flex-grow"></CardContent>
-                      <CardFooter className="pt-2 border-t flex justify-end"></CardFooter>
-                    </Card>
-                  </SheetContent>
-                </Sheet>
-              </div>
-              <CardDescription>Edit your left panel content</CardDescription>
-            </CardHeader>
-            <CardContent></CardContent>
-            <CardFooter className="pt-2 border-t flex justify-end"></CardFooter>
-          </Card>
-        </div>
+        {/* Right panel */}
+        <Preview />
       </div>
-    </>
+
+      {/* Mobile/Tablet view - tabbed interface */}
+      <div className="lg:hidden h-full">
+        <Tabs
+          defaultValue="chat"
+          value={activeView}
+          onValueChange={(v) => setActiveView(v as "chat" | "preview")}
+          className="h-full flex flex-col"
+        >
+          <TabsList className="grid grid-cols-2 mb-2">
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Chat
+            </TabsTrigger>
+            <TabsTrigger value="preview" className="flex items-center gap-2">
+              <Smartphone className="h-4 w-4" />
+              Preview
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent
+            value="chat"
+            className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col"
+          >
+            <div className="flex-1">
+              <ChatInput onSendMessage={() => {}} />
+            </div>
+          </TabsContent>
+
+          <TabsContent
+            value="preview"
+            className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col"
+          >
+            <div className="flex-1">
+              <Preview />
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
   );
 }
