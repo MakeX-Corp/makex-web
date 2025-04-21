@@ -73,22 +73,6 @@ interface AppContextType {
   currentAppId: string | null;
   refreshApps: () => Promise<void>;
 
-  // Sessions
-  sessions: SessionData[];
-  setSessions: React.Dispatch<React.SetStateAction<SessionData[]>>;
-  currentSessionId: string | null;
-  setCurrentSessionId: React.Dispatch<React.SetStateAction<string | null>>;
-  fetchSessions: (appId: string) => Promise<SessionData[]>;
-  createSession: (
-    appId: string,
-    title?: string,
-    metadata?: any
-  ) => Promise<SessionData>;
-  deleteSession: (sessionId: string) => Promise<void>;
-
-  // Track which app's sessions we've loaded
-  loadedAppSessions: string[];
-
   // Subscription
   subscription: SubscriptionData | null;
   refreshSubscription: () => Promise<void>;
@@ -98,7 +82,6 @@ interface AppContextType {
 
   // Loading states
   isLoading: boolean;
-  isLoadingSessions: boolean;
 }
 
 // Create the context
@@ -123,10 +106,6 @@ const getAppIdFromPath = (pathname: string): string | null => {
   return null;
 };
 
-// Mutex flags to prevent concurrent operations
-let isFetchingSessionsForApp: string | null = null;
-let isCreatingSession = false;
-
 // Provider component
 export function AppProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -141,11 +120,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Sample apps data - will be replaced by API data on load
   const [apps, setApps] = useState<AppData[]>([]);
-
-  // Sessions state
-  const [sessions, setSessions] = useState<SessionData[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [loadedAppSessions, setLoadedAppSessions] = useState<string[]>([]);
 
   // Initialize subscription state
   const [subscription, setSubscription] = useState<SubscriptionData | null>(
@@ -252,226 +226,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Replace your existing fetchSessions function with this one:
-
-  // Mutex flag to prevent concurrent fetches for the same app
-  let isFetchingSessionsForApp: string | null = null;
-
-  // Function to fetch sessions for a specific app
-  const fetchSessions = async (appId: string): Promise<SessionData[]> => {
-    // If no app ID, return empty array
-    if (!appId) {
-      console.log("No app ID provided for fetching sessions");
-      return [];
-    }
-
-    // If already fetching for this app, wait for it to complete
-    if (isFetchingSessionsForApp === appId) {
-      console.log(`Already fetching sessions for app ${appId}`);
-      return sessions.filter((s) => s.app_id === appId);
-    }
-
-    try {
-      // Set mutex flag to prevent concurrent fetches
-      isFetchingSessionsForApp = appId;
-
-      const decodedToken = getAuthToken();
-      if (!decodedToken) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await fetch(`/api/sessions?appId=${appId}`, {
-        headers: {
-          Authorization: `Bearer ${decodedToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to fetch sessions");
-      }
-
-      const data = await response.json();
-      console.log(`Fetched ${data.length} sessions for app ${appId}`);
-
-      // Replace all sessions for this app ID
-      setSessions(data);
-
-      return data;
-    } catch (error) {
-      console.error("Error fetching sessions:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An error occurred while fetching sessions",
-      });
-      return [];
-    } finally {
-      // Clear mutex flag
-      isFetchingSessionsForApp = null;
-    }
-  };
-
-  // Function to create a new session with mutex protection
-  const createSession = async (
-    appId: string,
-    title?: string,
-    metadata?: any
-  ): Promise<SessionData> => {
-    // Check for existing session with the same title
-    if (title) {
-      const existingSession = sessions.find(
-        (session) => session.app_id === appId && session.title === title
-      );
-      if (existingSession) {
-        console.log(
-          `Session with title "${title}" already exists, using existing session`
-        );
-        setCurrentSessionId(existingSession.id);
-        return existingSession;
-      }
-    }
-
-    // Use a mutex to prevent multiple simultaneous creations
-    if (isCreatingSession) {
-      console.log("Session creation already in progress, waiting...");
-      let attempts = 0;
-      while (isCreatingSession && attempts < 10) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        attempts++;
-      }
-
-      // After waiting, check again for a session with the same title
-      if (title) {
-        const existingSession = sessions.find(
-          (session) => session.app_id === appId && session.title === title
-        );
-        if (existingSession) {
-          console.log(
-            `Session with title "${title}" was created while waiting, using existing session`
-          );
-          setCurrentSessionId(existingSession.id);
-          return existingSession;
-        }
-      }
-    }
-
-    try {
-      isCreatingSession = true;
-      setIsLoadingSessions(true);
-      console.log(
-        `Creating new session for app ${appId} with title "${
-          title || "Untitled"
-        }"`
-      );
-
-      const decodedToken = getAuthToken();
-      if (!decodedToken) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await fetch("/api/sessions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${decodedToken}`,
-        },
-        body: JSON.stringify({
-          appId,
-          title: title || null,
-          metadata: metadata || null,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create session");
-      }
-
-      const newSession = await response.json();
-      console.log(`Session created successfully: ${newSession.id}`);
-
-      // Add new session to state, avoiding duplicates
-      setSessions((prev) => {
-        if (prev.some((session) => session.id === newSession.id)) {
-          return prev;
-        }
-        return [...prev, newSession];
-      });
-
-      // Mark this app's sessions as loaded if not already
-      setLoadedAppSessions((prev) => {
-        if (!prev.includes(appId)) {
-          return [...prev, appId];
-        }
-        return prev;
-      });
-
-      // Set as current session
-      setCurrentSessionId(newSession.id);
-
-      return newSession;
-    } catch (error) {
-      console.error("Error creating session:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An error occurred while creating a session",
-      });
-      throw error;
-    } finally {
-      isCreatingSession = false;
-      setIsLoadingSessions(false);
-    }
-  };
-
-  // Function to delete (soft-delete) a session
-  const deleteSession = async (sessionId: string): Promise<void> => {
-    try {
-      const decodedToken = getAuthToken();
-
-      if (!decodedToken) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await fetch(`/api/sessions?sessionId=${sessionId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${decodedToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete session");
-      }
-
-      // Update sessions state to remove the deleted session
-      setSessions((prev) => prev.filter((session) => session.id !== sessionId));
-
-      // If the deleted session was the current one, clear the current session
-      if (currentSessionId === sessionId) {
-        setCurrentSessionId(null);
-      }
-    } catch (error) {
-      console.error("Error deleting session:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An error occurred while deleting the session",
-      });
-    }
-  };
-
   // Function to fetch subscription data
   const fetchSubscription = async () => {
     try {
@@ -534,20 +288,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // No dependencies - only run once on mount
   }, []);
 
-  // Reset current session ID when app changes in URL
-  useEffect(() => {
-    // This doesn't fetch sessions, it just clears the current session
-    // when navigating between apps
-    const appIdFromPath = getAppIdFromPath(pathname);
-    if (appIdFromPath && currentSessionId) {
-      const currentSession = sessions.find((s) => s.id === currentSessionId);
-      if (currentSession && currentSession.app_id !== appIdFromPath) {
-        console.log("App changed in URL, clearing current session");
-        setCurrentSessionId(null);
-      }
-    }
-  }, [pathname, currentSessionId, sessions]);
-
   // Context value
   const value = {
     sidebarVisible,
@@ -555,14 +295,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     apps,
     setApps,
     currentAppId,
-    sessions,
-    setSessions,
-    currentSessionId,
-    setCurrentSessionId,
-    fetchSessions,
-    createSession,
-    deleteSession,
-    loadedAppSessions,
     subscription,
     isLoading,
     isLoadingSessions,

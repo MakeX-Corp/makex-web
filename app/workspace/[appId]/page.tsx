@@ -1,9 +1,13 @@
+// workspace/[appId]/page.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { use } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+
+// Import session service
+import { getSessionsForApp, createNewSession } from "@/lib/session-service";
 
 // Import shadcn components
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -15,41 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-// Mock API functions with proper TypeScript types
-const getSessionsForApp = (
-  appId: string
-): Promise<Array<{ id: string; name: string }>> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const sessions: Record<string, Array<{ id: string; name: string }>> = {
-        app1: [
-          { id: "session1", name: "First Session" },
-          { id: "session2", name: "Second Session" },
-        ],
-        app2: [{ id: "session3", name: "App 2 Session" }],
-      };
-
-      resolve(sessions[appId] || []);
-    }, 100);
-  });
-};
-
-const createSession = (
-  appId: string
-): Promise<{ id: string; name: string; appId: string; createdAt: string }> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const sessionId = `new-session-${Date.now()}`;
-      resolve({
-        id: sessionId,
-        name: `New Session for ${appId}`,
-        appId,
-        createdAt: new Date().toISOString(),
-      });
-    }, 100);
-  });
-};
+import { toast } from "sonner";
 
 interface PageProps {
   params: any;
@@ -73,7 +43,7 @@ export default function WorkspaceAppPage({ params }: PageProps) {
 
     async function handleSessionRouting() {
       try {
-        console.log(`Loading sessions for app ID: ${appId}`);
+        console.log(`Handling session routing for app ID: ${appId}`);
 
         if (isMounted) setLoadingText("Loading app sessions...");
 
@@ -91,7 +61,10 @@ export default function WorkspaceAppPage({ params }: PageProps) {
             setLoadingText(`Redirecting to session: ${sessionId}...`);
         } else {
           if (isMounted) setLoadingText("Creating new session...");
-          const newSession = await createSession(appId);
+          const newSession = await createNewSession(appId);
+          if (!newSession) {
+            throw new Error("Failed to create a new session");
+          }
           sessionId = newSession.id;
           console.log(`Created new session: ${sessionId}`);
           if (isMounted)
@@ -105,6 +78,7 @@ export default function WorkspaceAppPage({ params }: PageProps) {
         console.error("Failed to handle session routing:", err);
         setError("Could not load or create a session");
         setIsLoading(false);
+        toast.error("Failed to load or create session");
       }
     }
 
@@ -118,34 +92,50 @@ export default function WorkspaceAppPage({ params }: PageProps) {
 
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          <p>{error}</p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => window.location.reload()}
-          >
-            Try Again
-          </Button>
-        </AlertDescription>
-      </Alert>
+      <div className="flex flex-col h-screen">
+        <div className="flex-1 flex items-center justify-center p-6">
+          <Alert variant="destructive" className="max-w-md w-full">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              <p>{error}</p>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                >
+                  Try Again
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={() => router.push("/dashboard")}
+                >
+                  Return to Dashboard
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Loading Workspace</CardTitle>
-        <CardDescription>
-          Finding available sessions for this application
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center p-6">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-        <p className="text-center text-muted-foreground">{loadingText}</p>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col h-screen">
+      <div className="flex-1 flex items-center justify-center p-6">
+        <Card className="w-full max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle>Loading Workspace</CardTitle>
+            <CardDescription>{loadingText}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center p-6">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-center text-muted-foreground">
+              This will just take a moment
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

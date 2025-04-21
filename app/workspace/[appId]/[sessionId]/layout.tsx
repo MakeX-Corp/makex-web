@@ -3,7 +3,10 @@
 
 import { ReactNode, use, useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, ChevronDown, Laptop } from "lucide-react";
+import { Check, ChevronDown, Laptop, Plus } from "lucide-react";
+
+// Import session service
+import { getSessionsForApp, SessionListItem } from "@/lib/session-service";
 
 // Import shadcn components
 import {
@@ -16,33 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import { Button } from "@/components/ui/button";
-
-// Hard-coded mock function to simulate fetching sessions for an app
-const getSessionsForApp = async (appId: string) => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 100));
-
-  // Simulate different sessions for different app IDs
-  const mockSessions: Record<string, Array<{ id: string; name: string }>> = {
-    app1: [
-      { id: "session1", name: "First Session" },
-      { id: "session2", name: "Second Session" },
-    ],
-    app2: [{ id: "session3", name: "App 2 Session" }],
-    // Default returns empty array for unknown apps
-  };
-
-  return mockSessions[appId] || [];
-};
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 export default function SessionLayout({
   children,
@@ -55,16 +35,17 @@ export default function SessionLayout({
   const appId = (unwrappedParams as { appId: string }).appId;
   const sessionId = (unwrappedParams as { sessionId: string }).sessionId;
 
-  const [sessions, setSessions] = useState<Array<{ id: string; name: string }>>(
-    []
-  );
+  const [sessions, setSessions] = useState<SessionListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
     const fetchSessions = async () => {
       try {
+        setLoading(true);
+
         // Load all sessions for this app to display in the dropdown
         const sessionsData = await getSessionsForApp(appId);
 
@@ -72,10 +53,14 @@ export default function SessionLayout({
           setSessions(sessionsData);
           setLoading(false);
         }
-      } catch (error) {
-        console.error("Error fetching sessions:", error);
+      } catch (err) {
+        console.error("Error fetching sessions:", err);
         if (isMounted) {
+          setError(
+            err instanceof Error ? err : new Error("Failed to fetch sessions")
+          );
           setLoading(false);
+          toast.error("Failed to load sessions");
         }
       }
     };
@@ -111,75 +96,56 @@ export default function SessionLayout({
           <div className="flex items-center space-x-4">
             {/* Session selector dropdown */}
             {loading ? (
-              <Button variant="outline" disabled>
-                <span className="animate-spin mr-2 h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></span>
-                Loading sessions...
-              </Button>
-            ) : (
-              <Select
-                defaultValue={sessionId}
-                onValueChange={(value) => {
-                  // Navigate to the selected session
-                  window.location.href = `/workspace/${appId}/${value}`;
-                }}
-              >
-                <SelectTrigger className="w-[280px]">
-                  <SelectValue placeholder="Select a session" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Available Sessions</SelectLabel>
-                    {sessions.map((session) => (
-                      <SelectItem key={session.id} value={session.id}>
-                        <div className="flex items-center">
-                          {session.id === sessionId && (
-                            <Check className="mr-2 h-4 w-4 text-primary" />
-                          )}
-                          <span>{session.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                  <SelectSeparator />
-                  <SelectItem value={`new-session-${Date.now()}`}>
-                    + Create New Session
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-
-            {/* App switcher dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  Switch App <ChevronDown className="ml-2 h-4 w-4" />
+              <div className="flex space-x-2 items-center">
+                <Skeleton className="h-9 w-[280px]" />
+              </div>
+            ) : error ? (
+              <div className="flex space-x-2 items-center">
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                  className="text-red-500"
+                >
+                  Failed to load sessions. Retry?
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuLabel>Applications</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/workspace/app1">
-                    <div className="flex items-center">
-                      {appId === "app1" && (
-                        <Check className="mr-2 h-4 w-4 text-primary" />
+              </div>
+            ) : (
+              <div className="flex space-x-2 items-center">
+                <Select
+                  defaultValue={sessionId}
+                  onValueChange={(value) => {
+                    // Navigate to the selected session
+                    window.location.href = `/workspace/${appId}/${value}`;
+                  }}
+                >
+                  <SelectTrigger className="w-[280px]">
+                    <SelectValue placeholder="Select a session" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Available Sessions</SelectLabel>
+                      {sessions.length === 0 ? (
+                        <div className="px-2 py-1 text-sm text-gray-500">
+                          No sessions found
+                        </div>
+                      ) : (
+                        sessions.map((session) => (
+                          <SelectItem key={session.id} value={session.id}>
+                            <div className="flex items-center">
+                              <span>
+                                {session.title ||
+                                  `Session ${session.id.slice(0, 8)}`}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))
                       )}
-                      <span>Application One</span>
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/workspace/app2">
-                    <div className="flex items-center">
-                      {appId === "app2" && (
-                        <Check className="mr-2 h-4 w-4 text-primary" />
-                      )}
-                      <span>Application Two</span>
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    </SelectGroup>
+                    <SelectSeparator />
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
         </div>
       </header>
