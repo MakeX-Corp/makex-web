@@ -193,13 +193,18 @@ export async function createNewSession(
 export async function deleteSession(sessionId: string): Promise<boolean> {
   try {
     console.log(`[SESSION SERVICE] Deleting session ${sessionId}`);
+    const decodedToken = getAuthToken();
 
+    if (!decodedToken) {
+      throw new Error("No authentication token found");
+    }
     const response = await fetch(
       `/api/sessions?sessionId=${encodeURIComponent(sessionId)}`,
       {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${decodedToken}`,
         },
       }
     );
@@ -215,6 +220,49 @@ export async function deleteSession(sessionId: string): Promise<boolean> {
     return true;
   } catch (error) {
     console.error("[SESSION SERVICE] Error deleting session:", error);
+    return false;
+  }
+}
+
+// Add this function to lib/session-service.ts
+
+// Update session title
+export async function updateSessionTitle(
+  sessionId: string,
+  title: string
+): Promise<boolean> {
+  try {
+    console.log(`[SESSION SERVICE] Updating title for session ${sessionId}`);
+    const decodedToken = getAuthToken();
+
+    if (!decodedToken) {
+      throw new Error("No authentication token found");
+    }
+
+    const response = await fetch(`/api/sessions/title`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${decodedToken}`,
+      },
+      body: JSON.stringify({
+        sessionId,
+        title,
+        isAiGenerated: false,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        isApiError(data) ? data.error : "Failed to update session title"
+      );
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[SESSION SERVICE] Error updating session title:", error);
     return false;
   }
 }

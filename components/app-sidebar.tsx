@@ -63,9 +63,6 @@ export function AppSidebar() {
     name: string;
   }>(null);
 
-  // Check if user is signed in based on subscription data
-  const isSignedIn = !!subscription;
-
   // External links
   const twitterUrl = "https://x.com/Makexapp";
   const discordUrl = "https://discord.gg/3EsUgb53Zp";
@@ -123,7 +120,12 @@ export function AppSidebar() {
       icon: DiscordIcon,
       external: true,
     },
-    { href: "/settings", label: "Settings", icon: Settings, external: false },
+    {
+      href: "/workspace/settings",
+      label: "Settings",
+      icon: Settings,
+      external: false,
+    },
     {
       href: "/pricing",
       label: "Upgrade Plan",

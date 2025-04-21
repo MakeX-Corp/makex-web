@@ -4,19 +4,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { use } from "react";
-import {
-  AlertCircle,
-  CheckCircle,
-  PanelRightClose,
-  PanelRightOpen,
-  Save,
-  Trash2,
-} from "lucide-react";
-
-// Import session service
-import { getSession, deleteSession, SessionData } from "@/lib/session-service";
-
-// Import shadcn components
+import { AlertCircle, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { getSession, SessionData } from "@/lib/session-service";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,7 +16,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Preview } from "@/components/workspace/preview";
