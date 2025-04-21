@@ -16,7 +16,7 @@ import { initPaddle } from "@/utils/server/paddle-client";
 import { useToast } from "@/components/ui/use-toast";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cp } from "fs";
+import { getAuthToken } from "@/utils/client/auth";
 
 interface PlanProps {
   name: string;
@@ -117,6 +117,7 @@ export default function PricingPage() {
 
   const handleCheckout = async (priceId: string) => {
     console.log("priceId", priceId);
+    const token = await getAuthToken();
     const paddle = await initPaddle();
     if (!paddle) {
       toast({
@@ -145,6 +146,7 @@ export default function PricingPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             subscriptionId: subscriptionId,
