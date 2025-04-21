@@ -53,7 +53,7 @@ export async function POST(request: Request) {
 
     // Begin transaction to ensure both app and session are created atomically
     // Insert into Supabase user_apps table
-    /*
+
     const { data: insertedApp, error: insertError } = await supabase
       .from("user_apps")
       .insert({
@@ -92,9 +92,6 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-    */
-    const insertedApp = { id: "123" };
-    const session = { id: "123" };
     // Return the app data along with session ID and redirect URL
     return NextResponse.json({
       ...insertedApp,

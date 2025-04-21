@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   Settings,
-  User,
+  CreditCard,
   ChevronRight,
   Search,
   MessageCircle,
@@ -125,9 +125,9 @@ export function AppSidebar() {
     },
     { href: "/settings", label: "Settings", icon: Settings, external: false },
     {
-      href: isSignedIn ? "/profile" : "/signin",
-      label: isSignedIn ? "Profile" : "Sign In",
-      icon: User,
+      href: "/pricing",
+      label: "Upgrade Plan",
+      icon: CreditCard,
       external: false,
     },
   ];
@@ -333,9 +333,7 @@ export function AppSidebar() {
             >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteApp}>
-              Delete
-            </Button>
+            <Button onClick={handleDeleteApp}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
