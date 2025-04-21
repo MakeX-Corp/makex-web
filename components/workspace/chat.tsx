@@ -46,6 +46,9 @@ export function ChatInput({
     }
   };
 
+  if (sessionId === "") {
+    return <div>sdkdsjdlkajd</div>;
+  }
   return (
     <Card className="flex flex-col h-full border rounded-md">
       <CardContent className="flex-1 p-4 overflow-y-auto">

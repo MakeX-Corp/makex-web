@@ -180,8 +180,8 @@ export function AppSidebar() {
           </Button>
         </div>
 
-        {/* Apps section */}
-        <div className="px-3 py-3">
+        {/* Apps section - Now takes up remaining space before bottom nav */}
+        <div className="px-3 py-3 flex flex-col flex-1 overflow-hidden">
           {expanded ? (
             <>
               <div className="flex items-center justify-between mb-3">
@@ -202,8 +202,8 @@ export function AppSidebar() {
                 />
               </div>
 
-              {/* Enhanced Apps list with delete icon */}
-              <div className="space-y-1 max-h-40 overflow-y-auto">
+              {/* Enhanced Apps list with delete icon - Takes remaining space */}
+              <div className="space-y-1 overflow-y-auto flex-1">
                 {filteredApps.length > 0 ? (
                   filteredApps.map((app) => (
                     <div key={app.id} className="group relative">
@@ -251,9 +251,6 @@ export function AppSidebar() {
             </div>
           )}
         </div>
-
-        {/* Spacer */}
-        <div className="flex-1"></div>
 
         {/* Theme Toggle Button */}
         <div className={expanded ? "px-3 py-2" : "flex justify-center py-2"}>
