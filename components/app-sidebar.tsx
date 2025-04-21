@@ -80,16 +80,23 @@ export function AppSidebar() {
       <div className="p-4 flex items-center justify-between">
         {expanded && (
           <div className="flex items-center gap-2">
-            <div className="relative w-6 h-6 flex-shrink-0">
-              <Image
-                src="/logo.png"
-                alt="MakeX logo"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-            <span className="font-semibold text-sm tracking-tight">MakeX</span>
+            <Link
+              href="/workspace"
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <div className="relative w-6 h-6 flex-shrink-0">
+                <Image
+                  src="/logo.png"
+                  alt="MakeX logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <span className="font-semibold text-sm tracking-tight">
+                MakeX
+              </span>
+            </Link>
           </div>
         )}
         <Button

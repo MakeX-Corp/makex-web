@@ -29,7 +29,6 @@ import {
   Loader2,
   Sparkles,
 } from "lucide-react";
-import { useApp } from "@/context/AppContext";
 // Expanded app suggestion chips for multiple rows
 const APP_SUGGESTIONS = [
   { icon: <Layout size={14} />, label: "Landing page" },
@@ -75,7 +74,6 @@ const LoadingModal = () => {
 };
 export default function DashboardPage() {
   const router = useRouter();
-  const { createApp } = useApp();
   const [isCreating, setIsCreating] = useState(false);
   const [prompt, setPrompt] = useState("");
   // Create refs with explicit typing
@@ -142,17 +140,18 @@ export default function DashboardPage() {
   }, []);
 
   const handleCreateApp = async () => {
-    if (!prompt.trim()) {
-      alert("Please enter a prompt");
-      return;
-    }
-    setIsCreating(true);
+    if (!prompt.trim()) return;
+
     try {
-      const redirectUrl = await createApp(prompt);
-      router.push(redirectUrl);
+      setIsCreating(true);
+
+      // Store the prompt in localStorage for persistence
+      localStorage.setItem("lastAppPrompt", prompt.trim());
+
+      // Redirect to dashboard
+      router.push("/dashboard");
     } catch (error) {
       console.error("Error creating app:", error);
-    } finally {
       setIsCreating(false);
     }
   };
@@ -250,23 +249,29 @@ export default function DashboardPage() {
         </div>
 
         {/* Main prompt input */}
-        <div className="mb-6">
-          <div className="relative bg-white border rounded-lg shadow-sm overflow-hidden transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+        <div className="mb-8">
+          <div className="relative bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl shadow-lg overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
             <textarea
               ref={inputRef}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Describe your app idea in detail..."
-              className="w-full px-4 pt-4 pb-12 resize-none focus:outline-none text-base"
-              rows={1}
-              style={{ minHeight: "80px" }}
+              className="w-full px-6 pt-5 pb-16 resize-none focus:outline-none text-base bg-transparent transition-colors"
+              rows={3}
+              style={{ minHeight: "120px" }}
             />
-            <div className="absolute bottom-0 right-0 p-2 flex items-center">
-              <Sparkles className="h-5 w-5 mr-2" />
+
+            {/* Button area with clean design */}
+            <div className="absolute bottom-0 left-0 right-0 py-3 px-4 bg-gray-50 dark:bg-gray-800/50 border-t dark:border-gray-800 flex items-center justify-end">
+              <div className="flex items-center mr-2">
+                <Sparkles className="h-5 w-5 text-gray-400" />
+              </div>
+
               <Button
                 onClick={handleCreateApp}
                 disabled={!prompt.trim()}
-                className=" text-white font-medium rounded-md px-4 py-2 flex items-center"
+                variant="default"
+                className="font-medium rounded-md flex items-center disabled:opacity-50"
               >
                 Create App
                 <ArrowRight className="ml-2 h-4 w-4" />

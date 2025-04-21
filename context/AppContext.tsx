@@ -99,6 +99,21 @@ interface AppContextType {
 // Create the context
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// Helper function to extract app ID from path
+const getAppIdFromPath = (pathname: string): string | null => {
+  const pathSegments = pathname.split("/");
+  const appIndex = pathSegments.findIndex((segment) => segment === "app") + 1;
+
+  if (appIndex > 0 && appIndex < pathSegments.length) {
+    return pathSegments[appIndex];
+  }
+  return null;
+};
+
+// Mutex flags to prevent concurrent operations
+let isFetchingSessionsForApp: string | null = null;
+let isCreatingSession = false;
+
 // Provider component
 export function AppProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -122,19 +137,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     null
   );
 
-  // Determine current app ID from path
-  const pathSegments = pathname.split("/");
-  const appIdIndex =
-    pathSegments.findIndex((segment) => segment === "workspace") + 1;
-  const currentAppId =
-    appIdIndex > 0 && appIdIndex < pathSegments.length
-      ? pathSegments[appIdIndex]
-      : null;
-
-  console.log("currentAppId dsd", currentAppId);
-  console.log("apps ==", pathSegments[appIdIndex]);
-  console.log("pathSegments", pathSegments);
-  console.log("appIdIndex", appIdIndex);
+  // Determine current app ID from path using the helper function
+  const currentAppId = getAppIdFromPath(pathname);
 
   // Toggle function for sidebar
   const toggleSidebar = () => {
@@ -164,8 +168,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await response.json();
-      // Refresh apps list after successful creation
-      //await fetchApps();
       return data.redirectUrl;
     } catch (error) {
       console.error("Error creating app:", error);
@@ -235,11 +237,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Function to fetch sessions for a specific app
+  // Function to fetch sessions for a specific app with mutex protection
   const fetchSessions = async (appId: string): Promise<SessionData[]> => {
-    try {
-      const decodedToken = getAuthToken();
+    // If we're already fetching sessions for this app, don't start another fetch
+    if (isFetchingSessionsForApp === appId) {
+      console.log(`Already fetching sessions for app ${appId}, waiting...`);
 
+      // Wait for the current fetch to complete
+      let attempts = 0;
+      while (isFetchingSessionsForApp === appId && attempts < 10) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      // If we already have sessions for this app, return them
+      const appSessions = sessions.filter(
+        (session) => session.app_id === appId
+      );
+      if (appSessions.length > 0) {
+        console.log(`Sessions for app ${appId} were loaded by another request`);
+        return appSessions;
+      }
+    }
+
+    try {
+      isFetchingSessionsForApp = appId;
+      console.log(`Fetching sessions for app ${appId}`);
+
+      const decodedToken = getAuthToken();
       if (!decodedToken) {
         throw new Error("No authentication token found");
       }
@@ -256,7 +281,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await response.json();
-      setSessions(data);
+      console.log(`Received ${data.length} sessions for app ${appId}`);
+
+      // Keep any existing sessions for other apps, replace just this app's sessions
+      setSessions((prev) => {
+        const otherAppSessions = prev.filter(
+          (session) => session.app_id !== appId
+        );
+        return [...otherAppSessions, ...data];
+      });
+
       return data;
     } catch (error) {
       console.error("Error fetching sessions:", error);
@@ -269,18 +303,65 @@ export function AppProvider({ children }: { children: ReactNode }) {
             : "An error occurred while fetching sessions",
       });
       return [];
+    } finally {
+      // Clear the mutex
+      isFetchingSessionsForApp = null;
     }
   };
 
-  // Function to create a new session
+  // Function to create a new session with mutex protection
   const createSession = async (
     appId: string,
     title?: string,
     metadata?: any
   ): Promise<SessionData> => {
-    try {
-      const decodedToken = getAuthToken();
+    // Check for existing session with the same title
+    if (title) {
+      const existingSession = sessions.find(
+        (session) => session.app_id === appId && session.title === title
+      );
+      if (existingSession) {
+        console.log(
+          `Session with title "${title}" already exists, using existing session`
+        );
+        setCurrentSessionId(existingSession.id);
+        return existingSession;
+      }
+    }
 
+    // Use a mutex to prevent multiple simultaneous creations
+    if (isCreatingSession) {
+      console.log("Session creation already in progress, waiting...");
+      let attempts = 0;
+      while (isCreatingSession && attempts < 10) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      // After waiting, check again for a session with the same title
+      if (title) {
+        const existingSession = sessions.find(
+          (session) => session.app_id === appId && session.title === title
+        );
+        if (existingSession) {
+          console.log(
+            `Session with title "${title}" was created while waiting, using existing session`
+          );
+          setCurrentSessionId(existingSession.id);
+          return existingSession;
+        }
+      }
+    }
+
+    try {
+      isCreatingSession = true;
+      console.log(
+        `Creating new session for app ${appId} with title "${
+          title || "Untitled"
+        }"`
+      );
+
+      const decodedToken = getAuthToken();
       if (!decodedToken) {
         throw new Error("No authentication token found");
       }
@@ -304,9 +385,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       const newSession = await response.json();
-      setSessions((prev) => [...prev, newSession]);
+      console.log(`Session created successfully: ${newSession.id}`);
 
-      // Set the newly created session as the current one
+      // Add new session to state, avoiding duplicates
+      setSessions((prev) => {
+        if (prev.some((session) => session.id === newSession.id)) {
+          return prev;
+        }
+        return [...prev, newSession];
+      });
+
+      // Set as current session
       setCurrentSessionId(newSession.id);
 
       return newSession;
@@ -321,6 +410,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             : "An error occurred while creating a session",
       });
       throw error;
+    } finally {
+      isCreatingSession = false;
     }
   };
 
@@ -367,7 +458,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Function to fetch subscription data
   const fetchSubscription = async () => {
-    setIsLoading(true);
     try {
       const decodedToken = getAuthToken();
 
@@ -388,14 +478,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await subscriptionResponse.json();
-      console.log("this is the data", data);
+
       // Get email from token using the provided utility function
       const email = getUserEmailFromToken(decodedToken) || "";
       const planName = getPlanName(data.subscription?.planId || "");
       data.email = email;
       data.planName = planName;
 
-      console.log("this is the data ===d", data);
       setSubscription(data);
     } catch (error) {
       console.error("Error fetching subscription:", error);
@@ -407,28 +496,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ? error.message
             : "An error occurred while fetching subscription data",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Fetch data on initial load
+  // Fetch data on initial load - only get apps and subscription
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
+        setIsLoading(true);
+        // Only fetch apps and subscription data on initial load
+        // DO NOT fetch sessions here - let the workspace component handle that
         await Promise.all([fetchApps(), fetchSubscription()]);
-
-        // If we have a current app ID, load its sessions
-        if (currentAppId) {
-          await fetchSessions(currentAppId);
-        }
       } catch (error) {
         console.error("Error during initial data fetch:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchInitialData();
-  }, [currentAppId]);
+    // No dependencies - only run once on mount
+  }, []);
 
   // Context value
   const value = {
@@ -462,4 +550,10 @@ export function useApp() {
     throw new Error("useApp must be used within a AppProvider");
   }
   return context;
+}
+
+// Custom hook to get app ID from path
+export function useAppId() {
+  const pathname = usePathname();
+  return getAppIdFromPath(pathname);
 }
