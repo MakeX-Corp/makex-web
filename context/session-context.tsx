@@ -125,8 +125,22 @@ export function SessionProvider({
       );
       setSessions(sessionsList);
 
-      // Only select first session if we don't have a current session
-      if (sessionsList.length > 0 && !currentSessionId) {
+      // Check URL for sessionId first
+      const urlSessionId =
+        typeof window !== "undefined"
+          ? new URL(window.location.href).searchParams.get("sessionId")
+          : null;
+
+      if (
+        urlSessionId &&
+        sessionsList.some((session) => session.id === urlSessionId)
+      ) {
+        // Use session ID from URL if it's valid
+        console.log(`Using session ID from URL: ${urlSessionId}`);
+        await switchSession(urlSessionId);
+      }
+      // Only select first session if we don't have a current session and no valid URL session ID
+      else if (sessionsList.length > 0 && !currentSessionId) {
         console.log(`Auto-selecting first session: ${sessionsList[0].id}`);
         await switchSession(sessionsList[0].id);
       }

@@ -12,6 +12,7 @@ import {
   Sun,
   Moon,
   Trash2,
+  Loader2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -251,7 +252,11 @@ export function AppSidebar() {
                   ))
                 ) : (
                   <div className="text-xs text-muted-foreground py-2 px-2 italic">
-                    {apps.length === 0 ? "No apps found" : "No matching apps"}
+                    {apps.length === 0 ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "No matching apps"
+                    )}
                   </div>
                 )}
               </div>

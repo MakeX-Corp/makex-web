@@ -69,7 +69,7 @@ export default function WorkspaceContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appId]); // Only depend on appId
 
-  // Switch to initialSessionId if provided, otherwise use first session or create new one
+  // Fix for the useEffect that handles session switching
   useEffect(() => {
     if (!appId || loadingSessions) return;
 
@@ -81,14 +81,23 @@ export default function WorkspaceContent({
       if (isHandled || currentSessionId) return;
       isHandled = true;
 
-      if (initialSessionId) {
-        // Use provided session ID
+      // First, check URL for sessionId
+      const urlSessionId =
+        typeof window !== "undefined"
+          ? new URL(window.location.href).searchParams.get("sessionId")
+          : null;
+
+      if (urlSessionId) {
+        // Use session ID from URL if available
+        await switchSession(urlSessionId);
+      } else if (initialSessionId) {
+        // Use provided initial session ID if URL doesn't have one
         await switchSession(initialSessionId);
       } else if (sessions.length > 0) {
-        // Use first session
+        // Use first session as fallback
         await switchSession(sessions[0].id);
       } else {
-        // Create new session
+        // Create new session if no sessions exist
         await createSession();
       }
     };
