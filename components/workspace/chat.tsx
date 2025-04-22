@@ -1,138 +1,3 @@
-/*
-
-"use client";
-
-import { useState, useEffect, useRef } from "react";
-import { Send } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-
-interface ChatInputProps {
-  onSendMessage: (message: string) => void;
-  sessionId?: string;
-  isProcessing?: boolean;
-  isAppReady?: boolean; // Add this prop to check if the app is ready
-}
-
-export function ChatInput({
-  onSendMessage,
-  sessionId,
-  isProcessing = false,
-  isAppReady = true, // Default to false to be safe
-}: ChatInputProps) {
-  const [message, setMessage] = useState("");
-  const [loadTimestamp, setLoadTimestamp] = useState(new Date().toISOString());
-  const initialPromptChecked = useRef(false);
-
-  // Update the timestamp whenever sessionId changes and reset the check flag
-  useEffect(() => {
-    setLoadTimestamp(new Date().toISOString());
-    console.log(`Chat component reloaded for session: ${sessionId}`);
-    initialPromptChecked.current = false; // Reset the check when session changes
-  }, [sessionId]);
-
-  // Check for prompt in local storage when component loads or when app becomes ready
-  useEffect(() => {
-    // Only proceed if session is valid, app is ready, and we haven't checked yet for this session
-    if (
-      sessionId &&
-      isAppReady &&
-      !initialPromptChecked.current &&
-      !isProcessing
-    ) {
-      initialPromptChecked.current = true; // Mark as checked to prevent multiple sends
-
-      try {
-        // Get the stored prompt from localStorage
-        const storedPrompt = localStorage.getItem(`initialPrompt_${sessionId}`);
-
-        if (storedPrompt) {
-          console.log(
-            `Found stored prompt for session ${sessionId}, sending...`
-          );
-          onSendMessage(storedPrompt);
-
-          // Remove the prompt from localStorage after sending
-          localStorage.removeItem(`initialPrompt_${sessionId}`);
-        } else {
-          console.log(`No stored prompt found for session ${sessionId}`);
-        }
-      } catch (error) {
-        console.error("Error accessing localStorage:", error);
-      }
-    }
-  }, [sessionId, isAppReady, isProcessing, onSendMessage]);
-
-  const handleSendMessage = () => {
-    if (message.trim() && !isProcessing) {
-      onSendMessage(message);
-      setMessage("");
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  if (sessionId === "") {
-    return <div>No active session</div>;
-  }
-
-  return (
-    <Card className="flex flex-col h-full border rounded-md">
-      <CardContent className="flex-1 p-4 overflow-y-auto">
-        <div className="space-y-4">
-          <div className="p-4 border rounded-md bg-muted/30">
-            <div className="mb-2">
-              <strong>Session ID:</strong> {sessionId || "Not set"}
-            </div>
-            <div>
-              <strong>Component loaded at:</strong> {loadTimestamp}
-            </div>
-            <div>
-              <strong>App Ready:</strong> {isAppReady ? "Yes" : "No"}
-            </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              This component will automatically send a prompt from localStorage
-              if available when the session changes and the app is ready.
-            </div>
-          </div>
-        </div>
-      </CardContent>
-
-      <CardFooter className="p-4 pt-2 border-t">
-        <div className="flex w-full items-end gap-2">
-          <Textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your message..."
-            className="min-h-[60px] flex-1 resize-none"
-            disabled={isProcessing}
-          />
-          <Button
-            size="icon"
-            onClick={handleSendMessage}
-            disabled={message.trim() === "" || isProcessing}
-            title="Send message"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardFooter>
-    </Card>
-  );
-}
-*/
-
 "use client";
 
 import { useChat } from "@ai-sdk/react";
@@ -173,6 +38,7 @@ export function Chat({
     null
   );
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [initialPromptSent, setInitialPromptSent] = useState(false);
 
   // Use image upload custom hook
   const {
@@ -283,6 +149,46 @@ export function Chat({
       setIsWaitingForResponse(false);
     }
   }, [error]);
+
+  // Simple effect to check for initial prompt - runs when component is ready
+  useEffect(() => {
+    // Only run this once when the component is fully loaded
+    if (!isLoading && !initialPromptSent && messages.length === 0) {
+      const storedPrompt = localStorage.getItem("makeX_prompt");
+      if (storedPrompt) {
+        // Remove the prompt from storage
+        localStorage.removeItem("makeX_prompt");
+
+        // Submit the prompt manually
+        const input = document.querySelector("input");
+        if (input) {
+          // Simulate typing the stored prompt
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+            window.HTMLInputElement.prototype,
+            "value"
+          )?.set;
+          if (nativeInputValueSetter) {
+            nativeInputValueSetter.call(input, storedPrompt);
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+
+            // Simulate clicking the submit button
+            setTimeout(() => {
+              const submitButton = document.querySelector(
+                'button[type="submit"]'
+              );
+              if (submitButton) {
+                // @ts-ignore
+                submitButton.click();
+              }
+              setInitialPromptSent(true);
+            }, 100);
+          }
+        }
+      } else {
+        setInitialPromptSent(true);
+      }
+    }
+  }, [isLoading, messages.length, initialPromptSent]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

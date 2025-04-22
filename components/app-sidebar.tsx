@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Settings,
   CreditCard,
@@ -56,7 +56,7 @@ export function AppSidebar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredApps, setFilteredApps] = useState(apps);
   const { theme } = useTheme();
-
+  const router = useRouter();
   // State for delete confirmation
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeletingApp, setIsDeletingApp] = useState(false);
@@ -68,6 +68,11 @@ export function AppSidebar() {
   // External links
   const twitterUrl = "https://x.com/Makexapp";
   const discordUrl = "https://discord.gg/3EsUgb53Zp";
+
+  // Get current app ID from pathname
+  const currentAppId = pathname.startsWith("/dashboard/")
+    ? pathname.split("/")[2]
+    : null;
 
   // Filter apps when search query changes
   useEffect(() => {
@@ -99,7 +104,10 @@ export function AppSidebar() {
       setIsDeletingApp(true);
       try {
         await deleteApp(appToDelete.id);
-        // No need to update filteredApps as it will be updated via the apps dependency in useEffect
+        // Check if we're deleting the current app
+        if (appToDelete.id === currentAppId) {
+          router.push("/dashboard");
+        }
         setIsDeleteModalOpen(false);
         setAppToDelete(null);
       } catch (error) {
@@ -216,7 +224,7 @@ export function AppSidebar() {
                         href={`/dashboard/${app.id}`}
                         className={cn(
                           "flex items-center py-1.5 px-2 text-sm rounded-md transition-colors font-medium w-full pr-8",
-                          pathname.includes(`/dashboard/app/${app.id}`)
+                          pathname.includes(`/dashboard/${app.id}`)
                             ? "bg-primary/10 text-primary"
                             : "text-foreground hover:bg-muted"
                         )}

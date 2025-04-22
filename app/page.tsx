@@ -28,6 +28,7 @@ import {
   Image as ImageIcon,
   Loader2,
   Sparkles,
+  LogIn,
 } from "lucide-react";
 // Expanded app suggestion chips for multiple rows
 const APP_SUGGESTIONS = [
@@ -65,13 +66,6 @@ const ROW_1 = APP_SUGGESTIONS.slice(0, 7);
 const ROW_2 = APP_SUGGESTIONS.slice(7, 14);
 const ROW_3 = APP_SUGGESTIONS.slice(14);
 
-const LoadingModal = () => {
-  return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-      <Loader2 className="h-10 w-10 animate-spin" />
-    </div>
-  );
-};
 export default function DashboardPage() {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
@@ -167,9 +161,16 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      {/* Add login button in top right */}
+      <div className="absolute top-4 right-4">
+        <Button onClick={() => router.push("/dashboard")} variant="outline">
+          <LogIn className="mr-2 h-4 w-4" />
+          Login
+        </Button>
+      </div>
+
       <div className="w-full max-w-2xl mx-auto">
         {/* Header with logo */}
-        {isCreating && <LoadingModal />}
         <div className="mb-10 text-center">
           <div className="mb-2">
             <Image
@@ -269,12 +270,20 @@ export default function DashboardPage() {
 
               <Button
                 onClick={handleCreateApp}
-                disabled={!prompt.trim()}
+                disabled={!prompt.trim() || isCreating}
                 variant="default"
                 className="font-medium rounded-md flex items-center disabled:opacity-50"
               >
-                Create App
-                <ArrowRight className="ml-2 h-4 w-4" />
+                {isCreating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  </>
+                ) : (
+                  <>
+                    Create App
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
               </Button>
             </div>
           </div>

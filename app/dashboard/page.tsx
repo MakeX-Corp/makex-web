@@ -54,13 +54,6 @@ const APP_SUGGESTIONS = [
   { icon: <Briefcase size={14} />, label: "Job board" },
 ];
 
-// Example prompts
-const EXAMPLE_PROMPTS = [
-  "A markdown note-taking app with search and tagging",
-  "A job application tracker that organizes applications by status",
-  "A recipe app that suggests meals based on ingredients you have",
-];
-
 // Create three rows of suggestions for animation
 const ROW_1 = APP_SUGGESTIONS.slice(0, 7);
 const ROW_2 = APP_SUGGESTIONS.slice(7, 14);
@@ -104,13 +97,7 @@ const LoadingModal = () => {
         <div className="text-center">
           <h3 className="text-xl font-semibold mb-2">Creating Your App</h3>
           <p className="text-muted-foreground text-sm max-w-xs">
-            Building your{" "}
-            {
-              EXAMPLE_PROMPTS[
-                Math.floor(Math.random() * EXAMPLE_PROMPTS.length)
-              ].split(" ")[0]
-            }{" "}
-            app with AI...
+            Building your app with AI...
           </p>
         </div>
 
@@ -234,6 +221,7 @@ export default function DashboardPage() {
     }
     setIsCreating(true);
     try {
+      localStorage.setItem("makeX_prompt", prompt);
       const redirectUrl = await createApp(prompt);
       router.push(redirectUrl);
     } catch (error) {
