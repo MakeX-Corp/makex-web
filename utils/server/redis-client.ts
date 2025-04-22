@@ -6,11 +6,12 @@ export const redis = createRedisClient({
 });
 
 export const connectRedis = async () => {
-  await redis.connect();
+  if (!redis.isOpen) {
+    await redis.connect();
+  }
 };
 
 export const redisUrlSetter = async (appName: string, appUrl: string, apiUrl: string) => {
-
   // connect to redis
   await connectRedis();
 
@@ -18,5 +19,7 @@ export const redisUrlSetter = async (appName: string, appUrl: string, apiUrl: st
   await redis.set(`proxy:api-${appName}.makex.app`, apiUrl);
 
   // disconnect from redis
-  await redis.disconnect();
+  if (redis.isOpen) {
+    await redis.disconnect();
+  }
 };
