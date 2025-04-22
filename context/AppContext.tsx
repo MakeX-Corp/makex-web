@@ -85,6 +85,10 @@ interface AppContextType {
   signOut: () => Promise<void>;
   isSigningOut: boolean;
 
+  // Auth token
+  authToken: string | null;
+  refreshAuthToken: () => void;
+
   // Loading states
   isLoading: boolean;
 }
@@ -139,6 +143,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Toggle function for sidebar
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
+  };
+
+  // Store auth token in state
+  const [authToken, setAuthToken] = useState<string | null>(() =>
+    getAuthToken()
+  );
+
+  // Function to refresh the auth token
+  const refreshAuthToken = () => {
+    setAuthToken(getAuthToken());
   };
 
   // Sign out function
@@ -317,6 +331,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const fetchInitialData = async () => {
       try {
         setIsLoading(true);
+
         // Only fetch apps and subscription data on initial load
         // DO NOT fetch sessions here - let the workspace component handle that
         await Promise.all([fetchApps(), fetchSubscription()]);
@@ -347,6 +362,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshSubscription: fetchSubscription,
     signOut,
     isSigningOut,
+    authToken,
+    refreshAuthToken,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

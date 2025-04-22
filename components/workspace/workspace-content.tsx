@@ -27,7 +27,7 @@ import {
 import { SessionSelector } from "@/components/workspace/session-selector";
 import { SessionsError } from "@/components/workspace/sessions-error";
 import { LoadingSessions } from "@/components/workspace/loading-sessions";
-import { getAuthToken } from "@/utils/client/auth";
+import { useApp } from "@/context/AppContext";
 interface WorkspaceContentProps {
   initialSessionId: string | null;
 }
@@ -35,8 +35,6 @@ interface WorkspaceContentProps {
 export default function WorkspaceContent({
   initialSessionId,
 }: WorkspaceContentProps) {
-  const [authToken, setAuthToken] = useState<string | null>(null);
-
   const {
     appId,
     appName,
@@ -54,7 +52,7 @@ export default function WorkspaceContent({
     switchSession,
     createSession,
   } = useSession();
-
+  const { authToken } = useApp();
   // State for the UI elements
   const [activeView, setActiveView] = useState<"chat" | "preview">("chat");
   const [isResetting, setIsResetting] = useState(false);
@@ -64,7 +62,6 @@ export default function WorkspaceContent({
   useEffect(() => {
     if (appId) {
       initializeApp(appId);
-      setAuthToken(getAuthToken());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appId]); // Only depend on appId
@@ -390,13 +387,12 @@ export default function WorkspaceContent({
             {/* Left panel */}
             <Chat
               sessionId={currentSessionId || ""}
-              authToken={authToken || ""}
               onResponseComplete={() => {}}
               onSessionError={() => {}}
             />
 
             {/* Right panel */}
-            <Preview authToken={authToken || ""} />
+            <Preview />
           </div>
 
           {/* Mobile/Tablet view - tabbed interface */}
@@ -428,7 +424,6 @@ export default function WorkspaceContent({
                 <div className="flex-1">
                   <Chat
                     sessionId={currentSessionId || ""}
-                    authToken={authToken || ""}
                     onResponseComplete={() => {}}
                     onSessionError={() => {}}
                   />
@@ -440,7 +435,7 @@ export default function WorkspaceContent({
                 className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col"
               >
                 <div className="flex-1">
-                  <Preview authToken={authToken || ""} />
+                  <Preview />
                 </div>
               </TabsContent>
             </Tabs>

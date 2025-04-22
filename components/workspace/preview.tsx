@@ -1,18 +1,26 @@
 "use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RefreshCw, ExternalLink, Smartphone, QrCode } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/context/session-context";
 import { QRCodeDisplay } from "@/components/qr-code";
 import MobileMockup from "@/components/mobile-mockup";
+import { useApp } from "@/context/AppContext";
 
-export function Preview({ authToken }: { authToken: string }) {
+export function Preview() {
   const [viewMode, setViewMode] = useState<"mobile" | "qr">("mobile");
-  const { appId, appName, appUrl, apiUrl } = useSession();
-  const [iframeKey, setIframeKey] = useState<string | null>(null);
+  const { appId, appUrl } = useSession();
+  const { authToken } = useApp();
+  // Initialize with a random key instead of null
+  const [iframeKey, setIframeKey] = useState<string>(
+    Math.random().toString(36).substring(2, 15)
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    handleRefresh();
+  }, [appUrl]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);

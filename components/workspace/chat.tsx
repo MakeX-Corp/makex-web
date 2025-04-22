@@ -16,23 +16,22 @@ import {
 } from "@/lib/chat-service";
 import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
 import { updateSessionTitle } from "@/utils/session/session-utils";
-
+import { useApp } from "@/context/AppContext";
 interface ChatProps {
   sessionId: string;
-  authToken: string;
   onResponseComplete?: () => void;
   onSessionError?: (error: string) => void;
 }
 
 export function Chat({
   sessionId,
-  authToken,
   onResponseComplete,
   onSessionError,
 }: ChatProps) {
   // Get app context from the SessionContext
   const { appId, apiUrl, supabaseProject, sessionName, setSessionName } =
     useSession();
+  const { authToken } = useApp();
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
@@ -89,7 +88,11 @@ export function Chat({
       setIsLoading(true);
 
       try {
-        const messages = await fetchChatMessages(sessionId, appId, authToken);
+        const messages = await fetchChatMessages(
+          sessionId,
+          appId,
+          authToken || ""
+        );
         setInitialMessages(messages);
       } catch (error) {
         console.error("Error fetching messages:", error);
@@ -132,7 +135,7 @@ export function Chat({
           apiUrl,
           options,
           message,
-          authToken
+          authToken || ""
         );
         // If this is the first AI response and title hasn't been updated yet
         if (
@@ -147,7 +150,7 @@ export function Chat({
             userMessage,
             aiResponse,
             sessionId,
-            authToken
+            authToken || ""
           );
           if (newTitle) {
             setSessionName(newTitle);
@@ -270,7 +273,6 @@ export function Chat({
         // Important: Clear the image state right away
         resetImages();
       } else {
-        console.log("messageContent");
         // Regular text submission
         handleSubmit(e);
       }
@@ -287,6 +289,13 @@ export function Chat({
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
   }, [messages, isWaitingForResponse]);
+
+  // Focus the input field when the chat component loads
+  useEffect(() => {
+    if (!isLoading && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isLoading]);
 
   // Render message part based on type
   const renderMessagePart = (part: any) => {
@@ -316,7 +325,7 @@ export function Chat({
   const handleRestore = async (messageId: string) => {
     try {
       setRestoringMessageId(messageId);
-      await restoreCheckpoint(messageId, apiUrl, sessionId, authToken);
+      await restoreCheckpoint(messageId, apiUrl, sessionId, authToken || "");
     } catch (error) {
       console.error("Error restoring checkpoint:", error);
     } finally {
@@ -334,9 +343,9 @@ export function Chat({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Drag overlay indicator */}
+      {/* Drag overlay indicator with improved visibility */}
       {isDragging && (
-        <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm z-20 flex items-center justify-center border-2 border-dashed border-primary rounded-lg">
+        <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm z-20 flex items-center justify-center border-4 border-dashed border-primary rounded-lg pointer-events-none">
           <div className="text-center p-6 bg-background rounded-lg shadow-lg">
             <ImageIcon className="h-12 w-12 text-primary mx-auto mb-4" />
             <p className="text-lg font-medium">Drop your images here</p>

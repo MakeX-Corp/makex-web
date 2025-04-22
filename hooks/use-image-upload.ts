@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, ChangeEvent, useRef, DragEvent } from "react";
+import { useState, ChangeEvent, useRef, DragEvent, useEffect } from "react";
 
 export function useImageUpload() {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const dragCounter = useRef(0);
 
   // Resize and optimize image while preserving transparency
   const optimizeImage = (file: File): Promise<string> => {
@@ -59,6 +60,28 @@ export function useImageUpload() {
     });
   };
 
+  // Convert clipboard items to files
+  const handleClipboardItems = async (items: DataTransferItemList) => {
+    let hasProcessedImage = false;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      // Handle image items
+      if (item.type.startsWith("image/")) {
+        const blob = item.getAsFile();
+        if (blob) {
+          const filesArray = [blob];
+          await processFiles(filesArray);
+          hasProcessedImage = true;
+        }
+      }
+    }
+
+    // If we processed an image, prevent default paste behavior
+    return hasProcessedImage;
+  };
+
   // Process multiple files with optimization
   const processFiles = async (files: File[]) => {
     // Filter to only include images
@@ -103,37 +126,91 @@ export function useImageUpload() {
     }
   };
 
-  // Drag events handlers
+  // Improved drag events handlers with counter
   const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(true);
+
+    dragCounter.current += 1;
+    if (dragCounter.current === 1) {
+      setIsDragging(true);
+    }
   };
 
   const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
+
+    dragCounter.current -= 1;
+    if (dragCounter.current === 0) {
+      setIsDragging(false);
+    }
   };
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isDragging) {
-      setIsDragging(true);
-    }
+    e.dataTransfer.dropEffect = "copy"; // Shows the user a copy cursor
   };
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+
     setIsDragging(false);
+    dragCounter.current = 0;
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const filesArray = Array.from(e.dataTransfer.files);
       processFiles(filesArray);
     }
   };
+
+  // Clipboard paste handler
+  const handlePaste = async (e: ClipboardEvent) => {
+    let hasImage = false;
+
+    if (e.clipboardData) {
+      // Check if there are any image items in the clipboard
+      if (e.clipboardData.items && e.clipboardData.items.length > 0) {
+        for (let i = 0; i < e.clipboardData.items.length; i++) {
+          if (e.clipboardData.items[i].type.startsWith("image/")) {
+            hasImage = true;
+            break;
+          }
+        }
+      }
+
+      // If there's an image in the clipboard, prevent default behavior immediately
+      // This will stop any text from being pasted alongside the image
+      if (hasImage) {
+        e.preventDefault();
+
+        // Handle clipboard files if any
+        if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+          const filesArray = Array.from(e.clipboardData.files);
+          await processFiles(filesArray);
+          return;
+        }
+
+        // Handle clipboard items (for Chrome, Edge, Safari)
+        if (e.clipboardData.items && e.clipboardData.items.length > 0) {
+          await handleClipboardItems(e.clipboardData.items);
+          return;
+        }
+      }
+    }
+  };
+
+  // Set up paste event listener
+  useEffect(() => {
+    const pasteHandler = (e: ClipboardEvent) => handlePaste(e);
+    document.addEventListener("paste", pasteHandler);
+
+    return () => {
+      document.removeEventListener("paste", pasteHandler);
+    };
+  }, []);
 
   return {
     selectedImages,
