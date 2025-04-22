@@ -104,6 +104,7 @@ export function Chat({
   }, [sessionId, appId, authToken, onSessionError]);
 
   const { messages, input, handleInputChange, handleSubmit, error } = useChat({
+    id: sessionId,
     api: `/api/chat/`,
     initialMessages: isLoading
       ? []

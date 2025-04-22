@@ -175,10 +175,11 @@ export default function WorkspaceContent({
     return <SessionsError sessionsError={sessionsError} />;
   }
 
+  /*
   // If sessions are still loading, show a loading state
   if (loadingSessions) {
     return <LoadingSessions />;
-  }
+  }*/
 
   return (
     <div className="flex flex-col h-screen dark:bg-gray-950">
@@ -381,85 +382,70 @@ export default function WorkspaceContent({
           </div>
         )}
 
-        {/* Show loading state while loading a session */}
-        {loadingCurrentSession && !currentSessionError && (
-          <div className="flex-1 p-4 overflow-auto">
-            <div className="space-y-4">
-              <Skeleton className="h-8 w-full max-w-md" />
-              <Skeleton className="h-4 w-full max-w-xs" />
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <Skeleton className="h-64" />
-                <Skeleton className="h-64 hidden lg:block" />
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Show session content when a session is loaded */}
-        {currentSession && !currentSessionError && !loadingCurrentSession && (
-          <div className="p-2 sm:p-4 overflow-auto h-full">
-            {/* Desktop view - side by side */}
-            <div className="hidden lg:grid grid-cols-2 gap-4 h-full">
-              {/* Left panel */}
-              <Chat
-                sessionId={currentSessionId || ""}
-                authToken={authToken || ""}
-                onResponseComplete={() => {}}
-                onSessionError={() => {}}
-              />
 
-              {/* Right panel */}
-              <Preview authToken={authToken || ""} />
-            </div>
+        <div className="p-2 sm:p-4 overflow-auto h-full">
+          {/* Desktop view - side by side */}
+          <div className="hidden lg:grid grid-cols-2 gap-4 h-full">
+            {/* Left panel */}
+            <Chat
+              sessionId={currentSessionId || ""}
+              authToken={authToken || ""}
+              onResponseComplete={() => {}}
+              onSessionError={() => {}}
+            />
 
-            {/* Mobile/Tablet view - tabbed interface */}
-            <div className="lg:hidden h-full">
-              <Tabs
-                defaultValue="chat"
-                value={activeView}
-                onValueChange={(v) => setActiveView(v as "chat" | "preview")}
-                className="h-full flex flex-col"
-              >
-                <TabsList className="grid grid-cols-2 mb-2">
-                  <TabsTrigger value="chat" className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Chat
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="preview"
-                    className="flex items-center gap-2"
-                  >
-                    <Smartphone className="h-4 w-4" />
-                    Preview
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent
-                  value="chat"
-                  className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col"
-                >
-                  <div className="flex-1">
-                    <Chat
-                      sessionId={currentSessionId || ""}
-                      authToken={authToken || ""}
-                      onResponseComplete={() => {}}
-                      onSessionError={() => {}}
-                    />
-                  </div>
-                </TabsContent>
-
-                <TabsContent
-                  value="preview"
-                  className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col"
-                >
-                  <div className="flex-1">
-                    <Preview authToken={authToken || ""} />
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
+            {/* Right panel */}
+            <Preview authToken={authToken || ""} />
           </div>
-        )}
+
+          {/* Mobile/Tablet view - tabbed interface */}
+          <div className="lg:hidden h-full">
+            <Tabs
+              defaultValue="chat"
+              value={activeView}
+              onValueChange={(v) => setActiveView(v as "chat" | "preview")}
+              className="h-full flex flex-col"
+            >
+              <TabsList className="grid grid-cols-2 mb-2">
+                <TabsTrigger value="chat" className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Chat
+                </TabsTrigger>
+                <TabsTrigger
+                  value="preview"
+                  className="flex items-center gap-2"
+                >
+                  <Smartphone className="h-4 w-4" />
+                  Preview
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent
+                value="chat"
+                className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col"
+              >
+                <div className="flex-1">
+                  <Chat
+                    sessionId={currentSessionId || ""}
+                    authToken={authToken || ""}
+                    onResponseComplete={() => {}}
+                    onSessionError={() => {}}
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent
+                value="preview"
+                className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col"
+              >
+                <div className="flex-1">
+                  <Preview authToken={authToken || ""} />
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </main>
     </div>
   );
