@@ -156,7 +156,6 @@ interface ChatProps {
   authToken: string;
   onResponseComplete?: () => void;
   onSessionError?: (error: string) => void;
-  fetchSessions?: () => void;
 }
 
 export function Chat({
@@ -164,7 +163,6 @@ export function Chat({
   authToken,
   onResponseComplete,
   onSessionError,
-  fetchSessions,
 }: ChatProps) {
   // Get app context from the SessionContext
   const { appId, apiUrl, supabaseProject } = useSession();

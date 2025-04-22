@@ -122,13 +122,13 @@ export function AppSidebar() {
       external: true,
     },
     {
-      href: "/workspace/settings",
+      href: "/dashboard/settings",
       label: "Settings",
       icon: Settings,
       external: false,
     },
     {
-      href: "/workspace/pricing",
+      href: "/dashboard/pricing",
       label: "Upgrade Plan",
       icon: CreditCard,
       external: false,
@@ -148,7 +148,7 @@ export function AppSidebar() {
           {expanded && (
             <div className="flex items-center gap-2">
               <Link
-                href="/workspace"
+                href="/dashboard"
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               >
                 <div className="relative w-6 h-6 flex-shrink-0">
@@ -209,7 +209,7 @@ export function AppSidebar() {
                   filteredApps.map((app) => (
                     <div key={app.id} className="group relative">
                       <Link
-                        href={`/workspace/${app.id}`}
+                        href={`/dashboard/${app.id}`}
                         className={cn(
                           "flex items-center py-1.5 px-2 text-sm rounded-md transition-colors font-medium w-full pr-8",
                           pathname.includes(`/dashboard/app/${app.id}`)

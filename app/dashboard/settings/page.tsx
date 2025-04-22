@@ -13,7 +13,14 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, User, CreditCard, LogOut, Moon, Globe } from "lucide-react";
+import {
+  Loader2,
+  User,
+  CreditCard,
+  LogOut,
+  Globe,
+  ChevronRight,
+} from "lucide-react";
 import { getAuthToken } from "@/utils/client/auth";
 import { useApp } from "@/context/AppContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -31,7 +38,6 @@ export default function ProfileSettings() {
 
   const [isManagingSubscription, setIsManagingSubscription] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [activeTab, setActiveTab] = useState("account");
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -51,7 +57,7 @@ export default function ProfileSettings() {
 
       // If we don't have a customer ID, redirect to pricing
       if (!customerId || planName === "Free") {
-        router.push("/pricing");
+        router.push("/dashboard/pricing");
         return;
       }
 
@@ -78,11 +84,11 @@ export default function ProfileSettings() {
       if (data.url) {
         window.open(data.url, "_blank");
       } else {
-        router.push("/pricing");
+        router.push("/dashboard/pricing");
       }
     } catch (error) {
       console.error("Error managing subscription:", error);
-      router.push("/pricing");
+      router.push("/dashboard/pricing");
     } finally {
       setIsManagingSubscription(false);
     }
@@ -98,210 +104,217 @@ export default function ProfileSettings() {
 
   if (subscriptionLoading) {
     return (
-      <div className="w-full max-w-4xl px-4">
-        <Card className="w-full">
-          <CardHeader>
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-4 w-64" />
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-4 w-48" />
-            </div>
-            <Separator />
-            <div className="space-y-4">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-            <Separator />
-            <div className="space-y-4">
-              <Skeleton className="h-4 w-20" />
-              <div className="flex justify-center">
-                <Skeleton className="h-10 w-[200px]" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="w-full max-w-3xl mx-auto px-4 py-8">
+        <Skeleton className="h-10 w-48 mb-8" />
+        <div className="space-y-6">
+          <Skeleton className="h-52 w-full rounded-lg" />
+          <Skeleton className="h-64 w-full rounded-lg" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-6xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-2">
-        <h1 className="text-2xl font-bold ml-4">Settings</h1>
+    <div className="w-full max-w-3xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-bold">Settings</h1>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="hover:text-destructive hover:bg-destructive/10"
+          onClick={handleSignOut}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign out
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Sidebar with avatar and tabs */}
-        <div className="md:col-span-3">
-          <Card>
-            <CardContent className="py-6">
-              <div className="flex flex-col items-center space-y-4 mb-6">
-                <Avatar className="h-20 w-20">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="text-center">
-                  <p className="font-medium">{email}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {planName} Plan
-                    {pendingCancellation && " (Cancelling)"}
-                  </p>
+      {/* Profile Card */}
+      <Card className="mb-6 overflow-hidden border-none shadow-sm bg-gradient-to-br from-background to-muted">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16 border-2 border-background shadow-sm">
+              <AvatarFallback className="bg-primary text-primary-foreground text-xl font-medium">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h2 className="text-xl font-semibold mb-1">{email}</h2>
+              <div className="flex items-center">
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    planName === "Free"
+                      ? "bg-muted text-muted-foreground"
+                      : pendingCancellation
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
+                      : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  {planName} Plan
+                  {pendingCancellation && " (Cancelling)"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Account Information Section */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Account Information</h2>
+        </div>
+
+        <Card>
+          <CardContent className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Email Address */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Email Address
+                </label>
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
+                  <p className="text-sm font-medium">{email}</p>
                 </div>
               </div>
 
+              {/* Language Settings */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Language & Region
+                </label>
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">English (US)</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                  ></Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Subscription Section */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Subscription & Billing</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/dashboard/pricing")}
+          >
+            {planName === "Free" ? "Upgrade" : "Change Plan"}
+          </Button>
+        </div>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start mb-6">
               <div className="space-y-1">
-                <Button
-                  variant={activeTab === "account" ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  size="sm"
-                  onClick={() => setActiveTab("account")}
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  Account
-                </Button>
-                <Button
-                  variant={activeTab === "billing" ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  size="sm"
-                  onClick={() => setActiveTab("billing")}
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Billing
-                </Button>
+                <h3 className="font-medium">{planName} Plan</h3>
+                <p className="text-sm text-muted-foreground">
+                  {pendingCancellation
+                    ? "Your subscription will be cancelled at the end of the current billing period."
+                    : planName === "Free"
+                    ? "Upgrade to access premium features."
+                    : "Access to all premium features."}
+                </p>
               </div>
+              <div className="text-right">
+                <p className="font-medium">
+                  {planName === "Free"
+                    ? "Free"
+                    : planName === "Starter"
+                    ? "$10/month"
+                    : "$20/month"}
+                </p>
+              </div>
+            </div>
 
-              <Separator className="my-6" />
-
-              <Button
-                variant="outline"
-                className="w-full justify-center"
-                size="sm"
-                onClick={handleSignOut}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main content area */}
-        <div className="md:col-span-9">
-          {/* Account Tab */}
-          {activeTab === "account" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Information</CardTitle>
-                <CardDescription>
-                  Manage your account details and preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium">Email Address</h3>
-                  <p className="text-sm text-muted-foreground">{email}</p>
-                  <p className="text-xs text-muted-foreground">
-                    This is the email address associated with your account.
-                  </p>
+            {/* Subscription Features */}
+            {planName !== "Free" && (
+              <div className="mb-6">
+                <div className="bg-muted/50 rounded-md p-4">
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-2 text-sm">
+                      <svg
+                        className="h-5 w-5 text-primary"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      Unlimited projects
+                    </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <svg
+                        className="h-5 w-5 text-primary"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      Priority support
+                    </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <svg
+                        className="h-5 w-5 text-primary"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      Advanced integrations
+                    </li>
+                  </ul>
                 </div>
+              </div>
+            )}
 
-                <Separator />
-
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Account Type</h3>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">{planName} Plan</p>
-                      <p className="text-xs text-muted-foreground">
-                        {pendingCancellation
-                          ? "Your subscription will be cancelled at the end of the current billing period."
-                          : planName === "Free"
-                          ? "Upgrade to access premium features."
-                          : "Access to all premium features."}
-                      </p>
-                    </div>
-                    <Button
-                      variant={planName === "Free" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => router.push("/pricing")}
-                    >
-                      {planName === "Free" ? "Upgrade" : "Change Plan"}
-                    </Button>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Language and Region</h3>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">English (US)</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Billing Tab */}
-          {activeTab === "billing" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Subscription & Billing</CardTitle>
-                <CardDescription>
-                  Manage your subscription and payment details
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Current Plan</h3>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <div className="flex justify-between items-center mb-2">
-                      <div>
-                        <p className="font-medium">{planName} Plan</p>
-                        <p className="text-sm text-muted-foreground">
-                          {pendingCancellation && "Cancelling at period end"}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">
-                          {planName === "Free"
-                            ? "Free"
-                            : planName === "Starter"
-                            ? "$10/month"
-                            : "$20/month"}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      className="w-full mt-2"
-                      onClick={handleManageSubscription}
-                      disabled={isManagingSubscription}
-                    >
-                      {isManagingSubscription ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        "Manage Subscription"
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+            <Button
+              variant={planName === "Free" ? "default" : "outline"}
+              className="w-full"
+              onClick={handleManageSubscription}
+              disabled={isManagingSubscription}
+            >
+              {isManagingSubscription ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : planName === "Free" ? (
+                "Upgrade Now"
+              ) : (
+                "Manage Subscription"
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
-  Zap,
   ArrowRight,
   Code,
   Database,
@@ -13,7 +12,6 @@ import {
   ShoppingCart,
   MessageSquare,
   Calendar,
-  Lightbulb,
   Music,
   PenTool,
   Book,
@@ -29,6 +27,7 @@ import {
   Briefcase,
   Image as ImageIcon,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 // Expanded app suggestion chips for multiple rows
@@ -78,11 +77,12 @@ export default function DashboardPage() {
   const router = useRouter();
   const { createApp } = useApp();
   const [isCreating, setIsCreating] = useState(false);
-
+  const [prompt, setPrompt] = useState("");
   // Create refs with explicit typing
   const row1Ref = useRef<HTMLDivElement>(null);
   const row2Ref = useRef<HTMLDivElement>(null);
   const row3Ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Animation for moving suggestion pills
   useEffect(() => {
@@ -131,9 +131,9 @@ export default function DashboardPage() {
     };
 
     // Start animations for each row with different speeds and directions
-    animateRow(row1Ref, "left", 0.5);
-    animateRow(row2Ref, "right", 0.3);
-    animateRow(row3Ref, "left", 0.4);
+    animateRow(row1Ref, "left", 0.3);
+    animateRow(row2Ref, "right", 0.2);
+    animateRow(row3Ref, "left", 0.3);
 
     // Cleanup
     return () => {
@@ -142,9 +142,13 @@ export default function DashboardPage() {
   }, []);
 
   const handleCreateApp = async () => {
+    if (!prompt.trim()) {
+      alert("Please enter a prompt");
+      return;
+    }
     setIsCreating(true);
     try {
-      const redirectUrl = await createApp();
+      const redirectUrl = await createApp(prompt);
       router.push(redirectUrl);
     } catch (error) {
       console.error("Error creating app:", error);
@@ -153,7 +157,9 @@ export default function DashboardPage() {
     }
   };
 
-  const handleSuggestionClick = (suggestion: string) => {};
+  const handleSuggestionClick = (suggestion: string) => {
+    setPrompt(suggestion);
+  };
 
   // Function to duplicate items for continuous scrolling effect
   const duplicateItemsForScrolling = (items: typeof APP_SUGGESTIONS) => {
@@ -244,46 +250,34 @@ export default function DashboardPage() {
         </div>
 
         {/* Main prompt input */}
-        <div className="flex flex-col items-center space-y-6 mb-8">
-          <div className="w-full max-w-md text-center space-y-2">
-            <h2 className="text-xl font-medium">
-              Ready to build something amazing?
-            </h2>
-            <p className="text-muted-foreground">
-              Create a new app and start building with AI
-            </p>
-          </div>
+        <div className="mb-8">
+          <div className="relative bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl shadow-lg overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+            <textarea
+              ref={inputRef}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe your app idea in detail..."
+              className="w-full px-6 pt-5 pb-16 resize-none focus:outline-none text-base bg-transparent transition-colors"
+              rows={3}
+              style={{ minHeight: "120px" }}
+            />
 
-          <Button
-            onClick={handleCreateApp}
-            size="lg"
-            className="h-14 px-8 font-medium rounded-full shadow-md hover:shadow-lg transition-all transform hover:scale-105"
-          >
-            <Zap className="mr-2 h-5 w-5" />
-            Create New App
-          </Button>
-        </div>
+            {/* Button area with clean design */}
+            <div className="absolute bottom-0 left-0 right-0 py-3 px-4 bg-gray-50 dark:bg-gray-800/50 border-t dark:border-gray-800 flex items-center justify-end">
+              <div className="flex items-center mr-2">
+                <Sparkles className="h-5 w-5 text-gray-400" />
+              </div>
 
-        {/* Example prompts */}
-        <div className="flex flex-col items-center w-full max-w-2xl mx-auto">
-          <div className="flex items-center gap-2 mb-4">
-            <Lightbulb size={18} className="text-yellow-500" />
-            <span className="text-sm font-medium text-center">
-              Popular apps our users are building
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 w-full gap-2">
-            {EXAMPLE_PROMPTS.map((examplePrompt, index) => (
-              <button
-                key={index}
-                className="w-full px-4 py-3 border bg-card hover:bg-accent/50 transition-colors"
+              <Button
+                onClick={handleCreateApp}
+                disabled={!prompt.trim()}
+                variant="default"
+                className="font-medium rounded-md flex items-center disabled:opacity-50"
               >
-                <span className="text-sm text-center block w-full">
-                  {examplePrompt}
-                </span>
-              </button>
-            ))}
+                Create App
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

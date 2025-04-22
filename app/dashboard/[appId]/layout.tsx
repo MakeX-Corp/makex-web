@@ -2,8 +2,8 @@
 
 import { ReactNode } from "react";
 
-// This layout will be shared by all pages under /workspace/[appId]
-export default function WorkspaceLayout({
+// This layout will be shared by all pages under /dashboard/[appId]
+export default function DashboardLayout({
   children,
   params,
 }: {

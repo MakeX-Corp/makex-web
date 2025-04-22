@@ -4,40 +4,6 @@ import { Sandbox } from "@e2b/code-interpreter";
 import { generateAppName } from "@/utils/server/app-name-generator";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 
-/*
-
-// ────────────────────────────────────────────────────────────────────────────────
-// POST /api/app – allocate a container to the authenticated user
-// ────────────────────────────────────────────────────────────────────────────────
-export async function POST(request: Request) {
-  // Authenticate
-  const result = await getSupabaseWithUser(request);
-  if (result instanceof NextResponse) return result;
-  const { supabase, user } = result;
-  
-
-  const appName = generateAppName()
-
-  // Insert into Supabase user_apps table
-  const { data: insertedApp, error: insertError } = await supabase
-    .from("user_apps")
-    .insert({
-      user_id: user.id,
-      app_name: appName,
-      app_url: `https://${appName}.makex.app`,
-      api_url: `https://api-${appName}.makex.app`,
-    })
-    .select()
-    .single();
-
-  if (insertError) {
-    console.error('Supabase insert error:', insertError);
-    return NextResponse.json({ error: "Failed to save app data" }, { status: 500 });
-  }
-
-  return NextResponse.json(insertedApp);
-}*/
-
 export async function POST(request: Request) {
   // Authenticate
   const result = await getSupabaseWithUser(request);
@@ -96,7 +62,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ...insertedApp,
       sessionId: session.id,
-      redirectUrl: `/workspace/${insertedApp.id}?sessionId=${session.id}`,
+      redirectUrl: `/dashboard/${insertedApp.id}?sessionId=${session.id}`,
     });
   } catch (error) {
     console.error("Error in app creation:", error);
