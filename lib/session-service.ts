@@ -32,7 +32,7 @@ function isApiError(data: any): data is ApiError {
 // Get session list for an app
 export async function getSessionsForApp(
   appId: string
-): Promise<{ sessions: SessionListItem[]; appName: string }> {
+): Promise<{ sessions: SessionListItem[] }> {
   try {
     console.log(`[SESSION SERVICE] Fetching session list for app ${appId}`);
     const decodedToken = getAuthToken();
@@ -60,11 +60,9 @@ export async function getSessionsForApp(
       );
     }
 
-    // Extract app name from the response
-    const appName = data.appName || "";
-
+    console.log(`[SESSION SERVICE] Received sessions for app ${appId}:`, data);
     // Map to our SessionListItem format
-    const sessions = data.sessions.map((session: any) => ({
+    const sessions = data.map((session: any) => ({
       id: session.id,
       title: session.title || `New Chat`, // Use title or fallback
       app_id: session.app_id,
@@ -72,11 +70,11 @@ export async function getSessionsForApp(
       last_activity: session.updated_at,
     }));
 
-    return { sessions, appName };
+    return { sessions };
   } catch (error) {
     console.error("[SESSION SERVICE] Error fetching sessions:", error);
     // You might want to show a toast notification here
-    return { sessions: [], appName: "" };
+    return { sessions: [] };
   }
 }
 
@@ -302,7 +300,7 @@ export async function getAppInfo(appId: string): Promise<{
     return {
       data: {
         id: data.id,
-        name: data.app_name,
+        app_name: data.app_name,
         api_url: data.api_url,
         app_url: data.app_url,
         supabase_project: data.supabase_project,

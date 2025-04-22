@@ -15,8 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { useEffect, useRef, useState } from "react";
-import { formatDistanceToNow } from "date-fns";
+import { useRef, useState } from "react";
 import { useSession } from "@/context/session-context";
 import { Button } from "../ui/button";
 
@@ -229,14 +228,6 @@ export function SessionSelector() {
                           <div className="flex flex-col truncate mr-2">
                             <span className="font-medium truncate">
                               {session.title || "Untitled Session"}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(
-                                new Date(session.created_at),
-                                {
-                                  addSuffix: true,
-                                }
-                              )}
                             </span>
                           </div>
                           <div className="flex items-center gap-1">

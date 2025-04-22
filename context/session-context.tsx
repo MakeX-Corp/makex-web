@@ -19,6 +19,7 @@ interface SessionContextType {
   appUrl: string;
   apiUrl: string;
   supabaseProject: any;
+  setSupabaseProject: (project: any) => void;
   isAppReady: boolean;
 
   // Session lists
@@ -92,6 +93,7 @@ export function SessionProvider({
       // Set the configuration values from database
       setApiUrl(data.api_url || "");
       setAppUrl(data.app_url || "");
+      setAppName(data.app_name || `App ${newAppId}`);
       setSupabaseProject(data.supabase_project);
 
       // Now load the sessions for this app
@@ -115,15 +117,13 @@ export function SessionProvider({
       setLoadingSessions(true);
       setSessionsError(null);
 
-      const { sessions: sessionsList, appName: fetchedAppName } =
-        await getSessionsForApp(newAppId);
+      const { sessions: sessionsList } = await getSessionsForApp(newAppId);
 
       console.log(
         `Received ${sessionsList.length} sessions for app ${newAppId}:`,
         sessionsList
       );
       setSessions(sessionsList);
-      setAppName(fetchedAppName || `App ${newAppId}`);
 
       // Only select first session if we don't have a current session
       if (sessionsList.length > 0 && !currentSessionId) {
@@ -293,6 +293,7 @@ export function SessionProvider({
     appUrl,
     apiUrl,
     supabaseProject,
+    setSupabaseProject,
     isAppReady,
     sessions,
     loadingSessions,

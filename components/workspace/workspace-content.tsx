@@ -40,7 +40,10 @@ export default function WorkspaceContent({
   const {
     appId,
     appName,
+    apiUrl,
     sessions,
+    supabaseProject,
+    setSupabaseProject,
     loadingSessions,
     sessionsError,
     currentSession,
@@ -54,9 +57,8 @@ export default function WorkspaceContent({
 
   // State for the UI elements
   const [activeView, setActiveView] = useState<"chat" | "preview">("chat");
-  const [supabaseProject, setSupabaseProject] = useState<string | null>(null);
-  const [isResetingApp, setIsResetingApp] = useState(false);
-  const [isExportingCode, setIsExportingCode] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Load sessions when component mounts or appId changes
   useEffect(() => {
@@ -95,6 +97,70 @@ export default function WorkspaceContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appId, initialSessionId, loadingSessions, sessions.length]);
 
+  const exportCode = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch("/api/code/export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          apiUrl: apiUrl,
+          appId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Export failed");
+      }
+
+      // Convert response to blob
+      const blob = await response.blob();
+
+      // Create a URL for the blob
+      const url = URL.createObjectURL(blob);
+
+      // Create a download link
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "app_export.zip";
+      document.body.appendChild(a);
+      a.click();
+
+      // Clean up
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error exporting app:", error);
+      alert("Failed to export app. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const resetApp = async () => {
+    try {
+      setIsResetting(true);
+      const response = await fetch("/api/code/reset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + authToken,
+        },
+        body: JSON.stringify({
+          appId,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to reset state");
+    } catch (error) {
+      console.error("Error resetting state:", error);
+    } finally {
+      setIsResetting(false);
+    }
+  };
   // If there's an error loading sessions, show an error
   if (sessionsError) {
     return <SessionsError sessionsError={sessionsError} />;
@@ -132,14 +198,12 @@ export default function WorkspaceContent({
             <Button
               variant="outline"
               onClick={() => {
-                setIsResetingApp(true);
-                // Add your reset functionality here
-                setTimeout(() => setIsResetingApp(false), 1000);
+                resetApp();
               }}
-              disabled={isResetingApp}
+              disabled={isResetting}
               className="flex items-center gap-2"
             >
-              {isResetingApp ? (
+              {isResetting ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin" />
                   <span>Resetting...</span>
@@ -155,14 +219,12 @@ export default function WorkspaceContent({
             <Button
               variant="outline"
               onClick={() => {
-                setIsExportingCode(true);
-                // Add your export functionality here
-                setTimeout(() => setIsExportingCode(false), 1000);
+                exportCode();
               }}
               className="flex items-center gap-2"
-              disabled={isExportingCode}
+              disabled={isExporting}
             >
-              {isExportingCode ? (
+              {isExporting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span>Exporting...</span>
@@ -202,9 +264,7 @@ export default function WorkspaceContent({
               <DropdownMenuItem
                 className="cursor-pointer"
                 onClick={() => {
-                  setIsResetingApp(true);
-                  // Add your reset functionality here
-                  setTimeout(() => setIsResetingApp(false), 1000);
+                  resetApp();
                 }}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -213,9 +273,7 @@ export default function WorkspaceContent({
               <DropdownMenuItem
                 className="cursor-pointer"
                 onClick={() => {
-                  setIsExportingCode(true);
-                  // Add your export functionality here
-                  setTimeout(() => setIsExportingCode(false), 1000);
+                  exportCode();
                 }}
               >
                 <Download className="h-4 w-4 mr-2" />
@@ -251,9 +309,7 @@ export default function WorkspaceContent({
                 <DropdownMenuItem
                   className="cursor-pointer"
                   onClick={() => {
-                    setIsResetingApp(true);
-                    // Add your reset functionality here
-                    setTimeout(() => setIsResetingApp(false), 1000);
+                    resetApp();
                   }}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
@@ -262,9 +318,7 @@ export default function WorkspaceContent({
                 <DropdownMenuItem
                   className="cursor-pointer"
                   onClick={() => {
-                    setIsExportingCode(true);
-                    // Add your export functionality here
-                    setTimeout(() => setIsExportingCode(false), 1000);
+                    exportCode();
                   }}
                 >
                   <Download className="h-4 w-4 mr-2" />

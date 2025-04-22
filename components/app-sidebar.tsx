@@ -59,6 +59,7 @@ export function AppSidebar() {
 
   // State for delete confirmation
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingApp, setIsDeletingApp] = useState(false);
   const [appToDelete, setAppToDelete] = useState<null | {
     id: string;
     name: string;
@@ -95,6 +96,7 @@ export function AppSidebar() {
   // Execute the actual deletion
   const handleDeleteApp = async () => {
     if (appToDelete) {
+      setIsDeletingApp(true);
       try {
         await deleteApp(appToDelete.id);
         // No need to update filteredApps as it will be updated via the apps dependency in useEffect
@@ -103,6 +105,8 @@ export function AppSidebar() {
       } catch (error) {
         console.error("Failed to delete app:", error);
         // Handle error (e.g., show toast notification)
+      } finally {
+        setIsDeletingApp(false);
       }
     }
   };
@@ -335,7 +339,9 @@ export function AppSidebar() {
             >
               Cancel
             </Button>
-            <Button onClick={handleDeleteApp}>Delete</Button>
+            <Button onClick={handleDeleteApp} disabled={isDeletingApp}>
+              {isDeletingApp ? "Deleting..." : "Delete"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
