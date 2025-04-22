@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SessionSelector } from "@/components/workspace/session-selector";
 import { SessionsError } from "@/components/workspace/sessions-error";
-import { LoadingSessions } from "@/components/workspace/loading-sessions";
 import { useApp } from "@/context/AppContext";
 interface WorkspaceContentProps {
   initialSessionId: string | null;
@@ -172,14 +171,8 @@ export default function WorkspaceContent({
     return <SessionsError sessionsError={sessionsError} />;
   }
 
-  /*
-  // If sessions are still loading, show a loading state
-  if (loadingSessions) {
-    return <LoadingSessions />;
-  }*/
-
   return (
-    <div className="flex flex-col h-screen dark:bg-gray-950">
+    <div className="flex flex-col h-screen">
       {/* Top navigation bar */}
       <header className="border-b px-3 sm:px-6 py-3 bg-background">
         {/* Desktop view with full button bar - only at larger screen sizes */}

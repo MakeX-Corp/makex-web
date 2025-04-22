@@ -3,17 +3,21 @@ import { useEffect, useState } from "react";
 
 interface MobileMockupProps {
   appId: string;
-  appUrl: string;
+  appUrl: string | null;
   authToken: string;
   iframeKey: any;
 }
 
-export default function MobileMockup({ appId,appUrl,iframeKey,authToken }: MobileMockupProps) {
-
+export default function MobileMockup({
+  appId,
+  appUrl,
+  iframeKey,
+  authToken,
+}: MobileMockupProps) {
   const [isCreatingSandbox, setIsCreatingSandbox] = useState(false);
-  
+
   const handleCreateSandbox = async () => {
-    if (!appId) return; 
+    if (!appId) return;
 
     try {
       setIsCreatingSandbox(true);
@@ -34,7 +38,6 @@ export default function MobileMockup({ appId,appUrl,iframeKey,authToken }: Mobil
 
       const sandboxData = await response.json();
       console.log(sandboxData);
-
     } catch (error) {
       console.error("Error recreating sandbox:", error);
     } finally {
@@ -46,8 +49,6 @@ export default function MobileMockup({ appId,appUrl,iframeKey,authToken }: Mobil
     handleCreateSandbox();
   }, []);
 
-
-  
   return (
     <div className={`flex items-center justify-center`}>
       <div className="relative">
@@ -67,7 +68,7 @@ export default function MobileMockup({ appId,appUrl,iframeKey,authToken }: Mobil
             ) : (
               <iframe
                 key={iframeKey}
-                src={appUrl || ""}
+                src={appUrl || undefined}
                 style={{
                   height: "100%",
                 }}

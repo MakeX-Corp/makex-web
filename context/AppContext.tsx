@@ -9,7 +9,6 @@ import {
   useCallback,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useToast } from "@/components/ui/use-toast";
 import {
   getAuthToken,
   getUserEmailFromToken,
@@ -87,7 +86,6 @@ interface AppContextType {
 
   // Auth token
   authToken: string | null;
-  refreshAuthToken: () => void;
 
   // Loading states
   isLoading: boolean;
@@ -119,7 +117,6 @@ const getAppIdFromPath = (pathname: string): string | null => {
 export function AppProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { toast } = useToast();
 
   // Sidebar state
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -150,36 +147,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     getAuthToken()
   );
 
-  // Function to refresh the auth token
-  const refreshAuthToken = () => {
-    setAuthToken(getAuthToken());
-  };
-
   // Sign out function
   const signOut = async () => {
     try {
       setIsSigningOut(true);
       const supabase = createClientComponentClient();
 
-      console.log("Signing out...");
       const { error } = await supabase.auth.signOut();
 
       if (error) {
         console.error("Error signing out from Supabase:", error);
-        toast({
-          variant: "destructive",
-          title: "Sign Out Error",
-          description: error.message || "Failed to sign out. Please try again.",
-        });
         throw error;
       }
-
-      console.log("Successfully signed out");
-
       // Clear local app state
       setApps([]);
       setSubscription(null);
-
       // Redirect to home/login page
       router.push("/");
     } catch (error) {
@@ -270,14 +252,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setApps(data);
     } catch (error) {
       console.error("Error fetching apps:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An error occurred while fetching apps",
-      });
     } finally {
       setIsLoading(false);
     }
@@ -315,14 +289,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSubscription(data);
     } catch (error) {
       console.error("Error fetching subscription:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An error occurred while fetching subscription data",
-      });
     }
   };
 
@@ -363,7 +329,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     signOut,
     isSigningOut,
     authToken,
-    refreshAuthToken,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

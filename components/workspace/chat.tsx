@@ -42,7 +42,7 @@ export function Chat({
 
   // Refs for the input and form elements
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Use image upload custom hook
@@ -167,16 +167,6 @@ export function Chat({
     },
   });
 
-  // Handle errors
-  useEffect(() => {
-    if (error) {
-      console.error("Chat error:", error);
-      // Reset waiting state if there's an error
-      setIsWaitingForResponse(false);
-    }
-  }, [error]);
-
-  // Improved initial prompt handler - specific to this component
   useEffect(() => {
     if (!isLoading && !initialPromptSent && messages.length === 0) {
       const storedPrompt = localStorage.getItem("makeX_prompt");
@@ -184,20 +174,27 @@ export function Chat({
         // Remove the prompt from storage
         localStorage.removeItem("makeX_prompt");
 
-        // Find the input within THIS component only
-        const inputElement = chatContainerRef.current.querySelector(
-          'input[type="text"], input:not([type])'
-        );
-        if (inputElement) {
-          // Set input value
-          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-            window.HTMLInputElement.prototype,
+        // Find the textarea within THIS component only
+        const textareaElement =
+          chatContainerRef.current.querySelector("textarea");
+
+        if (textareaElement) {
+          // Set textarea value
+          const nativeTextareaValueSetter = Object.getOwnPropertyDescriptor(
+            window.HTMLTextAreaElement.prototype,
             "value"
           )?.set;
 
-          if (nativeInputValueSetter) {
-            nativeInputValueSetter.call(inputElement, storedPrompt);
-            inputElement.dispatchEvent(new Event("input", { bubbles: true }));
+          if (nativeTextareaValueSetter) {
+            nativeTextareaValueSetter.call(textareaElement, storedPrompt);
+            textareaElement.dispatchEvent(
+              new Event("input", { bubbles: true })
+            );
+
+            // Also trigger the auto-resize logic
+            textareaElement.style.height = "auto";
+            const newHeight = Math.min(textareaElement.scrollHeight, 200);
+            textareaElement.style.height = `${newHeight}px`;
 
             // Find form within THIS component
             const formElement = chatContainerRef.current.querySelector("form");
@@ -217,7 +214,6 @@ export function Chat({
       }
     }
   }, [isLoading, messages.length, initialPromptSent]);
-
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -451,14 +447,30 @@ export function Chat({
         )}
 
         <form ref={formRef} onSubmit={handleFormSubmit} className="flex gap-2">
-          <Input
+          <textarea
             ref={inputRef}
-            type="text"
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => {
+              handleInputChange(e);
+
+              // Auto-resize logic
+              e.target.style.height = "auto";
+              const newHeight = Math.min(e.target.scrollHeight, 200); // Max height of 200px
+              e.target.style.height = `${newHeight}px`;
+            }}
+            onKeyDown={(e) => {
+              // Submit on Enter (without Shift key)
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                formRef.current?.dispatchEvent(
+                  new Event("submit", { bubbles: true, cancelable: true })
+                );
+              }
+            }}
             placeholder="Type your message or drop images anywhere..."
-            className="flex-1"
+            className="flex-1 min-h-[38px] max-h-[200px] py-2 px-3 rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
             disabled={isWaitingForResponse || isLoading}
+            rows={1}
           />
 
           {/* File input for images (hidden) */}
