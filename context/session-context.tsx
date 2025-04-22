@@ -33,6 +33,10 @@ interface SessionContextType {
   loadingCurrentSession: boolean;
   currentSessionError: string | null;
 
+  // Session name (added from SessionNameContext)
+  sessionName: string;
+  setSessionName: (name: string) => void;
+
   // Actions
   loadSessions: (appId: string) => Promise<void>;
   switchSession: (sessionId: string) => Promise<void>;
@@ -74,6 +78,9 @@ export function SessionProvider({
   const [currentSessionError, setCurrentSessionError] = useState<string | null>(
     null
   );
+
+  // Session name state (added from SessionNameContext)
+  const [sessionName, setSessionName] = useState<string>("");
 
   // Initialize the app with an appId and fetch its configuration
   const initializeApp = async (newAppId: string) => {
@@ -173,6 +180,8 @@ export function SessionProvider({
       if (sessionData) {
         setCurrentSession(sessionData);
         setCurrentSessionId(sessionId);
+        // Update the session name when switching sessions
+        setSessionName(sessionData.title || "");
       } else {
         setCurrentSessionError(`Session ${sessionId} not found`);
       }
@@ -201,6 +210,8 @@ export function SessionProvider({
         // Switch to the new session
         setCurrentSession(newSession);
         setCurrentSessionId(newSession.id);
+        // Set the session name for the new session
+        setSessionName(newSession.title || "");
 
         // Update URL
         if (typeof window !== "undefined") {
@@ -246,9 +257,10 @@ export function SessionProvider({
           if (remainingSessions.length > 0) {
             await switchSession(remainingSessions[0].id);
           } else {
-            // If no sessions left, create a new one
+            // If no sessions left, clear current session
             setCurrentSession(null);
             setCurrentSessionId(null);
+            setSessionName(""); // Reset session name
           }
         }
 
@@ -288,6 +300,8 @@ export function SessionProvider({
             ...currentSession,
             title: title.trim(),
           });
+          // Update session name when title changes
+          setSessionName(title.trim());
         }
 
         return true;
@@ -316,6 +330,8 @@ export function SessionProvider({
     currentSessionId,
     loadingCurrentSession,
     currentSessionError,
+    sessionName,
+    setSessionName,
     loadSessions,
     switchSession,
     createSession,

@@ -19,14 +19,13 @@ export async function updateSessionTitle(
         content: userMessage + " " + aiResponse,
       }),
     });
+
+    const data = await updateResponse.json();
     if (!updateResponse.ok) {
       throw new Error("Failed to update title");
     }
 
-    // 2. Execute the callback if provided to update UI in parent component
-    if (callback && typeof callback === "function") {
-      callback();
-    }
+    return data.title; // Return the title from the response
   } catch (error) {
     console.error("Error updating session title:", error);
     return null;

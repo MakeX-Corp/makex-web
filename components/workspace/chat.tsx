@@ -15,6 +15,7 @@ import {
   restoreCheckpoint,
 } from "@/lib/chat-service";
 import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
+import { updateSessionTitle } from "@/utils/session/session-utils";
 
 interface ChatProps {
   sessionId: string;
@@ -30,8 +31,8 @@ export function Chat({
   onSessionError,
 }: ChatProps) {
   // Get app context from the SessionContext
-  const { appId, apiUrl, supabaseProject } = useSession();
-
+  const { appId, apiUrl, supabaseProject, sessionName, setSessionName } =
+    useSession();
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
@@ -121,12 +122,9 @@ export function Chat({
       supabaseProject,
     },
     maxSteps: 30,
-    onResponse: async (response) => {
-      console.log("response", response);
-    },
+    onResponse: async (response) => {},
     onFinish: async (message, options) => {
       // Save the AI message
-      console.log("onFinish", message, options);
       try {
         await saveAIMessage(
           sessionId,
@@ -136,6 +134,25 @@ export function Chat({
           message,
           authToken
         );
+        // If this is the first AI response and title hasn't been updated yet
+        if (
+          messages.length === 0 &&
+          message.role === "assistant" &&
+          sessionName === "New Chat"
+        ) {
+          const userMessage = messages[0]?.content || "";
+          // Get the AI response (the current message)
+          const aiResponse = message.content || "";
+          const newTitle = await updateSessionTitle(
+            userMessage,
+            aiResponse,
+            sessionId,
+            authToken
+          );
+          if (newTitle) {
+            setSessionName(newTitle);
+          }
+        }
       } catch (error) {
         console.error("Error saving AI message:", error);
       }

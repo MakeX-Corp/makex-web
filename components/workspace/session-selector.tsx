@@ -15,9 +15,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useSession } from "@/context/session-context";
 import { Button } from "../ui/button";
+//import { useSessionName } from "@/context/session-name-context";
 
 export function SessionSelector() {
   const {
@@ -29,6 +30,8 @@ export function SessionSelector() {
     updateSessionTitle,
     loadingSessions,
     loadingCurrentSession,
+    sessionName,
+    setSessionName,
   } = useSession();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +48,13 @@ export function SessionSelector() {
   const currentSession = sessions.find(
     (session) => session.id === currentSessionId
   );
-  const sessionName = currentSession?.title || "Select Session";
+  useEffect(() => {
+    if (currentSession?.title) {
+      setSessionName(currentSession.title);
+    } else {
+      setSessionName("Select Session");
+    }
+  }, [currentSession, setSessionName]);
 
   // Handle creating a new session
   const handleCreateSession = async () => {
@@ -227,7 +236,9 @@ export function SessionSelector() {
                         >
                           <div className="flex flex-col truncate mr-2">
                             <span className="font-medium truncate">
-                              {session.title || "Untitled Session"}
+                              {session.id === currentSessionId && sessionName
+                                ? sessionName
+                                : session.title || "Untitled Session"}
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
