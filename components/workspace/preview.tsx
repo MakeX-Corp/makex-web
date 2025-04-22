@@ -8,43 +8,6 @@ import { useSession } from "@/context/session-context";
 import { QRCodeDisplay } from "@/components/qr-code";
 import MobileMockup from "@/components/mobile-mockup";
 
-const MobileMockup5 = ({
-  appId,
-  appUrl,
-  iframeKey,
-  authToken,
-}: {
-  appId: string;
-  appUrl: string;
-  iframeKey: string | null;
-  authToken: string;
-}) => (
-  <div className="relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] h-[600px] w-[300px] shadow-xl">
-    <div className="w-[148px] h-[18px] bg-gray-800 top-0 rounded-b-[1rem] left-1/2 -translate-x-1/2 absolute"></div>
-    <div className="h-[46px] w-[3px] bg-gray-800 absolute -left-[17px] top-[124px] rounded-l-lg"></div>
-    <div className="h-[46px] w-[3px] bg-gray-800 absolute -left-[17px] top-[178px] rounded-l-lg"></div>
-    <div className="h-[64px] w-[3px] bg-gray-800 absolute -right-[17px] top-[142px] rounded-r-lg"></div>
-    <div className="rounded-[2rem] overflow-hidden w-full h-full bg-white">
-      {appUrl ? (
-        <iframe
-          key={iframeKey || "default"}
-          src={appUrl}
-          className="w-full h-full border-0"
-          title="Mobile App Preview"
-        ></iframe>
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-          <div className="text-center p-4">
-            <Smartphone className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-sm font-medium">App preview will appear here</p>
-            <p className="text-xs mt-2">Start chatting to build your app</p>
-          </div>
-        </div>
-      )}
-    </div>
-  </div>
-);
-
 export function Preview({ authToken }: { authToken: string }) {
   const [viewMode, setViewMode] = useState<"mobile" | "qr">("mobile");
   const { appId, appName, appUrl, apiUrl } = useSession();

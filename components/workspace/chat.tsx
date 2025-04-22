@@ -257,7 +257,7 @@ export function Chat({
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    const messagesContainer = document.querySelector(".overflow-y-auto");
+    const messagesContainer = document.querySelector(".messages-container");
     if (messagesContainer) {
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
@@ -302,7 +302,7 @@ export function Chat({
 
   return (
     <div
-      className="flex flex-col h-full bg-background relative"
+      className="flex flex-col h-full overflow-hidden border rounded-md"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -318,74 +318,76 @@ export function Chat({
         </div>
       )}
 
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {isLoading ? (
-          <div className="flex justify-center items-center h-full">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        ) : (
-          <>
-            {messages.map((message, index) => (
-              <div
-                key={message.id || `message-${index}`}
-                className={`flex flex-col ${
-                  message.role === "user" ? "items-end" : "items-start"
-                }`}
-              >
-                <Card
-                  className={`max-w-[80%] ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-card-foreground"
+      {/* Messages area - added fixed height with messages-container class */}
+      <div className="flex-1 overflow-hidden">
+        <div className="messages-container h-full overflow-y-auto px-4 py-4 space-y-4">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-full">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : (
+            <>
+              {messages.map((message, index) => (
+                <div
+                  key={message.id || `message-${index}`}
+                  className={`flex flex-col ${
+                    message.role === "user" ? "items-end" : "items-start"
                   }`}
                 >
-                  <CardContent className="p-4">
-                    {/* Display multiple images if they exist */}
-                    {message?.experimental_attachments && (
-                      <div className="mb-3 flex flex-wrap gap-2">
-                        {message.experimental_attachments.map(
-                          (attachment: any, i: number) => (
-                            <img
-                              key={i}
-                              src={attachment.url}
-                              alt={`Uploaded image ${i + 1}`}
-                              className="rounded border border-border shadow-sm"
-                              style={{
-                                cursor: "pointer",
-                                height: "150px",
-                                objectFit: "cover",
-                              }}
-                            />
-                          )
-                        )}
-                      </div>
-                    )}
-                    {message.parts?.length ? (
-                      message.parts.map((part: any, i: number) => (
-                        <div key={i}>{renderMessagePart(part)}</div>
-                      ))
-                    ) : (
-                      <div className="text-sm">{message.content}</div>
-                    )}
-                  </CardContent>
-                </Card>
-                {message.role === "assistant" && (
-                  <button
-                    className="text-[10px] text-muted-foreground hover:text-foreground mt-0.5 flex items-center gap-1"
-                    onClick={() => handleRestore(message.id)}
-                    disabled={restoringMessageId !== null}
+                  <Card
+                    className={`max-w-[80%] ${
+                      message.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card text-card-foreground"
+                    }`}
                   >
-                    {restoringMessageId === message.id && (
-                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                    )}
-                    Restore Checkpoint
-                  </button>
-                )}
-              </div>
-            ))}
-          </>
-        )}
+                    <CardContent className="p-4">
+                      {/* Display multiple images if they exist */}
+                      {message?.experimental_attachments && (
+                        <div className="mb-3 flex flex-wrap gap-2">
+                          {message.experimental_attachments.map(
+                            (attachment: any, i: number) => (
+                              <img
+                                key={i}
+                                src={attachment.url}
+                                alt={`Uploaded image ${i + 1}`}
+                                className="rounded border border-border shadow-sm"
+                                style={{
+                                  cursor: "pointer",
+                                  height: "150px",
+                                  objectFit: "cover",
+                                }}
+                              />
+                            )
+                          )}
+                        </div>
+                      )}
+                      {message.parts?.length ? (
+                        message.parts.map((part: any, i: number) => (
+                          <div key={i}>{renderMessagePart(part)}</div>
+                        ))
+                      ) : (
+                        <div className="text-sm">{message.content}</div>
+                      )}
+                    </CardContent>
+                  </Card>
+                  {message.role === "assistant" && (
+                    <button
+                      className="text-[10px] text-muted-foreground hover:text-foreground mt-0.5 flex items-center gap-1"
+                      onClick={() => handleRestore(message.id)}
+                      disabled={restoringMessageId !== null}
+                    >
+                      {restoringMessageId === message.id && (
+                        <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                      )}
+                      Restore Checkpoint
+                    </button>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
+        </div>
       </div>
 
       {isWaitingForResponse && <ThreeDotsLoader />}
