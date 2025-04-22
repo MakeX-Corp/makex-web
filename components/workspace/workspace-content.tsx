@@ -1,6 +1,4 @@
 "use client";
-
-import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSession } from "@/context/session-context";
 import {
@@ -18,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Preview } from "@/components/workspace/preview";
-import { ChatInput } from "@/components/workspace/chat";
+import { Chat } from "@/components/workspace/chat";
 import { SupabaseConnect } from "@/components/supabase-connect";
 import {
   DropdownMenu,
@@ -29,6 +27,7 @@ import {
 import { SessionSelector } from "@/components/workspace/session-selector";
 import { SessionsError } from "@/components/workspace/sessions-error";
 import { LoadingSessions } from "@/components/workspace/loading-sessions";
+import { getAuthToken } from "@/utils/client/auth";
 interface WorkspaceContentProps {
   initialSessionId: string | null;
 }
@@ -36,7 +35,8 @@ interface WorkspaceContentProps {
 export default function WorkspaceContent({
   initialSessionId,
 }: WorkspaceContentProps) {
-  const router = useRouter();
+  const [authToken, setAuthToken] = useState<string | null>(null);
+
   const {
     appId,
     appName,
@@ -47,7 +47,7 @@ export default function WorkspaceContent({
     currentSessionId,
     loadingCurrentSession,
     currentSessionError,
-    loadSessions,
+    initializeApp,
     switchSession,
     createSession,
   } = useSession();
@@ -61,10 +61,11 @@ export default function WorkspaceContent({
   // Load sessions when component mounts or appId changes
   useEffect(() => {
     if (appId) {
-      loadSessions(appId);
+      initializeApp(appId);
+      setAuthToken(getAuthToken());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appId]); // Only depend on appId, not loadSessions which could cause re-renders
+  }, [appId]); // Only depend on appId
 
   // Switch to initialSessionId if provided, otherwise use first session or create new one
   useEffect(() => {
@@ -337,13 +338,15 @@ export default function WorkspaceContent({
             {/* Desktop view - side by side */}
             <div className="hidden lg:grid grid-cols-2 gap-4 h-full">
               {/* Left panel */}
-              <ChatInput
-                onSendMessage={() => {}}
+              <Chat
                 sessionId={currentSessionId || ""}
+                authToken={authToken || ""}
+                onResponseComplete={() => {}}
+                onSessionError={() => {}}
               />
 
               {/* Right panel */}
-              <Preview />
+              <Preview authToken={authToken || ""} />
             </div>
 
             {/* Mobile/Tablet view - tabbed interface */}
@@ -373,9 +376,11 @@ export default function WorkspaceContent({
                   className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col"
                 >
                   <div className="flex-1">
-                    <ChatInput
-                      onSendMessage={() => {}}
+                    <Chat
                       sessionId={currentSessionId || ""}
+                      authToken={authToken || ""}
+                      onResponseComplete={() => {}}
+                      onSessionError={() => {}}
                     />
                   </div>
                 </TabsContent>
@@ -385,7 +390,7 @@ export default function WorkspaceContent({
                   className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col"
                 >
                   <div className="flex-1">
-                    <Preview />
+                    <Preview authToken={authToken || ""} />
                   </div>
                 </TabsContent>
               </Tabs>

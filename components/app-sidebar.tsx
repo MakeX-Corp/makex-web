@@ -55,6 +55,7 @@ export function AppSidebar() {
   const { subscription, apps, deleteApp } = useApp(); // Assume deleteApp is a function in your AppContext
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredApps, setFilteredApps] = useState(apps);
+  const { theme } = useTheme();
 
   // State for delete confirmation
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -257,7 +258,9 @@ export function AppSidebar() {
           {expanded ? (
             <div className="flex items-center">
               <ThemeToggle />
-              <span className="ml-3 text-sm font-medium">Toggle Theme</span>
+              <span className="ml-3 text-sm font-medium">
+                {theme === "dark" ? "Dark Mode" : "Light Mode"}
+              </span>
             </div>
           ) : (
             <ThemeToggle />

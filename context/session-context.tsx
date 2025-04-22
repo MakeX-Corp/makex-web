@@ -1,27 +1,25 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 import {
   getSessionsForApp,
   createNewSession,
   getSession,
+  getAppInfo,
   deleteSession as deleteSessionApi,
   updateSessionTitle as updateSessionTitleApi,
   SessionListItem,
   SessionData,
 } from "@/lib/session-service";
-import { toast } from "sonner";
 
 interface SessionContextType {
   // App data
   appId: string | null;
   appName: string;
+  appUrl: string;
+  apiUrl: string;
+  supabaseProject: any;
+  isAppReady: boolean;
 
   // Session lists
   sessions: SessionListItem[];
@@ -40,6 +38,7 @@ interface SessionContextType {
   createSession: () => Promise<SessionData | null>;
   deleteSession: (sessionId: string) => Promise<boolean>;
   updateSessionTitle: (sessionId: string, title: string) => Promise<boolean>;
+  initializeApp: (newAppId: string) => Promise<void>;
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
@@ -54,6 +53,10 @@ export function SessionProvider({
   // App data
   const [appId, setAppId] = useState<string | null>(initialAppId);
   const [appName, setAppName] = useState<string>("");
+  const [apiUrl, setApiUrl] = useState<string>("");
+  const [appUrl, setAppUrl] = useState<string>("");
+  const [supabaseProject, setSupabaseProject] = useState<any>(null);
+  const [isAppReady, setIsAppReady] = useState<boolean>(false);
 
   // Session list state
   const [sessions, setSessions] = useState<SessionListItem[]>([]);
@@ -71,6 +74,34 @@ export function SessionProvider({
     null
   );
 
+  // Initialize the app with an appId and fetch its configuration
+  const initializeApp = async (newAppId: string) => {
+    try {
+      setAppId(newAppId);
+      setIsAppReady(false);
+
+      // Use our new getAppInfo function to fetch app details
+      const { data, error } = await getAppInfo(newAppId);
+
+      if (error || !data) {
+        throw new Error(
+          `Failed to fetch app configuration: ${error || "No data returned"}`
+        );
+      }
+
+      // Set the configuration values from database
+      setApiUrl(data.api_url || "");
+      setAppUrl(data.app_url || "");
+      setSupabaseProject(data.supabase_project);
+
+      // Now load the sessions for this app
+      await loadSessions(newAppId);
+    } catch (error) {
+      console.error("Failed to initialize app:", error);
+      setSessionsError("Failed to initialize app");
+      setIsAppReady(false); // Make sure we set this to false if there's an error
+    }
+  };
   // Load sessions for an app
   const loadSessions = async (newAppId: string) => {
     try {
@@ -81,9 +112,6 @@ export function SessionProvider({
         );
         return;
       }
-
-      console.log(`Loading sessions for app ${newAppId} from service`);
-      setAppId(newAppId);
       setLoadingSessions(true);
       setSessionsError(null);
 
@@ -105,7 +133,6 @@ export function SessionProvider({
     } catch (error) {
       console.error("Failed to load sessions:", error);
       setSessionsError("Failed to load sessions");
-      toast.error("Failed to load sessions");
     } finally {
       setLoadingSessions(false);
     }
@@ -134,12 +161,10 @@ export function SessionProvider({
         setCurrentSessionId(sessionId);
       } else {
         setCurrentSessionError(`Session ${sessionId} not found`);
-        toast.error(`Session ${sessionId} not found`);
       }
     } catch (error) {
       console.error("Failed to load session:", error);
       setCurrentSessionError("Failed to load session data");
-      toast.error("Failed to load session data");
     } finally {
       setLoadingCurrentSession(false);
     }
@@ -177,13 +202,11 @@ export function SessionProvider({
         return newSession;
       } else {
         setCurrentSessionError("Failed to create new session");
-        toast.error("Failed to create new session");
         return null;
       }
     } catch (error) {
       console.error("Failed to create session:", error);
       setCurrentSessionError("Error creating new session");
-      toast.error("Error creating new session");
       return null;
     } finally {
       setLoadingCurrentSession(false);
@@ -215,15 +238,12 @@ export function SessionProvider({
           }
         }
 
-        toast.success("Session deleted successfully");
         return true;
       } else {
-        toast.error("Failed to delete session");
         return false;
       }
     } catch (error) {
       console.error("Failed to delete session:", error);
-      toast.error("Error deleting session");
       return false;
     }
   };
@@ -256,15 +276,12 @@ export function SessionProvider({
           });
         }
 
-        toast.success("Session title updated");
         return true;
       } else {
-        toast.error("Failed to update session title");
         return false;
       }
     } catch (error) {
       console.error("Failed to update session title:", error);
-      toast.error("Error updating session title");
       return false;
     }
   };
@@ -273,6 +290,10 @@ export function SessionProvider({
   const value = {
     appId,
     appName,
+    appUrl,
+    apiUrl,
+    supabaseProject,
+    isAppReady,
     sessions,
     loadingSessions,
     sessionsError,
@@ -285,6 +306,7 @@ export function SessionProvider({
     createSession,
     deleteSession,
     updateSessionTitle,
+    initializeApp,
   };
 
   return (

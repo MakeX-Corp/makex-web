@@ -116,7 +116,7 @@ export function SessionSelector() {
   ) => {
     event.stopPropagation();
     if (isDeleting) return;
-
+    if (sessions.length <= 1) return;
     try {
       setIsDeleting(true);
       console.log(`Deleting session: ${sessionId}`);

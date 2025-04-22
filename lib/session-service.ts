@@ -267,6 +267,60 @@ export async function updateSessionTitle(
   }
 }
 
+// Get app information
+export async function getAppInfo(appId: string): Promise<{
+  data: any | null;
+  error: string | null;
+}> {
+  try {
+    console.log(`[SESSION SERVICE] Fetching app info for app ${appId}`);
+    const decodedToken = getAuthToken();
+
+    if (!decodedToken) {
+      return { data: null, error: "No authentication token found" };
+    }
+
+    const response = await fetch(`/api/app?id=${encodeURIComponent(appId)}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${decodedToken}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        data: null,
+        error: isApiError(data)
+          ? data.error
+          : `Failed to fetch app info: ${response.status}`,
+      };
+    }
+
+    return {
+      data: {
+        id: data.id,
+        name: data.app_name,
+        api_url: data.api_url,
+        app_url: data.app_url,
+        supabase_project: data.supabase_project,
+      },
+      error: null,
+    };
+  } catch (error) {
+    console.error("[SESSION SERVICE] Error fetching app info:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unknown error fetching app info",
+    };
+  }
+}
+
 // Update session data
 export async function updateSession(
   sessionId: string,

@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ...insertedApp,
       sessionId: session.id,
-      redirectUrl: `/workspace/${insertedApp.id}/${session.id}`,
+      redirectUrl: `/workspace/${insertedApp.id}?sessionId=${session.id}`,
     });
   } catch (error) {
     console.error("Error in app creation:", error);
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
   }
 }
 
-// GET /api/app - Get all apps for the authenticated user
+// GET /api/app - Get all apps or a specific app by ID for the authenticated user
 export async function GET(request: Request) {
   try {
     const result = await getSupabaseWithUser(request);
@@ -115,20 +115,46 @@ export async function GET(request: Request) {
 
     const { supabase, user } = result;
 
-    const { data: apps, error } = await supabase
-      .from("user_apps")
-      .select("*")
-      .eq("user_id", user.id)
-      .or("status.is.null");
+    // Get the app ID from the URL if provided
+    const { searchParams } = new URL(request.url);
+    const appId = searchParams.get("id");
 
-    if (error) {
-      return NextResponse.json(
-        { error: "Failed to fetch apps" },
-        { status: 500 }
-      );
+    // If an appId is provided, get just that specific app
+    if (appId) {
+      const { data: app, error } = await supabase
+        .from("user_apps")
+        .select("*")
+        .eq("id", appId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (error) {
+        return NextResponse.json(
+          { error: "Failed to fetch app", details: error.message },
+          { status: error.code === "PGRST116" ? 404 : 500 }
+        );
+      }
+
+      return NextResponse.json(app);
     }
 
-    return NextResponse.json(apps);
+    // Otherwise, get all apps for the user
+    else {
+      const { data: apps, error } = await supabase
+        .from("user_apps")
+        .select("*")
+        .eq("user_id", user.id)
+        .or("status.is.null");
+
+      if (error) {
+        return NextResponse.json(
+          { error: "Failed to fetch apps" },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(apps);
+    }
   } catch (error) {
     return NextResponse.json(
       { error: "Internal Server Error" },

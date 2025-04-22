@@ -4,36 +4,11 @@ import { useState } from "react";
 import { RefreshCw, ExternalLink, Smartphone, QrCode } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useSession } from "@/context/session-context";
+import { QRCodeDisplay } from "@/components/qr-code";
+import MobileMockup from "@/components/mobile-mockup";
 
-// These would be implemented in your application
-// Stub implementations for the example
-const QRCodeDisplay = ({ url }: { url: string }) => (
-  <div className="bg-white p-8 rounded-lg border flex flex-col items-center justify-center">
-    <div className="w-48 h-48 bg-gray-100 border-2 flex items-center justify-center relative">
-      {/* Simulated QR code grid */}
-      <div className="absolute inset-4 grid grid-cols-5 grid-rows-5 gap-1">
-        {Array(25)
-          .fill(0)
-          .map((_, i) => (
-            <div
-              key={i}
-              className={`bg-black rounded-sm ${
-                Math.random() > 0.7 ? "opacity-100" : "opacity-0"
-              }`}
-            ></div>
-          ))}
-      </div>
-    </div>
-    <p className="mt-4 text-sm text-center font-medium">
-      Scan to open app on your device
-    </p>
-    <p className="mt-1 text-xs text-center text-muted-foreground break-all max-w-[200px]">
-      {url}
-    </p>
-  </div>
-);
-
-const MobileMockup = ({
+const MobileMockup5 = ({
   appId,
   appUrl,
   iframeKey,
@@ -70,36 +45,9 @@ const MobileMockup = ({
   </div>
 );
 
-interface AppDetails {
-  id: string;
-  user_id: string;
-  app_name: string;
-  app_url: string | null;
-  api_url: string | null;
-  machine_id: string | null;
-  created_at: string;
-  updated_at: string;
-  sandbox_id: string | null;
-  sandbox_status: string | null;
-  supabase_project: any;
-}
-
-export function Preview() {
+export function Preview({ authToken }: { authToken: string }) {
   const [viewMode, setViewMode] = useState<"mobile" | "qr">("mobile");
-  const [app, setApp] = useState<AppDetails>({
-    app_url: "https://example.com",
-    api_url: "https://api.example.com",
-    id: "123",
-    user_id: "123",
-    app_name: "Example App",
-    machine_id: "123",
-    created_at: "2021-01-01",
-    updated_at: "2021-01-01",
-    sandbox_id: "123",
-    sandbox_status: "active",
-    supabase_project: null,
-  });
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const { appId, appName, appUrl, apiUrl } = useSession();
   const [iframeKey, setIframeKey] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -112,8 +60,6 @@ export function Preview() {
       setIsRefreshing(false);
     }, 1000);
   };
-
-  const appId = "123";
 
   return (
     <Card className="h-full border rounded-md">
@@ -145,7 +91,7 @@ export function Preview() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => app.app_url && window.open(app.app_url, "_blank")}
+              onClick={() => appUrl && window.open(appUrl, "_blank")}
               className="h-6 px-2 flex items-center gap-1"
             >
               <ExternalLink className="h-4 w-4" />
@@ -167,15 +113,15 @@ export function Preview() {
           {viewMode === "mobile" ? (
             <div className="h-full w-full flex items-center justify-center">
               <MobileMockup
-                appId={appId}
-                appUrl={app.app_url || ""}
+                appId={appId || ""}
+                appUrl={appUrl || ""}
                 iframeKey={iframeKey}
                 authToken={authToken || ""}
               />
             </div>
           ) : (
             <div className="h-full w-full rounded-lg p-4 overflow-auto flex items-center justify-center">
-              <QRCodeDisplay url={app.app_url || ""} />
+              <QRCodeDisplay url={appUrl || ""} />
             </div>
           )}
         </div>
