@@ -27,7 +27,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function ProfileSettings() {
   const router = useRouter();
-  const { subscription, isLoading: subscriptionLoading } = useApp();
+  const {
+    subscription,
+    isLoading: subscriptionLoading,
+    signOut,
+    isSigningOut,
+  } = useApp();
 
   // Derive values from the subscription data
   const pendingCancellation = subscription?.pendingCancellation || false;
@@ -37,13 +42,9 @@ export default function ProfileSettings() {
   const initials = email ? email.substring(0, 2).toUpperCase() : "US";
 
   const [isManagingSubscription, setIsManagingSubscription] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
-    setIsSigningOut(true);
-    const supabase = createClientComponentClient();
-    await supabase.auth.signOut();
-    router.push("/");
+    await signOut();
   };
 
   const handleManageSubscription = async () => {

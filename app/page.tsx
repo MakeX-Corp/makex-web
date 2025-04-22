@@ -249,9 +249,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Main prompt input */}
+        {/* Main prompt input - Modified to remove background colors */}
         <div className="mb-8">
-          <div className="relative bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-xl shadow-lg overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+          <div className="relative border rounded-xl shadow-lg overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
             <textarea
               ref={inputRef}
               value={prompt}
@@ -263,7 +263,7 @@ export default function DashboardPage() {
             />
 
             {/* Button area with clean design */}
-            <div className="absolute bottom-0 left-0 right-0 py-3 px-4 bg-gray-50 dark:bg-gray-800/50 border-t dark:border-gray-800 flex items-center justify-end">
+            <div className="absolute bottom-0 left-0 right-0 py-3 px-4 border-t flex items-center justify-end">
               <div className="flex items-center mr-2">
                 <Sparkles className="h-5 w-5 text-gray-400" />
               </div>

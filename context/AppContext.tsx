@@ -8,13 +8,14 @@ import {
   useEffect,
   useCallback,
 } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 import {
   getAuthToken,
   getUserEmailFromToken,
   getPlanName,
 } from "@/utils/client/auth";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 // Define app data interface based on the API response
 export interface AppData {
@@ -80,6 +81,10 @@ interface AppContextType {
   createApp: (prompt: string) => Promise<string>; // Returns URL to redirect to
   deleteApp: (appId: string) => Promise<void>;
 
+  // Authentication
+  signOut: () => Promise<void>;
+  isSigningOut: boolean;
+
   // Loading states
   isLoading: boolean;
 }
@@ -109,6 +114,7 @@ const getAppIdFromPath = (pathname: string): string | null => {
 // Provider component
 export function AppProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { toast } = useToast();
 
   // Sidebar state
@@ -117,6 +123,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   // Sample apps data - will be replaced by API data on load
   const [apps, setApps] = useState<AppData[]>([]);
@@ -132,6 +139,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Toggle function for sidebar
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
+  };
+
+  // Sign out function
+  const signOut = async () => {
+    try {
+      setIsSigningOut(true);
+      const supabase = createClientComponentClient();
+
+      console.log("Signing out...");
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error("Error signing out from Supabase:", error);
+        toast({
+          variant: "destructive",
+          title: "Sign Out Error",
+          description: error.message || "Failed to sign out. Please try again.",
+        });
+        throw error;
+      }
+
+      console.log("Successfully signed out");
+
+      // Clear local app state
+      setApps([]);
+      setSubscription(null);
+
+      // Redirect to home/login page
+      router.push("/");
+    } catch (error) {
+      console.error("Error during sign out process:", error);
+      // Even if there's an error, try to redirect
+      router.push("/");
+    } finally {
+      setIsSigningOut(false);
+    }
   };
 
   // Create app function
@@ -302,6 +345,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     deleteApp,
     refreshApps: fetchApps,
     refreshSubscription: fetchSubscription,
+    signOut,
+    isSigningOut,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
