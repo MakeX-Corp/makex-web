@@ -1,11 +1,12 @@
 import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
-import { streamText } from "ai";
+import { generateText, streamText } from "ai";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse } from "next/server";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { checkDailyMessageLimit } from "@/utils/server/check-daily-limit";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
+import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
 
@@ -160,9 +161,16 @@ export async function POST(req: Request) {
       }
     });
 
+    const bedrock = createAmazonBedrock({
+      region: process.env.AWS_REGION,
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    });
+
+    const modelAmazon = bedrock("us.anthropic.claude-3-5-sonnet-20241022-v2:0");
 
     const result = streamText({
-      model: anthropic(modelName),
+      model: modelAmazon,
       messages: formattedMessages,
       tools: tools,
       toolCallStreaming: true,
@@ -193,6 +201,7 @@ export async function POST(req: Request) {
       },
       maxSteps: 30,
     });
+
 
     return result.toDataStreamResponse({
       sendReasoning: true,
