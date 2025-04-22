@@ -140,7 +140,7 @@ export default function DashboardPage() {
       setIsCreating(true);
 
       // Store the prompt in localStorage for persistence
-      localStorage.setItem("lastAppPrompt", prompt.trim());
+      localStorage.setItem("makeX_home_prompt", prompt.trim());
 
       // Redirect to dashboard
       router.push("/dashboard");

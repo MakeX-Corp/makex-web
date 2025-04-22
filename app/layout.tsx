@@ -5,7 +5,6 @@ import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PostHogProvider } from "@/components/providers/PostHogProvider";
 import { Footer } from "./components/footer";
-import { AppProvider } from "@/context/AppContext";
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -55,20 +54,18 @@ export default function RootLayout({
         <script src="https://prod-waitlist-widget.s3.us-east-2.amazonaws.com/getwaitlist.min.js"></script>
       </head>
       <body className="overflow-x-hidden antialiased min-h-screen flex flex-col">
-        <AppProvider>
-          <PostHogProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="light"
-              enableSystem={false}
-              disableTransitionOnChange
-            >
-              <main className="flex-1">{children}</main>
-              <Footer />
-              <Analytics />
-            </ThemeProvider>
-          </PostHogProvider>
-        </AppProvider>
+        <PostHogProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem={false}
+            disableTransitionOnChange
+          >
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <Analytics />
+          </ThemeProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

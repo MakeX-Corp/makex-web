@@ -40,6 +40,11 @@ export function Chat({
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [initialPromptSent, setInitialPromptSent] = useState(false);
 
+  // Refs for the input and form elements
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
   // Use image upload custom hook
   const {
     selectedImages,
@@ -150,38 +155,40 @@ export function Chat({
     }
   }, [error]);
 
-  // Simple effect to check for initial prompt - runs when component is ready
+  // Improved initial prompt handler - specific to this component
   useEffect(() => {
-    // Only run this once when the component is fully loaded
     if (!isLoading && !initialPromptSent && messages.length === 0) {
       const storedPrompt = localStorage.getItem("makeX_prompt");
-      if (storedPrompt) {
+      if (storedPrompt && chatContainerRef.current) {
         // Remove the prompt from storage
         localStorage.removeItem("makeX_prompt");
 
-        // Submit the prompt manually
-        const input = document.querySelector("input");
-        if (input) {
-          // Simulate typing the stored prompt
+        // Find the input within THIS component only
+        const inputElement = chatContainerRef.current.querySelector(
+          'input[type="text"], input:not([type])'
+        );
+        if (inputElement) {
+          // Set input value
           const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
             window.HTMLInputElement.prototype,
             "value"
           )?.set;
-          if (nativeInputValueSetter) {
-            nativeInputValueSetter.call(input, storedPrompt);
-            input.dispatchEvent(new Event("input", { bubbles: true }));
 
-            // Simulate clicking the submit button
-            setTimeout(() => {
-              const submitButton = document.querySelector(
-                'button[type="submit"]'
-              );
-              if (submitButton) {
-                // @ts-ignore
-                submitButton.click();
-              }
-              setInitialPromptSent(true);
-            }, 100);
+          if (nativeInputValueSetter) {
+            nativeInputValueSetter.call(inputElement, storedPrompt);
+            inputElement.dispatchEvent(new Event("input", { bubbles: true }));
+
+            // Find form within THIS component
+            const formElement = chatContainerRef.current.querySelector("form");
+            if (formElement) {
+              // Short timeout to ensure state is updated
+              setTimeout(() => {
+                formElement.dispatchEvent(
+                  new Event("submit", { bubbles: true, cancelable: true })
+                );
+                setInitialPromptSent(true);
+              }, 100);
+            }
           }
         }
       } else {
@@ -302,7 +309,8 @@ export function Chat({
 
   return (
     <div
-      className="flex flex-col h-full overflow-hidden border rounded-md"
+      ref={chatContainerRef}
+      className="flex flex-col h-full overflow-hidden border rounded-md chat-component"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -415,8 +423,10 @@ export function Chat({
           </div>
         )}
 
-        <form onSubmit={handleFormSubmit} className="flex gap-2">
+        <form ref={formRef} onSubmit={handleFormSubmit} className="flex gap-2">
           <Input
+            ref={inputRef}
+            type="text"
             value={input}
             onChange={handleInputChange}
             placeholder="Type your message or drop images anywhere..."

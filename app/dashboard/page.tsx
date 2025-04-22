@@ -151,11 +151,33 @@ export default function DashboardPage() {
   const { createApp } = useApp();
   const [isCreating, setIsCreating] = useState(false);
   const [prompt, setPrompt] = useState("");
+  const [initialPromptLoaded, setInitialPromptLoaded] = useState(false);
+
   // Create refs with explicit typing
   const row1Ref = useRef<HTMLDivElement>(null);
   const row2Ref = useRef<HTMLDivElement>(null);
   const row3Ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Check localStorage for initial prompt - only on initial mount
+  useEffect(() => {
+    if (!initialPromptLoaded) {
+      const storedPrompt = localStorage.getItem("makeX_home_prompt");
+      if (storedPrompt) {
+        // Update the state
+        setPrompt(storedPrompt);
+
+        // Clear the localStorage item after retrieving it
+        localStorage.removeItem("makeX_home_prompt");
+
+        // Focus the textarea
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }
+      setInitialPromptLoaded(true);
+    }
+  }, [initialPromptLoaded]);
 
   // Animation for moving suggestion pills
   useEffect(() => {
