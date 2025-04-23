@@ -451,7 +451,22 @@ export function Chat({
       {isWaitingForResponse && <ThreeDotsLoader />}
 
       {/* Input area - fixed at bottom */}
-      <div className="border-t border-border p-4 bg-background">
+      <div className="border-t border-border p-4 bg-background relative">
+        {limitReached && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
+            <div className="p-4 rounded-lg text-center">
+              <p className="font-medium text-foreground">
+                Message limit reached
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {subscription?.planName === "Free"
+                  ? "Try again tomorrow or upgrade your plan"
+                  : "Please upgrade your plan for more messages"}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Image previews area */}
         {imagePreviews.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">
