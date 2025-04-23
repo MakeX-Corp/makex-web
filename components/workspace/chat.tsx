@@ -24,17 +24,20 @@ interface ChatProps {
   sessionId: string;
   onResponseComplete?: () => void;
   onSessionError?: (error: string) => void;
+  authToken: string | null;
 }
 
 export function Chat({
   sessionId,
   onResponseComplete,
   onSessionError,
+  authToken,
 }: ChatProps) {
   // Get app context from the SessionContext
   const { appId, apiUrl, supabaseProject, sessionName, setSessionName } =
     useSession();
-  const { authToken, subscription } = useApp();
+  const { subscription } = useApp();
+  const router = useRouter();
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
@@ -358,12 +361,10 @@ export function Chat({
     }
   };
 
-  const router = useRouter();
-
   return (
     <div
       ref={chatContainerRef}
-      className="flex flex-col h-full overflow-hidden border rounded-md chat-component"
+      className="flex flex-col h-full overflow-hidden border rounded-md chat-component relative"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -371,14 +372,13 @@ export function Chat({
     >
       {/* Drag overlay indicator with improved visibility */}
       {isDragging && (
-        <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm z-20 flex items-center justify-center border-4 border-dashed border-primary rounded-lg pointer-events-none">
-          <div className="text-center p-6 bg-background rounded-lg shadow-lg">
-            <ImageIcon className="h-12 w-12 text-primary mx-auto mb-4" />
-            <p className="text-lg font-medium">Drop your images here</p>
+        <div className="absolute top-0 left-0 right-0 bottom-0 bg-primary/20 backdrop-blur-sm z-20 flex items-center justify-center border-4 border-dashed border-primary rounded pointer-events-none">
+          <div className="text-center p-4 bg-background rounded shadow-lg">
+            <ImageIcon className="h-10 w-10 text-primary mx-auto mb-2" />
+            <p className="font-medium">Drop your images here</p>
           </div>
         </div>
       )}
-
       {/* Messages area - added fixed height with messages-container class */}
       <div className="flex-1 overflow-hidden">
         <div className="messages-container h-full overflow-y-auto px-4 py-4 space-y-4">
@@ -465,9 +465,9 @@ export function Chat({
                 {subscription?.planName === "Free" ? (
                   <>
                     Try again tomorrow or{" "}
-                    <span 
-                      className="text-primary cursor-pointer hover:underline" 
-                      onClick={() => router.push('/dashboard/pricing')}
+                    <span
+                      className="text-primary cursor-pointer hover:underline"
+                      onClick={() => router.push("/dashboard/pricing")}
                     >
                       upgrade your plan
                     </span>

@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SessionSelector } from "@/components/workspace/session-selector";
 import { SessionsError } from "@/components/workspace/sessions-error";
-import { useApp } from "@/context/AppContext";
+import { getAuthToken } from "@/utils/client/auth";
 interface WorkspaceContentProps {
   initialSessionId: string | null;
 }
@@ -50,7 +50,13 @@ export default function WorkspaceContent({
     switchSession,
     createSession,
   } = useSession();
-  const { authToken } = useApp();
+
+  const [authToken, setAuthToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = getAuthToken();
+    setAuthToken(token);
+  }, []);
   // State for the UI elements
   const [activeView, setActiveView] = useState<"chat" | "preview">("chat");
   const [isResetting, setIsResetting] = useState(false);
@@ -402,6 +408,7 @@ export default function WorkspaceContent({
               sessionId={currentSessionId || ""}
               onResponseComplete={handleResponseComplete}
               onSessionError={() => {}}
+              authToken={authToken}
             />
 
             {/* Right panel */}
@@ -443,6 +450,7 @@ export default function WorkspaceContent({
                     sessionId={currentSessionId || ""}
                     onResponseComplete={handleResponseComplete}
                     onSessionError={() => {}}
+                    authToken={authToken}
                   />
                 </div>
               </TabsContent>
