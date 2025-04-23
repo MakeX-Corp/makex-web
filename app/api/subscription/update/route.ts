@@ -1,8 +1,10 @@
 // pages/api/subscriptions/update.js or app/api/subscriptions/update/route.ts
+import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   const { subscriptionId, priceId, userId } = await request.json();
+  const result = await getSupabaseWithUser(request);
 
   if (!subscriptionId || !priceId || !userId) {
     return NextResponse.json(

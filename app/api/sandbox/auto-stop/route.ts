@@ -77,7 +77,7 @@ export async function GET(request: Request) {
 
         console.log(`App ${app.app_name} - last activity: ${lastActivityTime}, inactive for ${diffMinutes} minutes`);
 
-        if (diffMinutes > 4) {
+        if (diffMinutes > 15) {
           // Export the code before killing the sandbox
           try {
             if (app.api_url) {

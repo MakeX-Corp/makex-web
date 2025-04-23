@@ -16,7 +16,7 @@ import { initPaddle } from "@/utils/server/paddle-client";
 import { useToast } from "@/components/ui/use-toast";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cp } from "fs";
+import { getAuthToken } from "@/utils/client/auth";
 
 interface PlanProps {
   name: string;
@@ -34,10 +34,9 @@ const plans: PlanProps[] = [
     price: "0",
     interval: "month",
     features: [
-      "1 app",
       "10 messages a day",
       "Slower app start times",
-      "Standard support",
+      "Discord support",
     ],
     priceId: "",
   },
@@ -47,10 +46,11 @@ const plans: PlanProps[] = [
     price: "19",
     interval: "month",
     features: [
-      "3 apps",
       "100 messages a day",
       "Basic AI editing",
       "Faster app start times",
+      "Priority support",
+      "Publish to App Store and Google Play (coming soon)",
     ],
     priceId: process.env.NEXT_PUBLIC_PADDLE_STARTER_ID || "",
   },
@@ -64,7 +64,8 @@ const plans: PlanProps[] = [
       "200 messages a day",
       "Advanced AI editing",
       "Faster app start times",
-      "Priority support",
+      "1-1 support",
+      "White glove service",
     ],
     priceId: process.env.NEXT_PUBLIC_PADDLE_PRO_ID || "",
   },
@@ -116,6 +117,7 @@ export default function PricingPage() {
 
   const handleCheckout = async (priceId: string) => {
     console.log("priceId", priceId);
+    const token = await getAuthToken();
     const paddle = await initPaddle();
     if (!paddle) {
       toast({
@@ -144,6 +146,7 @@ export default function PricingPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             subscriptionId: subscriptionId,
