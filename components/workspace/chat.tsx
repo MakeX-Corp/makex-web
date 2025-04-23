@@ -13,10 +13,12 @@ import {
   fetchChatMessages,
   saveAIMessage,
   restoreCheckpoint,
+  checkMessageLimit,
 } from "@/lib/chat-service";
 import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
 import { updateSessionTitle } from "@/utils/session/session-utils";
 import { useApp } from "@/context/AppContext";
+
 interface ChatProps {
   sessionId: string;
   onResponseComplete?: () => void;
@@ -31,7 +33,7 @@ export function Chat({
   // Get app context from the SessionContext
   const { appId, apiUrl, supabaseProject, sessionName, setSessionName } =
     useSession();
-  const { authToken } = useApp();
+  const { authToken, subscription } = useApp();
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
@@ -39,7 +41,11 @@ export function Chat({
   );
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [initialPromptSent, setInitialPromptSent] = useState(false);
-
+  const [limitReached, setLimitReached] = useState(false);
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [remainingMessages, setRemainingMessages] = useState<number | null>(
+    null
+  );
   // Refs for the input and form elements
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -94,6 +100,10 @@ export function Chat({
           authToken || ""
         );
         setInitialMessages(messages);
+
+        if (authToken && subscription) {
+          await initialCheck();
+        }
       } catch (error) {
         console.error("Error fetching messages:", error);
         if (onSessionError) {
@@ -106,6 +116,15 @@ export function Chat({
 
     getMessages();
   }, [sessionId, appId, authToken, onSessionError]);
+
+  const initialCheck = async () => {
+    const result = await checkMessageLimit(authToken || "", subscription);
+    if (result) {
+      const { remainingMessages, reachedLimit } = result;
+      setRemainingMessages(remainingMessages);
+      setLimitReached(reachedLimit);
+    }
+  };
 
   const { messages, input, handleInputChange, handleSubmit, error } = useChat({
     id: sessionId,
@@ -123,6 +142,7 @@ export function Chat({
       appId,
       sessionId,
       supabaseProject,
+      subscription,
     },
     maxSteps: 30,
     onResponse: async (response) => {},
@@ -155,6 +175,13 @@ export function Chat({
           if (newTitle) {
             setSessionName(newTitle);
           }
+        }
+        // Update message limit after successful message
+        const result = await checkMessageLimit(authToken || "", subscription);
+        if (result) {
+          const { remainingMessages, reachedLimit } = result;
+          setRemainingMessages(remainingMessages);
+          setLimitReached(reachedLimit);
         }
       } catch (error) {
         console.error("Error saving AI message:", error);
@@ -513,6 +540,15 @@ export function Chat({
             )}
           </Button>
         </form>
+        {remainingMessages !== null && !limitReached && (
+          <div className="text-xs text-muted-foreground flex justify-end mt-2">
+            <span>
+              {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
+              remaining{" "}
+              {subscription?.planName === "Free" ? "today" : "in this cycle"}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

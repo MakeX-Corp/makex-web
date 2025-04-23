@@ -3,7 +3,7 @@ import { generateText, streamText } from "ai";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse } from "next/server";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
-import { checkDailyMessageLimit } from "@/utils/server/check-daily-limit";
+import { checkMessageLimit } from "@/utils/server/check-daily-limit";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
@@ -80,6 +80,7 @@ export async function POST(req: Request) {
       messageParts,
       multiModal,
       apiUrl,
+      subscription,
     } = await req.json();
 
     // Get the last user message
@@ -89,9 +90,8 @@ export async function POST(req: Request) {
     const userResult = await getSupabaseWithUser(req);
     if (userResult instanceof NextResponse) return userResult;
     const { supabase, user } = userResult;
-
     // Check daily message limit using the new utility function
-    const limitCheck = await checkDailyMessageLimit(supabase, user);
+    const limitCheck = await checkMessageLimit(supabase, user, subscription);
     if (limitCheck.error) {
       return NextResponse.json(
         { error: limitCheck.error },
@@ -201,7 +201,6 @@ export async function POST(req: Request) {
       },
       maxSteps: 30,
     });
-
 
     return result.toDataStreamResponse({
       sendReasoning: true,
