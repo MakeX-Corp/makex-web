@@ -18,6 +18,7 @@ import {
 import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
 import { updateSessionTitle } from "@/utils/session/session-utils";
 import { useApp } from "@/context/AppContext";
+import { useRouter } from "next/navigation";
 
 interface ChatProps {
   sessionId: string;
@@ -357,6 +358,8 @@ export function Chat({
     }
   };
 
+  const router = useRouter();
+
   return (
     <div
       ref={chatContainerRef}
@@ -459,9 +462,19 @@ export function Chat({
                 Message limit reached
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                {subscription?.planName === "Free"
-                  ? "Try again tomorrow or upgrade your plan"
-                  : "Please upgrade your plan for more messages"}
+                {subscription?.planName === "Free" ? (
+                  <>
+                    Try again tomorrow or{" "}
+                    <span 
+                      className="text-primary cursor-pointer hover:underline" 
+                      onClick={() => router.push('/dashboard/pricing')}
+                    >
+                      upgrade your plan
+                    </span>
+                  </>
+                ) : (
+                  "Please upgrade your plan for more messages"
+                )}
               </p>
             </div>
           </div>

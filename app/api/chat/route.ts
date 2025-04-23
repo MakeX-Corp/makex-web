@@ -106,6 +106,21 @@ export async function POST(req: Request) {
       connectionUri = `postgresql://postgres.${supabase_project.id}:${supabase_project.db_pass}@aws-0-us-east-1.pooler.supabase.com:6543/postgres`;
     }
 
+
+    // Keep on looping until you get package.json
+    while (true) {
+      try {
+        const file= await apiClient.get("/file", { path: "package.json" });
+        console.log(file);
+        if(file) {
+          break;
+        }
+      } catch (error) {
+        console.error("Error fetching file tree:", error);
+      }
+    }
+
+
     // Get the file tree
     const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
     const fileTree = fileTreeResponse;

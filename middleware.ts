@@ -22,7 +22,12 @@ export async function middleware(req: NextRequest) {
   }
 
   // Redirect to dashboard if logged in user tries to access login page
-  if (session && req.nextUrl.pathname === "/login") {
+  if (
+    session &&
+    (req.nextUrl.pathname === "/login" ||
+      req.nextUrl.pathname === "/signup" ||
+      req.nextUrl.pathname === "/")
+  ) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
