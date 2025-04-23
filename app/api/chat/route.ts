@@ -1,11 +1,12 @@
 import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
-import { streamText } from "ai";
+import { generateText, streamText } from "ai";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse } from "next/server";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
-import { checkDailyMessageLimit } from "@/utils/server/check-daily-limit";
+import { checkMessageLimit } from "@/utils/server/check-daily-limit";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
+import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
 
@@ -79,6 +80,7 @@ export async function POST(req: Request) {
       messageParts,
       multiModal,
       apiUrl,
+      subscription,
     } = await req.json();
 
     // Get the last user message
@@ -88,9 +90,8 @@ export async function POST(req: Request) {
     const userResult = await getSupabaseWithUser(req);
     if (userResult instanceof NextResponse) return userResult;
     const { supabase, user } = userResult;
-
     // Check daily message limit using the new utility function
-    const limitCheck = await checkDailyMessageLimit(supabase, user);
+    const limitCheck = await checkMessageLimit(supabase, user, subscription);
     if (limitCheck.error) {
       return NextResponse.json(
         { error: limitCheck.error },
@@ -104,6 +105,21 @@ export async function POST(req: Request) {
     if (supabase_project) {
       connectionUri = `postgresql://postgres.${supabase_project.id}:${supabase_project.db_pass}@aws-0-us-east-1.pooler.supabase.com:6543/postgres`;
     }
+
+
+    // Keep on looping until you get package.json
+    while (true) {
+      try {
+        const file= await apiClient.get("/file", { path: "package.json" });
+        console.log(file);
+        if(file) {
+          break;
+        }
+      } catch (error) {
+        console.error("Error fetching file tree:", error);
+      }
+    }
+
 
     // Get the file tree
     const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
@@ -160,9 +176,16 @@ export async function POST(req: Request) {
       }
     });
 
+    const bedrock = createAmazonBedrock({
+      region: process.env.AWS_REGION,
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    });
+
+    const modelAmazon = bedrock("us.anthropic.claude-3-5-sonnet-20241022-v2:0");
 
     const result = streamText({
-      model: anthropic(modelName),
+      model: modelAmazon,
       messages: formattedMessages,
       tools: tools,
       toolCallStreaming: true,

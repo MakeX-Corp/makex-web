@@ -1,498 +1,342 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus, Lock, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
-import Link from "next/link";
-import { getAuthToken, getUserEmailFromToken } from "@/utils/client/auth";
-import { Skeleton } from "@/components/ui/skeleton";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { DiscordSupportButton } from "@/components/support-button";
-import { Input } from "@/components/ui/input";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import posthog from "posthog-js";
-const INVITE_CODE_REQUIRED = true;
-interface UserApp {
-  id: string;
-  user_id: string;
-  app_name: string;
-  app_url: string | null;
-  created_at: string;
-  updated_at: string;
-}
+  ArrowRight,
+  Code,
+  Database,
+  Layout,
+  ShoppingCart,
+  MessageSquare,
+  Calendar,
+  Music,
+  PenTool,
+  Book,
+  Users,
+  Map,
+  CreditCard,
+  Mail,
+  FileText,
+  Video,
+  BarChart,
+  Globe,
+  Search,
+  Briefcase,
+  Image as ImageIcon,
+  Sparkles,
+  Loader2,
+} from "lucide-react";
+import { useApp } from "@/context/AppContext";
 
-interface ContainerLimitError {
-  error: string;
-  currentCount: number;
-  maxAllowed: number;
-}
+// Expanded app suggestion chips for multiple rows
+const APP_SUGGESTIONS = [
+  { icon: <Layout size={14} />, label: "Landing page" },
+  { icon: <ShoppingCart size={14} />, label: "E-commerce" },
+  { icon: <Database size={14} />, label: "Dashboard" },
+  { icon: <MessageSquare size={14} />, label: "Chat app" },
+  { icon: <Calendar size={14} />, label: "Calendar" },
+  { icon: <Code size={14} />, label: "Portfolio" },
+  { icon: <ImageIcon size={14} />, label: "Photo gallery" },
+  { icon: <Music size={14} />, label: "Music player" },
+  { icon: <PenTool size={14} />, label: "Blog" },
+  { icon: <Book size={14} />, label: "Knowledge base" },
+  { icon: <Users size={14} />, label: "Social network" },
+  { icon: <Map size={14} />, label: "Travel planner" },
+  { icon: <CreditCard size={14} />, label: "Finance tracker" },
+  { icon: <Mail size={14} />, label: "Email client" },
+  { icon: <FileText size={14} />, label: "Note taking" },
+  { icon: <Video size={14} />, label: "Video streaming" },
+  { icon: <BarChart size={14} />, label: "Analytics" },
+  { icon: <Globe size={14} />, label: "News aggregator" },
+  { icon: <Search size={14} />, label: "Search engine" },
+  { icon: <Briefcase size={14} />, label: "Job board" },
+];
 
-export default function Dashboard() {
-  const [userApps, setUserApps] = useState<UserApp[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCreatingApp, setIsCreatingApp] = useState(false);
-  const [editingAppId, setEditingAppId] = useState<string | null>(null);
-  const [deletingAppIds, setDeletingAppIds] = useState<Set<string>>(new Set());
-  const [limitError, setLimitError] = useState<ContainerLimitError | null>(
-    null
-  );
-  const [inviteCode, setInviteCode] = useState("");
-  const [inviteCodeVerified, setInviteCodeVerified] = useState(false);
-  const [inviteError, setInviteError] = useState<string | null>(null);
-  const { toast } = useToast();
+// Create three rows of suggestions for animation
+const ROW_1 = APP_SUGGESTIONS.slice(0, 7);
+const ROW_2 = APP_SUGGESTIONS.slice(7, 14);
+const ROW_3 = APP_SUGGESTIONS.slice(14);
+
+// Add these styles to your global CSS file
+const GlobalStyles = () => (
+  <style jsx global>{`
+    @keyframes fadeInOut {
+      0%,
+      100% {
+        opacity: 0;
+        transform: scale(0);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes progress {
+      0% {
+        width: 5%;
+      }
+      50% {
+        width: 70%;
+      }
+      90% {
+        width: 90%;
+      }
+      100% {
+        width: 95%;
+      }
+    }
+
+    .animate-progress {
+      animation: progress 3s ease-in-out infinite;
+    }
+  `}</style>
+);
+
+export default function DashboardPage() {
   const router = useRouter();
+  const { createApp } = useApp();
+  const [isCreating, setIsCreating] = useState(false);
+  const [prompt, setPrompt] = useState("");
+  const [initialPromptLoaded, setInitialPromptLoaded] = useState(false);
 
-  const verifyInviteCode = async () => {
-    if (!inviteCode.trim()) return;
+  // Create refs with explicit typing
+  const row1Ref = useRef<HTMLDivElement>(null);
+  const row2Ref = useRef<HTMLDivElement>(null);
+  const row3Ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-    setInviteError(null);
-
-    try {
-      const decodedToken = getAuthToken();
-
-      const response = await fetch("/api/invite-codes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${decodedToken}`,
-        },
-        body: JSON.stringify({ inviteCode }),
-      });
-      const data = await response.json();
-
-      if (response.status === 403 || response.status === 400) {
-        console.log("Invalid invite code");
-        setInviteCodeVerified(false);
-        setInviteError(data.error || "Invalid invite code");
-        return;
-      }
-
-      // Success! Invite code verified
-      setInviteCodeVerified(true);
-      setIsLoading(true);
-
-      // Now fetch user apps
-      fetchUserApps();
-    } catch (error) {
-      console.error("Error verifying invite code:", error);
-      setInviteError(
-        error instanceof Error
-          ? error.message
-          : "An error occurred while verifying the invite code"
-      );
-    }
-  };
-
-  const fetchUserApps = async () => {
-    try {
-      const decodedToken = getAuthToken();
-
-      if (!decodedToken) {
-        throw new Error("No authentication token found");
-      }
-
-      // Fetch user apps
-      const appsResponse = await fetch("/api/app", {
-        headers: {
-          Authorization: `Bearer ${decodedToken}`,
-        },
-      });
-
-      if (!appsResponse.ok) {
-        const error = await appsResponse.json();
-      }
-
-      if (appsResponse.ok) {
-        const apps = await appsResponse.json();
-        setUserApps(apps);
-      }
-    } catch (error) {
-      console.error("Error fetching user apps:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCreateApp = async () => {
-    try {
-      setIsCreatingApp(true);
-      // Clear any previous limit errors
-      setLimitError(null);
-
-      const decodedToken = getAuthToken();
-
-      if (!decodedToken) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await fetch("/api/app", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${decodedToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-
-        // Check if this is a container limit error
-        if (
-          response.status === 400 &&
-          errorData.currentCount !== undefined &&
-          errorData.maxAllowed !== undefined
-        ) {
-          setLimitError(errorData as ContainerLimitError);
-          return;
-        }
-
-        throw new Error(errorData.error || "Failed to create app");
-      }
-
-      const newApp = await response.json();
-      setUserApps((prev) => [...prev, newApp]);
-
-      toast({
-        title: "Success",
-        description: "New app created successfully!",
-      });
-    } catch (error) {
-      console.error("Error creating app:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An error occurred while creating the app",
-      });
-    } finally {
-      setIsCreatingApp(false);
-    }
-  };
-
-  const handleDeleteApp = async (appId: string) => {
-    try {
-      // Set this app as deleting to show skeleton
-      setDeletingAppIds((prev) => new Set([...prev, appId]));
-
-      const decodedToken = getAuthToken();
-
-      if (!decodedToken) {
-        throw new Error("No authentication token found");
-      }
-
-      console.log(decodedToken);
-
-      const response = await fetch(`/api/app?id=${appId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${decodedToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete app");
-      }
-
-      setUserApps((prev) => prev.filter((app) => app.id !== appId));
-
-      // Clear any limit errors if they exist
-      if (limitError) {
-        setLimitError(null);
-      }
-
-      toast({
-        title: "Success",
-        description: "App deleted successfully",
-      });
-    } catch (error) {
-      console.error("Error deleting app:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An error occurred while deleting the app",
-      });
-    } finally {
-      // Remove this app from the deleting set
-      setDeletingAppIds((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(appId);
-        return newSet;
-      });
-    }
-  };
+  // Check localStorage for initial prompt - only on initial mount
   useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const decodedToken = getAuthToken();
+    if (!initialPromptLoaded) {
+      const storedPrompt = localStorage.getItem("makeX_home_prompt");
+      if (storedPrompt) {
+        // Update the state
+        setPrompt(storedPrompt);
 
-        if (!decodedToken) {
-          throw new Error("No authentication token found");
+        // Clear the localStorage item after retrieving it
+        localStorage.removeItem("makeX_home_prompt");
+
+        // Focus the textarea
+        if (inputRef.current) {
+          inputRef.current.focus();
         }
-
-        const userEmail = getUserEmailFromToken(decodedToken);
-        if (userEmail) {
-          posthog.identify(userEmail, {
-            email: userEmail,
-            has_apps: userApps.length > 0,
-            app_count: userApps.length,
-          });
-        }
-
-        // Fetch user apps
-        const appsResponse = await fetch("/api/app", {
-          headers: {
-            Authorization: `Bearer ${decodedToken}`,
-          },
-        });
-
-        if (appsResponse.status === 403) {
-          setInviteCodeVerified(false);
-          return;
-        }
-
-        if (!appsResponse.ok) {
-          const error = await appsResponse.json();
-          return;
-        }
-
-        setInviteCodeVerified(true);
-        setInviteError(null);
-        if (appsResponse.ok) {
-          const apps = await appsResponse.json();
-          setUserApps(apps);
-        }
-      } catch (error) {
-        console.error("Error fetching initial data:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description:
-            error instanceof Error
-              ? error.message
-              : "An error occurred while fetching data",
-        });
-      } finally {
-        setIsLoading(false);
       }
+      setInitialPromptLoaded(true);
+    }
+  }, [initialPromptLoaded]);
+
+  // Animation for moving suggestion pills
+  useEffect(() => {
+    // Modified the function to accept any ref type and handle null check inside
+    const animateRow = (
+      rowRef: { current: HTMLDivElement | null },
+      direction: "left" | "right",
+      speed: number
+    ) => {
+      if (!rowRef.current) return;
+
+      let position = 0;
+      const row = rowRef.current;
+      const rowWidth = row.scrollWidth;
+      const viewWidth = row.offsetWidth;
+
+      // Set initial position based on direction
+      if (direction === "right") {
+        position = -rowWidth / 2;
+      }
+
+      const animate = () => {
+        if (!row) return;
+
+        // Update position
+        if (direction === "left") {
+          position -= speed;
+          // Reset when enough content has scrolled by
+          if (position <= -rowWidth / 2) {
+            position = 0;
+          }
+        } else {
+          position += speed;
+          // Reset when enough content has scrolled by
+          if (position >= 0) {
+            position = -rowWidth / 2;
+          }
+        }
+
+        // Apply the transformation
+        row.style.transform = `translateX(${position}px)`;
+        requestAnimationFrame(animate);
+      };
+
+      requestAnimationFrame(animate);
     };
 
-    fetchInitialData();
+    // Start animations for each row with different speeds and directions
+    animateRow(row1Ref, "left", 0.3);
+    animateRow(row2Ref, "right", 0.2);
+    animateRow(row3Ref, "left", 0.3);
+
+    // Cleanup
+    return () => {
+      // Animation cleanup will happen automatically when component unmounts
+    };
   }, []);
-  // Add this new component for the skeleton loading state
-  const AppCardSkeleton = () => (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardContent className="p-4">
-        <Skeleton className="h-6 w-3/4 mb-2" />
-        <Skeleton className="h-4 w-1/2 mb-2" />
-        <Skeleton className="h-4 w-2/3 mb-4" />
-        <div className="mt-4 space-y-2">
-          <Skeleton className="h-9 w-full" />
-          <Skeleton className="h-9 w-full" />
-        </div>
-      </CardContent>
-    </Card>
-  );
 
-  // If the invite code hasn't been verified yet, show the invite code screen
-  if (!inviteCodeVerified && !isLoading) {
-    return (
-      <div className="container mx-auto p-8 flex items-center justify-center min-h-[80vh]">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8">
-            <div className="flex flex-col items-center mb-6">
-              <Lock className="h-12 w-12 text-primary mb-4" />
-              <h1 className="text-2xl font-bold text-center">
-                Access Required
-              </h1>
-              <p className="text-muted-foreground text-center mt-2">
-                Enter your invite code to access the dashboard
-              </p>
-            </div>
+  const handleCreateApp = async () => {
+    if (!prompt.trim()) {
+      alert("Please enter a prompt");
+      return;
+    }
+    setIsCreating(true);
+    try {
+      localStorage.setItem("makeX_prompt", prompt);
+      const redirectUrl = await createApp(prompt);
+      router.push(redirectUrl);
+    } catch (error) {
+      console.error("Error creating app:", error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
-            {inviteError && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{inviteError}</AlertDescription>
-              </Alert>
-            )}
+  const handleSuggestionClick = (suggestion: string) => {
+    setPrompt(suggestion);
+  };
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="inviteCode" className="text-sm font-medium">
-                  Invite Code
-                </label>
-                <Input
-                  id="inviteCode"
-                  placeholder="Enter your invite code"
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      verifyInviteCode();
-                    }
-                  }}
-                />
-              </div>
-
-              <Button
-                className="w-full"
-                onClick={verifyInviteCode}
-                disabled={!inviteCode.trim()}
-              >
-                Verify Invite Code
-              </Button>
-
-              <p className="text-sm text-muted-foreground text-center mt-4">
-                Need an invite code? Join Discord !
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <DiscordSupportButton />
-      </div>
-    );
-  }
+  // Function to duplicate items for continuous scrolling effect
+  const duplicateItemsForScrolling = (items: typeof APP_SUGGESTIONS) => {
+    return [...items, ...items];
+  };
 
   return (
-    <div className="container mx-auto p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">My Apps</h1>
-        <div className="flex items-center gap-4">
-          <Button
-            onClick={handleCreateApp}
-            disabled={isLoading || isCreatingApp}
-          >
-            {isCreatingApp ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4 mr-2" />
-                Create New App
-              </>
-            )}
-          </Button>
+    <>
+      <GlobalStyles />
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="w-full max-w-2xl mx-auto">
+          {/* Header with logo */}
+          <div className="mb-10 text-center">
+            <div className="mb-2">
+              <Image
+                src="/logo.png"
+                alt="makeX logo"
+                width={128}
+                height={32}
+                className="mx-auto"
+              />
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight mb-3">
+              What do you want to build?
+            </h1>
+          </div>
+
+          {/* Moving suggestion pills in three rows */}
+          <div className="mb-8">
+            {/* Row 1 - scrolling left */}
+            <div className="overflow-hidden mb-2">
+              <div
+                ref={row1Ref}
+                className="flex whitespace-nowrap"
+                style={{ willChange: "transform" }}
+              >
+                {duplicateItemsForScrolling(ROW_1).map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSuggestionClick(suggestion.label)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
+                  >
+                    {suggestion.icon}
+                    {suggestion.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Row 2 - scrolling right */}
+            <div className="overflow-hidden mb-2">
+              <div
+                ref={row2Ref}
+                className="flex whitespace-nowrap"
+                style={{ willChange: "transform" }}
+              >
+                {duplicateItemsForScrolling(ROW_2).map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSuggestionClick(suggestion.label)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
+                  >
+                    {suggestion.icon}
+                    {suggestion.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Row 3 - scrolling left */}
+            <div className="overflow-hidden">
+              <div
+                ref={row3Ref}
+                className="flex whitespace-nowrap"
+                style={{ willChange: "transform" }}
+              >
+                {duplicateItemsForScrolling(ROW_3).map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSuggestionClick(suggestion.label)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
+                  >
+                    {suggestion.icon}
+                    {suggestion.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Main prompt input */}
+          <div className="mb-8">
+            <div className="relative border rounded-xl shadow-lg overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+              <textarea
+                ref={inputRef}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe your app idea in detail..."
+                className="w-full px-6 pt-5 pb-16 resize-none focus:outline-none text-base bg-transparent transition-colors"
+                rows={3}
+                style={{ minHeight: "120px" }}
+              />
+
+              {/* Button area with clean design */}
+              <div className="absolute bottom-0 left-0 right-0 py-3 px-4 border-t flex items-center justify-end">
+                <div className="flex items-center mr-2">
+                  <Sparkles className="h-5 w-5 text-gray-400" />
+                </div>
+
+                <Button
+                  onClick={handleCreateApp}
+                  disabled={!prompt.trim() || isCreating}
+                  variant="default"
+                  className="font-medium rounded-md flex items-center disabled:opacity-50"
+                >
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    </>
+                  ) : (
+                    <>
+                      Create App
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {limitError && (
-        <Dialog open={!!limitError} onOpenChange={() => setLimitError(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>App Limit Reached</DialogTitle>
-              <DialogDescription>
-                You have reached your maximum limit of {limitError.maxAllowed}{" "}
-                app
-                {limitError.maxAllowed !== 1 ? "s" : ""}. Please delete an
-                existing app before creating a new one, or upgrade your
-                subscription for more apps.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col gap-2">
-              <Button asChild>
-                <Link href="/pricing">View Pricing Plans</Link>
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, index) => (
-            <AppCardSkeleton key={index} />
-          ))}
-        </div>
-      ) : userApps.length === 0 ? (
-        <Card className="p-8">
-          <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">
-              You haven't created any apps yet
-            </p>
-            <Button
-              onClick={handleCreateApp}
-              disabled={isLoading || isCreatingApp}
-            >
-              {isCreatingApp ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Your First App
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {userApps.map((app) =>
-            deletingAppIds.has(app.id) ? (
-              <AppCardSkeleton key={app.id} />
-            ) : (
-              <Card key={app.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-4">
-                  <h2 className="font-semibold mb-2">{app.app_name}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Created: {new Date(app.created_at).toLocaleDateString()}
-                  </p>
-                  {app.app_url && (
-                    <p className="text-sm text-muted-foreground truncate">
-                      URL: {app.app_url}
-                    </p>
-                  )}
-                  <div className="mt-4 space-y-2">
-                    <Link href={`/ai-editor/${app.id}`}>
-                      <Button
-                        variant="default"
-                        className="w-full"
-                        onClick={() => setEditingAppId(app.id)}
-                        disabled={editingAppId === app.id}
-                      >
-                        {editingAppId === app.id ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          </>
-                        ) : (
-                          "Edit App"
-                        )}
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => handleDeleteApp(app.id)}
-                    >
-                      Delete App
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          )}
-        </div>
-      )}
-
-      <DiscordSupportButton />
-    </div>
+    </>
   );
 }

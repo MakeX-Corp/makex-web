@@ -5,7 +5,6 @@ import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PostHogProvider } from "@/components/providers/PostHogProvider";
 import { Footer } from "./components/footer";
-
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -56,12 +55,12 @@ export default function RootLayout({
       </head>
       <body className="overflow-x-hidden antialiased min-h-screen flex flex-col">
         <PostHogProvider>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem={false}
+            disableTransitionOnChange
+          >
             <main className="flex-1">{children}</main>
             <Footer />
             <Analytics />

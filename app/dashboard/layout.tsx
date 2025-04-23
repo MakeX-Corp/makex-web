@@ -1,16 +1,16 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/app-sidebar"
-import { Header } from "@/components/header"
-
-export default function Layout({ children }: { children: React.ReactNode }) {
+import { AppSidebar } from "@/components/app-sidebar";
+import { AppProvider } from "@/context/AppContext";
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <div className="flex flex-1">
-        <main className="flex-1 p-6">
-          {children}
-        </main>
+    <AppProvider>
+      <div className="flex h-screen overflow-hidden">
+        <AppSidebar />
+        <div className="flex-1 overflow-auto">{children}</div>
       </div>
-    </div>
-  )
+    </AppProvider>
+  );
 }

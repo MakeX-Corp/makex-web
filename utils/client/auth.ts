@@ -55,3 +55,13 @@ export const getUserEmailFromToken = (token: string): string | null => {
     return null;
   }
 };
+
+export const getPlanName = (planId: string): string => {
+  if (planId === process.env.NEXT_PUBLIC_PRO_PLAN_ID) {
+    return "Pro";
+  } else if (planId === process.env.NEXT_PUBLIC_STARTER_PLAN_ID) {
+    return "Starter";
+  } else {
+    return "Free";
+  }
+};

@@ -1,43 +1,79 @@
 import { NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from "@e2b/code-interpreter";
 import { generateAppName } from "@/utils/server/app-name-generator";
 import { redisUrlSetter } from "@/utils/server/redis-client";
-import { createClient } from "@supabase/supabase-js";
 
-// ────────────────────────────────────────────────────────────────────────────────
-// POST /api/app – allocate a container to the authenticated user
-// ────────────────────────────────────────────────────────────────────────────────
 export async function POST(request: Request) {
   // Authenticate
   const result = await getSupabaseWithUser(request);
   if (result instanceof NextResponse) return result;
   const { supabase, user } = result;
-  
 
-  const appName = generateAppName()
+  try {
+    // Get prompt from request body
+    const body = await request.json();
+    const { prompt } = body;
 
-  // Insert into Supabase user_apps table
-  const { data: insertedApp, error: insertError } = await supabase
-    .from("user_apps")
-    .insert({
-      user_id: user.id,
-      app_name: appName,
-      app_url: `https://${appName}.makex.app`,
-      api_url: `https://api-${appName}.makex.app`,
-    })
-    .select()
-    .single();
+    const appName = generateAppName();
 
-  if (insertError) {
-    console.error('Supabase insert error:', insertError);
-    return NextResponse.json({ error: "Failed to save app data" }, { status: 500 });
+    // Begin transaction to ensure both app and session are created atomically
+    // Insert into Supabase user_apps table
+
+    const { data: insertedApp, error: insertError } = await supabase
+      .from("user_apps")
+      .insert({
+        user_id: user.id,
+        app_name: appName,
+        app_url: `https://${appName}.makex.app`,
+        api_url: `https://api-${appName}.makex.app`,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Supabase insert error:", insertError);
+      return NextResponse.json(
+        { error: "Failed to save app data" },
+        { status: 500 }
+      );
+    }
+
+    // Create the session in the same transaction
+    const { data: session, error: sessionError } = await supabase
+      .from("chat_sessions")
+      .insert({
+        app_id: insertedApp.id,
+        user_id: user.id,
+        title: `New Chat`, // Default title
+        metadata: { initialPrompt: prompt }, // Store prompt in metadata
+      })
+      .select()
+      .single();
+
+    if (sessionError) {
+      console.error("Session creation error:", sessionError);
+      return NextResponse.json(
+        { error: "Failed to create session" },
+        { status: 500 }
+      );
+    }
+    // Return the app data along with session ID and redirect URL
+    return NextResponse.json({
+      ...insertedApp,
+      sessionId: session.id,
+      redirectUrl: `/dashboard/${insertedApp.id}?sessionId=${session.id}`,
+    });
+  } catch (error) {
+    console.error("Error in app creation:", error);
+    return NextResponse.json(
+      { error: "Failed to process request" },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(insertedApp);
 }
 
-// GET /api/app - Get all apps for the authenticated user
+// GET /api/app - Get all apps or a specific app by ID for the authenticated user
 export async function GET(request: Request) {
   try {
     const result = await getSupabaseWithUser(request);
@@ -45,37 +81,46 @@ export async function GET(request: Request) {
 
     const { supabase, user } = result;
 
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_KEY!
-    );
+    // Get the app ID from the URL if provided
+    const { searchParams } = new URL(request.url);
+    const appId = searchParams.get("id");
 
-    const { data } = await supabaseAdmin
-    .from("invite_codes")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
+    // If an appId is provided, get just that specific app
+    if (appId) {
+      const { data: app, error } = await supabase
+        .from("user_apps")
+        .select("*")
+        .eq("id", appId)
+        .eq("user_id", user.id)
+        .single();
 
-    if (!data) {
-      return NextResponse.json({ error: "User is not authorized to access this resource" }, { status: 403 });
+      if (error) {
+        return NextResponse.json(
+          { error: "Failed to fetch app", details: error.message },
+          { status: error.code === "PGRST116" ? 404 : 500 }
+        );
+      }
+
+      return NextResponse.json(app);
     }
 
-    const { data: apps, error } = await supabase
-      .from("user_apps")
-      .select("*")
-      .eq("user_id", user.id)
-      .or("status.is.null");
+    // Otherwise, get all apps for the user
+    else {
+      const { data: apps, error } = await supabase
+        .from("user_apps")
+        .select("*")
+        .eq("user_id", user.id)
+        .or("status.is.null");
 
-  
+      if (error) {
+        return NextResponse.json(
+          { error: "Failed to fetch apps" },
+          { status: 500 }
+        );
+      }
 
-    if (error) {
-      return NextResponse.json(
-        { error: "Failed to fetch apps" },
-        { status: 500 }
-      );
+      return NextResponse.json(apps);
     }
-
-    return NextResponse.json(apps);
   } catch (error) {
     return NextResponse.json(
       { error: "Internal Server Error" },
@@ -116,14 +161,18 @@ export async function DELETE(request: Request) {
     }
 
     // kill the sandbox
-    const sbxkill = await Sandbox.kill(app.sandbox_id) 
+    const sbxkill = await Sandbox.kill(app.sandbox_id);
 
     // redis set te app url and api url to homepage
-    await redisUrlSetter(app.app_name, "https://makex.app/app-not-found", "https://makex.app/app-not-found");
-    
+    await redisUrlSetter(
+      app.app_name,
+      "https://makex.app/app-not-found",
+      "https://makex.app/app-not-found"
+    );
+
     const { error: updateError } = await supabase
       .from("user_apps")
-      .update({ status: "deleted", sandbox_status: 'deleted' })
+      .update({ status: "deleted", sandbox_status: "deleted" })
       .eq("id", appId)
       .eq("user_id", user.id);
 

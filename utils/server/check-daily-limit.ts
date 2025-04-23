@@ -1,76 +1,101 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { User } from "@supabase/supabase-js";
 
-// Default message limits if environment variables are not set
+// Default message limits for each plan
 const DEFAULT_LIMITS = {
-  free: 1,
-  starter: 100,
-  pro: 200,
+  free: 5, // 5 messages per day
+  starter: 250, // 250 messages per month
+  pro: 500, // 500 messages per month
 };
 
-// Get message limit based on subscription
-export async function getMessageLimit(
+export async function getMessageCount(
   supabase: SupabaseClient,
-  userId: string
-): Promise<number> {
-  // Get the user's most recent active subscription
-  const { data: subscription, error: subscriptionError } = await supabase
-    .from("subscriptions")
-    .select("*")
+  userId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<{ count: number | null; error: any }> {
+  const { count, error } = await supabase
+    .from("app_chat_history")
+    .select("*", { count: "exact", head: true })
     .eq("user_id", userId)
-    .in("status", ["active", "trialing", "past_due"])
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .single();
+    .eq("role", "user")
+    .gte("created_at", startDate.toISOString())
+    .lt("created_at", endDate.toISOString());
 
-  if (subscriptionError && subscriptionError.code !== "PGRST116") {
-    // Default to free plan limit if there's an error
-    return parseInt(
-      process.env.NEXT_PUBLIC_MAX_DAILY_MESSAGES_FREE ||
-        DEFAULT_LIMITS.free.toString(),
-      10
-    );
-  }
-  if (!subscription) {
-    // Free plan
-    return parseInt(
-      process.env.NEXT_PUBLIC_MAX_DAILY_MESSAGES_FREE ||
-        DEFAULT_LIMITS.free.toString(),
-      10
-    );
-  }
+  return { count, error };
+}
 
-  // Determine the message limit based on the subscription
-  switch (subscription.price_id) {
-    case process.env.NEXT_PUBLIC_PADDLE_STARTER_ID:
-      return parseInt(
-        process.env.NEXT_PUBLIC_MAX_DAILY_MESSAGES_STARTER ||
-          DEFAULT_LIMITS.starter.toString(),
-        10
+function formatDate(date: Date): string {
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+export async function checkMessageLimit(
+  supabase: SupabaseClient,
+  user: User,
+  subscriptionData: any
+): Promise<{ error?: string; status?: number }> {
+  try {
+    // Extract plan info with fallbacks
+    const planName = (subscriptionData?.planName || "free").toLowerCase();
+
+    // Handle different plan types
+    if (planName === "free") {
+      return await checkDailyLimit(supabase, user, DEFAULT_LIMITS.free);
+    } else if (["starter", "pro"].includes(planName)) {
+      // Get correct limit based on plan
+      const limit =
+        planName === "starter" ? DEFAULT_LIMITS.starter : DEFAULT_LIMITS.pro;
+
+      // Check if we have valid subscription period data
+      if (
+        subscriptionData?.subscription?.current_period_start &&
+        subscriptionData?.subscription?.current_period_end &&
+        subscriptionData?.subscription?.status === "active"
+      ) {
+        return await checkBillingPeriodLimit(
+          supabase,
+          user,
+          limit,
+          new Date(subscriptionData.subscription.current_period_start),
+          new Date(subscriptionData.subscription.current_period_end)
+        );
+      } else {
+        // Fall back to daily limit if no valid subscription period data
+        console.warn(
+          `Missing or invalid subscription period data for ${planName} plan, falling back to daily check`
+        );
+        return await checkDailyLimit(supabase, user, DEFAULT_LIMITS.free);
+      }
+    } else {
+      // Unknown plan type, fall back to free
+      console.warn(
+        `Unknown plan type: ${planName}, falling back to free plan limits`
       );
-    case process.env.NEXT_PUBLIC_PADDLE_PRO_ID:
-      return parseInt(
-        process.env.NEXT_PUBLIC_MAX_DAILY_MESSAGES_PRO ||
-          DEFAULT_LIMITS.pro.toString(),
-        10
-      );
-    default:
-      // Default to free plan limit
-      return parseInt(
-        process.env.NEXT_PUBLIC_MAX_DAILY_MESSAGES_FREE ||
-          DEFAULT_LIMITS.free.toString(),
-        10
-      );
+      return await checkDailyLimit(supabase, user, DEFAULT_LIMITS.free);
+    }
+  } catch (error) {
+    console.error("Error checking message limit:", error);
+    return {
+      error:
+        "Failed to check message limit: " +
+        (error instanceof Error ? error.message : String(error)),
+      status: 500,
+    };
   }
 }
 
-export async function getDailyMessageCount(
+async function checkDailyLimit(
   supabase: SupabaseClient,
-  user: User
-): Promise<{ count: number | null; error: any }> {
-  // Get user's local midnight time
+  user: User,
+  limit: number
+): Promise<{ error?: string; status?: number }> {
+  // Calculate today's midnight and tomorrow's midnight
   const now = new Date();
-  const userMidnight = new Date(
+  const todayMidnight = new Date(
     now.getFullYear(),
     now.getMonth(),
     now.getDate(),
@@ -79,43 +104,75 @@ export async function getDailyMessageCount(
     0,
     0
   );
-  const nextMidnight = new Date(userMidnight.getTime() + 24 * 60 * 60 * 1000);
-  const { count, error } = await supabase
-    .from("app_chat_history")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .eq("role", "user")
-    .gte("created_at", userMidnight.toISOString())
-    .lt("created_at", nextMidnight.toISOString());
+  const tomorrowMidnight = new Date(
+    todayMidnight.getTime() + 24 * 60 * 60 * 1000
+  );
 
-  console.log("count", count);
-  return { count, error };
+  // Get message count for today
+  const result = await getMessageCount(
+    supabase,
+    user.id,
+    todayMidnight,
+    tomorrowMidnight
+  );
+
+  if (result.error) {
+    return {
+      error: "Failed to check daily message limit",
+      status: 500,
+    };
+  }
+
+  // Check if limit exceeded
+  if (result.count !== null && result.count >= limit) {
+    return {
+      error: `Daily message limit reached (${result.count}/${limit}). Please try again tomorrow or upgrade your plan.`,
+      status: 429,
+    };
+  }
+
+  return {}; // No errors, under limit
+}
+
+async function checkBillingPeriodLimit(
+  supabase: SupabaseClient,
+  user: User,
+  limit: number,
+  periodStart: Date,
+  periodEnd: Date
+): Promise<{ error?: string; status?: number }> {
+  // Get message count for the current billing period
+  const result = await getMessageCount(
+    supabase,
+    user.id,
+    periodStart,
+    periodEnd
+  );
+
+  if (result.error) {
+    return {
+      error: "Failed to check billing period message limit",
+      status: 500,
+    };
+  }
+
+  // Check if limit exceeded
+  if (result.count !== null && result.count >= limit) {
+    const formattedEndDate = formatDate(periodEnd);
+
+    return {
+      error: `Monthly message limit reached (${result.count}/${limit}). Your limit will reset on ${formattedEndDate}.`,
+      status: 429,
+    };
+  }
+
+  return {}; // No errors, under limit
 }
 
 export async function checkDailyMessageLimit(
   supabase: SupabaseClient,
   user: User
 ): Promise<{ error?: string; status?: number }> {
-  const { count, error: countError } = await getDailyMessageCount(
-    supabase,
-    user
-  );
-
-  if (countError) {
-    return {
-      error: "Failed to check message limit",
-      status: 500,
-    };
-  }
-
-  const maxDailyMessages = 50000;
-
-  if (count && count >= maxDailyMessages) {
-    return {
-      error: `Daily message limit reached (${count}/${maxDailyMessages}). Please try again tomorrow or upgrade your plan.`,
-      status: 429,
-    };
-  }
-
-  return {};
+  // Default to free plan
+  return await checkDailyLimit(supabase, user, DEFAULT_LIMITS.free);
 }
