@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "@/context/session-context";
 import {
   AlertCircle,
@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Preview } from "@/components/workspace/preview";
 import { Chat } from "@/components/workspace/chat";
@@ -56,6 +55,12 @@ export default function WorkspaceContent({
   const [activeView, setActiveView] = useState<"chat" | "preview">("chat");
   const [isResetting, setIsResetting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  // State to manage the iframe refresh
+  const [iframeKey, setIframeKey] = useState<string>(
+    Math.random().toString(36).substring(2, 15)
+  );
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Load sessions when component mounts or appId changes
   useEffect(() => {
@@ -166,6 +171,22 @@ export default function WorkspaceContent({
       setIsResetting(false);
     }
   };
+
+  // Function to refresh the iframe
+  const refreshPreview = () => {
+    setIsRefreshing(true);
+    setIframeKey(Math.random().toString(36).substring(2, 15));
+
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1000);
+  };
+
+  // Handler for when chat response is complete
+  const handleResponseComplete = () => {
+    refreshPreview();
+  };
+
   // If there's an error loading sessions, show an error
   if (sessionsError) {
     return <SessionsError sessionsError={sessionsError} />;
@@ -373,19 +394,22 @@ export default function WorkspaceContent({
         )}
 
         {/* Show session content when a session is loaded */}
-
         <div className="p-2 sm:p-4 overflow-auto h-full">
           {/* Desktop view - side by side */}
           <div className="hidden lg:grid grid-cols-2 gap-4 h-full">
             {/* Left panel */}
             <Chat
               sessionId={currentSessionId || ""}
-              onResponseComplete={() => {}}
+              onResponseComplete={handleResponseComplete}
               onSessionError={() => {}}
             />
 
             {/* Right panel */}
-            <Preview />
+            <Preview
+              iframeKey={iframeKey}
+              isRefreshing={isRefreshing}
+              onRefresh={refreshPreview}
+            />
           </div>
 
           {/* Mobile/Tablet view - tabbed interface */}
@@ -417,7 +441,7 @@ export default function WorkspaceContent({
                 <div className="flex-1">
                   <Chat
                     sessionId={currentSessionId || ""}
-                    onResponseComplete={() => {}}
+                    onResponseComplete={handleResponseComplete}
                     onSessionError={() => {}}
                   />
                 </div>
@@ -428,7 +452,11 @@ export default function WorkspaceContent({
                 className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col"
               >
                 <div className="flex-1">
-                  <Preview />
+                  <Preview
+                    iframeKey={iframeKey}
+                    isRefreshing={isRefreshing}
+                    onRefresh={refreshPreview}
+                  />
                 </div>
               </TabsContent>
             </Tabs>

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { RefreshCw, ExternalLink, Smartphone, QrCode } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,29 +8,16 @@ import { QRCodeDisplay } from "@/components/qr-code";
 import MobileMockup from "@/components/mobile-mockup";
 import { useApp } from "@/context/AppContext";
 
-export function Preview() {
+interface PreviewProps {
+  iframeKey: string; // Key to force iframe refresh
+  isRefreshing: boolean; // Loading state
+  onRefresh: () => void; // Refresh function from parent
+}
+
+export function Preview({ iframeKey, isRefreshing, onRefresh }: PreviewProps) {
   const [viewMode, setViewMode] = useState<"mobile" | "qr">("mobile");
   const { appId, appUrl } = useSession();
   const { authToken } = useApp();
-  // Initialize with a random key instead of null
-  const [iframeKey, setIframeKey] = useState<string>(
-    Math.random().toString(36).substring(2, 15)
-  );
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  useEffect(() => {
-    handleRefresh();
-  }, [appUrl]);
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setIframeKey(Math.random().toString(36).substring(2, 15));
-
-    // Simulate refresh delay
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 1000);
-  };
 
   return (
     <Card className="h-full border rounded-md">
@@ -72,7 +59,7 @@ export function Preview() {
             <Button
               size="icon"
               variant="ghost"
-              onClick={handleRefresh}
+              onClick={onRefresh}
               className={isRefreshing ? "animate-spin" : ""}
             >
               <RefreshCw className="h-4 w-4" />
