@@ -34,7 +34,6 @@ export async function getSessionsForApp(
   appId: string
 ): Promise<{ sessions: SessionListItem[] }> {
   try {
-    console.log(`[SESSION SERVICE] Fetching session list for app ${appId}`);
     const decodedToken = getAuthToken();
 
     if (!decodedToken) {
@@ -60,7 +59,6 @@ export async function getSessionsForApp(
       );
     }
 
-    console.log(`[SESSION SERVICE] Received sessions for app ${appId}:`, data);
     // Map to our SessionListItem format
     const sessions = data.map((session: any) => ({
       id: session.id,
@@ -84,10 +82,6 @@ export async function getSession(
   sessionId: string
 ): Promise<SessionData | null> {
   try {
-    console.log(
-      `[SESSION SERVICE] Fetching session ${sessionId} for app ${appId}`
-    );
-
     const decodedToken = getAuthToken();
 
     if (!decodedToken) {
@@ -143,7 +137,6 @@ export async function createNewSession(
   title?: string
 ): Promise<SessionData | null> {
   try {
-    console.log(`[SESSION SERVICE] Creating new session for app ${appId}`);
     const decodedToken = getAuthToken();
 
     if (!decodedToken) {
@@ -190,7 +183,6 @@ export async function createNewSession(
 // Delete a session (soft delete)
 export async function deleteSession(sessionId: string): Promise<boolean> {
   try {
-    console.log(`[SESSION SERVICE] Deleting session ${sessionId}`);
     const decodedToken = getAuthToken();
 
     if (!decodedToken) {
@@ -230,7 +222,6 @@ export async function updateSessionTitle(
   title: string
 ): Promise<boolean> {
   try {
-    console.log(`[SESSION SERVICE] Updating title for session ${sessionId}`);
     const decodedToken = getAuthToken();
 
     if (!decodedToken) {
@@ -271,7 +262,6 @@ export async function getAppInfo(appId: string): Promise<{
   error: string | null;
 }> {
   try {
-    console.log(`[SESSION SERVICE] Fetching app info for app ${appId}`);
     const decodedToken = getAuthToken();
 
     if (!decodedToken) {
@@ -325,7 +315,6 @@ export async function updateSession(
   updates: Partial<SessionData>
 ): Promise<boolean> {
   try {
-    console.log(`[SESSION SERVICE] Updating session ${sessionId}`);
     const decodedToken = getAuthToken();
 
     if (!decodedToken) {

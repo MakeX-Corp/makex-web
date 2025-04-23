@@ -104,10 +104,6 @@ export function Chat({
           authToken || ""
         );
         setInitialMessages(messages);
-
-        if (authToken && subscription) {
-          await initialCheck();
-        }
       } catch (error) {
         console.error("Error fetching messages:", error);
         if (onSessionError) {
@@ -129,6 +125,10 @@ export function Chat({
       setLimitReached(reachedLimit);
     }
   };
+
+  useEffect(() => {
+    initialCheck();
+  }, [authToken, subscription]);
 
   const { messages, input, handleInputChange, handleSubmit, error } = useChat({
     id: sessionId,
