@@ -13,6 +13,7 @@ import {
   Moon,
   Trash2,
   Loader2,
+  Plus,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -202,6 +203,17 @@ export function AppSidebar() {
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Your Apps
                 </h2>
+                {/* Add New Plus Button */}
+                <Link href="/dashboard">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 rounded-sm hover:bg-muted"
+                    title="Create new app"
+                  >
+                    <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+                  </Button>
+                </Link>
               </div>
 
               {/* Search bar */}
@@ -263,9 +275,11 @@ export function AppSidebar() {
             </>
           ) : (
             <div className="flex justify-center">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MessageCircle className="h-4 w-4" />
-              </Button>
+              <Link href="/dashboard">
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MessageCircle className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           )}
         </div>

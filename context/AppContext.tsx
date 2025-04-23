@@ -196,6 +196,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await response.json();
+      fetchApps();
       return data.redirectUrl;
     } catch (error) {
       console.error("Error creating app:", error);
