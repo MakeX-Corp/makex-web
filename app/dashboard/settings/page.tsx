@@ -20,14 +20,28 @@ export default function ProfileSettings() {
   const customerId = subscription?.customerId || null;
   const email = subscription?.email || "";
   const initials = email ? email.substring(0, 2).toUpperCase() : "US";
-  const supabase = createClientComponentClient();
   const [isManagingSubscription, setIsManagingSubscription] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
-    setIsSigningOut(true);
-    await supabase.auth.signOut();
-    router.push("/");
+    try {
+      setIsSigningOut(true);
+      const supabase = createClientComponentClient();
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error("Error during sign out:", error);
+        throw error;
+      }
+      setTimeout(() => {
+        console.log("Redirecting to homepage...");
+        //router.push("/");
+        window.location.href = "/";
+      }, 500);
+    } catch (error) {
+      console.error("Failed to sign out:", error);
+      setIsSigningOut(false);
+    }
   };
 
   const handleManageSubscription = async () => {
