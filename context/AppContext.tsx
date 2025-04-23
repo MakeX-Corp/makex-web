@@ -80,13 +80,6 @@ interface AppContextType {
   createApp: (prompt: string) => Promise<string>; // Returns URL to redirect to
   deleteApp: (appId: string) => Promise<void>;
 
-  // Authentication
-  signOut: () => Promise<void>;
-  isSigningOut: boolean;
-
-  // Auth token
-  authToken: string | null;
-
   // Loading states
   isLoading: boolean;
 }
@@ -124,7 +117,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
 
   // Sample apps data - will be replaced by API data on load
   const [apps, setApps] = useState<AppData[]>([]);
@@ -140,37 +132,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Toggle function for sidebar
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
-  };
-
-  // Store auth token in state
-  const [authToken, setAuthToken] = useState<string | null>(() =>
-    getAuthToken()
-  );
-
-  // Sign out function
-  const signOut = async () => {
-    try {
-      setIsSigningOut(true);
-      const supabase = createClientComponentClient();
-
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        console.error("Error signing out from Supabase:", error);
-        throw error;
-      }
-      // Clear local app state
-      setApps([]);
-      setSubscription(null);
-      // Redirect to home/login page
-      router.push("/");
-    } catch (error) {
-      console.error("Error during sign out process:", error);
-      // Even if there's an error, try to redirect
-      router.push("/");
-    } finally {
-      setIsSigningOut(false);
-    }
   };
 
   // Create app function
@@ -327,9 +288,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     deleteApp,
     refreshApps: fetchApps,
     refreshSubscription: fetchSubscription,
-    signOut,
-    isSigningOut,
-    authToken,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

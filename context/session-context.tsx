@@ -125,11 +125,6 @@ export function SessionProvider({
       setSessionsError(null);
 
       const { sessions: sessionsList } = await getSessionsForApp(newAppId);
-
-      console.log(
-        `Received ${sessionsList.length} sessions for app ${newAppId}:`,
-        sessionsList
-      );
       setSessions(sessionsList);
 
       // Check URL for sessionId first

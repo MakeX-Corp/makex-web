@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useSession } from "@/context/session-context";
 import { QRCodeDisplay } from "@/components/qr-code";
 import MobileMockup from "@/components/mobile-mockup";
-import { useApp } from "@/context/AppContext";
+import { getAuthToken } from "@/utils/client/auth";
 
 interface PreviewProps {
   iframeKey: string; // Key to force iframe refresh
@@ -17,8 +17,7 @@ interface PreviewProps {
 export function Preview({ iframeKey, isRefreshing, onRefresh }: PreviewProps) {
   const [viewMode, setViewMode] = useState<"mobile" | "qr">("mobile");
   const { appId, appUrl } = useSession();
-  const { authToken } = useApp();
-
+  const authToken = getAuthToken();
   return (
     <Card className="h-full border rounded-md">
       <CardContent className="relative h-full flex flex-col p-4">

@@ -9,15 +9,10 @@ import { Loader2, LogOut, Globe } from "lucide-react";
 import { getAuthToken } from "@/utils/client/auth";
 import { useApp } from "@/context/AppContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 export default function ProfileSettings() {
   const router = useRouter();
-  const {
-    subscription,
-    isLoading: subscriptionLoading,
-    signOut,
-    isSigningOut,
-  } = useApp();
+  const { subscription, isLoading: subscriptionLoading } = useApp();
 
   // Derive values from the subscription data
   const pendingCancellation = subscription?.pendingCancellation || false;
@@ -25,11 +20,28 @@ export default function ProfileSettings() {
   const customerId = subscription?.customerId || null;
   const email = subscription?.email || "";
   const initials = email ? email.substring(0, 2).toUpperCase() : "US";
-
   const [isManagingSubscription, setIsManagingSubscription] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      setIsSigningOut(true);
+      const supabase = createClientComponentClient();
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error("Error during sign out:", error);
+        throw error;
+      }
+      setTimeout(() => {
+        console.log("Redirecting to homepage...");
+        //router.push("/");
+        window.location.href = "/";
+      }, 500);
+    } catch (error) {
+      console.error("Failed to sign out:", error);
+      setIsSigningOut(false);
+    }
   };
 
   const handleManageSubscription = async () => {
@@ -107,7 +119,7 @@ export default function ProfileSettings() {
         <Button
           variant="ghost"
           size="sm"
-          className="hover:text-destructive hover:bg-destructive/10"
+          className="hover:bg-secondary/80"
           onClick={handleSignOut}
         >
           <LogOut className="mr-2 h-4 w-4" />
