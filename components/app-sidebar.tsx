@@ -54,7 +54,7 @@ function ThemeToggle() {
 export function AppSidebar() {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
-  const { subscription, apps, deleteApp } = useApp(); // Assume deleteApp is a function in your AppContext
+  const { subscription, apps, deleteApp, isLoading } = useApp();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredApps, setFilteredApps] = useState(apps);
   const { theme } = useTheme();
@@ -230,7 +230,11 @@ export function AppSidebar() {
 
               {/* Enhanced Apps list with delete icon - Takes remaining space */}
               <div className="space-y-1 overflow-y-auto flex-1">
-                {filteredApps.length > 0 ? (
+                {isLoading ? (
+                  <div className="flex justify-center py-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                ) : filteredApps.length > 0 ? (
                   filteredApps.map((app) => (
                     <div key={app.id} className="group relative">
                       <Link
@@ -264,11 +268,9 @@ export function AppSidebar() {
                   ))
                 ) : (
                   <div className="text-xs text-muted-foreground py-2 px-2 italic">
-                    {apps.length === 0 ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "No matching apps"
-                    )}
+                    {searchQuery.trim() !== ""
+                      ? "No matching apps"
+                      : "No apps yet. Click the + button to create one."}
                   </div>
                 )}
               </div>
