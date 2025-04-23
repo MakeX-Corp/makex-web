@@ -1,26 +1,11 @@
 "use client";
 
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Loader2,
-  User,
-  CreditCard,
-  LogOut,
-  Globe,
-  ChevronRight,
-} from "lucide-react";
+import { Loader2, LogOut, Globe } from "lucide-react";
 import { getAuthToken } from "@/utils/client/auth";
 import { useApp } from "@/context/AppContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -224,7 +209,9 @@ export default function ProfileSettings() {
                     ? "Your subscription will be cancelled at the end of the current billing period."
                     : planName === "Free"
                     ? "Upgrade to access premium features."
-                    : "Access to all premium features."}
+                    : planName === "Starter"
+                    ? "Access to some premium features."
+                    : "Full access to all premium features."}
                 </p>
               </div>
               <div className="text-right">
@@ -232,8 +219,8 @@ export default function ProfileSettings() {
                   {planName === "Free"
                     ? "Free"
                     : planName === "Starter"
-                    ? "$10/month"
-                    : "$20/month"}
+                    ? "$19/month"
+                    : "$49/month"}
                 </p>
               </div>
             </div>
@@ -243,54 +230,109 @@ export default function ProfileSettings() {
               <div className="mb-6">
                 <div className="bg-muted/50 rounded-md p-4">
                   <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-sm">
-                      <svg
-                        className="h-5 w-5 text-primary"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      Unlimited projects
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <svg
-                        className="h-5 w-5 text-primary"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      Priority support
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <svg
-                        className="h-5 w-5 text-primary"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      Advanced integrations
-                    </li>
+                    {planName === "Starter" ? (
+                      <>
+                        <li className="flex items-center gap-2 text-sm">
+                          <svg
+                            className="h-5 w-5 text-primary"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          250 messages per month
+                        </li>
+                        <li className="flex items-center gap-2 text-sm">
+                          <svg
+                            className="h-5 w-5 text-primary"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          Publish to App Store and Google Play (coming soon)
+                        </li>
+                        <li className="flex items-center gap-2 text-sm">
+                          <svg
+                            className="h-5 w-5 text-primary"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          Priority support
+                        </li>
+                      </>
+                    ) : (
+                      <>
+                        <li className="flex items-center gap-2 text-sm">
+                          <svg
+                            className="h-5 w-5 text-primary"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          500 messages per month
+                        </li>
+                        <li className="flex items-center gap-2 text-sm">
+                          <svg
+                            className="h-5 w-5 text-primary"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          Advanced AI editing
+                        </li>
+                        <li className="flex items-center gap-2 text-sm">
+                          <svg
+                            className="h-5 w-5 text-primary"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          1-1 support
+                        </li>
+                      </>
+                    )}
                   </ul>
                 </div>
               </div>
