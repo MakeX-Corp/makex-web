@@ -57,7 +57,7 @@ function ThemeToggle() {
 export function AppSidebar() {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
-  const { apps, deleteApp, refreshApps, isLoading } = useApp();
+  const { apps, deleteApp, setApps, isLoading } = useApp();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredApps, setFilteredApps] = useState(apps);
   const { theme } = useTheme();
@@ -156,7 +156,7 @@ export function AppSidebar() {
     setEditingAppId(null);
   };
 
-  // Save the edited app name
+  // Save app name
   const saveAppName = async (e: React.MouseEvent, appId: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -166,13 +166,21 @@ export function AppSidebar() {
     setIsUpdatingApp(true);
     try {
       await updateAppName(appId, editedAppName.trim());
+
+      setApps((prevApps) =>
+        prevApps.map((app) =>
+          app.id === appId
+            ? { ...app, display_name: editedAppName.trim() }
+            : app
+        )
+      );
+
       setEditingAppId(null);
     } catch (error) {
       console.error("Failed to update app name:", error);
       // Handle error (e.g., show toast notification)
     } finally {
       setIsUpdatingApp(false);
-      refreshApps();
     }
   };
 

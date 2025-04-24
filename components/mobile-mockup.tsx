@@ -7,50 +7,16 @@ interface MobileMockupProps {
   containerState: "starting" | "live";
 }
 
-
 export default function MobileMockup({
   appUrl,
   iframeKey,
-  containerState
+  containerState,
 }: MobileMockupProps) {
-
-  const [isCreatingSandbox, setIsCreatingSandbox] = useState(false);
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200
   );
 
-  const handleCreateSandbox = async () => {
-    if (!appId) return;
-
-    try {
-      setIsCreatingSandbox(true);
-      const response = await fetch("/api/sandbox/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          appId: appId,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-
-      const sandboxData = await response.json();
-      console.log(sandboxData);
-    } catch (error) {
-      console.error("Error recreating sandbox:", error);
-    } finally {
-      setIsCreatingSandbox(false);
-    }
-  };
-
   useEffect(() => {
-    handleCreateSandbox();
-
     // Track window size
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
@@ -59,7 +25,6 @@ export default function MobileMockup({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
 
   // Determine scale based on window width
   const getScale = () => {
@@ -92,7 +57,6 @@ export default function MobileMockup({
   };
 
   return (
-
     <div style={containerStyle}>
       <div style={phoneStyle}>
         {/* Side buttons */}

@@ -100,25 +100,25 @@ export async function POST(req: Request) {
       );
     }
 
-
     // make a post request to api/sandbox/ with body appId and appName
     try {
-      const response = await fetch("https://makex-git-dev-shopvana.vercel.app/api/sandbox", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          appId,
-          appName,
-        }),
-
-
-      });
-      if (response.status === 201 || 400 ) {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_APP_URL}/api/sandbox`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            appId,
+            appName,
+          }),
+        }
+      );
+      if (response.status === 201 || 400) {
         // sleep
-        await new Promise(resolve => setTimeout(resolve, 4000));
+        await new Promise((resolve) => setTimeout(resolve, 4000));
       }
     } catch (error) {
       console.error("Error creating sandbox:", error);
@@ -200,13 +200,7 @@ export async function POST(req: Request) {
       message_id: lastUserMessage.id,
     });
 
-    // Check if there are any active sandboxes no just hit the get endpoint 
-
-
-
-
-
-
+    // Check if there are any active sandboxes no just hit the get endpoint
 
     const result = streamText({
       model: anthropic(modelName),
