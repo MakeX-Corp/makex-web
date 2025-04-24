@@ -26,6 +26,7 @@ import {
 import { SessionSelector } from "@/components/workspace/session-selector";
 import { SessionsError } from "@/components/workspace/sessions-error";
 import { getAuthToken } from "@/utils/client/auth";
+
 interface WorkspaceContentProps {
   initialSessionId: string | null;
 }
@@ -53,11 +54,7 @@ export default function WorkspaceContent({
 
   const [authToken, setAuthToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    const token = getAuthToken();
-    setAuthToken(token);
-  }, []);
-  // State for the UI elements
+  // State for UI elements
   const [activeView, setActiveView] = useState<"chat" | "preview">("chat");
   const [isResetting, setIsResetting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -67,6 +64,30 @@ export default function WorkspaceContent({
     Math.random().toString(36).substring(2, 15)
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Track window width for responsive design
+  const [windowWidth, setWindowWidth] = useState(0);
+
+  // Effect to set window width on mount and resize
+  useEffect(() => {
+    // Set initial width
+    setWindowWidth(window.innerWidth);
+
+    // Update width on resize
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Get auth token once on client side
+  useEffect(() => {
+    const token = getAuthToken();
+    setAuthToken(token);
+  }, []);
+
   // Load sessions when component mounts or appId changes
   useEffect(() => {
     if (appId) {
@@ -196,6 +217,9 @@ export default function WorkspaceContent({
   if (sessionsError) {
     return <SessionsError sessionsError={sessionsError} />;
   }
+
+  // Determine if we're on mobile/tablet or desktop
+  const isDesktop = windowWidth >= 1024; // lg breakpoint is 1024px
 
   return (
     <div className="flex flex-col h-screen">
@@ -400,74 +424,89 @@ export default function WorkspaceContent({
 
         {/* Show session content when a session is loaded */}
         <div className="p-2 sm:p-4 overflow-auto h-full">
-          {/* Desktop view - side by side */}
-          <div className="hidden lg:grid grid-cols-2 gap-4 h-full">
-            {/* Left panel */}
-            <Chat
-              sessionId={currentSessionId || ""}
-              onResponseComplete={handleResponseComplete}
-              onSessionError={() => {}}
-              authToken={authToken}
-            />
+          {/* Only render the desktop or mobile view based on screen size */}
+          {windowWidth > 0 && (
+            <>
+              {isDesktop ? (
+                // Desktop view - side by side layout
+                <div className="grid grid-cols-2 gap-4 h-full">
+                  {/* Left panel - Chat */}
 
-            {/* Right panel */}
-            <Preview
-              iframeKey={iframeKey}
-              isRefreshing={isRefreshing}
-              onRefresh={refreshPreview}
-            />
-          </div>
-
-          {/* Mobile/Tablet view - tabbed interface */}
-          <div className="lg:hidden h-full">
-            <Tabs
-              defaultValue="chat"
-              value={activeView}
-              onValueChange={(v) => setActiveView(v as "chat" | "preview")}
-              className="h-full flex flex-col"
-            >
-              <TabsList className="grid grid-cols-2 mb-2">
-                <TabsTrigger value="chat" className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4" />
-                  Chat
-                </TabsTrigger>
-                <TabsTrigger
-                  value="preview"
-                  className="flex items-center gap-2"
-                >
-                  <Smartphone className="h-4 w-4" />
-                  Preview
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent
-                value="chat"
-                className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col"
-              >
-                <div className="flex-1">
                   <Chat
                     sessionId={currentSessionId || ""}
                     onResponseComplete={handleResponseComplete}
                     onSessionError={() => {}}
                     authToken={authToken}
                   />
-                </div>
-              </TabsContent>
 
-              <TabsContent
-                value="preview"
-                className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col"
-              >
-                <div className="flex-1">
+                  {/* Right panel - Preview */}
+
                   <Preview
                     iframeKey={iframeKey}
                     isRefreshing={isRefreshing}
                     onRefresh={refreshPreview}
                   />
                 </div>
-              </TabsContent>
-            </Tabs>
-          </div>
+              ) : (
+                // Mobile/tablet view - tabbed interface with persistent components
+                <div className="h-full">
+                  <Tabs
+                    defaultValue="chat"
+                    value={activeView}
+                    onValueChange={(v) =>
+                      setActiveView(v as "chat" | "preview")
+                    }
+                    className="h-full flex flex-col"
+                  >
+                    <TabsList className="grid grid-cols-2 mb-2">
+                      <TabsTrigger
+                        value="chat"
+                        className="flex items-center gap-2"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        Chat
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="preview"
+                        className="flex items-center gap-2"
+                      >
+                        <Smartphone className="h-4 w-4" />
+                        Preview
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <div className="flex-1 relative">
+                      {/* Both components are always rendered, but we control visibility with CSS */}
+                      <div
+                        className={`absolute inset-0 ${
+                          activeView === "chat" ? "block" : "hidden"
+                        }`}
+                      >
+                        <Chat
+                          sessionId={currentSessionId || ""}
+                          onResponseComplete={handleResponseComplete}
+                          onSessionError={() => {}}
+                          authToken={authToken}
+                        />
+                      </div>
+
+                      <div
+                        className={`absolute inset-0 ${
+                          activeView === "preview" ? "block" : "hidden"
+                        }`}
+                      >
+                        <Preview
+                          iframeKey={iframeKey}
+                          isRefreshing={isRefreshing}
+                          onRefresh={refreshPreview}
+                        />
+                      </div>
+                    </div>
+                  </Tabs>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </main>
     </div>

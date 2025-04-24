@@ -97,7 +97,7 @@ export async function getSession(
     }
 
     // Fetch the session from the API
-    const response = await fetch(`/api/sessions/id?sessionId=${sessionId}`, {
+    const response = await fetch(`/api/sessions?sessionId=${sessionId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -306,41 +306,5 @@ export async function getAppInfo(appId: string): Promise<{
           ? error.message
           : "Unknown error fetching app info",
     };
-  }
-}
-
-// Update session data
-export async function updateSession(
-  sessionId: string,
-  updates: Partial<SessionData>
-): Promise<boolean> {
-  try {
-    const decodedToken = getAuthToken();
-
-    if (!decodedToken) {
-      throw new Error("No authentication token found");
-    }
-
-    const response = await fetch(`/api/sessions/id?sessionId=${sessionId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${decodedToken}`,
-      },
-      body: JSON.stringify(updates),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        isApiError(data) ? data.error : "Failed to update session"
-      );
-    }
-
-    return true;
-  } catch (error) {
-    console.error("[SESSION SERVICE] Error updating session:", error);
-    return false;
   }
 }

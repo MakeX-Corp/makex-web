@@ -117,17 +117,24 @@ export function Chat({
     getMessages();
   }, [sessionId, appId, authToken, onSessionError]);
 
-  const initialCheck = async () => {
-    const result = await checkMessageLimit(authToken || "", subscription);
-    if (result) {
-      const { remainingMessages, reachedLimit } = result;
-      setRemainingMessages(remainingMessages);
-      setLimitReached(reachedLimit);
-    }
-  };
-
   useEffect(() => {
-    initialCheck();
+    let isMounted = true;
+
+    const checkLimit = async () => {
+      if (!authToken || !subscription) return;
+
+      const result = await checkMessageLimit(authToken, subscription);
+      if (isMounted && result) {
+        setRemainingMessages(result.remainingMessages);
+        setLimitReached(result.reachedLimit);
+      }
+    };
+
+    checkLimit();
+
+    return () => {
+      isMounted = false;
+    };
   }, [authToken, subscription]);
 
   const { messages, input, handleInputChange, handleSubmit, error } = useChat({
@@ -317,13 +324,6 @@ export function Chat({
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
   }, [messages, isWaitingForResponse]);
-
-  // Focus the input field when the chat component loads
-  useEffect(() => {
-    if (!isLoading && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isLoading]);
 
   // Render message part based on type
   const renderMessagePart = (part: any) => {
