@@ -63,7 +63,7 @@ export async function GET(request: Request) {
 
                 console.log("Diff minutes:", diffMinutes);
 
-                if (diffMinutes > -1) {
+                if (diffMinutes > 3) {
                     try {
                         // pause the sandbox 
                         const { data: updatedSandbox, error: updatedSandboxError } =
@@ -88,7 +88,15 @@ export async function GET(request: Request) {
                         // pause the sandbox
                         await pauseE2BContainer(sandbox.sandbox_id);
 
-                        await redisUrlSetter(sandbox.app_name, "makex.app/app-not-found", "makex.app/app-not-found");
+                        // get the app 
+                        const { data: app, error: appError } =
+                            await supabase
+                                .from("apps")
+                                .select("app_name, app_url, api_url")
+                                .eq("id", sandbox.app_id)
+                                .single();
+
+                        await redisUrlSetter(app?.app_name, "makex.app/app-not-found", "makex.app/app-not-found");
 
 
 
