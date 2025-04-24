@@ -21,7 +21,31 @@ export default function MobileMockup({
 
   const handleCreateSandbox = async () => {
     if (!appId) return;
-    // Sandbox creation logic
+
+    try {
+      setIsCreatingSandbox(true);
+      const response = await fetch("/api/sandbox/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          appId: appId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const sandboxData = await response.json();
+      console.log(sandboxData);
+    } catch (error) {
+      console.error("Error recreating sandbox:", error);
+    } finally {
+      setIsCreatingSandbox(false);
+    }
   };
 
   useEffect(() => {
