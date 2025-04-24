@@ -100,7 +100,7 @@ export function SessionProvider({
       // Set the configuration values from database
       setApiUrl(data.api_url || "");
       setAppUrl(data.app_url || "");
-      setAppName(data.app_name || `App ${newAppId}`);
+      setAppName(data.display_name || data.app_name || "");
       setSupabaseProject(data.supabase_project);
 
       // Now load the sessions for this app

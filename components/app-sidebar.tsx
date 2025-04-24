@@ -11,18 +11,21 @@ import {
   MessageCircle,
   Sun,
   Moon,
-  Trash2,
+  Trash,
   Loader2,
   Plus,
+  Edit,
+  Check,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { XIcon, DiscordIcon, renderIcon } from "@/utils/image/icon-utils";
 import { useTheme } from "next-themes";
-
+import { updateAppName } from "@/lib/app-service";
 // Import dialog components for confirmation modal
 import {
   Dialog,
@@ -54,7 +57,7 @@ function ThemeToggle() {
 export function AppSidebar() {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
-  const { subscription, apps, deleteApp, isLoading } = useApp();
+  const { apps, deleteApp, refreshApps, isLoading } = useApp();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredApps, setFilteredApps] = useState(apps);
   const { theme } = useTheme();
@@ -66,6 +69,12 @@ export function AppSidebar() {
     id: string;
     name: string;
   }>(null);
+
+  // State for editing app names
+  const [editingAppId, setEditingAppId] = useState<string | null>(null);
+  const [editedAppName, setEditedAppName] = useState("");
+  const [isUpdatingApp, setIsUpdatingApp] = useState(false);
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   // External links
   const twitterUrl = "https://x.com/Makexapp";
@@ -87,6 +96,13 @@ export function AppSidebar() {
       setFilteredApps(filtered);
     }
   }, [searchQuery, apps]);
+
+  // Focus the input when editing starts
+  useEffect(() => {
+    if (editingAppId && editInputRef.current) {
+      editInputRef.current.focus();
+    }
+  }, [editingAppId]);
 
   // Handle delete confirmation
   const confirmDelete = (
@@ -118,6 +134,45 @@ export function AppSidebar() {
       } finally {
         setIsDeletingApp(false);
       }
+    }
+  };
+
+  // Start editing app name
+  const startEditing = (
+    e: React.MouseEvent,
+    appId: string,
+    currentName: string
+  ) => {
+    e.preventDefault(); // Prevent navigation
+    e.stopPropagation(); // Prevent event bubbling
+    setEditingAppId(appId);
+    setEditedAppName(currentName);
+  };
+
+  // Cancel editing
+  const cancelEditing = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingAppId(null);
+  };
+
+  // Save the edited app name
+  const saveAppName = async (e: React.MouseEvent, appId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (editedAppName.trim() === "") return;
+
+    setIsUpdatingApp(true);
+    try {
+      await updateAppName(appId, editedAppName.trim());
+      setEditingAppId(null);
+    } catch (error) {
+      console.error("Failed to update app name:", error);
+      // Handle error (e.g., show toast notification)
+    } finally {
+      setIsUpdatingApp(false);
+      refreshApps();
     }
   };
 
@@ -228,7 +283,7 @@ export function AppSidebar() {
                 />
               </div>
 
-              {/* Enhanced Apps list with delete icon - Takes remaining space */}
+              {/* Enhanced Apps list with edit and delete functionality */}
               <div className="space-y-1 overflow-y-auto flex-1">
                 {isLoading ? (
                   <div className="flex justify-center py-2">
@@ -237,33 +292,94 @@ export function AppSidebar() {
                 ) : filteredApps.length > 0 ? (
                   filteredApps.map((app) => (
                     <div key={app.id} className="group relative">
-                      <Link
-                        href={`/dashboard/${app.id}`}
-                        className={cn(
-                          "flex items-center py-1.5 px-2 text-sm rounded-md transition-colors font-medium w-full pr-8",
-                          pathname.includes(`/dashboard/${app.id}`)
-                            ? "bg-primary/10 text-primary"
-                            : "text-foreground hover:bg-muted"
-                        )}
-                      >
-                        <span className="truncate">
-                          {app.app_name || "Untitled App"}
-                        </span>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) =>
-                          confirmDelete(
-                            e,
-                            app.id,
-                            app.app_name || "Untitled App"
-                          )
-                        }
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                      </Button>
+                      {editingAppId === app.id ? (
+                        // Editing mode
+                        <div className="flex items-center p-1.5 rounded-md bg-muted/50">
+                          <input
+                            ref={editInputRef}
+                            type="text"
+                            value={editedAppName}
+                            onChange={(e) => setEditedAppName(e.target.value)}
+                            className="flex-1 text-sm py-0.5 px-1.5 rounded bg-background border focus:outline-none focus:ring-1 focus:ring-primary"
+                            disabled={isUpdatingApp}
+                          />
+                          <div className="flex ml-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-primary"
+                              onClick={(e) => saveAppName(e, app.id)}
+                              disabled={isUpdatingApp}
+                            >
+                              {isUpdatingApp ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Check className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground"
+                              onClick={cancelEditing}
+                              disabled={isUpdatingApp}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        // Normal view mode
+                        <>
+                          <Link
+                            href={`/dashboard/${app.id}`}
+                            className={cn(
+                              "flex items-center py-1.5 px-2 text-sm rounded-md transition-colors font-medium w-full pr-12",
+                              pathname.includes(`/dashboard/${app.id}`)
+                                ? "bg-primary/10 text-primary"
+                                : "text-foreground hover:bg-muted"
+                            )}
+                          >
+                            <span className="truncate">
+                              {app.display_name || app.app_name}
+                            </span>
+                          </Link>
+                          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 transition-opacity">
+                            {/* Edit button */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={(e) =>
+                                startEditing(
+                                  e,
+                                  app.id,
+                                  app.display_name ||
+                                    app.app_name ||
+                                    "Untitled App"
+                                )
+                              }
+                            >
+                              <Edit className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                            </Button>
+                            {/* Delete button */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={(e) =>
+                                confirmDelete(
+                                  e,
+                                  app.id,
+                                  app.display_name || app.app_name
+                                )
+                              }
+                            >
+                              <Trash className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))
                 ) : (
