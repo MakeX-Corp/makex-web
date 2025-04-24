@@ -8,6 +8,7 @@ export default function DashboardLayout({
   return (
     <AppProvider>
       <div className="flex h-screen overflow-hidden">
+        <AppSidebar />
         <div className="flex-1 overflow-auto">{children}</div>
       </div>
     </AppProvider>
