@@ -103,7 +103,7 @@ export async function POST(req: Request) {
 
     // make a post request to api/sandbox/ with body appId and appName
     try {
-      const response = await fetch("http://localhost:3000/api/sandbox", {
+      const response = await fetch("https://makex-git-dev-shopvana.vercel.app/api/sandbox", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
