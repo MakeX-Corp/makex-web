@@ -228,112 +228,12 @@ export default function DashboardPage() {
                 className="mx-auto"
               />
             </div>
-            <h1 className="text-4xl font-bold tracking-tight mb-3">
-              What do you want to build?
-            </h1>
-          </div>
-
-          {/* Moving suggestion pills in three rows */}
-          <div className="mb-8">
-            {/* Row 1 - scrolling left */}
-            <div className="overflow-hidden mb-2">
-              <div
-                ref={row1Ref}
-                className="flex whitespace-nowrap"
-                style={{ willChange: "transform" }}
-              >
-                {duplicateItemsForScrolling(ROW_1).map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSuggestionClick(suggestion.label)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
-                  >
-                    {suggestion.icon}
-                    {suggestion.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Row 2 - scrolling right */}
-            <div className="overflow-hidden mb-2">
-              <div
-                ref={row2Ref}
-                className="flex whitespace-nowrap"
-                style={{ willChange: "transform" }}
-              >
-                {duplicateItemsForScrolling(ROW_2).map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSuggestionClick(suggestion.label)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
-                  >
-                    {suggestion.icon}
-                    {suggestion.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Row 3 - scrolling left */}
-            <div className="overflow-hidden">
-              <div
-                ref={row3Ref}
-                className="flex whitespace-nowrap"
-                style={{ willChange: "transform" }}
-              >
-                {duplicateItemsForScrolling(ROW_3).map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSuggestionClick(suggestion.label)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
-                  >
-                    {suggestion.icon}
-                    {suggestion.label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* Main prompt input */}
           <div className="mb-8">
-            <div className="relative border rounded-xl shadow-lg overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
-              <textarea
-                ref={inputRef}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe your app idea in detail..."
-                className="w-full px-6 pt-5 pb-16 resize-none focus:outline-none text-base bg-transparent transition-colors"
-                rows={3}
-                style={{ minHeight: "120px" }}
-              />
-
-              {/* Button area with clean design */}
-              <div className="absolute bottom-0 left-0 right-0 py-3 px-4 border-t flex items-center justify-end">
-                <div className="flex items-center mr-2">
-                  <Sparkles className="h-5 w-5 text-gray-400" />
-                </div>
-
-                <Button
-                  onClick={handleCreateApp}
-                  disabled={!prompt.trim() || isCreating}
-                  variant="default"
-                  className="font-medium rounded-md flex items-center disabled:opacity-50"
-                >
-                  {isCreating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    </>
-                  ) : (
-                    <>
-                      Create App
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
+            Sorry, we are currently making some changes to the app. Message us
+            if you need help.
           </div>
         </div>
       </div>
