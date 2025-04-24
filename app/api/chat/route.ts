@@ -118,7 +118,7 @@ export async function POST(req: Request) {
       });
       if (response.status === 201 || 400 ) {
         // sleep
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        await new Promise(resolve => setTimeout(resolve, 4000));
       }
     } catch (error) {
       console.error("Error creating sandbox:", error);
