@@ -30,6 +30,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { getAuthToken } from "@/utils/client/auth";
+import { checkMessageLimit } from "@/lib/chat-service";
 
 // Expanded app suggestion chips for multiple rows
 const APP_SUGGESTIONS = [
@@ -98,11 +100,11 @@ const GlobalStyles = () => (
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { createApp } = useApp();
+  const { createApp, subscription } = useApp();
   const [isCreating, setIsCreating] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [initialPromptLoaded, setInitialPromptLoaded] = useState(false);
-
+  const [limitReached, setLimitReached] = useState(false);
   // Create refs with explicit typing
   const row1Ref = useRef<HTMLDivElement>(null);
   const row2Ref = useRef<HTMLDivElement>(null);
@@ -193,6 +195,17 @@ export default function DashboardPage() {
     }
     setIsCreating(true);
     try {
+      //check if user can create app
+      const authToken = getAuthToken();
+      const result = await checkMessageLimit(authToken || "", subscription);
+      if (result) {
+        const { reachedLimit } = result;
+
+        if (reachedLimit) {
+          setLimitReached(true);
+          return;
+        }
+      }
       localStorage.setItem("makeX_prompt", prompt);
       const redirectUrl = await createApp(prompt);
       router.push(redirectUrl);
@@ -235,6 +248,43 @@ export default function DashboardPage() {
             Sorry, we are currently making some changes to the app. Message us
             if you need help.
           </div>
+
+          {limitReached && (
+            <div className="bg-background/5 border rounded-lg p-4 text-center relative">
+              <button
+                onClick={() => setLimitReached(false)}
+                className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
+                aria-label="Dismiss"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+              <p className="font-medium text-foreground">
+                Message limit reached
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                <span
+                  className="text-primary cursor-pointer hover:underline"
+                  onClick={() => router.push("/dashboard/pricing")}
+                >
+                  Upgrade your plan
+                </span>{" "}
+                for more messages
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </>
