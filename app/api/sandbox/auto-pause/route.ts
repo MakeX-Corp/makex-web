@@ -96,6 +96,8 @@ export async function GET(request: Request) {
                                 .eq("id", sandbox.app_id)
                                 .single();
 
+                        console.log("app",app)
+
                         await redisUrlSetter(app?.app_name, "makex.app/app-not-found", "makex.app/app-not-found");
 
 
