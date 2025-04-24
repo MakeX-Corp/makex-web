@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
+import { useApp } from "@/context/AppContext"; // Import the AppContext hook
 import {
   getSessionsForApp,
   createNewSession,
@@ -33,7 +40,7 @@ interface SessionContextType {
   loadingCurrentSession: boolean;
   currentSessionError: string | null;
 
-  // Session name (added from SessionNameContext)
+  // Session name
   sessionName: string;
   setSessionName: (name: string) => void;
 
@@ -55,6 +62,9 @@ export function SessionProvider({
   children: ReactNode;
   initialAppId?: string | null;
 }) {
+  // Get app data from AppContext
+  const { apps } = useApp(); // Access the parent AppContext
+
   // App data
   const [appId, setAppId] = useState<string | null>(initialAppId);
   const [appName, setAppName] = useState<string>("");
@@ -79,14 +89,38 @@ export function SessionProvider({
     null
   );
 
-  // Session name state (added from SessionNameContext)
+  // Session name state
   const [sessionName, setSessionName] = useState<string>("");
+
+  // Effect to sync app name with AppContext
+  useEffect(() => {
+    if (appId && apps.length > 0) {
+      // Find the current app in the AppContext apps array
+      const currentApp = apps.find((app) => app.id === appId);
+
+      if (
+        currentApp &&
+        (currentApp.display_name !== appName || currentApp.app_name !== appName)
+      ) {
+        // Update local appName state when it changes in AppContext
+        setAppName(currentApp.display_name || currentApp.app_name || "");
+      }
+    }
+  }, [appId, apps, appName]);
 
   // Initialize the app with an appId and fetch its configuration
   const initializeApp = async (newAppId: string) => {
     try {
       setAppId(newAppId);
       setIsAppReady(false);
+
+      // First check if the app exists in AppContext
+      const currentApp = apps.find((app) => app.id === newAppId);
+
+      if (currentApp) {
+        // Use data from AppContext if available
+        setAppName(currentApp.display_name || currentApp.app_name || "");
+      }
 
       // Use our new getAppInfo function to fetch app details
       const { data, error } = await getAppInfo(newAppId);
@@ -100,8 +134,14 @@ export function SessionProvider({
       // Set the configuration values from database
       setApiUrl(data.api_url || "");
       setAppUrl(data.app_url || "");
-      setAppName(data.app_name || `App ${newAppId}`);
+
+      // Only set appName if it's not already set from AppContext
+      if (!currentApp) {
+        setAppName(data.display_name || data.app_name || "");
+      }
+
       setSupabaseProject(data.supabase_project);
+      setIsAppReady(true);
 
       // Now load the sessions for this app
       await loadSessions(newAppId);
@@ -111,6 +151,7 @@ export function SessionProvider({
       setIsAppReady(false); // Make sure we set this to false if there's an error
     }
   };
+
   // Load sessions for an app
   const loadSessions = async (newAppId: string) => {
     try {

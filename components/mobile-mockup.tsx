@@ -2,76 +2,82 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface MobileMockupProps {
-  appId: string;
   appUrl: string | null;
-  authToken: string;
   iframeKey: any;
+  containerState: "starting" | "live";
 }
 
 export default function MobileMockup({
-  appId,
   appUrl,
   iframeKey,
-  authToken,
+  containerState,
 }: MobileMockupProps) {
-  const [isCreatingSandbox, setIsCreatingSandbox] = useState(false);
-
-  const handleCreateSandbox = async () => {
-    if (!appId) return;
-
-    try {
-      setIsCreatingSandbox(true);
-      const response = await fetch("/api/sandbox/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          appId: appId,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-
-      const sandboxData = await response.json();
-      console.log(sandboxData);
-    } catch (error) {
-      console.error("Error recreating sandbox:", error);
-    } finally {
-      setIsCreatingSandbox(false);
-    }
-  };
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200
+  );
 
   useEffect(() => {
-    handleCreateSandbox();
+    // Track window size
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Determine scale based on window width
+  const getScale = () => {
+    if (windowWidth > 1200) return 1;
+    if (windowWidth > 992) return 0.9;
+    if (windowWidth > 768) return 0.8;
+    if (windowWidth > 576) return 0.7;
+    if (windowWidth > 400) return 0.6;
+    return 0.5;
+  };
+
+  const scale = getScale();
+
+  // Container styles with flex centering
+  const containerStyle = {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    height: "100%",
+    padding: "10px",
+  };
+
+  // Mockup phone styles with scaling
+  const phoneStyle = {
+    position: "relative" as const,
+    transform: `scale(${scale})`,
+    transformOrigin: "center center",
+    transition: "transform 0.2s ease",
+  };
+
   return (
-    <div className={`flex items-center justify-center`}>
-      <div className="relative">
+    <div style={containerStyle}>
+      <div style={phoneStyle}>
+        {/* Side buttons */}
         <div className="absolute top-[90px] left-0 w-[4px] h-[30px] bg-black rounded-l-md shadow-lg"></div>
         <div className="absolute top-[135px] left-0 w-[4px] h-[30px] bg-black rounded-l-md shadow-lg"></div>
-
         {/* Power Button */}
         <div className="absolute top-[90px] right-0 w-[4px] h-[45px] bg-black rounded-r-md shadow-lg"></div>
 
         {/* Phone Container */}
         <div className="relative w-[300px] h-[580px] rounded-[48px] mx-[4px]">
           <div className="absolute inset-0 rounded-[48px] overflow-hidden">
-            {isCreatingSandbox ? (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-4 w-4 animate-spin" />
+            {containerState === "starting" ? (
+              <div className="flex flex-col items-center justify-center h-full">
+                <span>The Server is starting</span>
+                <Loader2 className="h-4 w-4 animate-spin mt-2" />
               </div>
             ) : (
               <iframe
                 key={iframeKey}
                 src={appUrl || undefined}
-                style={{
-                  height: "100%",
-                }}
+                className="w-full h-full"
               />
             )}
           </div>

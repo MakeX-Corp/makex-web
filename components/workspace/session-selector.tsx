@@ -10,7 +10,6 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -18,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { useRef, useState, useEffect } from "react";
 import { useSession } from "@/context/session-context";
 import { Button } from "../ui/button";
-//import { useSessionName } from "@/context/session-name-context";
+import { cn } from "@/lib/utils";
 
 export function SessionSelector() {
   const {
@@ -168,7 +167,7 @@ export function SessionSelector() {
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="start" className="w-64">
+      <DropdownMenuContent align="start" className="w-64 p-2">
         {isLoading ? (
           <div className="p-4 text-center text-sm text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin mx-auto mb-2" />
@@ -178,13 +177,14 @@ export function SessionSelector() {
           <>
             {sessions.length > 0 ? (
               <>
-                <div className="max-h-72 overflow-y-auto">
+                <div className="max-h-72 overflow-y-auto space-y-1">
                   {sessions.map((session) => (
                     <div key={session.id}>
                       {editingSessionId === session.id ? (
-                        <div className="p-2" ref={editInputRef}>
+                        <div className="p-1.5 rounded-md bg-muted/50">
                           <div className="flex gap-2">
                             <Input
+                              ref={editInputRef}
                               placeholder="Session name"
                               value={editSessionName}
                               onChange={(e) =>
@@ -199,87 +199,82 @@ export function SessionSelector() {
                                 }
                               }}
                               autoFocus
-                              className="flex-1"
+                              className="flex-1 text-sm py-0.5 px-1.5 rounded bg-background border focus:outline-none focus:ring-1 focus:ring-primary"
                               disabled={isSubmitting}
                             />
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleEditSession(session.id)}
-                              disabled={isSubmitting || !editSessionName.trim()}
-                              className="px-2 h-9 flex-shrink-0"
-                            >
-                              {isSubmitting ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Check size={16} />
-                              )}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setEditingSessionId(null);
-                                setEditSessionName("");
-                              }}
-                              className="p-0 h-9 w-9 flex-shrink-0"
-                              disabled={isSubmitting}
-                            >
-                              <X size={16} />
-                            </Button>
+                            <div className="flex ml-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-primary"
+                                onClick={() => handleEditSession(session.id)}
+                                disabled={isSubmitting}
+                              >
+                                {isSubmitting ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Check className="h-3.5 w-3.5" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground"
+                                onClick={() => {
+                                  setEditingSessionId(null);
+                                  setEditSessionName("");
+                                }}
+                                disabled={isSubmitting}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ) : (
-                        <DropdownMenuItem
-                          onClick={() => handleSessionSelection(session.id)}
-                          className="flex items-center justify-between cursor-pointer py-2 group"
-                        >
-                          <div className="flex flex-col truncate mr-2">
-                            <span className="font-medium truncate">
+                        <div className="group relative">
+                          <div
+                            onClick={() => handleSessionSelection(session.id)}
+                            className={cn(
+                              "flex items-center py-1.5 px-2 text-sm rounded-md transition-colors font-medium w-full pr-12 cursor-pointer",
+                              session.id === currentSessionId
+                                ? "bg-primary/10 text-primary"
+                                : "text-foreground hover:bg-muted"
+                            )}
+                          >
+                            <span className="truncate">
                               {session.id === currentSessionId && sessionName
                                 ? sessionName
                                 : session.title || "Untitled Session"}
                             </span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 mr-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={(e) => startEditSession(session, e)}
-                              >
-                                <Edit
-                                  size={14}
-                                  className="text-muted-foreground hover:text-foreground"
-                                />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={(e) =>
-                                  handleDeleteSession(session.id, e)
-                                }
-                              >
-                                {isDeleting ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash
-                                    size={14}
-                                    className="text-muted-foreground hover:text-destructive"
-                                  />
-                                )}
-                              </Button>
-                            </div>
-                            {session.id === currentSessionId && (
-                              <Check
-                                size={16}
-                                className="text-primary flex-shrink-0"
-                              />
-                            )}
+                          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 transition-opacity">
+                            {/* Edit button */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={(e) => startEditSession(session, e)}
+                            >
+                              <Edit className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                            </Button>
+                            {/* Delete button */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={(e) =>
+                                handleDeleteSession(session.id, e)
+                              }
+                            >
+                              {isDeleting ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Trash className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                              )}
+                            </Button>
                           </div>
-                        </DropdownMenuItem>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -291,15 +286,15 @@ export function SessionSelector() {
               </div>
             )}
 
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="my-2" />
 
-            <DropdownMenuItem
+            <div
               onClick={() => handleCreateSession()}
-              className="flex items-center gap-2 cursor-pointer"
+              className="flex items-center gap-2 py-1.5 px-2 text-sm rounded-md transition-colors cursor-pointer hover:bg-muted"
             >
               <Plus size={16} />
               <span>New Session</span>
-            </DropdownMenuItem>
+            </div>
           </>
         )}
       </DropdownMenuContent>

@@ -1,5 +1,9 @@
 export const getAuthToken = (): string | null => {
   try {
+    // Check if running in browser context
+    if (typeof document === "undefined") {
+      return null;
+    }
     const token = document.cookie
       .split("; ")
       .find((row) => row.startsWith("sb-aljrjyhwwmjqfkgnbeiz-auth-token="))
@@ -10,7 +14,7 @@ export const getAuthToken = (): string | null => {
       ? JSON.parse(decodeURIComponent(token))[0]
       : null;
 
-    return decodedToken;
+    return decodedToken || null;
   } catch (error) {
     console.error("Error getting auth token:", error);
     return null;

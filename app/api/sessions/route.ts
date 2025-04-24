@@ -8,50 +8,73 @@ export async function GET(request: Request) {
     if (result instanceof NextResponse) return result;
 
     const { supabase, user } = result;
-
-    // Get the app ID from the URL
     const { searchParams } = new URL(request.url);
+    const sessionId = searchParams.get("sessionId");
     const appId = searchParams.get("appId");
 
-    if (!appId) {
+    // Case 1: Get a specific session by ID
+    if (sessionId) {
+      // Get the specified chat session
+      const { data: session, error: sessionError } = await supabase
+        .from("chat_sessions")
+        .select("*")
+        .eq("id", sessionId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (sessionError || !session) {
+        return NextResponse.json(
+          { error: "Session not found or unauthorized" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json(session);
+    }
+
+    // Case 2: Get all sessions for an app
+    else if (appId) {
+      // Verify the app belongs to the user
+      const { data: app, error: appError } = await supabase
+        .from("user_apps")
+        .select("id")
+        .eq("id", appId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (appError || !app) {
+        return NextResponse.json(
+          { error: "App not found or unauthorized" },
+          { status: 404 }
+        );
+      }
+
+      // Get all visible chat sessions for this app
+      const { data: sessions, error: sessionsError } = await supabase
+        .from("chat_sessions")
+        .select("*")
+        .eq("app_id", appId)
+        .eq("user_id", user.id)
+        .or("visible.is.null,visible.neq.false")
+        .order("created_at", { ascending: false });
+
+      if (sessionsError) {
+        return NextResponse.json(
+          { error: "Failed to fetch chat sessions" },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(sessions);
+    }
+
+    // No valid parameters provided
+    else {
       return NextResponse.json(
-        { error: "App ID is required" },
+        { error: "Either Session ID or App ID is required" },
         { status: 400 }
       );
     }
-
-    // Verify the app belongs to the user
-    const { data: app, error: appError } = await supabase
-      .from("user_apps")
-      .select("id")
-      .eq("id", appId)
-      .eq("user_id", user.id)
-      .single();
-
-    if (appError || !app) {
-      return NextResponse.json(
-        { error: "App not found or unauthorized" },
-        { status: 404 }
-      );
-    }
-
-    // Get all visible chat sessions for this app
-    const { data: sessions, error: sessionsError } = await supabase
-      .from("chat_sessions")
-      .select("*")
-      .eq("app_id", appId)
-      .eq("user_id", user.id)
-      .or("visible.is.null,visible.neq.false") // Include sessions where visible is null or not false
-      .order("created_at", { ascending: false });
-
-    if (sessionsError) {
-      return NextResponse.json(
-        { error: "Failed to fetch chat sessions" },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(sessions);
   } catch (error) {
     return NextResponse.json(
       { error: "Internal Server Error" },
