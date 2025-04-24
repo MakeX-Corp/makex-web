@@ -82,7 +82,7 @@ export function AppSidebar() {
       setFilteredApps(apps);
     } else {
       const filtered = apps.filter((app) =>
-        app.app_name.toLowerCase().includes(searchQuery.toLowerCase())
+        app.display_name.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredApps(filtered);
     }
@@ -247,7 +247,7 @@ export function AppSidebar() {
                         )}
                       >
                         <span className="truncate">
-                          {app.app_name || "Untitled App"}
+                          {app.display_name || app.app_name}
                         </span>
                       </Link>
                       <Button
@@ -258,7 +258,7 @@ export function AppSidebar() {
                           confirmDelete(
                             e,
                             app.id,
-                            app.app_name || "Untitled App"
+                            app.display_name || app.app_name
                           )
                         }
                       >

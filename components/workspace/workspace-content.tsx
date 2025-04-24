@@ -25,7 +25,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SessionSelector } from "@/components/workspace/session-selector";
 import { SessionsError } from "@/components/workspace/sessions-error";
+import { AppNameEditor } from "@/components/workspace/app-name-editor";
 import { getAuthToken } from "@/utils/client/auth";
+
 interface WorkspaceContentProps {
   initialSessionId: string | null;
 }
@@ -57,6 +59,7 @@ export default function WorkspaceContent({
     const token = getAuthToken();
     setAuthToken(token);
   }, []);
+
   // State for the UI elements
   const [activeView, setActiveView] = useState<"chat" | "preview">("chat");
   const [isResetting, setIsResetting] = useState(false);
@@ -207,9 +210,11 @@ export default function WorkspaceContent({
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-3">
               <Smartphone className="h-5 w-5 text-primary" />
-              <h1 className="text-xl font-semibold text-foreground">
-                {appName}
-              </h1>
+              <AppNameEditor
+                appName={appName}
+                appId={appId || ""}
+                authToken={authToken || ""}
+              />
             </div>
 
             {/* Session selector on the same line for desktop */}
@@ -271,9 +276,11 @@ export default function WorkspaceContent({
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-3">
               <Smartphone className="h-5 w-5 text-primary" />
-              <h1 className="text-xl font-semibold text-foreground">
-                {appName}
-              </h1>
+              <AppNameEditor
+                appName={appName}
+                appId={appId || ""}
+                authToken={authToken || ""}
+              />
             </div>
 
             {/* Session selector on the same line for medium screens */}
@@ -320,9 +327,11 @@ export default function WorkspaceContent({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <Smartphone className="h-5 w-5 text-primary" />
-              <h1 className="text-lg sm:text-xl font-semibold text-foreground truncate max-w-[180px] sm:max-w-full">
-                {appName}
-              </h1>
+              <AppNameEditor
+                appName={appName}
+                appId={appId || ""}
+                authToken={authToken || ""}
+              />
             </div>
 
             {/* Mobile menu button */}

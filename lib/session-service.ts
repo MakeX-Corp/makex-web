@@ -291,6 +291,7 @@ export async function getAppInfo(appId: string): Promise<{
       data: {
         id: data.id,
         app_name: data.app_name,
+        display_name: data.display_name,
         api_url: data.api_url,
         app_url: data.app_url,
         supabase_project: data.supabase_project,

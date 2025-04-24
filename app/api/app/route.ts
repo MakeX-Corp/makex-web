@@ -129,6 +129,77 @@ export async function GET(request: Request) {
   }
 }
 
+// PATCH /api/app - Update specific fields of an app
+export async function PATCH(request: Request) {
+  try {
+    const result = await getSupabaseWithUser(request);
+    if (result instanceof NextResponse) return result;
+
+    const { supabase, user } = result;
+
+    // Get the request body
+    const body = await request.json();
+    const { appId, displayName } = body;
+
+    if (!appId) {
+      return NextResponse.json(
+        { error: "App ID is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!displayName) {
+      return NextResponse.json(
+        { error: "display_name is required" },
+        { status: 400 }
+      );
+    }
+
+    // Verify the app belongs to the user
+    const { data: app, error: fetchError } = await supabase
+      .from("user_apps")
+      .select("id")
+      .eq("id", appId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (fetchError || !app) {
+      return NextResponse.json(
+        { error: "App not found or access denied" },
+        { status: 404 }
+      );
+    }
+
+    // Update only the display_name field
+    const { data: updatedApp, error: updateError } = await supabase
+      .from("user_apps")
+      .update({ display_name: displayName })
+      .eq("id", appId)
+      .eq("user_id", user.id)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error("Error updating app:", updateError);
+      return NextResponse.json(
+        { error: "Failed to update app" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      message: "App updated successfully",
+      app: updatedApp,
+    });
+  } catch (error) {
+    console.error("Error in app update:", error);
+    return NextResponse.json(
+      { error: "Failed to process update request" },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/app - Delete specific app
 export async function DELETE(request: Request) {
   try {

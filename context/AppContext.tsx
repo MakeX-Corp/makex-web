@@ -21,6 +21,7 @@ export interface AppData {
   id: string;
   user_id: string;
   app_name: string;
+  display_name: string;
   app_url: string;
   machine_id: string;
   created_at: string;
