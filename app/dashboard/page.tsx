@@ -201,7 +201,6 @@ export default function DashboardPage() {
       if (result) {
         const { reachedLimit } = result;
 
-        console.log("reachedLimit", reachedLimit);
         if (reachedLimit) {
           setLimitReached(true);
           return;
