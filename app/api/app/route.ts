@@ -159,10 +159,7 @@ export async function DELETE(request: Request) {
     if (fetchError || !app) {
       return NextResponse.json({ error: "App not found" }, { status: 404 });
     }
-
-    // kill the sandbox
-    const sbxkill = await Sandbox.kill(app.sandbox_id);
-
+    
     // redis set te app url and api url to homepage
     await redisUrlSetter(
       app.app_name,

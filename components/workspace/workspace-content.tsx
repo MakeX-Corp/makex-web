@@ -67,7 +67,6 @@ export default function WorkspaceContent({
     Math.random().toString(36).substring(2, 15)
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
-
   // Load sessions when component mounts or appId changes
   useEffect(() => {
     if (appId) {
@@ -217,10 +216,10 @@ export default function WorkspaceContent({
           </div>
 
           <div className="flex items-center space-x-2">
-            <SupabaseConnect
+            {/* <SupabaseConnect
               supabaseProject={supabaseProject}
               setSupabaseProject={setSupabaseProject}
-            />
+            /> */}
 
             <Button
               variant="outline"

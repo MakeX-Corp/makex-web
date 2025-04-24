@@ -34,7 +34,7 @@ export function Chat({
   authToken,
 }: ChatProps) {
   // Get app context from the SessionContext
-  const { appId, apiUrl, supabaseProject, sessionName, setSessionName } =
+  const { appId, apiUrl, appName, supabaseProject, sessionName, setSessionName } =
     useSession();
   const { subscription } = useApp();
   const router = useRouter();
@@ -144,6 +144,7 @@ export function Chat({
     body: {
       apiUrl,
       appId,
+      appName,
       sessionId,
       supabaseProject,
       subscription,

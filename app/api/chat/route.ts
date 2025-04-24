@@ -75,6 +75,7 @@ export async function POST(req: Request) {
     const {
       messages,
       appId,
+      appName,
       sessionId,
       supabase_project,
       messageParts,
@@ -89,7 +90,7 @@ export async function POST(req: Request) {
     // Get the user API client
     const userResult = await getSupabaseWithUser(req);
     if (userResult instanceof NextResponse) return userResult;
-    const { supabase, user } = userResult;
+    const { supabase, user, token } = userResult;
     // Check daily message limit using the new utility function
     const limitCheck = await checkMessageLimit(supabase, user, subscription);
     if (limitCheck.error) {
@@ -99,27 +100,36 @@ export async function POST(req: Request) {
       );
     }
 
+
+    // make a post request to api/sandbox/ with body appId and appName
+    try {
+      const response = await fetch("http://localhost:3000/api/sandbox", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          appId,
+          appName,
+        }),
+
+
+      });
+      if (response.status === 201 || 400 ) {
+        // sleep
+        await new Promise(resolve => setTimeout(resolve, 10000));
+      }
+    } catch (error) {
+      console.error("Error creating sandbox:", error);
+    }
+
     const apiClient = createFileBackendApiClient(apiUrl);
     let connectionUri = undefined;
 
     if (supabase_project) {
       connectionUri = `postgresql://postgres.${supabase_project.id}:${supabase_project.db_pass}@aws-0-us-east-1.pooler.supabase.com:6543/postgres`;
     }
-
-
-    // Keep on looping until you get package.json
-    while (true) {
-      try {
-        const file= await apiClient.get("/file", { path: "package.json" });
-        console.log(file);
-        if(file) {
-          break;
-        }
-      } catch (error) {
-        console.error("Error fetching file tree:", error);
-      }
-    }
-
 
     // Get the file tree
     const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
@@ -176,44 +186,34 @@ export async function POST(req: Request) {
       }
     });
 
-    const bedrock = createAmazonBedrock({
-      region: process.env.AWS_REGION,
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    await supabase.from("app_chat_history").insert({
+      app_id: appId,
+      user_id: user.id,
+      content: lastUserMessage.content,
+      role: "user",
+      model_used: modelName,
+      metadata: {
+        streamed: false,
+        parts: messageParts || undefined,
+      },
+      session_id: sessionId,
+      message_id: lastUserMessage.id,
     });
 
-    const modelAmazon = bedrock("us.anthropic.claude-3-5-sonnet-20241022-v2:0");
+    // Check if there are any active sandboxes no just hit the get endpoint 
+
+
+
+
+
+
 
     const result = streamText({
-      model: modelAmazon,
+      model: anthropic(modelName),
       messages: formattedMessages,
       tools: tools,
       toolCallStreaming: true,
       system: getPrompt(fileTree, connectionUri),
-      onFinish: async (result) => {
-        // Save the chat message
-        const inputTokens = result.usage.promptTokens;
-        const inputCost = inputTokens * 0.000003;
-
-        // Insert user's last message into chat history
-        await supabase.from("app_chat_history").insert({
-          app_id: appId,
-          user_id: user.id,
-          content: lastUserMessage.content,
-          role: "user",
-          model_used: modelName,
-          metadata: {
-            streamed: false,
-            // Store image parts in metadata for display
-            parts: messageParts || undefined,
-          },
-          input_tokens_used: inputTokens,
-          output_tokens_used: 0,
-          cost: inputCost,
-          session_id: sessionId,
-          message_id: lastUserMessage.id,
-        });
-      },
       maxSteps: 30,
     });
 

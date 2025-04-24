@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { getMessageCount } from "@/utils/server/check-daily-limit"; // Import existing function
-
-// Default message limits for each plan
-const DEFAULT_LIMITS = {
-  free: 5, // 5 messages per day
-  starter: 250, // 250 messages per month
-  pro: 500, // 500 messages per month
-};
-
+import { DEFAULT_LIMITS } from "@/const/const";
 /**
  * Get message usage stats based on subscription plan using POST method
  * Allows passing subscription data in the request body

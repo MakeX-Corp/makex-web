@@ -2,54 +2,20 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface MobileMockupProps {
-  appId: string;
   appUrl: string | null;
-  authToken: string;
   iframeKey: any;
+  containerState: "starting" | "live";
 }
 
+
 export default function MobileMockup({
-  appId,
   appUrl,
   iframeKey,
-  authToken,
+  containerState
 }: MobileMockupProps) {
-  const [isCreatingSandbox, setIsCreatingSandbox] = useState(false);
-
-  const handleCreateSandbox = async () => {
-    if (!appId) return;
-
-    try {
-      setIsCreatingSandbox(true);
-      const response = await fetch("/api/sandbox/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          appId: appId,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-
-      const sandboxData = await response.json();
-      console.log(sandboxData);
-    } catch (error) {
-      console.error("Error recreating sandbox:", error);
-    } finally {
-      setIsCreatingSandbox(false);
-    }
-  };
-
-  useEffect(() => {
-    handleCreateSandbox();
-  }, []);
 
   return (
+
     <div className={`flex items-center justify-center`}>
       <div className="relative">
         <div className="absolute top-[90px] left-0 w-[4px] h-[30px] bg-black rounded-l-md shadow-lg"></div>
@@ -61,9 +27,10 @@ export default function MobileMockup({
         {/* Phone Container */}
         <div className="relative w-[300px] h-[580px] rounded-[48px] mx-[4px]">
           <div className="absolute inset-0 rounded-[48px] overflow-hidden">
-            {isCreatingSandbox ? (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-4 w-4 animate-spin" />
+            {containerState === "starting" ? (
+              <div className="flex flex-col items-center justify-center h-full">
+                <span>The Server is starting</span>
+                <Loader2 className="h-4 w-4 animate-spin mt-2" />
               </div>
             ) : (
               <iframe

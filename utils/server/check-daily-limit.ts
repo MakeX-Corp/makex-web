@@ -1,12 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { User } from "@supabase/supabase-js";
-
-// Default message limits for each plan
-const DEFAULT_LIMITS = {
-  free: 5, // 5 messages per day
-  starter: 250, // 250 messages per month
-  pro: 500, // 500 messages per month
-};
+import { DEFAULT_LIMITS } from "@/const/const";
 
 export async function getMessageCount(
   supabase: SupabaseClient,
