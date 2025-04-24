@@ -719,12 +719,12 @@
   resolved "https://registry.yarnpkg.com/@connectrpc/connect/-/connect-2.0.0-rc.3.tgz#f75cd1bd132dd983ff4f16432aaf5309ee673662"
   integrity sha512-ARBt64yEyKbanyRETTjcjJuHr2YXorzQo0etyS5+P6oSeW8xEuzajA9g+zDnMcj1hlX2dQE93foIWQGfpru7gQ==
 
-"@e2b/code-interpreter@^1.1.1":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@e2b/code-interpreter/-/code-interpreter-1.1.1.tgz#f2f9229eec3e778f6a9bc8495c82bebcf9d0033d"
-  integrity sha512-a8uS3dzWaKl1NNv2K9WK+uFhBD4nsOXk8RoCKJAqqnc6/BXUNrKwELW1jKrtzyB1dQBx52WgSznRLIx7uCVpmA==
+"@e2b/code-interpreter@^1.2.0-beta.4":
+  version "1.2.0-beta.4"
+  resolved "https://registry.yarnpkg.com/@e2b/code-interpreter/-/code-interpreter-1.2.0-beta.4.tgz#03e5a829e1c90d660f5179356c9048ffed71294f"
+  integrity sha512-09Rciui9D/d7Fl7nzlNMYKFzloakauYNyXGMZxlD8UUY5oLvbuoT1zMDEKgKhfAbBkO8cRNPAZ1jRGLKYJlrUw==
   dependencies:
-    e2b "^1.2.3"
+    e2b "1.2.0-beta.4"
 
 "@emnapi/runtime@^1.2.0":
   version "1.3.1"
@@ -1384,6 +1384,11 @@
   resolved "https://registry.yarnpkg.com/@radix-ui/react-compose-refs/-/react-compose-refs-1.1.1.tgz#6f766faa975f8738269ebb8a23bad4f5a8d2faec"
   integrity sha512-Y9VzoRDSJtgFMUCoiZBDVo084VQ5hfpXxVE+NgkdNsjiDBByiImMZKKhxMwCbdHvhlENG6a833CbFkOQvTricw==
 
+"@radix-ui/react-compose-refs@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@radix-ui/react-compose-refs/-/react-compose-refs-1.1.2.tgz#a2c4c47af6337048ee78ff6dc0d090b390d2bb30"
+  integrity sha512-z4eqJvfiNnFMHIIvXP3CY57y2WJs5g2v3X0zm9mEJkrkNv4rDxu+sg9Jh8EkXyeqBkB7SOcboo9dMVqhyrACIg==
+
 "@radix-ui/react-context-menu@^2.2.4":
   version "2.2.6"
   resolved "https://registry.yarnpkg.com/@radix-ui/react-context-menu/-/react-context-menu-2.2.6.tgz#752fd1d91f92bba287ef2b558770f4ca7d74523e"
@@ -1718,12 +1723,19 @@
     "@radix-ui/react-use-previous" "1.1.0"
     "@radix-ui/react-use-size" "1.1.0"
 
-"@radix-ui/react-slot@1.1.2", "@radix-ui/react-slot@^1.1.2":
+"@radix-ui/react-slot@1.1.2":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@radix-ui/react-slot/-/react-slot-1.1.2.tgz#daffff7b2bfe99ade63b5168407680b93c00e1c6"
   integrity sha512-YAKxaiGsSQJ38VzKH86/BPRC4rh+b1Jpa+JneA5LRE7skmLPNAyeG8kPJj/oo4STLvlrs8vkf/iYyc3A5stYCQ==
   dependencies:
     "@radix-ui/react-compose-refs" "1.1.1"
+
+"@radix-ui/react-slot@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@radix-ui/react-slot/-/react-slot-1.2.0.tgz#57727fc186ddb40724ccfbe294e1a351d92462ba"
+  integrity sha512-ujc+V6r0HNDviYqIK3rW4ffgYiZ8g5DEHrGJVk4x7kTlLXRDILnKX9vAUYeIsLOoDpDJ0ujpqMkjH4w2ofuo6w==
+  dependencies:
+    "@radix-ui/react-compose-refs" "1.1.2"
 
 "@radix-ui/react-switch@^1.1.2":
   version "1.1.3"
@@ -3433,10 +3445,10 @@ dunder-proto@^1.0.1:
     es-errors "^1.3.0"
     gopd "^1.2.0"
 
-e2b@^1.2.3:
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/e2b/-/e2b-1.2.5.tgz#21915e0c6aac301f72d2e7fbbf054ce0fb5d4f27"
-  integrity sha512-15oCJp1bi21AownAhTcub+3X8COXCzlACzCbPh4IqZPewbotObo5FRUWa7rOmYvC5LRpS9jMXTJHYqWcNQhWEg==
+e2b@1.2.0-beta.4:
+  version "1.2.0-beta.4"
+  resolved "https://registry.yarnpkg.com/e2b/-/e2b-1.2.0-beta.4.tgz#b2b2666724f96f99fddc489bf5cacc5662ec791d"
+  integrity sha512-LIXU1oWV9MnsSOtGPJh5LjZ17CQ/K252Ko/JJ+URn7EoFYShtRz+LZD4YsSWVOQUiI/+8EybHRsZtjhxw8zPXw==
   dependencies:
     "@bufbuild/protobuf" "^2.2.2"
     "@connectrpc/connect" "2.0.0-rc.3"

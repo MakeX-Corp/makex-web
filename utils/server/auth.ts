@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js'
 
 export async function getSupabaseWithUser(request: Request): Promise<
-    | { supabase: SupabaseClient; user: User }
+    | { supabase: SupabaseClient; user: User, token: string }
     | NextResponse
 > {
     const authHeader = request.headers.get('Authorization')
@@ -33,5 +33,5 @@ export async function getSupabaseWithUser(request: Request): Promise<
         return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    return { supabase, user }
+    return { supabase, user, token }
 } 

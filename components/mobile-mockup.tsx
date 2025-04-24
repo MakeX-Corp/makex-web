@@ -2,18 +2,18 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface MobileMockupProps {
-  appId: string;
   appUrl: string | null;
-  authToken: string;
   iframeKey: any;
+  containerState: "starting" | "live";
 }
 
+
 export default function MobileMockup({
-  appId,
   appUrl,
   iframeKey,
-  authToken,
+  containerState
 }: MobileMockupProps) {
+
   const [isCreatingSandbox, setIsCreatingSandbox] = useState(false);
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200
@@ -60,6 +60,7 @@ export default function MobileMockup({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+
   // Determine scale based on window width
   const getScale = () => {
     if (windowWidth > 1200) return 1;
@@ -91,6 +92,7 @@ export default function MobileMockup({
   };
 
   return (
+
     <div style={containerStyle}>
       <div style={phoneStyle}>
         {/* Side buttons */}
@@ -102,9 +104,10 @@ export default function MobileMockup({
         {/* Phone Container */}
         <div className="relative w-[300px] h-[580px] rounded-[48px] mx-[4px]">
           <div className="absolute inset-0 rounded-[48px] overflow-hidden">
-            {isCreatingSandbox ? (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-4 w-4 animate-spin" />
+            {containerState === "starting" ? (
+              <div className="flex flex-col items-center justify-center h-full">
+                <span>The Server is starting</span>
+                <Loader2 className="h-4 w-4 animate-spin mt-2" />
               </div>
             ) : (
               <iframe

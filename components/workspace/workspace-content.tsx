@@ -240,10 +240,10 @@ export default function WorkspaceContent({
           </div>
 
           <div className="flex items-center space-x-2">
-            <SupabaseConnect
+            {/* <SupabaseConnect
               supabaseProject={supabaseProject}
               setSupabaseProject={setSupabaseProject}
-            />
+            /> */}
 
             <Button
               variant="outline"
