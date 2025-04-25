@@ -8,6 +8,7 @@ import { useSession } from "@/context/session-context";
 import { QRCodeDisplay } from "@/components/qr-code";
 import MobileMockup from "@/components/mobile-mockup";
 import { getAuthToken } from "@/utils/client/auth";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 interface PreviewProps {
   iframeKey: string; // Key to force iframe refresh
@@ -15,59 +16,80 @@ interface PreviewProps {
   onRefresh: () => void; // Refresh function from parent
 }
 
+// const createSandbox = async () => {
+//   try {
+//     const response = await fetch("/api/sandbox", {
+//       method: "POST",
+//       headers: {
+//         Authorization: `Bearer ${authToken}`,
+//       },
+//       body: JSON.stringify({
+//         appId,
+//         appName,
+//       }),
+//     });
+//     if (response.status === 201 || response.status === 200) {
+//       setContainerState("live");
+//     }
+//   } catch (error) {
+//     console.error("Error creating sandbox:", error);
+//   }
+// };
+
 export function Preview({ iframeKey, isRefreshing, onRefresh }: PreviewProps) {
   const [viewMode, setViewMode] = useState<"mobile" | "qr">("mobile");
   const { appId, appUrl, appName } = useSession();
-  const [containerState, setContainerState] = useState<"starting" | "live">("starting");
+  const [containerState, setContainerState] = useState<"starting" | "active" | "paused" | "resuming" | "pausing">("starting");
   const authToken = getAuthToken();
+  const supabase = createClientComponentClient();
 
-  const createSandbox = async () => {
-    try {
-      const response = await fetch("/api/sandbox", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          appId,
-          appName,
-        }),
-      });
-      if (response.status === 201 || response.status === 200) {
-        setContainerState("live");
-      }
-    } catch (error) {
-      console.error("Error creating sandbox:", error);
-    }
-  };
+  const fetchUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    console.log(user)
+  }
 
   useEffect(() => {
-    // get the current container state by hitting /sandbox
-    const fetchContainerState = async () => {
-      try {
-        const response = await fetch(`/api/sandbox?appId=${appId}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
-        if (response.status === 200) {
-          setContainerState("live");
-        }
-        else if (response.status === 404) {
-          // call the create sandbox endpoint
-          await createSandbox();
-        }
-      } catch (error) {
-        console.error("Error fetching container state:", error);
+    if (!appId) return
+
+    // Initial fetch
+    const fetchInitialState = async () => {
+      const { data, error } = await supabase
+        .from('user_sandboxes')
+        .select('sandbox_id, sandbox_status, sandbox_updated_at')
+        .eq('app_id', appId)
+        .order('sandbox_updated_at', { ascending: false })
+
+      if (error) {
+        console.error('Initial fetch error:', error)
+      } else {
+        setContainerState(data?.[0]?.sandbox_status)
       }
-    };
-
-    if (appName && appId && authToken) {
-      fetchContainerState();
     }
-  }, [appName, appId, authToken]);
 
+    fetchInitialState()
+
+    // Realtime subscription
+    const channel = supabase
+      .channel(`realtime:user_sandboxes:${appId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'user_sandboxes',
+          filter: `app_id=eq.${appId}`
+        },
+        (payload) => {
+          console.log('🔁 Realtime update:', payload)
+          setContainerState(payload.new.sandbox_status)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [appId])
 
   return (
     <Card className="h-full border rounded-md">
@@ -105,14 +127,13 @@ export function Preview({ iframeKey, isRefreshing, onRefresh }: PreviewProps) {
           </div>
           <div className="flex items-center gap-2">
             <Badge
-              className={`ml-2 px-3 py-1 text-xs capitalize font-semibold border rounded-full flex items-center justify-center select-none pointer-events-none shadow-none
-    ${containerState === "starting"
-                  ? "bg-blue-100 text-blue-800 border-blue-200"
-                  : containerState === "live"
-                    ? "bg-green-100 text-green-800 border-green-200"
-                    : "bg-gray-100 text-gray-700 border-gray-200"
-                }
-  `}
+              className={`ml-2 px-3 py-1 text-xs capitalize font-semibold border rounded-full flex items-center justify-center select-none pointer-events-none shadow-none ${{
+                'starting': 'bg-blue-200 text-blue-800 border-blue-300',
+                'active': 'bg-green-200 text-green-800 border-green-300',
+                'paused': 'bg-red-200 text-red-800 border-red-300',
+                'resuming': 'bg-green-100 text-green-600 border-green-200',
+                'pausing': 'bg-red-100 text-red-700 border-red-200'
+              }[containerState] || 'bg-gray-100 text-gray-700 border-gray-200'}`}
               style={{ minWidth: 70, textAlign: "center" }}
             >
               {containerState}
