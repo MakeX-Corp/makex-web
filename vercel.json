@@ -2,7 +2,7 @@
     "crons": [
       {
         "path": "/api/sandbox/auto-pause",
-        "schedule": "* * * * * *"
+        "schedule": "* * * * *"
       }
     ]
   }
