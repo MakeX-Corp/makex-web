@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
 import { useState, useEffect, useRef } from "react";
-import { XIcon, DiscordIcon, renderIcon } from "@/utils/image/icon-utils";
+import { XIcon, DiscordIcon, renderIcon } from "@/components/icon-utils";
 import { useTheme } from "next-themes";
 import { updateAppName } from "@/lib/app-service";
 // Import dialog components for confirmation modal

@@ -16,7 +16,7 @@ import {
   checkMessageLimit,
 } from "@/lib/chat-service";
 import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
-import { updateSessionTitle } from "@/utils/session/session-utils";
+import { updateSessionTitle } from "@/utils/client/session-utils";
 import { useApp } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 
