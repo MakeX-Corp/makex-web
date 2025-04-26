@@ -1,10 +1,10 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { pauseE2BContainer } from "@/utils/server/e2b";
+import { killE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 
-export const pauseContainer = task({
-  id: "pause-container",
+export const deleteContainer = task({
+  id: "delete-container",
   retry: {
     maxAttempts: 1
   },
@@ -25,13 +25,13 @@ export const pauseContainer = task({
 
     if (sandbox) {
       const sandboxId = sandbox.sandbox_id;
-      await pauseE2BContainer(sandboxId);
+      await killE2BContainer(sandboxId);
     }
 
     // update status to deleted 
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
-      .update({ sandbox_status: "paused" })
+      .update({ sandbox_status: "deleted" })
       .eq("id", sandbox.id);
 
     await redisUrlSetter(appName, "https://makex.app/app-not-found", "https://makex.app/app-not-found");

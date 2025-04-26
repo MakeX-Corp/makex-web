@@ -14,82 +14,14 @@ interface PreviewProps {
   iframeKey: string; // Key to force iframe refresh
   isRefreshing: boolean; // Loading state
   onRefresh: () => void; // Refresh function from parent
+  containerState: "starting" | "active" | "paused" | "resuming" | "pausing";
 }
 
-// const createSandbox = async () => {
-//   try {
-//     const response = await fetch("/api/sandbox", {
-//       method: "POST",
-//       headers: {
-//         Authorization: `Bearer ${authToken}`,
-//       },
-//       body: JSON.stringify({
-//         appId,
-//         appName,
-//       }),
-//     });
-//     if (response.status === 201 || response.status === 200) {
-//       setContainerState("live");
-//     }
-//   } catch (error) {
-//     console.error("Error creating sandbox:", error);
-//   }
-// };
 
-export function Preview({ iframeKey, isRefreshing, onRefresh }: PreviewProps) {
+export function Preview({ iframeKey, isRefreshing, onRefresh, containerState }: PreviewProps) {
   const [viewMode, setViewMode] = useState<"mobile" | "qr">("mobile");
   const { appId, appUrl, appName } = useSession();
-  const [containerState, setContainerState] = useState<"starting" | "active" | "paused" | "resuming" | "pausing">("starting");
-  const authToken = getAuthToken();
-  const supabase = createClientComponentClient();
 
-  const fetchUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    console.log(user)
-  }
-
-  useEffect(() => {
-    if (!appId) return
-
-    // Initial fetch
-    const fetchInitialState = async () => {
-      const { data, error } = await supabase
-        .from('user_sandboxes')
-        .select('sandbox_id, sandbox_status, sandbox_updated_at')
-        .eq('app_id', appId)
-        .order('sandbox_updated_at', { ascending: false })
-
-      if (error) {
-        console.error('Initial fetch error:', error)
-      } else {
-        setContainerState(data?.[0]?.sandbox_status)
-      }
-    }
-
-    fetchInitialState()
-
-    // Realtime subscription
-    const channel = supabase
-      .channel(`realtime:user_sandboxes:${appId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'user_sandboxes',
-          filter: `app_id=eq.${appId}`
-        },
-        (payload) => {
-          console.log('🔁 Realtime update:', payload)
-          setContainerState(payload.new.sandbox_status)
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [appId])
 
   return (
     <Card className="h-full border rounded-md">
@@ -127,13 +59,19 @@ export function Preview({ iframeKey, isRefreshing, onRefresh }: PreviewProps) {
           </div>
           <div className="flex items-center gap-2">
             <Badge
-              className={`ml-2 px-3 py-1 text-xs capitalize font-semibold border rounded-full flex items-center justify-center select-none pointer-events-none shadow-none ${{
-                'starting': 'bg-blue-200 text-blue-800 border-blue-300',
-                'active': 'bg-green-200 text-green-800 border-green-300',
-                'paused': 'bg-red-200 text-red-800 border-red-300',
-                'resuming': 'bg-green-100 text-green-600 border-green-200',
-                'pausing': 'bg-red-100 text-red-700 border-red-200'
-              }[containerState] || 'bg-gray-100 text-gray-700 border-gray-200'}`}
+              className={`ml-2 px-3 py-1 text-xs capitalize font-semibold border rounded-full flex items-center justify-center select-none pointer-events-none shadow-none ${
+                containerState === 'starting'
+                  ? 'bg-blue-200 text-blue-800 border-blue-300'
+                  : containerState === 'active'
+                    ? 'bg-green-200 text-green-800 border-green-300'
+                    : containerState === 'paused'
+                      ? 'bg-red-200 text-red-800 border-red-300'
+                      : containerState === 'resuming'
+                        ? 'bg-green-100 text-green-600 border-green-200'
+                        : containerState === 'pausing'
+                          ? 'bg-red-100 text-red-700 border-red-200'
+                          : 'bg-gray-100 text-gray-700 border-gray-200'
+              }`}
               style={{ minWidth: 70, textAlign: "center" }}
             >
               {containerState}

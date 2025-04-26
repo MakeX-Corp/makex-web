@@ -7,7 +7,6 @@ if (!API_KEY) {
 }
 
 export const createFileBackendApiClient = (baseURL: string) => {
-  console.log("baseURL", baseURL);
   const client = axios.create({
     baseURL,
     headers: {

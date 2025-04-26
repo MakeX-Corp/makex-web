@@ -25,7 +25,8 @@ The app’s initial render entry point is at app/index.jsx. All UI changes must 
 
 <execution_order> Follow these steps exactly and in this order:
 
-Get the full file tree.
+The current file tree is:
+${fileTreeString}
 
 Determine which files are relevant to the user’s request.
 

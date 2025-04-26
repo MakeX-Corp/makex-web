@@ -25,6 +25,8 @@ interface ChatProps {
   onResponseComplete?: () => void;
   onSessionError?: (error: string) => void;
   authToken: string | null;
+  containerState: string;
+  resumeSandbox: () => Promise<void>;
 }
 
 export function Chat({
@@ -32,6 +34,8 @@ export function Chat({
   onResponseComplete,
   onSessionError,
   authToken,
+  containerState,
+  resumeSandbox
 }: ChatProps) {
   // Get app context from the SessionContext
   const { appId, apiUrl, appName, supabaseProject, sessionName, setSessionName } =
@@ -143,8 +147,8 @@ export function Chat({
     initialMessages: isLoading
       ? []
       : initialMessages.length > 0
-      ? initialMessages
-      : [],
+        ? initialMessages
+        : [],
     headers: {
       Authorization: `Bearer ${authToken}`,
     },
@@ -157,9 +161,10 @@ export function Chat({
       subscription,
     },
     maxSteps: 30,
-    onResponse: async (response) => {},
+    onResponse: async (response) => { },
     onFinish: async (message, options) => {
       // Save the AI message
+      setIsWaitingForResponse(false);
       try {
         await saveAIMessage(
           sessionId,
@@ -201,8 +206,6 @@ export function Chat({
       if (onResponseComplete) {
         onResponseComplete();
       }
-      // Only remove the waiting indicator when everything is complete
-      setIsWaitingForResponse(false);
     },
   });
 
@@ -255,7 +258,11 @@ export function Chat({
   }, [isLoading, messages.length, initialPromptSent]);
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    if (containerState !== 'active') {
+      await resumeSandbox();
+      // sleep 3 seconds
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
     // Don't proceed if there's nothing to send
     if (!input.trim() && selectedImages.length === 0) {
       return;
@@ -392,16 +399,14 @@ export function Chat({
               {messages.map((message, index) => (
                 <div
                   key={message.id || `message-${index}`}
-                  className={`flex flex-col ${
-                    message.role === "user" ? "items-end" : "items-start"
-                  }`}
+                  className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"
+                    }`}
                 >
                   <Card
-                    className={`max-w-[80%] ${
-                      message.role === "user"
+                    className={`max-w-[80%] ${message.role === "user"
                         ? "bg-primary text-primary-foreground"
                         : "bg-card text-card-foreground"
-                    }`}
+                      }`}
                   >
                     <CardContent className="p-4">
                       {/* Display multiple images if they exist */}

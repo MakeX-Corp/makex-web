@@ -100,30 +100,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // make a post request to api/sandbox/ with body appId and appName
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/sandbox`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            appId,
-            appName,
-          }),
-        }
-      );
-      if (response.status === 201 || 400) {
-        // sleep
-        await new Promise((resolve) => setTimeout(resolve, 4000));
-      }
-    } catch (error) {
-      console.error("Error creating sandbox:", error);
-    }
-
     const apiClient = createFileBackendApiClient(apiUrl);
     let connectionUri = undefined;
 
