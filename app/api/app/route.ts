@@ -5,7 +5,6 @@ import { createContainer } from "@/trigger/create-container";
 import { deleteContainer } from "@/trigger/delete-container";
 
 export async function POST(request: Request) {
-  // Authenticate
   const result = await getSupabaseWithUser(request);
   if (result instanceof NextResponse) return result;
   const { supabase, user } = result;
