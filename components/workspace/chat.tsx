@@ -38,16 +38,21 @@ export function Chat({
   resumeSandbox
 }: ChatProps) {
   // Get app context from the SessionContext
-  const { appId, apiUrl, appName, supabaseProject, sessionName, setSessionName } =
-    useSession();
-  const { subscription } = useApp();
+  const {
+    appId,
+    apiUrl,
+    appName,
+    supabaseProject,
+    sessionName,
+    setSessionName,
+  } = useSession();
+  const { subscription, isAIResponding, setIsAIResponding } = useApp();
   const router = useRouter();
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
     null
   );
-  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [initialPromptSent, setInitialPromptSent] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
@@ -206,6 +211,8 @@ export function Chat({
       if (onResponseComplete) {
         onResponseComplete();
       }
+      // Only remove the waiting indicator when everything is complete
+      setIsAIResponding(false);
     },
   });
 
@@ -267,9 +274,7 @@ export function Chat({
     if (!input.trim() && selectedImages.length === 0) {
       return;
     }
-
-    // Set waiting indicator when submitting
-    setIsWaitingForResponse(true);
+    setIsAIResponding(true);
 
     try {
       // If there are images
@@ -320,7 +325,7 @@ export function Chat({
       }
     } catch (error) {
       console.error("Error processing message with images:", error);
-      setIsWaitingForResponse(false);
+      setIsAIResponding(false);
     }
   };
 
@@ -330,7 +335,7 @@ export function Chat({
     if (messagesContainer) {
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-  }, [messages, isWaitingForResponse]);
+  }, [messages, isAIResponding]);
 
   // Render message part based on type
   const renderMessagePart = (part: any) => {
@@ -457,7 +462,7 @@ export function Chat({
         </div>
       </div>
 
-      {isWaitingForResponse && <ThreeDotsLoader />}
+      {isAIResponding && <ThreeDotsLoader />}
 
       {/* Input area - fixed at bottom */}
       <div className="border-t border-border p-4 bg-background relative">
@@ -530,7 +535,7 @@ export function Chat({
             }}
             placeholder="Type your message or drop images anywhere..."
             className="flex-1 min-h-[38px] max-h-[200px] py-2 px-3 rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-            disabled={isWaitingForResponse || isLoading}
+            disabled={isAIResponding || isLoading}
             rows={1}
           />
 
@@ -542,7 +547,7 @@ export function Chat({
             multiple
             className="hidden"
             onChange={handleImageSelect}
-            disabled={isWaitingForResponse || isLoading}
+            disabled={isAIResponding || isLoading}
           />
 
           {/* Image upload button */}
@@ -551,7 +556,7 @@ export function Chat({
             size="icon"
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isWaitingForResponse || isLoading}
+            disabled={isAIResponding || isLoading}
             title="Upload images"
           >
             <ImageIcon className="h-4 w-4" />
@@ -562,12 +567,12 @@ export function Chat({
             type="submit"
             size="icon"
             disabled={
-              isWaitingForResponse ||
+              isAIResponding ||
               (!input.trim() && selectedImages.length === 0) ||
               isLoading
             }
           >
-            {isWaitingForResponse ? (
+            {isAIResponding ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Send className="h-4 w-4" />

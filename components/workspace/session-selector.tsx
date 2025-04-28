@@ -18,6 +18,7 @@ import { useRef, useState, useEffect } from "react";
 import { useSession } from "@/context/session-context";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
+import { useApp } from "@/context/AppContext";
 
 export function SessionSelector() {
   const {
@@ -32,6 +33,7 @@ export function SessionSelector() {
     sessionName,
     setSessionName,
   } = useSession();
+  const { isAIResponding } = useApp();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -78,6 +80,7 @@ export function SessionSelector() {
 
   // Handle session selection
   const handleSessionSelection = (sessionId: string) => {
+    if (isAIResponding) return;
     if (sessionId === currentSessionId) {
       setDropdownOpen(false);
       return;
@@ -153,7 +156,7 @@ export function SessionSelector() {
         <Button
           variant="outline"
           className="flex items-center gap-2 min-w-[180px] justify-between"
-          disabled={isLoading}
+          disabled={isLoading || isAIResponding}
         >
           {isLoading ? (
             <span className="flex items-center">

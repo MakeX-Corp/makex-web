@@ -83,6 +83,9 @@ interface AppContextType {
 
   // Loading states
   isLoading: boolean;
+
+  isAIResponding: boolean;
+  setIsAIResponding: (isAIResponding: boolean) => void;
 }
 
 // Create the context
@@ -126,6 +129,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(
     null
   );
+
+  const [isAIResponding, setIsAIResponding] = useState(false);
 
   // Determine current app ID from path using the helper function
   const currentAppId = getAppIdFromPath(pathname);
@@ -289,6 +294,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     deleteApp,
     refreshApps: fetchApps,
     refreshSubscription: fetchSubscription,
+    isAIResponding,
+    setIsAIResponding,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
