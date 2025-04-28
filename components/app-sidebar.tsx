@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
 import { useState, useEffect, useRef } from "react";
-import { XIcon, DiscordIcon, renderIcon } from "@/utils/image/icon-utils";
+import { XIcon, DiscordIcon, renderIcon } from "@/components/icon-utils";
 import { useTheme } from "next-themes";
 import { updateAppName } from "@/lib/app-service";
 // Import dialog components for confirmation modal
@@ -35,6 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getAuthToken } from "@/utils/client/auth";
 
 // Theme toggle component
 function ThemeToggle() {
@@ -57,7 +58,7 @@ function ThemeToggle() {
 export function AppSidebar() {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
-  const { apps, deleteApp, setApps, isLoading } = useApp();
+  const { apps, deleteApp, setApps, isLoading, isAIResponding } = useApp();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredApps, setFilteredApps] = useState(apps);
   const { theme } = useTheme();
@@ -339,25 +340,41 @@ export function AppSidebar() {
                       ) : (
                         // Normal view mode
                         <>
-                          <Link
-                            href={`/dashboard/${app.id}`}
-                            className={cn(
-                              "flex items-center py-1.5 px-2 text-sm rounded-md transition-colors font-medium w-full pr-12",
-                              pathname.includes(`/dashboard/${app.id}`)
-                                ? "bg-primary/10 text-primary"
-                                : "text-foreground hover:bg-muted"
-                            )}
-                          >
-                            <span className="truncate">
-                              {app.display_name || app.app_name}
-                            </span>
-                          </Link>
+                          {isAIResponding ? (
+                            <div
+                              className={cn(
+                                "flex items-center py-1.5 px-2 text-sm rounded-md transition-colors font-medium w-full pr-12 cursor-not-allowed opacity-70",
+                                pathname.includes(`/dashboard/${app.id}`)
+                                  ? "bg-primary/10 text-primary"
+                                  : "text-foreground"
+                              )}
+                            >
+                              <span className="truncate">
+                                {app.display_name || app.app_name}
+                              </span>
+                            </div>
+                          ) : (
+                            <Link
+                              href={`/dashboard/${app.id}`}
+                              className={cn(
+                                "flex items-center py-1.5 px-2 text-sm rounded-md transition-colors font-medium w-full pr-12",
+                                pathname.includes(`/dashboard/${app.id}`)
+                                  ? "bg-primary/10 text-primary"
+                                  : "text-foreground hover:bg-muted"
+                              )}
+                            >
+                              <span className="truncate">
+                                {app.display_name || app.app_name}
+                              </span>
+                            </Link>
+                          )}
                           <div className="absolute right-1 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 transition-opacity">
                             {/* Edit button */}
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6"
+                              disabled={isAIResponding}
                               onClick={(e) =>
                                 startEditing(
                                   e,
@@ -375,6 +392,7 @@ export function AppSidebar() {
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6"
+                              disabled={isAIResponding}
                               onClick={(e) =>
                                 confirmDelete(
                                   e,

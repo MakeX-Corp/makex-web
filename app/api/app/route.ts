@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { Sandbox } from "@e2b/code-interpreter";
 import { generateAppName } from "@/utils/server/app-name-generator";
-import { redisUrlSetter } from "@/utils/server/redis-client";
+import { createContainer } from "@/trigger/create-container";
+import { deleteContainer } from "@/trigger/delete-container";
 
 export async function POST(request: Request) {
-  // Authenticate
   const result = await getSupabaseWithUser(request);
   if (result instanceof NextResponse) return result;
   const { supabase, user } = result;
@@ -39,6 +38,16 @@ export async function POST(request: Request) {
       );
     }
 
+    // Trigger container creation
+    await createContainer.trigger({
+      userId: user.id,
+      appId: insertedApp.id,
+      appName,
+    });
+
+    // Sleep for 3 seconds
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
     // Create the session in the same transaction
     const { data: session, error: sessionError } = await supabase
       .from("chat_sessions")
@@ -58,6 +67,7 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
     // Return the app data along with session ID and redirect URL
     return NextResponse.json({
       ...insertedApp,
@@ -159,23 +169,22 @@ export async function DELETE(request: Request) {
     if (fetchError || !app) {
       return NextResponse.json({ error: "App not found" }, { status: 404 });
     }
-    
-    // redis set te app url and api url to homepage
-    await redisUrlSetter(
-      app.app_name,
-      "https://makex.app/app-not-found",
-      "https://makex.app/app-not-found"
-    );
 
     const { error: updateError } = await supabase
       .from("user_apps")
-      .update({ status: "deleted", sandbox_status: "deleted" })
+      .update({ status: "deleted" })
       .eq("id", appId)
       .eq("user_id", user.id);
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
+
+    await deleteContainer.trigger({
+      userId: user.id,
+      appId: app.id,
+      appName: app.app_name,
+    });
 
     return NextResponse.json({ message: "App deleted successfully" });
   } catch (error) {
