@@ -46,6 +46,9 @@ export async function POST(request: Request) {
       appName,
     });
 
+    // Sleep for 3 seconds
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
     // Create the session in the same transaction
     const { data: session, error: sessionError } = await supabase
       .from("chat_sessions")

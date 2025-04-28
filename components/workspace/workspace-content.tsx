@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Preview } from "@/components/workspace/preview";
 import { Chat } from "@/components/workspace/chat";
 import {
@@ -86,6 +86,7 @@ export default function WorkspaceContent({
           console.error('Initial fetch error:', data.error)
         } else {
           setContainerState(data?.sandbox_status)
+          console.log(data)
           if (data?.sandbox_status === "paused") {
             await resumeSandbox();
           }

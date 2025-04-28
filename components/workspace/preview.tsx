@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { useSession } from "@/context/session-context";
 import { QRCodeDisplay } from "@/components/qr-code";
 import MobileMockup from "@/components/mobile-mockup";
-import { getAuthToken } from "@/utils/client/auth";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 interface PreviewProps {
   iframeKey: string; // Key to force iframe refresh

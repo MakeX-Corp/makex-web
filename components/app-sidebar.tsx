@@ -348,29 +348,29 @@ export function AppSidebar() {
                                 ? "bg-primary/10 text-primary"
                                 : "text-foreground hover:bg-muted"
                             )}
-                            onClick={()=>{
-                              // Send pause request in the background
-                              const prevAppId = pathname?.split("/")[2];
-                              const prevApp = apps.find(app => app.id === prevAppId);
-                              if (prevApp) {
-                                // Fire and forget - don't await the response
-                                fetch("/api/sandbox", {
-                                  method: "PATCH",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                    "Authorization": `Bearer ${getAuthToken()}`
-                                  },
-                                  body: JSON.stringify({
-                                    targetState: "pause",
-                                    appName: prevApp.app_name,
-                                    appId: prevApp.id
-                                  })
-                                }).catch(error => {
-                                  // Log any errors but don't block UI
-                                  console.error("Background pause request failed:", error);
-                                });
-                              }
-                            }}
+                            // onClick={()=>{
+                            //   // Send pause request in the background
+                            //   const prevAppId = pathname?.split("/")[2];
+                            //   const prevApp = apps.find(app => app.id === prevAppId);
+                            //   if (prevApp) {
+                            //     // Fire and forget - don't await the response
+                            //     fetch("/api/sandbox", {
+                            //       method: "PATCH",
+                            //       headers: {
+                            //         "Content-Type": "application/json",
+                            //         "Authorization": `Bearer ${getAuthToken()}`
+                            //       },
+                            //       body: JSON.stringify({
+                            //         targetState: "pause",
+                            //         appName: prevApp.app_name,
+                            //         appId: prevApp.id
+                            //       })
+                            //     }).catch(error => {
+                            //       // Log any errors but don't block UI
+                            //       console.error("Background pause request failed:", error);
+                            //     });
+                            //   }
+                            // }}
                           >
                             <span className="truncate">
                               {app.display_name || app.app_name}
