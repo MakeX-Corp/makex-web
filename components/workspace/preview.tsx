@@ -22,67 +22,22 @@ interface PreviewProps {
 export function Preview({
   iframeKey,
   isRefreshing,
-  onRefresh, containerState,
+  onRefresh, 
+  containerState,
   onScreenshotCaptured,
 }: PreviewProps) {
   const [viewMode, setViewMode] = useState<"mobile" | "qr">("mobile");
   const { appId, appUrl, appName } = useSession();
-  const [containerState, setContainerState] = useState<"starting" | "live">(
-    "starting"
-  );
   const authToken = getAuthToken();
 
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
 
-  const createSandbox = async () => {
-    try {
-      const response = await fetch("/api/sandbox", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          appId,
-          appName,
-        }),
-      });
-      if (response.status === 201 || response.status === 200) {
-        setContainerState("live");
-      }
-    } catch (error) {
-      console.error("Error creating sandbox:", error);
-    }
-  };
 
-  useEffect(() => {
-    // get the current container state by hitting /sandbox
-    const fetchContainerState = async () => {
-      try {
-        const response = await fetch(`/api/sandbox?appId=${appId}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
-        if (response.status === 200) {
-          setContainerState("live");
-        } else if (response.status === 404) {
-          // call the create sandbox endpoint
-          await createSandbox();
-        }
-      } catch (error) {
-        console.error("Error fetching container state:", error);
-      }
-    };
 
-    if (appName && appId && authToken) {
-      fetchContainerState();
-    }
-  }, [appName, appId, authToken]);
 
   // Handle taking a screenshot
   const handleCaptureScreenshot = async () => {
-    if (!appUrl || containerState !== "live") return;
+    if (!appUrl || containerState !== "active") return;
 
     setIsCapturingScreenshot(true);
 
@@ -174,7 +129,7 @@ export function Preview({
             </Badge>
 
             {/* Screenshot button using inline approach rather than a separate component */}
-            {viewMode === "mobile" && containerState === "live" && (
+            {viewMode === "mobile" && containerState === "active" && (
               <ScreenshotButton
                 onCapture={handleCaptureScreenshot}
                 isCapturing={isCapturingScreenshot}
