@@ -26,7 +26,7 @@ import {
 import { SessionSelector } from "@/components/workspace/session-selector";
 import { SessionsError } from "@/components/workspace/sessions-error";
 import { getAuthToken } from "@/utils/client/auth";
-
+import { dataURLToBlob } from "@/lib/screenshot-service";
 interface WorkspaceContentProps {
   initialSessionId: string | null;
 }
@@ -221,6 +221,35 @@ export default function WorkspaceContent({
   // Determine if we're on mobile/tablet or desktop
   const isDesktop = windowWidth >= 1024; // lg breakpoint is 1024px
 
+  // Handler for when a screenshot is captured
+  const handleScreenshotCaptured = (dataUrl: string) => {
+    // If on mobile, switch to chat view after screenshot is taken
+    if (windowWidth < 1024) {
+      setActiveView("chat");
+    }
+
+    // Convert data URL to a File object
+    const blob = dataURLToBlob(dataUrl);
+    const file = new File([blob], `screenshot-${Date.now()}.png`, {
+      type: "image/png",
+    });
+
+    // Find the file input in the Chat component and programmatically add the file
+    const fileInput = document.querySelector(
+      '.chat-component input[type="file"]'
+    );
+    if (fileInput) {
+      // Create a DataTransfer object to hold our file
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+
+      // Set the files property of the file input
+      (fileInput as HTMLInputElement).files = dataTransfer.files;
+
+      // Dispatch a change event to trigger the image upload handler
+      fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  };
   return (
     <div className="flex flex-col h-screen">
       {/* Top navigation bar */}
@@ -445,6 +474,7 @@ export default function WorkspaceContent({
                     iframeKey={iframeKey}
                     isRefreshing={isRefreshing}
                     onRefresh={refreshPreview}
+                    onScreenshotCaptured={handleScreenshotCaptured}
                   />
                 </div>
               ) : (
@@ -499,6 +529,7 @@ export default function WorkspaceContent({
                           iframeKey={iframeKey}
                           isRefreshing={isRefreshing}
                           onRefresh={refreshPreview}
+                          onScreenshotCaptured={handleScreenshotCaptured}
                         />
                       </div>
                     </div>
