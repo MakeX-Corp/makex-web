@@ -13,10 +13,9 @@ import {
 } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Preview } from "@/components/workspace/preview";
 import { Chat } from "@/components/workspace/chat";
-import { SupabaseConnect } from "@/components/supabase-connect";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +25,7 @@ import {
 import { SessionSelector } from "@/components/workspace/session-selector";
 import { SessionsError } from "@/components/workspace/sessions-error";
 import { getAuthToken } from "@/utils/client/auth";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { dataURLToBlob } from "@/lib/screenshot-service";
 interface WorkspaceContentProps {
   initialSessionId: string | null;
@@ -39,18 +39,16 @@ export default function WorkspaceContent({
     appName,
     apiUrl,
     sessions,
-    supabaseProject,
-    setSupabaseProject,
     loadingSessions,
     sessionsError,
-    currentSession,
     currentSessionId,
-    loadingCurrentSession,
     currentSessionError,
     initializeApp,
     switchSession,
     createSession,
+
   } = useSession();
+
 
   const [authToken, setAuthToken] = useState<string | null>(null);
 
@@ -67,6 +65,78 @@ export default function WorkspaceContent({
 
   // Track window width for responsive design
   const [windowWidth, setWindowWidth] = useState(0);
+  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+
+  const [containerState, setContainerState] = useState<"starting" | "active" | "paused" | "resuming" | "pausing">("starting");
+  const supabase = createClientComponentClient();
+  useEffect(() => {
+    if (appId && authToken) {
+      // Initial fetch
+      const fetchInitialState = async () => {
+        const res = await fetch("/api/sandbox?appId=" + appId, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        })
+
+        const data = await res.json()
+        if (data.error) {
+          console.error('Initial fetch error:', data.error)
+        } else {
+          setContainerState(data?.sandbox_status)
+          console.log(data)
+          if (data?.sandbox_status === "paused") {
+            await resumeSandbox();
+          }
+        }
+      }
+
+      fetchInitialState()
+
+      // Realtime subscription
+      const channel = supabase
+        .channel(`realtime:user_sandboxes:${appId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'user_sandboxes',
+            filter: `app_id=eq.${appId}`
+          },
+          (payload) => {
+            console.log('🔁 Realtime update:', payload)
+            setContainerState(payload.new.sandbox_status)
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
+  }, [appId, authToken])
+
+  const resumeSandbox = async () => {
+    try {
+      const response = await fetch("/api/sandbox", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          appId,
+          appName,
+          targetState: 'resume',
+        }),
+      });
+    } catch (error) {
+      console.error("Error creating sandbox:", error);
+    }
+  };
+
 
   // Effect to set window width on mount and resize
   useEffect(() => {
@@ -190,6 +260,7 @@ export default function WorkspaceContent({
         }),
       });
 
+      refreshPreview();
       if (!response.ok) throw new Error("Failed to reset state");
     } catch (error) {
       console.error("Error resetting state:", error);
@@ -199,10 +270,12 @@ export default function WorkspaceContent({
   };
 
   // Function to refresh the iframe
-  const refreshPreview = () => {
+  const refreshPreview = async () => {
     setIsRefreshing(true);
-    setIframeKey(Math.random().toString(36).substring(2, 15));
-
+    setIframeKey(Math.random().toString(36).substring(2, 15))
+    if (containerState == 'paused' || containerState == 'pausing') {
+      await resumeSandbox();
+    }
     setTimeout(() => {
       setIsRefreshing(false);
     }, 1000);
@@ -464,8 +537,11 @@ export default function WorkspaceContent({
                   <Chat
                     sessionId={currentSessionId || ""}
                     onResponseComplete={handleResponseComplete}
-                    onSessionError={() => {}}
+                    onSessionError={() => { }}
                     authToken={authToken}
+                    containerState={containerState}
+                    resumeSandbox={resumeSandbox}
+
                   />
 
                   {/* Right panel - Preview */}
@@ -474,6 +550,7 @@ export default function WorkspaceContent({
                     iframeKey={iframeKey}
                     isRefreshing={isRefreshing}
                     onRefresh={refreshPreview}
+                    containerState={containerState}
                     onScreenshotCaptured={handleScreenshotCaptured}
                   />
                 </div>
@@ -508,27 +585,28 @@ export default function WorkspaceContent({
                     <div className="flex-1 relative">
                       {/* Both components are always rendered, but we control visibility with CSS */}
                       <div
-                        className={`absolute inset-0 ${
-                          activeView === "chat" ? "block" : "hidden"
-                        }`}
+                        className={`absolute inset-0 ${activeView === "chat" ? "block" : "hidden"
+                          }`}
                       >
                         <Chat
                           sessionId={currentSessionId || ""}
                           onResponseComplete={handleResponseComplete}
-                          onSessionError={() => {}}
+                          onSessionError={() => { }}
                           authToken={authToken}
+                          containerState={containerState}
+                          resumeSandbox={resumeSandbox}
                         />
                       </div>
 
                       <div
-                        className={`absolute inset-0 ${
-                          activeView === "preview" ? "block" : "hidden"
-                        }`}
+                        className={`absolute inset-0 ${activeView === "preview" ? "block" : "hidden"
+                          }`}
                       >
                         <Preview
                           iframeKey={iframeKey}
                           isRefreshing={isRefreshing}
                           onRefresh={refreshPreview}
+                          containerState={containerState}
                           onScreenshotCaptured={handleScreenshotCaptured}
                         />
                       </div>

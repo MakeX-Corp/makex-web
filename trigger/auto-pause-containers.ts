@@ -1,14 +1,13 @@
-import { NextResponse } from "next/server";
+import { schedules } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { pauseE2BContainer } from "@/utils/server/e2b";
 import { UserSandbox } from "@/types/sandbox";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 
-
-export const maxDuration = 300;
-
-// This route will be triggered by a cron job
-export async function GET(request: Request) {
+export const firstScheduledTask = schedules.task({
+  id: "auto-pause-containers",
+  cron: "* * * * *",
+  run: async (payload) => {
     try {
         // Get all active sandbox containers
         const supabase = await getSupabaseAdmin();
@@ -20,16 +19,15 @@ export async function GET(request: Request) {
 
         if (activeSandboxError) {
             console.error("Error fetching active apps:", activeSandboxError);
-            return NextResponse.json(
-                { error: "Failed to fetch active apps" },
-                { status: 500 }
-            );
+            console.error("Failed to fetch active apps");
+            return;
         }
 
         console.log("Active sandboxes:", activeSandbox);
 
         if (!activeSandbox || activeSandbox.length === 0) {
-            return NextResponse.json({ message: "No active apps found" });
+            console.log("No active apps found");
+            return;
         }
 
         // Current time
@@ -57,6 +55,7 @@ export async function GET(request: Request) {
                     }
                 }
 
+                console.log("RECENT TIME", new Date().getTime())
                 const diffMinutes = Math.floor(
                     (new Date().getTime() - mostRecentActivity.getTime()) / (1000 * 60)
                 );
@@ -77,10 +76,8 @@ export async function GET(request: Request) {
                                 .overrideTypes<UserSandbox[]>();
 
                         if (updatedSandboxError) {
-                            return NextResponse.json(
-                                { error: updatedSandboxError.message },
-                                { status: 500 }
-                            );
+                            console.error("Error updating sandbox:", updatedSandboxError.message);
+                            return;
                         }
 
                         stoppedApps.push(sandbox.id);
@@ -113,10 +110,8 @@ export async function GET(request: Request) {
                                 .overrideTypes<UserSandbox[]>();
 
                         if (updatedSandbox2Error) {
-                            return NextResponse.json(
-                                { error: updatedSandbox2Error.message },
-                                { status: 500 }
-                            );
+                            console.error("Error updating sandbox final status:", updatedSandbox2Error.message);
+                            return;
                         }
                     } catch (exportError) {
                         console.error(
@@ -130,18 +125,10 @@ export async function GET(request: Request) {
             }
         }
 
-        return NextResponse.json({
-            message: `Auto-stop completed. Stopped ${stoppedApps.length} inactive apps.`,
-        });
+        console.log(`Auto-stop completed. Stopped ${stoppedApps.length} inactive apps.`);
     } catch (error) {
         console.error("Error in auto-stop routine:", error);
-        return NextResponse.json(
-            { error: "Internal server error during auto-stop" },
-            { status: 500 }
-        );
+        console.error("Internal server error during auto-stop");
     }
-}
-
-
-
-
+  },
+});

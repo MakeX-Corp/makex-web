@@ -14,73 +14,30 @@ interface PreviewProps {
   iframeKey: string; // Key to force iframe refresh
   isRefreshing: boolean; // Loading state
   onRefresh: () => void; // Refresh function from parent
+  containerState: "starting" | "active" | "paused" | "resuming" | "pausing";
   onScreenshotCaptured?: (dataUrl: string) => void; // Function to send screenshot to chat
 }
+
 
 export function Preview({
   iframeKey,
   isRefreshing,
-  onRefresh,
+  onRefresh, 
+  containerState,
   onScreenshotCaptured,
 }: PreviewProps) {
   const [viewMode, setViewMode] = useState<"mobile" | "qr">("mobile");
   const { appId, appUrl, appName } = useSession();
-  const [containerState, setContainerState] = useState<"starting" | "live">(
-    "starting"
-  );
   const authToken = getAuthToken();
 
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
 
-  const createSandbox = async () => {
-    try {
-      const response = await fetch("/api/sandbox", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          appId,
-          appName,
-        }),
-      });
-      if (response.status === 201 || response.status === 200) {
-        setContainerState("live");
-      }
-    } catch (error) {
-      console.error("Error creating sandbox:", error);
-    }
-  };
 
-  useEffect(() => {
-    // get the current container state by hitting /sandbox
-    const fetchContainerState = async () => {
-      try {
-        const response = await fetch(`/api/sandbox?appId=${appId}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
-        if (response.status === 200) {
-          setContainerState("live");
-        } else if (response.status === 404) {
-          // call the create sandbox endpoint
-          await createSandbox();
-        }
-      } catch (error) {
-        console.error("Error fetching container state:", error);
-      }
-    };
 
-    if (appName && appId && authToken) {
-      fetchContainerState();
-    }
-  }, [appName, appId, authToken]);
 
   // Handle taking a screenshot
   const handleCaptureScreenshot = async () => {
-    if (!appUrl || containerState !== "live") return;
+    if (!appUrl || containerState !== "active") return;
 
     setIsCapturingScreenshot(true);
 
@@ -153,22 +110,26 @@ export function Preview({
           </div>
           <div className="flex items-center gap-2">
             <Badge
-              className={`ml-2 px-3 py-1 text-xs capitalize font-semibold border rounded-full flex items-center justify-center select-none pointer-events-none shadow-none
-    ${
-      containerState === "starting"
-        ? "bg-blue-100 text-blue-800 border-blue-200"
-        : containerState === "live"
-        ? "bg-green-100 text-green-800 border-green-200"
-        : "bg-gray-100 text-gray-700 border-gray-200"
-    }
-  `}
+              className={`ml-2 px-3 py-1 text-xs capitalize font-semibold border rounded-full flex items-center justify-center select-none pointer-events-none shadow-none ${
+                containerState === 'starting'
+                  ? 'bg-blue-200 text-blue-800 border-blue-300'
+                  : containerState === 'active'
+                    ? 'bg-green-200 text-green-800 border-green-300'
+                    : containerState === 'paused'
+                      ? 'bg-red-200 text-red-800 border-red-300'
+                      : containerState === 'resuming'
+                        ? 'bg-green-100 text-green-600 border-green-200'
+                        : containerState === 'pausing'
+                          ? 'bg-red-100 text-red-700 border-red-200'
+                          : 'bg-gray-100 text-gray-700 border-gray-200'
+              }`}
               style={{ minWidth: 70, textAlign: "center" }}
             >
               {containerState}
             </Badge>
 
             {/* Screenshot button using inline approach rather than a separate component */}
-            {viewMode === "mobile" && containerState === "live" && (
+            {viewMode === "mobile" && containerState === "active" && (
               <ScreenshotButton
                 onCapture={handleCaptureScreenshot}
                 isCapturing={isCapturingScreenshot}

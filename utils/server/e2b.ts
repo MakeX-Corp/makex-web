@@ -43,3 +43,10 @@ export async function pauseE2BContainer(sandboxId: string) {
   const pausedId = await sbx.pause();
   return pausedId;
 }
+
+
+export async function killE2BContainer(sandboxId: string) {
+  const sbx = await Sandbox.kill(sandboxId);
+  return sbx;
+}
+  
