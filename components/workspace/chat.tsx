@@ -55,7 +55,6 @@ export function Chat({
   );
   const [initialPromptSent, setInitialPromptSent] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
-  const [limitModalOpen, setLimitModalOpen] = useState(false);
   const [remainingMessages, setRemainingMessages] = useState<number | null>(
     null
   );
@@ -169,7 +168,7 @@ export function Chat({
     onResponse: async (response) => { },
     onFinish: async (message, options) => {
       // Save the AI message
-      setIsWaitingForResponse(false);
+      setIsAIResponding(false);
       try {
         await saveAIMessage(
           sessionId,
@@ -212,7 +211,6 @@ export function Chat({
         onResponseComplete();
       }
       // Only remove the waiting indicator when everything is complete
-      setIsAIResponding(false);
     },
   });
 
