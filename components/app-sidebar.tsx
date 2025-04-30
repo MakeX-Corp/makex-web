@@ -8,7 +8,7 @@ import {
   CreditCard,
   ChevronRight,
   Search,
-  MessageCircle,
+  HomeIcon,
   Sun,
   Moon,
   Trash,
@@ -421,7 +421,7 @@ export function AppSidebar() {
             <div className="flex justify-center">
               <Link href="/dashboard">
                 <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MessageCircle className="h-4 w-4" />
+                  <HomeIcon className="h-4 w-4" />
                 </Button>
               </Link>
             </div>
