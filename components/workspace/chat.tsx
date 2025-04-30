@@ -35,7 +35,7 @@ export function Chat({
   onSessionError,
   authToken,
   containerState,
-  resumeSandbox
+  resumeSandbox,
 }: ChatProps) {
   // Get app context from the SessionContext
   const {
@@ -95,6 +95,13 @@ export function Chat({
     currentAppId.current = appId;
   }
 
+  // Function to reset textarea height
+  const resetTextareaHeight = () => {
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto"; // Reset to default height
+    }
+  };
+
   // Fetch initial messages
   useEffect(() => {
     const getMessages = async () => {
@@ -151,8 +158,8 @@ export function Chat({
     initialMessages: isLoading
       ? []
       : initialMessages.length > 0
-        ? initialMessages
-        : [],
+      ? initialMessages
+      : [],
     headers: {
       Authorization: `Bearer ${authToken}`,
     },
@@ -165,7 +172,7 @@ export function Chat({
       subscription,
     },
     maxSteps: 30,
-    onResponse: async (response) => { },
+    onResponse: async (response) => {},
     onFinish: async (message, options) => {
       // Save the AI message
       setIsAIResponding(false);
@@ -261,9 +268,10 @@ export function Chat({
       }
     }
   }, [isLoading, messages.length, initialPromptSent]);
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (containerState !== 'active') {
+    if (containerState !== "active") {
       await resumeSandbox();
       // sleep 3 seconds
       await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -321,6 +329,9 @@ export function Chat({
         // Regular text submission
         handleSubmit(e);
       }
+
+      // Reset textarea height after submission
+      resetTextareaHeight();
     } catch (error) {
       console.error("Error processing message with images:", error);
       setIsAIResponding(false);
@@ -402,14 +413,16 @@ export function Chat({
               {messages.map((message, index) => (
                 <div
                   key={message.id || `message-${index}`}
-                  className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"
-                    }`}
+                  className={`flex flex-col ${
+                    message.role === "user" ? "items-end" : "items-start"
+                  }`}
                 >
                   <Card
-                    className={`max-w-[80%] ${message.role === "user"
+                    className={`max-w-[80%] ${
+                      message.role === "user"
                         ? "bg-primary text-primary-foreground"
                         : "bg-card text-card-foreground"
-                      }`}
+                    }`}
                   >
                     <CardContent className="p-4">
                       {/* Display multiple images if they exist */}
