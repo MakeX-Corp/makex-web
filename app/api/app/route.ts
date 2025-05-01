@@ -39,11 +39,14 @@ export async function POST(request: Request) {
     }
 
     // Trigger container creation and wait for completion
-    await createContainer.triggerAndWait({
+    await createContainer.trigger({
       userId: user.id,
       appId: insertedApp.id,
       appName,
     });
+
+    //sleep for 5 seconds
+    await new Promise((resolve) => setTimeout(resolve, 15000));
 
     // Create the session in the same transaction
     const { data: session, error: sessionError } = await supabase
