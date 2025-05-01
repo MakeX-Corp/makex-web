@@ -4,6 +4,8 @@ import { generateAppName } from "@/utils/server/app-name-generator";
 import { createContainer } from "@/trigger/create-container";
 import { deleteContainer } from "@/trigger/delete-container";
 
+export const maxDuration = 300;
+
 export async function POST(request: Request) {
   const result = await getSupabaseWithUser(request);
   if (result instanceof NextResponse) return result;
