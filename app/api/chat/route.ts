@@ -177,14 +177,27 @@ export async function POST(req: Request) {
     });
 
     // Check if there are any active sandboxes no just hit the get endpoint
+    const bedrock = createAmazonBedrock({
+      region: "us-east-1",
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    });
+
+    const model = bedrock("us.anthropic.claude-3-5-sonnet-20241022-v2:0");
+
+    // Check if there are any active sandboxes no just hit the get endpoint
 
     const result = streamText({
-      model: anthropic(modelName),
+      model: model,
       messages: formattedMessages,
       tools: tools,
       toolCallStreaming: true,
       system: getPrompt(fileTree, connectionUri),
       maxSteps: 30,
+      onError: (error) => {
+        console.error("Detailed chat error:", error);
+        // Just log the error, don't return a response
+      },
     });
 
     return result.toDataStreamResponse({
