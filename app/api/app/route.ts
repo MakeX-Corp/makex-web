@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     });
 
     //sleep for 5 seconds
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await new Promise((resolve) => setTimeout(resolve, 15000));
 
     // Create the session in the same transaction
     const { data: session, error: sessionError } = await supabase
