@@ -44,10 +44,12 @@ export async function createE2BContainerClaude(metadata: {
   console.log('sandbox created', sbx.sandboxId);
 
 
-  await sbx.commands.run(`export EXPO_PACKAGER_PROXY_URL=https://${appHost} && yarn expo start --port 8000  > ~/expo_logs.txt 2>&1`, {
+  const output = await sbx.commands.run(`export EXPO_PACKAGER_PROXY_URL=https://${appHost} && yarn expo start --port 8000  > ~/expo_logs.txt 2>&1`, {
     background: true,
     cwd: '/app/expo-app'
   });
+
+  console.log('output', output);
   
   // Configure Git to trust the repository directory
   return {
