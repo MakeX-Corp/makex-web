@@ -37,12 +37,19 @@ export async function createE2BContainerClaude(metadata: {
     "bypassPermissionsModeAccepted": true
   }));
   
-  const output = await sbx.commands.run("sudo chown user:user -R /app/expo-app");
-  
-  // Configure Git to trust the repository directory
+
   const appHost = sbx.getHost(8000);
   const apiHost = sbx.getHost(8001);
 
+  console.log('sandbox created', sbx.sandboxId);
+
+
+  await sbx.commands.run(`export EXPO_PACKAGER_PROXY_URL=https://${appHost} && yarn expo start --port 8000  > ~/expo_logs.txt 2>&1`, {
+    background: true,
+    cwd: '/app/expo-app'
+  });
+  
+  // Configure Git to trust the repository directory
   return {
     appHost,
     apiHost,

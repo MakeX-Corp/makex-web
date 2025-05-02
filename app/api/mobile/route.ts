@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { generateAppName } from "@/utils/server/app-name-generator";
 import { tasks } from "@trigger.dev/sdk/v3";
+import { insertAgentResponseDb } from "@/trigger/insert-agent-response-db";
 
 export const maxDuration = 800;
 
@@ -105,6 +106,7 @@ export async function POST(request: Request) {
           const decoder = new TextDecoder();
           const encoder = new TextEncoder();
           let buffer = '';
+          let collectedResponse = '';
           
           const appUrl = `https://${appName}.makex.app`;
           // Send app name as first message
@@ -119,6 +121,7 @@ export async function POST(request: Request) {
                   try {
                     const json = JSON.parse(buffer);
                     controller.enqueue(encoder.encode(JSON.stringify(json) + '\n'));
+                    collectedResponse += JSON.stringify(json) + '\n';
                   } catch (e) {
                     console.error('Invalid JSON in final buffer:', buffer);
                   }
@@ -130,6 +133,7 @@ export async function POST(request: Request) {
               // Decode the chunk and add to buffer
               const chunk = decoder.decode(value, { stream: true });
               buffer += chunk;
+              collectedResponse += chunk;
               
               // Try to find complete JSON objects in the buffer
               let startIndex = 0;
@@ -152,6 +156,13 @@ export async function POST(request: Request) {
                 }
               }
             }
+
+            // Insert the collected response after the stream is complete
+            await insertAgentResponseDb.trigger({
+              appId: insertedApp.id,
+              userId: user.id,
+              agentResponse: collectedResponse,
+            });
           } catch (error) {
             console.error('Error in stream processing:', error);
             controller.error(error);
