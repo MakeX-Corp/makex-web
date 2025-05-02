@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { generateAppName } from "@/utils/server/app-name-generator";
-import { createContainer } from "@/trigger/create-container";
 import { tasks } from "@trigger.dev/sdk/v3";
 
-
-export const maxDuration = 300;
+export const maxDuration = 800;
 
 export async function POST(request: Request) {
   const result = await getSupabaseWithUser(request);
@@ -21,7 +19,6 @@ export async function POST(request: Request) {
 
     // Begin transaction to ensure both app and session are created atomically
     // Insert into Supabase user_apps table
-
     const { data: insertedApp, error: insertError } = await supabase
       .from("user_apps")
       .insert({
@@ -43,15 +40,20 @@ export async function POST(request: Request) {
 
     // Trigger container creation and wait for completion
     const result = await tasks.triggerAndPoll(
-        "create-container", {
+      "create-container-claude",
+      {
         userId: user.id,
         appId: insertedApp.id,
         appName,
       },
       { pollIntervalMs: 1000 }
     );
-      
-    
+
+    const api_url = `https://${result.output.apiHost}`;
+    const app_url = `https://${result.output.appHost}`;
+
+    console.log("API URL:", api_url);
+    console.log("APP URL:", app_url);
 
     // Create the agent_history in the same transaction
     const { data: agentHistory, error: agentHistoryError } = await supabase
@@ -72,13 +74,106 @@ export async function POST(request: Request) {
       );
     }
 
+    try {
+      const response = await fetch(`${api_url}/claude`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': process.env.FILE_BACKEND_API_KEY || '',
+        },
+        body: JSON.stringify({ prompt }),
+      });
 
-    // return 200
-    return NextResponse.json({
-      message: "Agent history created successfully",
-    }, { status: 200 });
 
-   
+      if (!response.ok) {
+        console.error("External service responded with status:", response.status);
+        throw new Error(`External service responded with status: ${response.status}`);
+      }
+
+      // Create a new ReadableStream from the response
+      const stream = new ReadableStream({
+        async start(controller) {
+          console.log('Starting stream processing');
+          const reader = response.body?.getReader();
+          if (!reader) {
+            console.log('No reader available, closing stream');
+            controller.close();
+            return;
+          }
+          console.log('Reader initialized successfully');
+
+          const decoder = new TextDecoder();
+          const encoder = new TextEncoder();
+          let buffer = '';
+          
+          const appUrl = `https://${appName}.makex.app`;
+          // Send app name as first message
+          controller.enqueue(encoder.encode(JSON.stringify({ appUrl }) + '\n'));
+
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) {
+                // Process any remaining buffer
+                if (buffer.trim()) {
+                  try {
+                    const json = JSON.parse(buffer);
+                    controller.enqueue(encoder.encode(JSON.stringify(json) + '\n'));
+                  } catch (e) {
+                    console.error('Invalid JSON in final buffer:', buffer);
+                  }
+                }
+                controller.close();
+                break;
+              }
+
+              // Decode the chunk and add to buffer
+              const chunk = decoder.decode(value, { stream: true });
+              buffer += chunk;
+              
+              // Try to find complete JSON objects in the buffer
+              let startIndex = 0;
+              while (true) {
+                const jsonStart = buffer.indexOf('{', startIndex);
+                if (jsonStart === -1) break;
+                
+                try {
+                  const jsonStr = buffer.slice(jsonStart);
+                  const json = JSON.parse(jsonStr);
+                  // If we successfully parsed, send this chunk
+                  controller.enqueue(encoder.encode(JSON.stringify(json) + '\n'));
+                  // Update buffer and startIndex
+                  buffer = buffer.slice(jsonStart + jsonStr.length);
+                  startIndex = 0;
+                } catch (e) {
+                  // If parsing failed, this might be an incomplete JSON
+                  startIndex = jsonStart + 1;
+                  break;
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error in stream processing:', error);
+            controller.error(error);
+          }
+        }
+      });
+
+      // Return the stream with appropriate headers
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    } catch (error) {
+      console.error('Error in agent route:', error);
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error("Error in app creation:", error);
     return NextResponse.json(
