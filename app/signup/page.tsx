@@ -34,8 +34,7 @@ export default function Signup() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push("/dashboard");
-      router.refresh();
+      router.push("/auth/callback?source=signup");
     }
   };
 
@@ -46,7 +45,7 @@ export default function Signup() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?source=signup`,
       },
     });
 
