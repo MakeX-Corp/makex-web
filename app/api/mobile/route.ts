@@ -193,6 +193,9 @@ export async function PATCH(request: Request) {
 
   const { appUrl, prompt } = await request.json();
 
+  console.log("App URL:", appUrl);
+  console.log("Prompt:", prompt);
+
   // Remove exp:// prefix if present and extract app name
   const cleanUrl = appUrl.replace('exp://', '');
   const appName = cleanUrl.split(".")[0];
