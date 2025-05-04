@@ -16,6 +16,11 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith(route)
   );
 
+  // Skip auth check for auth callback route
+  if (req.nextUrl.pathname.startsWith("/auth/callback")) {
+    return res;
+  }
+
   if (isProtectedRoute && !session) {
     // Redirect to login if accessing protected route without session
     return NextResponse.redirect(new URL("/login", req.url));

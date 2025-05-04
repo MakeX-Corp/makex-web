@@ -23,6 +23,10 @@ export const resumeContainer = task({
       throw new Error(`Failed fetching active sandboxes: ${activeSandboxError.message}`);
     }
 
+    if (activeSandbox[0]?.sandbox_status === "temporary" || activeSandbox[0]?.sandbox_status === "starting" || activeSandbox[0]?.sandbox_status === "resuming" || activeSandbox[0]?.sandbox_status === "active") {
+      return;
+    }
+
     const resumeSandbox = async (sandboxDbId: string, sandboxId: string) => {
       await adminSupabase
         .from("user_sandboxes")
