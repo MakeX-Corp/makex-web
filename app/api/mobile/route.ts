@@ -39,6 +39,9 @@ export async function POST(request: Request) {
       );
     }
 
+
+
+    console.log("Triggering container creation");
     // Trigger container creation and wait for completion
     const result = await tasks.triggerAndPoll(
       "create-container-claude",

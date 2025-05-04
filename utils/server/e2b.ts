@@ -36,6 +36,8 @@ export async function createE2BContainerClaude(metadata: {
     "userID": "d8eb97302a3997e5e4101d25ae7daaabd597f1cb76e416d477c394c594a5c5d8",
     "bypassPermissionsModeAccepted": true
   }));
+
+  await sbx.commands.run("sudo chown user:user -R /app/expo-app")
   
 
   const appHost = sbx.getHost(8000);
