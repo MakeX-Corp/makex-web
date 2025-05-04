@@ -8,12 +8,20 @@ export async function createE2BContainer(metadata: {
   appName: string;
 }) {
   const sbx = await Sandbox.create(process.env.E2B_TEMPLATE_ID as string, {
-    timeoutMs: 3600_1000,
+    timeoutMs: 3600*1000,
     metadata: metadata,
   });
 
   const appHost = sbx.getHost(8000);
   const apiHost = sbx.getHost(8001);
+
+  console.log('sandbox created', sbx.sandboxId);
+
+  const output = await sbx.commands.run(`export EXPO_PACKAGER_PROXY_URL=https://${appHost} && yarn expo start --port 8000  > ~/expo_logs.txt 2>&1`, {
+    background: true,
+    cwd: '/app/expo-app'
+  });
+
 
   return {
     appHost,
@@ -28,7 +36,7 @@ export async function createE2BContainerClaude(metadata: {
   appName: string;
 }) {
   const sbx = await Sandbox.create(process.env.E2B_TEMPLATE_ID as string, {
-    timeoutMs: 3600_1000,
+    timeoutMs: 3600*1000,
     metadata: metadata,
   });
 
