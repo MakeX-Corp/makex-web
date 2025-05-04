@@ -47,9 +47,8 @@ export async function POST(request: Request) {
       { pollIntervalMs: 1000 }
     );
 
-    // 4 seocnd timeout to let expo app start
-    await new Promise((resolve) => setTimeout(resolve, 6000));
-
+    // 8 seocnd timeout to let expo app start
+    await new Promise((resolve) => setTimeout(resolve, 8000));
     // Create the session in the same transaction
     const { data: session, error: sessionError } = await supabase
       .from("chat_sessions")
