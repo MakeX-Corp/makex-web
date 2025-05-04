@@ -3,7 +3,7 @@ import { getSupabaseWithUser } from "@/utils/server/auth";
 import { generateAppName } from "@/utils/server/app-name-generator";
 import { createContainer } from "@/trigger/create-container";
 import { deleteContainer } from "@/trigger/delete-container";
-
+import { tasks } from "@trigger.dev/sdk/v3";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
@@ -40,15 +40,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Trigger container creation and wait for completion
-    await createContainer.trigger({
-      userId: user.id,
-      appId: insertedApp.id,
-      appName,
-    });
 
-    //sleep for 5 seconds
-    await new Promise((resolve) => setTimeout(resolve, 15000));
+    const conatainerCreation = await tasks.triggerAndPoll(
+      "create-container",
+      { userId: user.id, appId: insertedApp.id, appName },
+      { pollIntervalMs: 1000 }
+    );
+
+    // 4 seocnd timeout to let expo app start
+    await new Promise((resolve) => setTimeout(resolve, 6000));
 
     // Create the session in the same transaction
     const { data: session, error: sessionError } = await supabase
