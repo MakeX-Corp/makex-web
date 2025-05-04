@@ -8,7 +8,7 @@ export async function createE2BContainer(metadata: {
   appName: string;
 }) {
   const sbx = await Sandbox.create(process.env.E2B_TEMPLATE_ID as string, {
-    timeoutMs: 3600*1000,
+    timeoutMs: 3600_1000,
     metadata: metadata,
   });
 
@@ -28,7 +28,7 @@ export async function createE2BContainerClaude(metadata: {
   appName: string;
 }) {
   const sbx = await Sandbox.create(process.env.E2B_TEMPLATE_ID as string, {
-    timeoutMs: 3600*1000,
+    timeoutMs: 3600_1000,
     metadata: metadata,
   });
 
