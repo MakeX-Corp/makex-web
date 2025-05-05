@@ -44,7 +44,7 @@ export const createContainer = task({
       .update({
         api_url: apiHost,
         app_url: appHost,
-        sandbox_status: "temporary",
+        sandbox_status: "active",
         sandbox_id: sbx.sandboxId,
       })
       .eq("id", sandboxDbId);

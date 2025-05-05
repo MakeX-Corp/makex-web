@@ -45,6 +45,14 @@ export const firstScheduledTask = schedules.task({
                     .limit(1)
                     .single();
 
+                // also get it from agent_history table
+                const { data: agentHistory, error: agentHistoryError } = await supabase
+                    .from("agent_history")
+                    .select("created_at")
+                    .eq("app_id", sandbox.app_id)
+                    .order("created_at", { ascending: false })
+                    .limit(1)
+                    .single();
                 // For apps with no messages, use the app creation time
                 // Otherwise use the latest message time
                 let mostRecentActivity = new Date(sandbox.sandbox_updated_at);
@@ -52,6 +60,12 @@ export const firstScheduledTask = schedules.task({
                     const lastMessageTime = new Date(latestMessage.created_at + "Z");
                     if (lastMessageTime > mostRecentActivity) {
                         mostRecentActivity = lastMessageTime;
+                    }
+                }
+                if (agentHistory) {
+                    const lastAgentMessageTime = new Date(agentHistory.created_at + "Z");
+                    if (lastAgentMessageTime > mostRecentActivity) {
+                        mostRecentActivity = lastAgentMessageTime;
                     }
                 }
 

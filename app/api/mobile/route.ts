@@ -191,7 +191,32 @@ export async function PATCH(request: Request) {
   if (result instanceof NextResponse) return result;
   const { supabase, user } = result;
 
-  const { appId, appName, prompt } = await request.json();
+  const { appUrl, prompt } = await request.json();
+
+  console.log("App URL:", appUrl);
+  console.log("Prompt:", prompt);
+
+  // Remove exp:// prefix if present and extract app name
+  const cleanUrl = appUrl.replace('exp://', '');
+  const appName = cleanUrl.split(".")[0];
+
+  console.log("App name:", appName);
+
+  const { data: app, error: appError } = await supabase
+    .from("user_apps")
+    .select("id")
+    .eq("app_name", appName)
+    .single();
+
+  if (appError) { 
+    console.error("App not found:", appError);
+    return NextResponse.json(
+      { error: "App not found" },
+      { status: 404 }
+    );
+  }
+
+  const appId = app.id;
 
   await tasks.triggerAndPoll(
     "resume-container",
