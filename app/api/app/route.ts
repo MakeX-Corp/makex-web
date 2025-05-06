@@ -4,9 +4,13 @@ import { generateAppName } from "@/utils/server/app-name-generator";
 import { deleteContainer } from "@/trigger/delete-container";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { createClient } from "@/utils/supabase/server";
+import { containerInitiate } from "@/trigger/container-initiate";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
+  const timings: Record<string, number> = {};
+  const startTime = performance.now();
+
   const result = await getSupabaseWithUser(request as NextRequest);
   if (result instanceof NextResponse) return result;
   if ('error' in result) return result.error;
@@ -18,10 +22,10 @@ export async function POST(request: Request) {
     const { prompt } = body;
 
     const appName = generateAppName();
+    timings.authAndSetup = performance.now() - startTime;
 
     // Begin transaction to ensure both app and session are created atomically
-    // Insert into Supabase user_apps table
-
+    const appStartTime = performance.now();
     const { data: insertedApp, error: insertError } = await supabase
       .from("user_apps")
       .insert({
@@ -32,6 +36,7 @@ export async function POST(request: Request) {
       })
       .select()
       .single();
+    timings.appCreation = performance.now() - appStartTime;
 
     if (insertError) {
       console.error("Supabase insert error:", insertError);
@@ -41,16 +46,16 @@ export async function POST(request: Request) {
       );
     }
 
-
-    const conatainerCreation = await tasks.triggerAndPoll(
-      "create-container",
+    const containerStartTime = performance.now();
+    const containerInitiateTask = await tasks.triggerAndPoll(
+      "container-initiate",
       { userId: user.id, appId: insertedApp.id, appName },
       { pollIntervalMs: 1000 }
     );
+    timings.containerInitiation = performance.now() - containerStartTime;
 
-    // 8 seocnd timeout to let expo app start
-    await new Promise((resolve) => setTimeout(resolve, 8000));
     // Create the session in the same transaction
+    const sessionStartTime = performance.now();
     const { data: session, error: sessionError } = await supabase
       .from("chat_sessions")
       .insert({
@@ -61,6 +66,7 @@ export async function POST(request: Request) {
       })
       .select()
       .single();
+    timings.sessionCreation = performance.now() - sessionStartTime;
 
     if (sessionError) {
       console.error("Session creation error:", sessionError);
@@ -70,11 +76,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // Return the app data along with session ID and redirect URL
+    timings.totalTime = performance.now() - startTime;
+
+    console.log("Timings:", timings);
+
+    // Return the app data along with session ID, redirect URL, and timings
     return NextResponse.json({
       ...insertedApp,
       sessionId: session.id,
       redirectUrl: `/dashboard/${insertedApp.id}?sessionId=${session.id}`,
+      timings: {
+        authAndSetup: `${timings.authAndSetup.toFixed(2)}ms`,
+        appCreation: `${timings.appCreation.toFixed(2)}ms`,
+        containerInitiation: `${timings.containerInitiation.toFixed(2)}ms`,
+        sessionCreation: `${timings.sessionCreation.toFixed(2)}ms`,
+        totalTime: `${timings.totalTime.toFixed(2)}ms`
+      }
     });
   } catch (error) {
     console.error("Error in app creation:", error);

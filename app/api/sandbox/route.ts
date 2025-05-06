@@ -1,7 +1,7 @@
 import { resumeContainer } from "@/trigger/resume-container";
 import { pauseContainer } from "@/trigger/pause-container"
 import { deleteContainer } from "@/trigger/delete-container";
-import { createContainer } from "@/trigger/create-container";
+import { containerInitiate } from "@/trigger/container-initiate";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     const { appId, appName, targetState } = body;
 
     // start new container 
-    await createContainer.trigger({
+    await containerInitiate.trigger({
       userId: user.id,
       appId,
       appName,

@@ -1,11 +1,11 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { createDaytonaContainer } from "@/utils/server/daytona";
-import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
+import { initiateDaytonaContainer } from "@/utils/server/daytona";
+import { startExpo } from "./start-expo";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 
-export const createContainer = task({
-  id: "create-container",
+export const containerInitiate = task({
+  id: "container-initiate",
   retry: {
     maxAttempts: 1
   },
@@ -22,6 +22,7 @@ export const createContainer = task({
         sandbox_created_at: new Date().toISOString(),
         sandbox_updated_at: new Date().toISOString(),
         sandbox_provider: "daytona",
+        app_status: "starting",
       })
       .select()
       .limit(1);
@@ -35,51 +36,35 @@ export const createContainer = task({
       throw new Error("Failed to create initial sandbox record (missing ID)");
     }
 
-    const { container, sessionId, apiPreview, appPreview } = await createDaytonaContainer({
+    const { containerId, apiUrl } = await initiateDaytonaContainer({
       userId,
       appId,
       appName,
     });
 
+    console.log('containerId', containerId)
+
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
       .update({
-        api_url: apiPreview,
-        app_url: appPreview,
         sandbox_status: "active",
-        sandbox_id: container.id,
+        sandbox_id: containerId,
+        api_url: apiUrl,
       })
       .eq("id", sandboxDbId);
+
+    await redisUrlSetter(appName, 'https://www.makex.app/app-not-found', apiUrl);
 
     if (updateError) {
       throw new Error(`Failed updating sandbox with container info: ${updateError.message}`);
     }
 
-    await redisUrlSetter(appName, appPreview.url, apiPreview.url);
-
-    // Initialize file backend
-    const filebackendApiClient = await createFileBackendApiClient(`${apiPreview.url}`);
-
-    // Initial Git commit
-    const res = await filebackendApiClient.post("/checkpoint/save", {
-      name: "initial",
-      message: "Initial commit",
+    await startExpo.trigger({
+      userId,
+      appId,
+      appName,
+      containerId,
     });
 
-    console.log("Initial commit response:", res);
-
-    // update the app with the current commit 
-    const { data: updatedApp, error: updateAppError } = await adminSupabase
-      .from("user_apps")
-      .update({
-        initial_commit: res.commit || res.current_commit,
-      })
-      .eq("id", appId);
-
-    console.log("Updated app with initial commit:", updatedApp);
-
-    if (updateAppError) {
-      throw new Error(`Failed updating app with initial commit: ${updateAppError.message}`);
-    }
   },
 });

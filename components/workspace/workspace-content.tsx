@@ -526,7 +526,7 @@ export default function WorkspaceContent({
                     onSessionError={() => { }}
                     containerState={containerState}
                     resumeSandbox={resumeSandbox}
-
+                    setContainerState={setContainerState}
                   />
 
                   {/* Right panel - Preview */}
@@ -579,6 +579,7 @@ export default function WorkspaceContent({
                           onSessionError={() => { }}
                           containerState={containerState}
                           resumeSandbox={resumeSandbox}
+                          setContainerState={setContainerState}
                         />
                       </div>
 

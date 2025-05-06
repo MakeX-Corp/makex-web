@@ -26,6 +26,7 @@ interface ChatProps {
   onSessionError?: (error: string) => void;
   containerState: string;
   resumeSandbox: () => Promise<void>;
+  setContainerState: (state: "starting" | "active" | "paused" | "resuming" | "pausing") => void;
 }
 
 export function Chat({
@@ -33,6 +34,7 @@ export function Chat({
   onResponseComplete,
   onSessionError,
   containerState,
+  setContainerState,
   resumeSandbox,
 }: ChatProps) {
   // Get app context from the SessionContext
@@ -170,6 +172,9 @@ export function Chat({
     onFinish: async (message, options) => {
       // Save the AI message
       setIsAIResponding(false);
+      if (onResponseComplete) {
+        onResponseComplete();
+      }
       try {
         await saveAIMessage(
           sessionId,
@@ -205,9 +210,6 @@ export function Chat({
         }
       } catch (error) {
         console.error("Error saving AI message:", error);
-      }
-      if (onResponseComplete) {
-        onResponseComplete();
       }
       // Only remove the waiting indicator when everything is complete
     },
