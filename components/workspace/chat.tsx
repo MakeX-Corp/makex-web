@@ -24,7 +24,6 @@ interface ChatProps {
   sessionId: string;
   onResponseComplete?: () => void;
   onSessionError?: (error: string) => void;
-  authToken: string | null;
   containerState: string;
   resumeSandbox: () => Promise<void>;
 }
@@ -33,7 +32,6 @@ export function Chat({
   sessionId,
   onResponseComplete,
   onSessionError,
-  authToken,
   containerState,
   resumeSandbox,
 }: ChatProps) {
@@ -116,7 +114,6 @@ export function Chat({
         const messages = await fetchChatMessages(
           sessionId,
           appId,
-          authToken || ""
         );
         setInitialMessages(messages);
       } catch (error) {
@@ -130,15 +127,15 @@ export function Chat({
     };
 
     getMessages();
-  }, [sessionId, appId, authToken, onSessionError]);
+  }, [sessionId, appId, onSessionError]);
 
   useEffect(() => {
     let isMounted = true;
 
     const checkLimit = async () => {
-      if (!authToken || !subscription) return;
+      if (!subscription) return;
 
-      const result = await checkMessageLimit(authToken, subscription);
+      const result = await checkMessageLimit(subscription);
       if (isMounted && result) {
         setRemainingMessages(result.remainingMessages);
         setLimitReached(result.reachedLimit);
@@ -150,7 +147,7 @@ export function Chat({
     return () => {
       isMounted = false;
     };
-  }, [authToken, subscription]);
+  }, [subscription]);
 
   const { messages, input, handleInputChange, handleSubmit, error } = useChat({
     id: sessionId,
@@ -160,9 +157,6 @@ export function Chat({
       : initialMessages.length > 0
       ? initialMessages
       : [],
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-    },
     body: {
       apiUrl,
       appId,
@@ -183,7 +177,6 @@ export function Chat({
           apiUrl,
           options,
           message,
-          authToken || ""
         );
         // If this is the first AI response and title hasn't been updated yet
         if (
@@ -198,14 +191,13 @@ export function Chat({
             userMessage,
             aiResponse,
             sessionId,
-            authToken || ""
           );
           if (newTitle) {
             setSessionName(newTitle);
           }
         }
         // Update message limit after successful message
-        const result = await checkMessageLimit(authToken || "", subscription);
+        const result = await checkMessageLimit(subscription);
         if (result) {
           const { remainingMessages, reachedLimit } = result;
           setRemainingMessages(remainingMessages);
@@ -374,7 +366,7 @@ export function Chat({
   const handleRestore = async (messageId: string) => {
     try {
       setRestoringMessageId(messageId);
-      await restoreCheckpoint(messageId, apiUrl, sessionId, authToken || "");
+      await restoreCheckpoint(messageId, apiUrl, sessionId);
     } catch (error) {
       console.error("Error restoring checkpoint:", error);
     } finally {

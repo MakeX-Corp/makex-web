@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAuthToken } from "@/utils/client/auth";
 import Image from "next/image";
 import {
   Dialog,
@@ -38,12 +37,10 @@ export function SupabaseConnect({
 
       // Simple creation process
       const appId = window.location.pathname.split("/")[2];
-      const authToken = await getAuthToken();
 
       const response = await fetch("/api/integrations/supabase/projects", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ appId }),
@@ -69,12 +66,7 @@ export function SupabaseConnect({
   useEffect(() => {
     const fetchUserIntegrations = async () => {
       try {
-        const authToken = await getAuthToken();
-        const response = await fetch("/api/integrations/supabase", {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
+        const response = await fetch("/api/integrations/supabase");
         const data = await response.json();
         if (data && data.exists) {
           setIsConnected(true);
@@ -98,8 +90,6 @@ export function SupabaseConnect({
       // Get the app id from the url
       const appId = window.location.pathname.split("/")[2];
 
-      const authToken = await getAuthToken();
-
       // Construct the authorization URL
       const authUrl = new URL("https://api.supabase.com/v1/oauth/authorize");
       authUrl.searchParams.append(
@@ -108,7 +98,7 @@ export function SupabaseConnect({
       );
       authUrl.searchParams.append(
         "redirect_uri",
-        `${window.location.origin}/api/integrations/supabase/callback?app_id=${appId}&auth_token=${authToken}`
+        `${window.location.origin}/api/integrations/supabase/callback?app_id=${appId}`
       );
       authUrl.searchParams.append("response_type", "code");
       authUrl.searchParams.append("state", state);

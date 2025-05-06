@@ -30,7 +30,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import { getAuthToken } from "@/utils/client/auth";
 import { checkMessageLimit } from "@/lib/chat-service";
 
 // Expanded app suggestion chips for multiple rows
@@ -196,8 +195,7 @@ export default function DashboardPage() {
     setIsCreating(true);
     try {
       //check if user can create app
-      const authToken = getAuthToken();
-      const result = await checkMessageLimit(authToken || "", subscription);
+      const result = await checkMessageLimit(subscription);
       if (result) {
         const { reachedLimit } = result;
 

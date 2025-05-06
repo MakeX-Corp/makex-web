@@ -36,16 +36,10 @@ interface ProcessedMessage {
 export const fetchChatMessages = async (
   sessionId: string,
   appId: string,
-  authToken: string
 ): Promise<ProcessedMessage[]> => {
   try {
     const response = await fetch(
       `/api/chat?sessionId=${sessionId}&appId=${appId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      }
     );
 
     if (!response.ok) {
@@ -93,15 +87,10 @@ export const saveAIMessage = async (
   apiUrl: string,
   options: any,
   message: any,
-  authToken: string
 ): Promise<any> => {
   try {
     const response = await fetch("/api/chat/ai-message-save", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
       body: JSON.stringify({
         sessionId,
         appId,
@@ -129,15 +118,10 @@ export const restoreCheckpoint = async (
   messageId: string,
   apiUrl: string,
   sessionId: string,
-  authToken: string
 ): Promise<any> => {
   try {
     const response = await fetch("/api/code", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
       body: JSON.stringify({
         messageId,
         apiUrl,
@@ -157,15 +141,11 @@ export const restoreCheckpoint = async (
 };
 
 export const checkMessageLimit = async (
-  authToken: string,
   subscription: any
 ) => {
   try {
     const response = await fetch("/api/chat/limits", {
       method: "POST",
-      headers: {
-        Authorization: "Bearer " + authToken,
-      },
       body: JSON.stringify({
         subscription,
       }),

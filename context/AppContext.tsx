@@ -6,14 +6,13 @@ import {
   useContext,
   ReactNode,
   useEffect,
-  useCallback,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  getAuthToken,
-  getUserEmailFromToken,
   getPlanName,
 } from "@/utils/client/auth";
+import { createClient } from "@/utils/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 // Define app data interface based on the API response
 export interface AppData {
@@ -85,6 +84,8 @@ interface AppContextType {
 
   isAIResponding: boolean;
   setIsAIResponding: (isAIResponding: boolean) => void;
+
+  user: User | null;
 }
 
 // Create the context
@@ -113,6 +114,7 @@ const getAppIdFromPath = (pathname: string): string | null => {
 export function AppProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  
 
   // Sidebar state
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -134,6 +136,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Determine current app ID from path using the helper function
   const currentAppId = getAppIdFromPath(pathname);
 
+
+  // const email 
+  const [user, setUser] = useState<User | null>(null);
+
   // Toggle function for sidebar
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
@@ -141,18 +147,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Create app function
   const createApp = async (prompt: string): Promise<string> => {
-    const decodedToken = getAuthToken();
-
-    if (!decodedToken) {
-      throw new Error("No authentication token found");
-    }
 
     try {
       const response = await fetch("/api/app", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${decodedToken}`,
         },
         body: JSON.stringify({ prompt }),
       });
@@ -172,16 +172,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Delete app function
   const deleteApp = async (appId: string) => {
-    const decodedToken = getAuthToken();
-    if (!decodedToken) {
-      throw new Error("No authentication token found");
-    }
     try {
       const response = await fetch(`/api/app?id=${appId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${decodedToken}`,
-        },
+
       });
       if (!response.ok) {
         throw new Error("Failed to delete app");
@@ -195,12 +189,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Fetch apps from API with authentication
   const fetchApps = async () => {
-    setIsLoading(true);
     try {
-
-
-
-
       // Fetch user apps
       const appsResponse = await fetch("/api/app", {
       });
@@ -214,26 +203,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setApps(data);
     } catch (error) {
       console.error("Error fetching apps:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   // Function to fetch subscription data
   const fetchSubscription = async () => {
     try {
-      const decodedToken = getAuthToken();
-
-      if (!decodedToken) {
-        throw new Error("No authentication token found");
-      }
 
       // Fetch subscription data
-      const subscriptionResponse = await fetch("/api/subscription", {
-        headers: {
-          Authorization: `Bearer ${decodedToken}`,
-        },
-      });
+      const subscriptionResponse = await fetch("/api/subscription");
 
       if (!subscriptionResponse.ok) {
         const error = await subscriptionResponse.json();
@@ -243,9 +221,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const data = await subscriptionResponse.json();
 
       // Get email from token using the provided utility function
-      const email = getUserEmailFromToken(decodedToken) || "";
       const planName = getPlanName(data.subscription?.planId || "");
-      data.email = email;
       data.planName = planName;
 
       setSubscription(data);
@@ -259,6 +235,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const fetchInitialData = async () => {
       try {
         setIsLoading(true);
+
+        const supabase = await createClient()
+        const { data } = await supabase.auth.getUser()
+        setUser(data.user || null)
 
         // Only fetch apps and subscription data on initial load
         // DO NOT fetch sessions here - let the workspace component handle that
@@ -290,6 +270,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshSubscription: fetchSubscription,
     isAIResponding,
     setIsAIResponding,
+    user,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

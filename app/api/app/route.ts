@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { generateAppName } from "@/utils/server/app-name-generator";
 import { deleteContainer } from "@/trigger/delete-container";
@@ -7,8 +7,9 @@ import { createClient } from "@/utils/supabase/server";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
-  const result = await getSupabaseWithUser(request);
+  const result = await getSupabaseWithUser(request as NextRequest);
   if (result instanceof NextResponse) return result;
+  if ('error' in result) return result.error;
   const { supabase, user } = result;
 
   try {
@@ -89,7 +90,6 @@ export async function GET(request: Request) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser();
-    console.log(user)
 
     const { searchParams } = new URL(request.url);
     const appId = searchParams.get("id");
@@ -141,8 +141,9 @@ export async function GET(request: Request) {
 // DELETE /api/app - Delete specific app
 export async function DELETE(request: Request) {
   try {
-    const result = await getSupabaseWithUser(request);
+    const result = await getSupabaseWithUser(request as NextRequest);
     if (result instanceof NextResponse) return result;
+    if ('error' in result) return result.error;
 
     const { supabase, user } = result;
 
@@ -198,8 +199,9 @@ export async function DELETE(request: Request) {
 // PATCH /api/app - Update specific fields of an app
 export async function PATCH(request: Request) {
   try {
-    const result = await getSupabaseWithUser(request);
+    const result = await getSupabaseWithUser(request as NextRequest);
     if (result instanceof NextResponse) return result;
+    if ('error' in result) return result.error;
 
     const { supabase, user } = result;
 

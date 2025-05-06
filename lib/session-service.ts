@@ -1,5 +1,4 @@
 // lib/session-service.ts
-import { getAuthToken } from "@/utils/client/auth";
 // Type definitions
 export interface SessionListItem {
   id: string;
@@ -34,21 +33,12 @@ export async function getSessionsForApp(
   appId: string
 ): Promise<{ sessions: SessionListItem[] }> {
   try {
-    const decodedToken = getAuthToken();
 
-    if (!decodedToken) {
-      throw new Error("No authentication token found");
-    }
+
 
     const response = await fetch(
       `/api/sessions?appId=${encodeURIComponent(appId)}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${decodedToken}`,
-        },
-      }
+
     );
 
     const data = await response.json();
@@ -82,11 +72,8 @@ export async function getSession(
   sessionId: string
 ): Promise<SessionData | null> {
   try {
-    const decodedToken = getAuthToken();
 
-    if (!decodedToken) {
-      throw new Error("No authentication token found");
-    }
+  
     // First check if this is a new session request
     if (sessionId.startsWith("new-session-")) {
       // Create a new session
@@ -97,13 +84,7 @@ export async function getSession(
     }
 
     // Fetch the session from the API
-    const response = await fetch(`/api/sessions?sessionId=${sessionId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${decodedToken}`,
-      },
-    });
+    const response = await fetch(`/api/sessions?sessionId=${sessionId}`);
 
     const data = await response.json();
 
@@ -137,17 +118,9 @@ export async function createNewSession(
   title?: string
 ): Promise<SessionData | null> {
   try {
-    const decodedToken = getAuthToken();
 
-    if (!decodedToken) {
-      throw new Error("No authentication token found");
-    }
     const response = await fetch("/api/sessions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${decodedToken}`,
-      },
       body: JSON.stringify({
         appId,
         title: title || `New Chat`,
@@ -183,19 +156,12 @@ export async function createNewSession(
 // Delete a session (soft delete)
 export async function deleteSession(sessionId: string): Promise<boolean> {
   try {
-    const decodedToken = getAuthToken();
 
-    if (!decodedToken) {
-      throw new Error("No authentication token found");
-    }
+
     const response = await fetch(
       `/api/sessions?sessionId=${encodeURIComponent(sessionId)}`,
       {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${decodedToken}`,
-        },
       }
     );
 
@@ -222,18 +188,9 @@ export async function updateSessionTitle(
   title: string
 ): Promise<boolean> {
   try {
-    const decodedToken = getAuthToken();
-
-    if (!decodedToken) {
-      throw new Error("No authentication token found");
-    }
 
     const response = await fetch(`/api/sessions/title`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${decodedToken}`,
-      },
       body: JSON.stringify({
         sessionId,
         title,
@@ -262,19 +219,8 @@ export async function getAppInfo(appId: string): Promise<{
   error: string | null;
 }> {
   try {
-    const decodedToken = getAuthToken();
 
-    if (!decodedToken) {
-      return { data: null, error: "No authentication token found" };
-    }
-
-    const response = await fetch(`/api/app?id=${encodeURIComponent(appId)}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${decodedToken}`,
-      },
-    });
+    const response = await fetch(`/api/app?id=${encodeURIComponent(appId)}`);
 
     const data = await response.json();
 

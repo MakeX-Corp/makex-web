@@ -56,7 +56,6 @@ export async function createDaytonaContainer(metadata: {
     public: true,
   });
 
-  await container.start();
 
   console.log('Container created', await container.info());
 

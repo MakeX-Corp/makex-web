@@ -1,39 +1,27 @@
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { NextResponse } from "next/server";
-import { uniqueNamesGenerator, Config, adjectives, colors, animals } from 'unique-names-generator';
-
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   // log all params
   const code = searchParams.get("code");
   const appId = searchParams.get("app_id");
-  const authToken = searchParams.get("auth_token");
   if (!code) {
     return NextResponse.json(
       { error: "No authorization code received" },
       { status: 400 }
     );
   }
-  if (!authToken) {
-    return NextResponse.json(
-      { error: "No auth token received" },
-      { status: 400 }
-    );
-  }
+
   if (!appId) {
     return NextResponse.json({ error: "No app id received" }, { status: 400 });
   }
 
   try {
     // Edit the request to add the auth token as header in bearer format because in incoming requets its in params
-    const requestWithAuthToken = new Request(request.url, {
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-    });
-    const result = await getSupabaseWithUser(requestWithAuthToken);
-    if (result instanceof NextResponse) return result;
+    const result = await getSupabaseWithUser(request as NextRequest);
+    if (result instanceof NextResponse || 'error' in result) return result;
+
     const { supabase, user } = result;
     if (!user) {
       return NextResponse.json({ error: "No user found" }, { status: 401 });
@@ -54,7 +42,7 @@ export async function GET(request: Request) {
         body: new URLSearchParams({
           grant_type: "authorization_code",
           code,
-          redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/integrations/supabase/callback?app_id=${appId}&auth_token=${authToken}`,
+          redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/integrations/supabase/callback?app_id=${appId}`,
         }),
       }
     );

@@ -6,19 +6,18 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, LogOut, Globe } from "lucide-react";
-import { getAuthToken } from "@/utils/client/auth";
 import { useApp } from "@/context/AppContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 export default function ProfileSettings() {
   const router = useRouter();
-  const { subscription, isLoading: subscriptionLoading } = useApp();
+  const { subscription, isLoading: subscriptionLoading, user } = useApp();
 
   // Derive values from the subscription data
   const pendingCancellation = subscription?.pendingCancellation || false;
   const planName = subscription?.planName || "";
   const customerId = subscription?.customerId || null;
-  const email = subscription?.email || "";
+  const email = user?.email || "";
   const initials = email ? email.substring(0, 2).toUpperCase() : "US";
   const [isManagingSubscription, setIsManagingSubscription] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -47,24 +46,17 @@ export default function ProfileSettings() {
   const handleManageSubscription = async () => {
     try {
       setIsManagingSubscription(true);
-      const decodedToken = getAuthToken();
-
-      if (!decodedToken) {
-        throw new Error("No authentication token found");
-      }
 
       // If we don't have a customer ID, redirect to pricing
       if (!customerId || planName === "Free") {
         router.push("/dashboard/pricing");
         return;
       }
-
       // Fetch customer session with customer ID
       const response = await fetch("/api/customer-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${decodedToken}`,
         },
         body: JSON.stringify({
           customerId,
@@ -140,13 +132,12 @@ export default function ProfileSettings() {
               <h2 className="text-xl font-semibold mb-1">{email}</h2>
               <div className="flex items-center">
                 <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    planName === "Free"
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${planName === "Free"
                       ? "bg-muted text-muted-foreground"
                       : pendingCancellation
-                      ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
-                      : "bg-primary/10 text-primary"
-                  }`}
+                        ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
+                        : "bg-primary/10 text-primary"
+                    }`}
                 >
                   {planName} Plan
                   {pendingCancellation && " (Cancelling)"}
@@ -220,10 +211,10 @@ export default function ProfileSettings() {
                   {pendingCancellation
                     ? "Your subscription will be cancelled at the end of the current billing period."
                     : planName === "Free"
-                    ? "Upgrade to access premium features."
-                    : planName === "Starter"
-                    ? "Access to some premium features."
-                    : "Full access to all premium features."}
+                      ? "Upgrade to access premium features."
+                      : planName === "Starter"
+                        ? "Access to some premium features."
+                        : "Full access to all premium features."}
                 </p>
               </div>
               <div className="text-right">
@@ -231,8 +222,8 @@ export default function ProfileSettings() {
                   {planName === "Free"
                     ? "Free"
                     : planName === "Starter"
-                    ? "$19/month"
-                    : "$49/month"}
+                      ? "$19/month"
+                      : "$49/month"}
                 </p>
               </div>
             </div>

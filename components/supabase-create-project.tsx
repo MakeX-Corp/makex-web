@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from 'react'
-import { getAuthToken } from "@/utils/client/auth"
 import Image from 'next/image'
 import { useToast } from "@/components/ui/use-toast"
 
@@ -15,13 +14,9 @@ export function SupabaseCreateProject() {
   useEffect(() => {
     const fetchUserIntegrations = async () => {
       try {
-        const authToken = await getAuthToken()
         const appId = window.location.pathname.split('/')[2]
 
         const response = await fetch(`/api/integrations/supabase/projects?appId=${appId}`, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`
-          },
           method: 'POST',
           body: JSON.stringify({
             appId: appId
@@ -43,17 +38,12 @@ export function SupabaseCreateProject() {
   const handleCreateProject = async () => {
     try {
       setLoading(true)
-      const authToken = await getAuthToken()
       
       // Get the app id from the url
       const appId = window.location.pathname.split('/')[2]
       
       const response = await fetch('/api/integrations/supabase/projects', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
           appid: appId
         })

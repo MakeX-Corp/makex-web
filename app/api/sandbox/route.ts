@@ -3,15 +3,15 @@ import { pauseContainer } from "@/trigger/pause-container"
 import { deleteContainer } from "@/trigger/delete-container";
 import { createContainer } from "@/trigger/create-container";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const result = await getSupabaseWithUser(req);
+    const result = await getSupabaseWithUser(req as NextRequest);
 
-    if (result instanceof NextResponse) return result;
+    if (result instanceof NextResponse || 'error' in result ) return result;
 
     const { user } = result;
     const { appId, appName, targetState } = body;
@@ -37,9 +37,9 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    const result = await getSupabaseWithUser(req);
+    const result = await getSupabaseWithUser(req as NextRequest);
 
-    if (result instanceof NextResponse) return result;
+    if (result instanceof NextResponse || 'error' in result ) return result;
 
     const { supabase, user } = result;
 
@@ -88,9 +88,9 @@ export async function GET(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const result = await getSupabaseWithUser(req);
+    const result = await getSupabaseWithUser(req as NextRequest);
 
-    if (result instanceof NextResponse) return result;
+    if (result instanceof NextResponse || 'error' in result ) return result;
 
     const { user } = result;
     const { appId, appName } = await req.json();
@@ -112,9 +112,9 @@ export async function DELETE(req: Request) {
 export async function PATCH(req: Request) {
   
   try {
-    const result = await getSupabaseWithUser(req);
+    const result = await getSupabaseWithUser(req as NextRequest);
 
-    if (result instanceof NextResponse) return result;
+    if (result instanceof NextResponse || 'error' in result ) return result;
 
     const { user } = result;
     

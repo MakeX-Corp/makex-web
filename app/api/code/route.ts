@@ -1,5 +1,5 @@
 import { getSupabaseWithUser } from '@/utils/server/auth';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest   } from 'next/server';
 import { createFileBackendApiClient } from '@/utils/server/file-backend-api-client';
 
 // Add this function to handle checkpoint restore
@@ -11,8 +11,9 @@ export async function POST(request: Request) {
   console.log("sessionId", sessionId);
   
   // query supabase app_chat_history to get the commit hash
-  const userResult = await getSupabaseWithUser(request)
+  const userResult = await getSupabaseWithUser(request as NextRequest)
   if (userResult instanceof NextResponse) return userResult
+  if ('error' in userResult) return userResult.error;
   const { supabase, user } = userResult
   const { data, error } = await supabase
     .from('app_chat_history')

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { generateAppName } from "@/utils/server/app-name-generator";
 import { tasks } from "@trigger.dev/sdk/v3";
@@ -112,8 +112,8 @@ async function handleStreamingResponse(
 }
 
 export async function POST(request: Request) {
-  const result = await getSupabaseWithUser(request);
-  if (result instanceof NextResponse) return result;
+  const result = await getSupabaseWithUser(request as NextRequest);
+  if (result instanceof NextResponse || 'error' in result) return result;
   const { supabase, user } = result;
 
   try {
@@ -187,8 +187,8 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const result = await getSupabaseWithUser(request);
-  if (result instanceof NextResponse) return result;
+  const result = await getSupabaseWithUser(request as NextRequest);
+  if (result instanceof NextResponse || 'error' in result) return result;
   const { supabase, user } = result;
 
   const { appUrl, prompt } = await request.json();

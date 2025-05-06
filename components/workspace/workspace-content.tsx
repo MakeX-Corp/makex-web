@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SessionSelector } from "@/components/workspace/session-selector";
 import { SessionsError } from "@/components/workspace/sessions-error";
-import { getAuthToken } from "@/utils/client/auth";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { dataURLToBlob } from "@/lib/screenshot-service";
 interface WorkspaceContentProps {
@@ -50,7 +49,6 @@ export default function WorkspaceContent({
   } = useSession();
 
 
-  const [authToken, setAuthToken] = useState<string | null>(null);
 
   // State for UI elements
   const [activeView, setActiveView] = useState<"chat" | "preview">("chat");
@@ -70,15 +68,11 @@ export default function WorkspaceContent({
   const [containerState, setContainerState] = useState<"starting" | "active" | "paused" | "resuming" | "pausing">("starting");
   const supabase = createClientComponentClient();
   useEffect(() => {
-    if (appId && authToken) {
+    if (appId) {
       // Initial fetch
       const fetchInitialState = async () => {
         const res = await fetch("/api/sandbox?appId=" + appId, {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
         })
 
         const data = await res.json()
@@ -117,15 +111,12 @@ export default function WorkspaceContent({
         supabase.removeChannel(channel)
       }
     }
-  }, [appId, authToken])
+  }, [appId])
 
   const resumeSandbox = async () => {
     try {
       const response = await fetch("/api/sandbox", {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
         body: JSON.stringify({
           appId,
           appName,
@@ -152,11 +143,7 @@ export default function WorkspaceContent({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Get auth token once on client side
-  useEffect(() => {
-    const token = getAuthToken();
-    setAuthToken(token);
-  }, []);
+
 
   // Load sessions when component mounts or appId changes
   useEffect(() => {
@@ -210,7 +197,6 @@ export default function WorkspaceContent({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           apiUrl: apiUrl,
@@ -253,7 +239,6 @@ export default function WorkspaceContent({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer " + authToken,
         },
         body: JSON.stringify({
           appId,
@@ -539,7 +524,6 @@ export default function WorkspaceContent({
                     sessionId={currentSessionId || ""}
                     onResponseComplete={handleResponseComplete}
                     onSessionError={() => { }}
-                    authToken={authToken}
                     containerState={containerState}
                     resumeSandbox={resumeSandbox}
 
@@ -593,7 +577,6 @@ export default function WorkspaceContent({
                           sessionId={currentSessionId || ""}
                           onResponseComplete={handleResponseComplete}
                           onSessionError={() => { }}
-                          authToken={authToken}
                           containerState={containerState}
                           resumeSandbox={resumeSandbox}
                         />
