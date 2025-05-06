@@ -14,7 +14,6 @@ import {
   getUserEmailFromToken,
   getPlanName,
 } from "@/utils/client/auth";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 // Define app data interface based on the API response
 export interface AppData {
@@ -198,17 +197,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const fetchApps = async () => {
     setIsLoading(true);
     try {
-      const decodedToken = getAuthToken();
 
-      if (!decodedToken) {
-        throw new Error("No authentication token found");
-      }
+
+
 
       // Fetch user apps
       const appsResponse = await fetch("/api/app", {
-        headers: {
-          Authorization: `Bearer ${decodedToken}`,
-        },
       });
 
       if (!appsResponse.ok) {

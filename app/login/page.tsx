@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { login, googleLogin, resetPassword } from "./actions";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -12,24 +12,21 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const router = useRouter();
-  const supabase = createClientComponentClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('password', password);
 
-    if (error) {
-      setError(error.message);
+    const result = await login(formData);
+
+    if (result?.error) {
+      setError(result.error);
       setLoading(false);
-    } else {
-      router.push("/dashboard");
-      router.refresh();
     }
   };
 
@@ -37,15 +34,10 @@ export default function Login() {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    const result = await googleLogin();
 
-    if (error) {
-      setError(error.message);
+    if (result?.error) {
+      setError(result.error);
       setLoading(false);
     }
   };
@@ -59,11 +51,14 @@ export default function Login() {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const formData = new FormData();
+    formData.append('email', email);
 
-    if (error) {
-      setError(error.message);
-    } else {
+    const result = await resetPassword(formData);
+
+    if (result?.error) {
+      setError(result.error);
+    } else if (result?.success) {
       setResetSent(true);
     }
     setLoading(false);

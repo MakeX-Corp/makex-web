@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { generateAppName } from "@/utils/server/app-name-generator";
-import { createContainer } from "@/trigger/create-container";
 import { deleteContainer } from "@/trigger/delete-container";
 import { tasks } from "@trigger.dev/sdk/v3";
+import { createClient } from "@/utils/supabase/server";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
@@ -87,22 +87,20 @@ export async function POST(request: Request) {
 // GET /api/app - Get all apps or a specific app by ID for the authenticated user
 export async function GET(request: Request) {
   try {
-    const result = await getSupabaseWithUser(request);
-    if (result instanceof NextResponse) return result;
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log(user)
 
-    const { supabase, user } = result;
-
-    // Get the app ID from the URL if provided
     const { searchParams } = new URL(request.url);
     const appId = searchParams.get("id");
-
+    
     // If an appId is provided, get just that specific app
     if (appId) {
       const { data: app, error } = await supabase
         .from("user_apps")
         .select("*")
         .eq("id", appId)
-        .eq("user_id", user.id)
+        .eq("user_id", user?.id)
         .single();
 
       if (error) {
@@ -120,7 +118,7 @@ export async function GET(request: Request) {
       const { data: apps, error } = await supabase
         .from("user_apps")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", user?.id)
         .or("status.is.null");
 
       if (error) {
