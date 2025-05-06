@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from '@/utils/supabase/client'
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { signup, googleSignup } from "./action";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
@@ -12,7 +12,6 @@ export default function Signup() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,16 +24,19 @@ export default function Signup() {
       return;
     }
 
-    const { error, data } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('password', password);
 
-    if (error) {
-      setError(error.message);
+    const result = await signup(formData);
+
+    if (result?.error) {
+      setError(result.error);
       setLoading(false);
-    } else {
-      router.push("/auth/callback?source=signup");
+    }
+    else {  
+      // redirect to /dashboard
+      router.push("/dashboard");
     }
   };
 
@@ -42,15 +44,14 @@ export default function Signup() {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?source=signup`,
-      },
-    });
-
-    if (error) {
-      setError(error.message);
+    try {
+      const result = await googleSignup();
+      if (result?.error) {
+        setError(result.error);
+      }
+    } catch (error) {
+      setError('Failed to initiate Google signup');
+    } finally {
       setLoading(false);
     }
   };

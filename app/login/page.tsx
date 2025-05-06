@@ -34,10 +34,14 @@ export default function Login() {
     setLoading(true);
     setError(null);
 
-    const result = await googleLogin();
-
-    if (result?.error) {
-      setError(result.error);
+    try {
+      const result = await googleLogin();
+      if (result?.error) {
+        setError(result.error);
+      }
+    } catch (error) {
+      setError('Failed to initiate Google login');
+    } finally {
       setLoading(false);
     }
   };
