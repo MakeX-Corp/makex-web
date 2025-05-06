@@ -274,6 +274,7 @@ export default function WorkspaceContent({
     setIsRefreshing(true);
     setIframeKey(Math.random().toString(36).substring(2, 15))
     if (containerState == 'paused' || containerState == 'pausing') {
+      setContainerState('resuming')
       await resumeSandbox();
     }
     setTimeout(() => {

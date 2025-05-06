@@ -76,7 +76,7 @@ export const firstScheduledTask = schedules.task({
 
                 console.log("Diff minutes:", diffMinutes);
 
-                if (diffMinutes > 3) {
+                if (diffMinutes > 10) {
                     try {
                         // pause the sandbox 
                         const { data: updatedSandbox, error: updatedSandboxError } =

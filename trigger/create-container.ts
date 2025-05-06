@@ -1,6 +1,6 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { createE2BContainer } from "@/utils/server/e2b";
+import { createDaytonaContainer } from "@/utils/server/daytona";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 
@@ -21,6 +21,7 @@ export const createContainer = task({
         sandbox_status: "starting",
         sandbox_created_at: new Date().toISOString(),
         sandbox_updated_at: new Date().toISOString(),
+        sandbox_provider: "daytona",
       })
       .select()
       .limit(1);
@@ -34,7 +35,7 @@ export const createContainer = task({
       throw new Error("Failed to create initial sandbox record (missing ID)");
     }
 
-    const { sbx, appHost, apiHost } = await createE2BContainer({
+    const { container, sessionId, apiPreview, appPreview } = await createDaytonaContainer({
       userId,
       appId,
       appName,
@@ -43,10 +44,10 @@ export const createContainer = task({
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
       .update({
-        api_url: apiHost,
-        app_url: appHost,
+        api_url: apiPreview,
+        app_url: appPreview,
         sandbox_status: "active",
-        sandbox_id: sbx.sandboxId,
+        sandbox_id: container.id,
       })
       .eq("id", sandboxDbId);
 
@@ -54,10 +55,10 @@ export const createContainer = task({
       throw new Error(`Failed updating sandbox with container info: ${updateError.message}`);
     }
 
-    await redisUrlSetter(appName, appHost, apiHost);
+    await redisUrlSetter(appName, appPreview.url, apiPreview.url);
 
     // Initialize file backend
-    const filebackendApiClient = await createFileBackendApiClient(`https://${apiHost}`);
+    const filebackendApiClient = await createFileBackendApiClient(`${apiPreview.url}`);
 
     // Initial Git commit
     const res = await filebackendApiClient.post("/checkpoint/save", {

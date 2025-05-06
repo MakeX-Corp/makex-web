@@ -1,8 +1,8 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { killE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
-
+import { killDaytonaContainer } from "@/utils/server/daytona";
+import { killE2BContainer } from "@/utils/server/e2b";
 export const deleteContainer = task({
   id: "delete-container",
   retry: {
@@ -25,7 +25,14 @@ export const deleteContainer = task({
 
     if (sandbox) {
       const sandboxId = sandbox.sandbox_id;
-      await killE2BContainer(sandboxId);
+      switch (sandbox.sandbox_provider) {
+        case "daytona":
+          await killDaytonaContainer(sandboxId);
+          break;
+        case "e2b":
+          await killE2BContainer(sandboxId);
+          break;
+      }
     }
 
     // update status to deleted 
