@@ -26,7 +26,7 @@ interface ChatProps {
   onSessionError?: (error: string) => void;
   containerState: string;
   resumeSandbox: () => Promise<void>;
-  setContainerState: (state: "starting" | "active" | "paused" | "resuming" | "pausing") => void;
+  setContainerState: (state: "starting" | "active" | "paused" | "resuming" | "pausing" | "coding") => void;
 }
 
 export function Chat({
@@ -175,6 +175,9 @@ export function Chat({
       if (onResponseComplete) {
         onResponseComplete();
       }
+      if (containerState === "coding") {
+        setContainerState("active");
+      }
       try {
         await saveAIMessage(
           sessionId,
@@ -219,6 +222,7 @@ export function Chat({
     if (!isLoading && !initialPromptSent && messages.length === 0) {
       const storedPrompt = localStorage.getItem("makeX_prompt");
       if (storedPrompt && chatContainerRef.current) {
+        setContainerState("coding");
         // Remove the prompt from storage
         localStorage.removeItem("makeX_prompt");
 
@@ -265,10 +269,9 @@ export function Chat({
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (containerState !== "active") {
-      await resumeSandbox();
-      // sleep 3 seconds
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+    if (containerState !== "active" && containerState !== "coding") {
+      alert("Please refresh the page and try again");
+      return;
     }
     // Don't proceed if there's nothing to send
     if (!input.trim() && selectedImages.length === 0) {
@@ -322,9 +325,7 @@ export function Chat({
       } else {
         // Regular text submission
         handleSubmit(e);
-      }
-
-      // Reset textarea height after submission
+      }      // Reset textarea height after submission
       resetTextareaHeight();
     } catch (error) {
       console.error("Error processing message with images:", error);

@@ -28,7 +28,6 @@ async function startFastAPI(container: any, sessionId: string) {
 
 async function startExpo(container: any, sessionId: string, appPreview: any) {
   // Start expo server
-  console.log('Starting expo server...');
   const expoCommand = `cd /app/expo-app && export EXPO_PACKAGER_PROXY_URL=${appPreview.url} && yarn expo start --port 8000 > expo.log 2>&1 &`;
   const expoResult = await container.process.executeSessionCommand(sessionId, {
     command: expoCommand,
@@ -133,9 +132,22 @@ export async function pauseDaytonaContainer(sandboxId: string) {
 
 export async function killDaytonaContainer(sandboxId: string) {
   const container = await daytona.get(sandboxId);
-  await daytona.remove(container);
 
   const containerInfo = await container.info();
+
+  if (containerInfo.state == 'destroyed') {
+    return {
+      containerInfo,
+    }
+  }
+
+  // if the container is running, stop itcn
+  if (containerInfo.state == 'started') {
+    await container.stop();
+
+  }
+
+  await daytona.remove(container);
 
   return {
     containerInfo,

@@ -60,6 +60,7 @@
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
+    "exa-js": "^1.6.13",
     "input-otp": "1.4.1",
     "install": "^0.13.0",
     "lucide-react": "^0.487.0",

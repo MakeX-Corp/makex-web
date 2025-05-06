@@ -13,7 +13,7 @@ interface PreviewProps {
   iframeKey: string; // Key to force iframe refresh
   isRefreshing: boolean; // Loading state
   onRefresh: () => void; // Refresh function from parent
-  containerState: "starting" | "active" | "paused" | "resuming" | "pausing";
+  containerState: "starting" | "active" | "paused" | "resuming" | "pausing" | "coding";
   onScreenshotCaptured?: (dataUrl: string) => void; // Function to send screenshot to chat
 }
 
@@ -29,9 +29,6 @@ export function Preview({
   const { appId, appUrl, appName } = useSession();
 
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
-
-
-
 
   // Handle taking a screenshot
   const handleCaptureScreenshot = async () => {
@@ -115,7 +112,9 @@ export function Preview({
                         ? 'bg-green-100 text-green-600 border-green-200'
                         : containerState === 'pausing'
                           ? 'bg-red-100 text-red-700 border-red-200'
-                          : 'bg-gray-100 text-gray-700 border-gray-200'
+                          : containerState === 'coding'
+                            ? 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                            : 'bg-gray-100 text-gray-700 border-gray-200'
               }`}
               style={{ minWidth: 70, textAlign: "center" }}
             >

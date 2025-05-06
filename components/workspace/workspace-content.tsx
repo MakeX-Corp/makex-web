@@ -65,7 +65,7 @@ export default function WorkspaceContent({
   const [windowWidth, setWindowWidth] = useState(0);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
 
-  const [containerState, setContainerState] = useState<"starting" | "active" | "paused" | "resuming" | "pausing">("starting");
+  const [containerState, setContainerState] = useState<"starting" | "active" | "paused" | "resuming" | "pausing" | "coding">("starting");
   const supabase = createClient();
   useEffect(() => {
     if (appId) {

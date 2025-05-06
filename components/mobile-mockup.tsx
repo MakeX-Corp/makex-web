@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 interface MobileMockupProps {
   appUrl: string | null;
   iframeKey: any;
-  containerState: "starting" | "active" | "paused" | "resuming" | "pausing";
+  containerState: "starting" | "active" | "paused" | "resuming" | "pausing" | "coding";
 }
 
 export default function MobileMockup({
@@ -68,8 +68,16 @@ export default function MobileMockup({
         {/* Phone Container */}
         <div className="relative w-[300px] h-[580px] rounded-[48px] mx-[4px]">
           <div className="absolute inset-0 rounded-[48px] overflow-hidden">
-            {containerState != "active" ? (
-              <div className="flex flex-col items-center justify-center h-full">
+            {/* Always render iframe */}
+            <iframe
+              key={iframeKey}
+              src={appUrl || undefined}
+              className="w-full h-full"
+            />
+            
+            {/* Overlay status message when not active */}
+            {containerState != "active" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 text-black">
                 <span>The Server is {containerState}</span>
                 {containerState === "paused" || containerState === "pausing" ? (
                   <span>Due to inactivity</span>
@@ -77,12 +85,6 @@ export default function MobileMockup({
                   <Loader2 className="h-4 w-4 animate-spin mt-2" />
                 )}
               </div>
-            ) : (
-              <iframe
-                key={iframeKey}
-                src={appUrl || undefined}
-                className="w-full h-full"
-              />
             )}
           </div>
 
