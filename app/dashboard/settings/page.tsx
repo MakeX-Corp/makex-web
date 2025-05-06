@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, LogOut, Globe } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from '@/utils/supabase/client'
 export default function ProfileSettings() {
   const router = useRouter();
   const { subscription, isLoading: subscriptionLoading, user } = useApp();
@@ -25,7 +25,7 @@ export default function ProfileSettings() {
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       const { error } = await supabase.auth.signOut();
 
       if (error) {

@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SessionSelector } from "@/components/workspace/session-selector";
 import { SessionsError } from "@/components/workspace/sessions-error";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from '@/utils/supabase/client'
 import { dataURLToBlob } from "@/lib/screenshot-service";
 interface WorkspaceContentProps {
   initialSessionId: string | null;
@@ -66,7 +66,7 @@ export default function WorkspaceContent({
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
 
   const [containerState, setContainerState] = useState<"starting" | "active" | "paused" | "resuming" | "pausing">("starting");
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   useEffect(() => {
     if (appId) {
       // Initial fetch
