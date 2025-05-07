@@ -36,11 +36,7 @@ export const containerInitiate = task({
       throw new Error("Failed to create initial sandbox record (missing ID)");
     }
 
-    const { containerId, apiUrl } = await initiateDaytonaContainer({
-      userId,
-      appId,
-      appName,
-    });
+    const { containerId, apiUrl } = await initiateDaytonaContainer();
 
     console.log('containerId', containerId)
 

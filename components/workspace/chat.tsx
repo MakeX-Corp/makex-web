@@ -25,8 +25,6 @@ interface ChatProps {
   onResponseComplete?: () => void;
   onSessionError?: (error: string) => void;
   containerState: string;
-  resumeSandbox: () => Promise<void>;
-  setContainerState: (state: "starting" | "active" | "paused" | "resuming" | "pausing" | "coding") => void;
 }
 
 export function Chat({
@@ -34,8 +32,6 @@ export function Chat({
   onResponseComplete,
   onSessionError,
   containerState,
-  setContainerState,
-  resumeSandbox,
 }: ChatProps) {
   // Get app context from the SessionContext
   const {
@@ -49,11 +45,10 @@ export function Chat({
   const { subscription, isAIResponding, setIsAIResponding } = useApp();
   const router = useRouter();
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
     null
   );
-  const [initialPromptSent, setInitialPromptSent] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [remainingMessages, setRemainingMessages] = useState<number | null>(
     null
@@ -109,6 +104,16 @@ export function Chat({
         return;
       }
 
+
+      // Check if there's a stored prompt in localStorage
+      const storedPrompt = localStorage.getItem("makeX_prompt");
+      
+      // If there's a stored prompt, don't load messages or set loading state
+      if (storedPrompt) {
+        return;
+      }
+
+      // Only set loading and fetch messages if no stored prompt
       messagesApiCalled.current = true;
       setIsLoading(true);
 
@@ -129,7 +134,7 @@ export function Chat({
     };
 
     getMessages();
-  }, [sessionId, appId, onSessionError]);
+  }, [sessionId, appId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -151,14 +156,10 @@ export function Chat({
     };
   }, [subscription]);
 
-  const { messages, input, handleInputChange, handleSubmit, error } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, error, append } = useChat({
     id: sessionId,
     api: `/api/chat/`,
-    initialMessages: isLoading
-      ? []
-      : initialMessages.length > 0
-      ? initialMessages
-      : [],
+    initialMessages: initialMessages,
     body: {
       apiUrl,
       appId,
@@ -168,15 +169,15 @@ export function Chat({
       subscription,
     },
     maxSteps: 30,
-    onResponse: async (response) => {},
+    onResponse: async (response) => {
+      console.log('Chat response:', response);
+    },
     onFinish: async (message, options) => {
+      console.log('Chat finished:', message, options);
       // Save the AI message
       setIsAIResponding(false);
       if (onResponseComplete) {
         onResponseComplete();
-      }
-      if (containerState === "coding") {
-        setContainerState("active");
       }
       try {
         await saveAIMessage(
@@ -214,62 +215,29 @@ export function Chat({
       } catch (error) {
         console.error("Error saving AI message:", error);
       }
-      // Only remove the waiting indicator when everything is complete
     },
   });
 
   useEffect(() => {
-    if (!isLoading && !initialPromptSent && messages.length === 0) {
+    if (messages.length === 0) {
       const storedPrompt = localStorage.getItem("makeX_prompt");
-      if (storedPrompt && chatContainerRef.current) {
-        setContainerState("coding");
+      if (storedPrompt) {
+        setIsAIResponding(true);
         // Remove the prompt from storage
         localStorage.removeItem("makeX_prompt");
-
-        // Find the textarea within THIS component only
-        const textareaElement =
-          chatContainerRef.current.querySelector("textarea");
-
-        if (textareaElement) {
-          // Set textarea value
-          const nativeTextareaValueSetter = Object.getOwnPropertyDescriptor(
-            window.HTMLTextAreaElement.prototype,
-            "value"
-          )?.set;
-
-          if (nativeTextareaValueSetter) {
-            nativeTextareaValueSetter.call(textareaElement, storedPrompt);
-            textareaElement.dispatchEvent(
-              new Event("input", { bubbles: true })
-            );
-
-            // Also trigger the auto-resize logic
-            textareaElement.style.height = "auto";
-            const newHeight = Math.min(textareaElement.scrollHeight, 200);
-            textareaElement.style.height = `${newHeight}px`;
-
-            // Find form within THIS component
-            const formElement = chatContainerRef.current.querySelector("form");
-            if (formElement) {
-              // Short timeout to ensure state is updated
-              setTimeout(() => {
-                formElement.dispatchEvent(
-                  new Event("submit", { bubbles: true, cancelable: true })
-                );
-                setInitialPromptSent(true);
-              }, 100);
-            }
-          }
-        }
-      } else {
-        setInitialPromptSent(true);
+        
+        // Send the prompt using append
+        append({
+          content: storedPrompt,
+          role: "user"
+        });
       }
     }
-  }, [isLoading, messages.length, initialPromptSent]);
+  }, [messages]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (containerState !== "active" && containerState !== "coding") {
+    if (containerState !== "active") {
       alert("Please refresh the page and try again");
       return;
     }

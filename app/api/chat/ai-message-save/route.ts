@@ -10,7 +10,19 @@ export async function POST(request: Request) {
     const { supabase, user } = userResult;
 
     const body = await request.json();
-    const { apiUrl, appId, sessionId, options, message } = body;
+    const { appId, sessionId, options, message } = body;
+
+    const { data: app, error: appError } = await supabase
+      .from("user_apps")
+      .select("*")
+      .eq("id", appId)
+      .single();
+
+    if (appError) {
+      return NextResponse.json({ error: "Failed to fetch app details" }, { status: 500 });
+    }
+
+    const apiUrl = app.api_url;
 
     let commitHash = null;
 

@@ -110,6 +110,8 @@ export function SessionProvider({
 
   // Initialize the app with an appId and fetch its configuration
   const initializeApp = async (newAppId: string) => {
+
+    console.log('initializing app', newAppId)
     try {
       setAppId(newAppId);
       setIsAppReady(false);
@@ -154,6 +156,7 @@ export function SessionProvider({
 
   // Load sessions for an app
   const loadSessions = async (newAppId: string) => {
+    console.log('loading sessions', newAppId)
     try {
       // If appId is the same, don't reload unless forced
       if (appId === newAppId && sessions.length > 0) {
@@ -180,13 +183,13 @@ export function SessionProvider({
       ) {
         // Use session ID from URL if it's valid
         console.log(`Using session ID from URL: ${urlSessionId}`);
-        await switchSession(urlSessionId);
+        // await switchSession(urlSessionId);
       }
-      // Only select first session if we don't have a current session and no valid URL session ID
-      else if (sessionsList.length > 0 && !currentSessionId) {
-        console.log(`Auto-selecting first session: ${sessionsList[0].id}`);
-        await switchSession(sessionsList[0].id);
-      }
+      // // Only select first session if we don't have a current session and no valid URL session ID
+      // else if (sessionsList.length > 0 && !currentSessionId) {
+      //   console.log(`Auto-selecting first session: ${sessionsList[0].id}`);
+      //   await switchSession(sessionsList[0].id);
+      // }
     } catch (error) {
       console.error("Failed to load sessions:", error);
       setSessionsError("Failed to load sessions");
@@ -210,6 +213,7 @@ export function SessionProvider({
         window.history.pushState({ path: url.toString() }, "", url.toString());
       }
 
+      console.log('TK switching session', sessionId)
       // Load the session data
       const sessionData = await getSession(appId, sessionId);
 
@@ -291,7 +295,7 @@ export function SessionProvider({
         if (sessionId === currentSessionId) {
           const remainingSessions = sessions.filter((s) => s.id !== sessionId);
           if (remainingSessions.length > 0) {
-            await switchSession(remainingSessions[0].id);
+            // await switchSession(remainingSessions[0].id);
           } else {
             // If no sessions left, clear current session
             setCurrentSession(null);

@@ -109,7 +109,7 @@ export const firstScheduledTask = schedules.task({
 
                         console.log("app",app)
 
-                        await redisUrlSetter(app?.app_name, "makex.app/app-not-found", "makex.app/app-not-found");
+                        await redisUrlSetter(app?.app_name, "https://makex.app/app-not-found", "https://makex.app/app-not-found");
 
 
 

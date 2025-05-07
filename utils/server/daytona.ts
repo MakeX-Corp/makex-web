@@ -38,11 +38,7 @@ async function startExpo(container: any, sessionId: string, appPreview: any) {
   return expoResult;
 }
 
-export async function initiateDaytonaContainer(metadata: {
-  userId: string;
-  appId: string;
-  appName: string;
-}) {
+export async function initiateDaytonaContainer() {
   const container = await daytona.create({
     image: 'harbor-transient.internal.daytona.app/daytona/makex-backend:0.1.4',
     resources: resources,

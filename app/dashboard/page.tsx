@@ -195,15 +195,15 @@ export default function DashboardPage() {
     setIsCreating(true);
     try {
       //check if user can create app
-      const result = await checkMessageLimit(subscription);
-      if (result) {
-        const { reachedLimit } = result;
+      // const result = await checkMessageLimit(subscription);
+      // if (result) {
+      //   const { reachedLimit } = result;
 
-        if (reachedLimit) {
-          setLimitReached(true);
-          return;
-        }
-      }
+      //   if (reachedLimit) {
+      //     setLimitReached(true);
+      //     return;
+      //   }
+      // }
       localStorage.setItem("makeX_prompt", prompt);
       const redirectUrl = await createApp(prompt);
       router.push(redirectUrl);

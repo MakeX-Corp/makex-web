@@ -4,7 +4,10 @@ import { generateAppName } from "@/utils/server/app-name-generator";
 import { deleteContainer } from "@/trigger/delete-container";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { createClient } from "@/utils/supabase/server";
-import { containerInitiate } from "@/trigger/container-initiate";
+import { redisUrlSetter } from "@/utils/server/redis-client";
+import { initiateDaytonaContainer } from "@/utils/server/daytona";
+import { startExpo } from "@/trigger/start-expo";
+import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
@@ -32,7 +35,6 @@ export async function POST(request: Request) {
         user_id: user.id,
         app_name: appName,
         app_url: `https://${appName}.makex.app`,
-        api_url: `https://api-${appName}.makex.app`,
       })
       .select()
       .single();
@@ -47,11 +49,63 @@ export async function POST(request: Request) {
     }
 
     const containerStartTime = performance.now();
-    const containerInitiateTask = await tasks.triggerAndPoll(
-      "container-initiate",
-      { userId: user.id, appId: insertedApp.id, appName },
-      { pollIntervalMs: 1000 }
-    );
+    const adminSupabase = await getSupabaseAdmin();
+
+    const { data: newSandbox, error: newSandboxError } = await adminSupabase
+      .from("user_sandboxes")
+      .insert({
+        user_id: user.id,
+        app_id: insertedApp.id,
+        sandbox_status: "starting",
+        sandbox_created_at: new Date().toISOString(),
+        sandbox_updated_at: new Date().toISOString(),
+        sandbox_provider: "daytona",
+        app_status: "starting",
+      })
+      .select()
+      .limit(1);
+
+    if (newSandboxError) {
+      throw new Error(`Failed inserting new sandbox: ${newSandboxError.message}`);
+    }
+
+    const sandboxDbId = newSandbox?.[0]?.id;
+    if (!sandboxDbId) {
+      throw new Error("Failed to create initial sandbox record (missing ID)");
+    }
+
+    const { containerId, apiUrl } = await initiateDaytonaContainer();
+
+    console.log('daytona containerId', containerId)
+    console.log('daytona apiUrl', apiUrl)
+
+    const { error: updateError } = await adminSupabase
+      .from("user_sandboxes")
+      .update({
+        sandbox_status: "active",
+        sandbox_id: containerId,
+        api_url: apiUrl,
+      })
+      .eq("id", sandboxDbId);
+
+    
+    // update the app_url and api_url in the user_apps table
+    const { error: updateAppError } = await supabase
+      .from("user_apps")
+      .update({
+        api_url: apiUrl,
+      })
+      .eq("id", insertedApp.id);
+    if (updateError) {
+      throw new Error(`Failed updating sandbox with container info: ${updateError.message}`);
+    }
+
+    await startExpo.trigger({
+      userId: user.id,
+      appId: insertedApp.id,
+      appName,
+      containerId,
+    });
     timings.containerInitiation = performance.now() - containerStartTime;
 
     // Create the session in the same transaction

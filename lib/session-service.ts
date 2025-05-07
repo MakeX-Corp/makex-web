@@ -73,6 +73,9 @@ export async function getSession(
 ): Promise<SessionData | null> {
   try {
 
+
+    console.log('TK getting session', sessionId)
+
   
     // First check if this is a new session request
     if (sessionId.startsWith("new-session-")) {

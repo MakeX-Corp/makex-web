@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 interface MobileMockupProps {
   appUrl: string | null;
   iframeKey: any;
-  containerState: "starting" | "active" | "paused" | "resuming" | "pausing" | "coding";
+  containerState: "starting" | "active" | "paused" | "resuming" | "pausing";
 }
 
 export default function MobileMockup({
@@ -77,7 +77,7 @@ export default function MobileMockup({
             
             {/* Overlay status message when not active */}
             {containerState != "active" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 text-black">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
                 <span>The Server is {containerState}</span>
                 {containerState === "paused" || containerState === "pausing" ? (
                   <span>Due to inactivity</span>

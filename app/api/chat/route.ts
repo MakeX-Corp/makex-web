@@ -101,7 +101,22 @@ export async function POST(req: Request) {
       );
     }
 
-    const apiClient = createFileBackendApiClient(apiUrl);
+    // Get app details from the database
+    const { data: app, error: appError } = await supabase
+      .from("user_apps")
+      .select("*")
+      .eq("id", appId)
+      .single();
+
+    if (appError) {
+      return NextResponse.json(
+        { error: "Failed to fetch app details" },
+        { status: 500 }
+      );
+    }
+
+   
+    const apiClient = createFileBackendApiClient(app.api_url);
     let connectionUri = undefined;
 
     if (supabase_project) {
@@ -115,7 +130,7 @@ export async function POST(req: Request) {
     const modelName = "claude-3-5-sonnet-latest";
 
     const tools = createTools({
-      apiUrl: apiUrl,
+      apiUrl: app.api_url,
       connectionUri: connectionUri,
     });
 
