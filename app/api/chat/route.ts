@@ -214,6 +214,11 @@ export async function POST(req: Request) {
         console.error("Detailed chat error:", error);
         // Just log the error, don't return a response
       },
+      onFinish: async (finishData) => {
+        console.log("--- Whole Streamed Message (Server-side) ---");
+        console.log(finishData.text);
+        console.log("--- End of Server-side Message ---");
+      }
     });
 
     return result.toDataStreamResponse({
