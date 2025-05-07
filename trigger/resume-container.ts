@@ -52,11 +52,11 @@ export const resumeContainer = task({
 
       await startExpo.trigger(
         {
-          userId: userId,
           appId: appId,
           appName: appName,
           containerId: sandboxId,
           sandboxId: sandboxDbId,
+          initial: false,
         }
       );
     };
