@@ -1,19 +1,19 @@
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 
 // Add this function to handle checkpoint restore
 export async function POST(request: Request) {
   const { appId } = await request.json();
-  const userResult = await getSupabaseWithUser(request);
-
+  const userResult = await getSupabaseWithUser(request as NextRequest);
+  if ('error' in userResult) return userResult.error;
   // query supabase app_chat_history to get the commit hash
   if (userResult instanceof NextResponse) return userResult;
   const { supabase, user } = userResult;
   const { data, error } = await supabase
     .from("user_apps")
     .select("*")
-    .eq("id", appId)
+    .eq("id", appId)      
     .single();
 
   // Transform the URL similar to chat route

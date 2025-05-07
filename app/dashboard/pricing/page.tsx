@@ -14,9 +14,8 @@ import { Check } from "lucide-react";
 import { initPaddle } from "@/utils/server/paddle-client";
 
 import { useToast } from "@/components/ui/use-toast";
-import { useSubscription } from "@/hooks/use-subscription";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getAuthToken } from "@/utils/client/auth";
+import { useApp } from "@/context/AppContext";
 
 interface PlanProps {
   name: string;
@@ -100,20 +99,14 @@ const PricingSkeleton = () => {
 
 export default function PricingPage() {
   const {
-    hasActiveSubscription,
-    pendingCancellation,
-    loading,
-    error,
-    userId,
-    planName,
-    subscriptionId,
-  } = useSubscription();
+    subscription,
+    isLoading: subscriptionLoading,
+  } = useApp();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
   const handleCheckout = async (priceId: string) => {
     console.log("priceId", priceId);
-    const token = await getAuthToken();
     const paddle = await initPaddle();
     if (!paddle) {
       toast({
@@ -126,28 +119,17 @@ export default function PricingPage() {
 
     try {
       setIsLoading(priceId);
-      console.log("userId", userId);
-      if (!userId) {
-        toast({
-          variant: "destructive",
-          title: "Authentication Error",
-          description: "User ID not found. Please try logging in again.",
-        });
-        return;
-      }
-      if (hasActiveSubscription) {
-        console.log("hasActiveSubscription", hasActiveSubscription);
+      if (subscription?.hasActiveSubscription) {
+        console.log("hasActiveSubscription", subscription?.hasActiveSubscription);
         // Handle upgrade/downgrade for existing subscription
         const updateResponse = await fetch("/api/subscription/update", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            subscriptionId: subscriptionId,
+            subscriptionId: subscription?.subscription?.id,
             priceId: priceId,
-            userId: userId,
           }),
         });
         const result = await updateResponse.json();
@@ -172,7 +154,7 @@ export default function PricingPage() {
             },
           ],
           customData: {
-            userId: userId,
+            userId: subscription?.userId,
           },
           settings: {
             successUrl: `${window.location.origin}/dashboard`,
@@ -197,11 +179,11 @@ export default function PricingPage() {
   // Check if button should be disabled for the current plan
   const isButtonDisabled = (priceId: string) => {
     // Find the current plan based on planName
-    const currentPlan = plans.find((plan) => plan.name === planName);
+    const currentPlan = plans.find((plan) => plan.name === subscription?.planName);
 
     // Disable the button for the current plan
     if (
-      hasActiveSubscription &&
+      subscription?.hasActiveSubscription &&
       currentPlan &&
       currentPlan.priceId === priceId
     ) {
@@ -222,7 +204,7 @@ export default function PricingPage() {
         </p>
       </div>
 
-      {loading ? (
+      {subscriptionLoading ? (
         <PricingSkeleton />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -257,7 +239,7 @@ export default function PricingPage() {
                   >
                     {isLoading === plan.priceId
                       ? "Processing..."
-                      : hasActiveSubscription && planName === plan.name
+                      : subscription?.hasActiveSubscription && subscription?.planName === plan.name
                       ? "Current Plan"
                       : "Subscribe"}
                   </Button>

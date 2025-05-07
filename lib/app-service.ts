@@ -1,22 +1,11 @@
-import { getAuthToken } from "@/utils/client/auth";
 // Function to update app name
 export const updateAppName = async (
   appId: string,
   newName: string
 ): Promise<boolean> => {
-  const authToken = getAuthToken();
   try {
-    if (!authToken) {
-      console.error("No auth token available");
-      return false;
-    }
-
     const response = await fetch("/api/app", {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
       body: JSON.stringify({
         appId,
         displayName: newName,

@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 
 export async function GET(request: Request) {
   // Get authenticated user and Supabase client
-  const result = await getSupabaseWithUser(request);
+  const result = await getSupabaseWithUser(request as NextRequest);
 
-  if (result instanceof NextResponse) {
+  if (result instanceof NextResponse || 'error' in result) {
     return result; // This handles auth errors automatically
   }
 

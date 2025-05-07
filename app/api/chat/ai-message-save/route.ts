@@ -1,16 +1,28 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 
 export async function POST(request: Request) {
   try {
     // Get authenticated user
-    const userResult = await getSupabaseWithUser(request);
-    if (userResult instanceof NextResponse) return userResult;
+    const userResult = await getSupabaseWithUser(request as NextRequest);
+    if (userResult instanceof NextResponse || 'error' in userResult) return userResult;
     const { supabase, user } = userResult;
 
     const body = await request.json();
-    const { apiUrl, appId, sessionId, options, message } = body;
+    const { appId, sessionId, options, message } = body;
+
+    const { data: app, error: appError } = await supabase
+      .from("user_apps")
+      .select("*")
+      .eq("id", appId)
+      .single();
+
+    if (appError) {
+      return NextResponse.json({ error: "Failed to fetch app details" }, { status: 500 });
+    }
+
+    const apiUrl = app.api_url;
 
     let commitHash = null;
 

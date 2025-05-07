@@ -2,16 +2,19 @@ import { DatabaseTool } from "@/utils/server/db-tools";
 import { tool } from "ai";
 import { z } from "zod";
 import { createFileBackendApiClient } from "./file-backend-api-client";
+import Exa from 'exa-js';
 
 type ToolConfig = {
   apiUrl?: string;
   connectionUri?: string;
+  exaApiKey?: string;
 };
 
 export function createTools(config: ToolConfig = {}) {
   const apiClient = createFileBackendApiClient(config.apiUrl || "");
   const dbTool = new DatabaseTool();
   const connectionUri = config.connectionUri || undefined;
+  const exa = config.exaApiKey ? new Exa(config.exaApiKey) : null;
   const tools: Record<string, any> = {
     readFile: tool({
       description: "Read contents of a file",
@@ -212,6 +215,41 @@ export function createTools(config: ToolConfig = {}) {
         try {
           const response = await apiClient.get("/file-tree", { path });
           return { success: true, data: response };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || "Unknown error occurred",
+          };
+        }
+      },
+    }),
+
+    webSearch: tool({
+      description: 'Search the web for up-to-date information',
+      parameters: z.object({
+        query: z.string().min(1).max(100).describe('The search query'),
+      }),
+      execute: async ({ query }) => {
+        if (!exa) {
+          return {
+            success: false,
+            error: "Exa API key not configured",
+          };
+        }
+        try {
+          const { results } = await exa.searchAndContents(query, {
+            livecrawl: 'always',
+            numResults: 3,
+          });
+          return {
+            success: true,
+            data: results.map(result => ({
+              title: result.title,
+              url: result.url,
+              content: result.text.slice(0, 1000),
+              publishedDate: result.publishedDate,
+            }))
+          };
         } catch (error: any) {
           return {
             success: false,

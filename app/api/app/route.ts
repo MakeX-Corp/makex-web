@@ -1,14 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { generateAppName } from "@/utils/server/app-name-generator";
-import { createContainer } from "@/trigger/create-container";
 import { deleteContainer } from "@/trigger/delete-container";
-import { tasks } from "@trigger.dev/sdk/v3";
+import { createClient } from "@/utils/supabase/server";
+import { initiateDaytonaContainer } from "@/utils/server/daytona";
+import { startExpo } from "@/trigger/start-expo";
+import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
-  const result = await getSupabaseWithUser(request);
+  const timings: Record<string, number> = {};
+  const startTime = performance.now();
+
+  const result = await getSupabaseWithUser(request as NextRequest);
   if (result instanceof NextResponse) return result;
+  if ('error' in result) return result.error;
   const { supabase, user } = result;
 
   try {
@@ -17,20 +23,20 @@ export async function POST(request: Request) {
     const { prompt } = body;
 
     const appName = generateAppName();
+    timings.authAndSetup = performance.now() - startTime;
 
     // Begin transaction to ensure both app and session are created atomically
-    // Insert into Supabase user_apps table
-
+    const appStartTime = performance.now();
     const { data: insertedApp, error: insertError } = await supabase
       .from("user_apps")
       .insert({
         user_id: user.id,
         app_name: appName,
         app_url: `https://${appName}.makex.app`,
-        api_url: `https://api-${appName}.makex.app`,
       })
       .select()
       .single();
+    timings.appCreation = performance.now() - appStartTime;
 
     if (insertError) {
       console.error("Supabase insert error:", insertError);
@@ -40,16 +46,69 @@ export async function POST(request: Request) {
       );
     }
 
+    const containerStartTime = performance.now();
+    const adminSupabase = await getSupabaseAdmin();
 
-    const conatainerCreation = await tasks.triggerAndPoll(
-      "create-container",
-      { userId: user.id, appId: insertedApp.id, appName },
-      { pollIntervalMs: 1000 }
-    );
+    const { data: newSandbox, error: newSandboxError } = await adminSupabase
+      .from("user_sandboxes")
+      .insert({
+        user_id: user.id,
+        app_id: insertedApp.id,
+        sandbox_status: "starting",
+        sandbox_created_at: new Date().toISOString(),
+        sandbox_updated_at: new Date().toISOString(),
+        sandbox_provider: "daytona",
+        app_status: "starting",
+      })
+      .select()
+      .limit(1);
 
-    // 8 seocnd timeout to let expo app start
-    await new Promise((resolve) => setTimeout(resolve, 8000));
+    if (newSandboxError) {
+      throw new Error(`Failed inserting new sandbox: ${newSandboxError.message}`);
+    }
+
+    const sandboxDbId = newSandbox?.[0]?.id;
+    if (!sandboxDbId) {
+      throw new Error("Failed to create initial sandbox record (missing ID)");
+    }
+
+    const { containerId, apiUrl } = await initiateDaytonaContainer();
+
+    console.log('daytona containerId', containerId)
+    console.log('daytona apiUrl', apiUrl)
+
+    const { error: updateError } = await adminSupabase
+      .from("user_sandboxes")
+      .update({
+        sandbox_status: "active",
+        sandbox_id: containerId,
+        api_url: apiUrl,
+      })
+      .eq("id", sandboxDbId);
+
+    
+    // update the app_url and api_url in the user_apps table
+    const { error: updateAppError } = await supabase
+      .from("user_apps")
+      .update({
+        api_url: apiUrl,
+      })
+      .eq("id", insertedApp.id);
+    if (updateError) {
+      throw new Error(`Failed updating sandbox with container info: ${updateError.message}`);
+    }
+
+    await startExpo.trigger({
+      userId: user.id,
+      appId: insertedApp.id,
+      appName,
+      containerId,
+      sandboxId: sandboxDbId,
+    });
+    timings.containerInitiation = performance.now() - containerStartTime;
+
     // Create the session in the same transaction
+    const sessionStartTime = performance.now();
     const { data: session, error: sessionError } = await supabase
       .from("chat_sessions")
       .insert({
@@ -60,6 +119,7 @@ export async function POST(request: Request) {
       })
       .select()
       .single();
+    timings.sessionCreation = performance.now() - sessionStartTime;
 
     if (sessionError) {
       console.error("Session creation error:", sessionError);
@@ -69,7 +129,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Return the app data along with session ID and redirect URL
+    timings.totalTime = performance.now() - startTime;
+
+    console.log("Timings:", timings);
+
+    // Return the app data along with session ID, redirect URL, and timings
     return NextResponse.json({
       ...insertedApp,
       sessionId: session.id,
@@ -87,22 +151,19 @@ export async function POST(request: Request) {
 // GET /api/app - Get all apps or a specific app by ID for the authenticated user
 export async function GET(request: Request) {
   try {
-    const result = await getSupabaseWithUser(request);
-    if (result instanceof NextResponse) return result;
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser();
 
-    const { supabase, user } = result;
-
-    // Get the app ID from the URL if provided
     const { searchParams } = new URL(request.url);
     const appId = searchParams.get("id");
-
+    
     // If an appId is provided, get just that specific app
     if (appId) {
       const { data: app, error } = await supabase
         .from("user_apps")
         .select("*")
         .eq("id", appId)
-        .eq("user_id", user.id)
+        .eq("user_id", user?.id)
         .single();
 
       if (error) {
@@ -120,7 +181,7 @@ export async function GET(request: Request) {
       const { data: apps, error } = await supabase
         .from("user_apps")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", user?.id)
         .or("status.is.null");
 
       if (error) {
@@ -143,8 +204,9 @@ export async function GET(request: Request) {
 // DELETE /api/app - Delete specific app
 export async function DELETE(request: Request) {
   try {
-    const result = await getSupabaseWithUser(request);
+    const result = await getSupabaseWithUser(request as NextRequest);
     if (result instanceof NextResponse) return result;
+    if ('error' in result) return result.error;
 
     const { supabase, user } = result;
 
@@ -200,8 +262,9 @@ export async function DELETE(request: Request) {
 // PATCH /api/app - Update specific fields of an app
 export async function PATCH(request: Request) {
   try {
-    const result = await getSupabaseWithUser(request);
+    const result = await getSupabaseWithUser(request as NextRequest);
     if (result instanceof NextResponse) return result;
+    if ('error' in result) return result.error;
 
     const { supabase, user } = result;
 

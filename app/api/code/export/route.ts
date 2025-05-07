@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 
@@ -7,8 +7,8 @@ export async function POST(req: Request) {
     const { apiUrl, appId } = await req.json();
 
     // Get user info and validate authentication
-    const userResult = await getSupabaseWithUser(req);
-    if (userResult instanceof NextResponse) return userResult;
+    const userResult = await getSupabaseWithUser(req as NextRequest);
+    if (userResult instanceof NextResponse || 'error' in userResult) return userResult;
     const { user } = userResult;
 
     try {

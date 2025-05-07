@@ -35,7 +35,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getAuthToken } from "@/utils/client/auth";
 
 // Theme toggle component
 function ThemeToggle() {

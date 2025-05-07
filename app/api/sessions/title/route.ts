@@ -1,8 +1,8 @@
 // File: app/api/sessions/title/route.js
-import { NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { anthropic } from "@ai-sdk/anthropic";
 import { streamText } from "ai";
+import { NextRequest, NextResponse } from "next/server";
 
 const summarizeChat = async (content: string) => {
   try {
@@ -41,8 +41,8 @@ const summarizeChat = async (content: string) => {
 };
 export async function PUT(request: Request) {
   try {
-    const result = await getSupabaseWithUser(request);
-    if (result instanceof NextResponse) return result;
+    const result = await getSupabaseWithUser(request as NextRequest);
+    if (result instanceof NextResponse || 'error' in result ) return result;
 
     const { supabase, user } = result;
 

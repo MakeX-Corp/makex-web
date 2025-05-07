@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from '@/utils/supabase/client'
 import { useRouter } from "next/navigation";
 
 // Create a separate component that uses searchParams
@@ -18,7 +18,7 @@ function PasswordResetForm() {
   // This is now correctly wrapped in a Suspense boundary by the parent
   const { useSearchParams } = require("next/navigation");
   const searchParams = useSearchParams();
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   // Verify OTP when component mounts
   useEffect(() => {

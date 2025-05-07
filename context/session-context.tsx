@@ -141,10 +141,10 @@ export function SessionProvider({
       }
 
       setSupabaseProject(data.supabase_project);
-      setIsAppReady(true);
 
       // Now load the sessions for this app
       await loadSessions(newAppId);
+      setIsAppReady(true);
     } catch (error) {
       console.error("Failed to initialize app:", error);
       setSessionsError("Failed to initialize app");
@@ -157,9 +157,6 @@ export function SessionProvider({
     try {
       // If appId is the same, don't reload unless forced
       if (appId === newAppId && sessions.length > 0) {
-        console.log(
-          `Sessions already loaded for app ${newAppId}, skipping reload`
-        );
         return;
       }
       setLoadingSessions(true);
@@ -179,13 +176,9 @@ export function SessionProvider({
         sessionsList.some((session) => session.id === urlSessionId)
       ) {
         // Use session ID from URL if it's valid
-        console.log(`Using session ID from URL: ${urlSessionId}`);
         await switchSession(urlSessionId);
-      }
-      // Only select first session if we don't have a current session and no valid URL session ID
-      else if (sessionsList.length > 0 && !currentSessionId) {
-        console.log(`Auto-selecting first session: ${sessionsList[0].id}`);
-        await switchSession(sessionsList[0].id);
+      } else {
+        await createSession();
       }
     } catch (error) {
       console.error("Failed to load sessions:", error);
