@@ -37,8 +37,11 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const authHeader = request.headers.get('Authorization');
+  const hasBearerToken = authHeader && authHeader.startsWith('Bearer ');
+
   if (
-    !user &&
+    !user && !hasBearerToken &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/auth/callback') &&
     !request.nextUrl.pathname.startsWith('/signup') &&

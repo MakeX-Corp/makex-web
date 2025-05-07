@@ -151,11 +151,17 @@ export async function POST(request: Request) {
 // GET /api/app - Get all apps or a specific app by ID for the authenticated user
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser();
+    const result = await getSupabaseWithUser(request as NextRequest);
+    if (result instanceof NextResponse) return result;
+    if ('error' in result) return result.error;
+
+    const { supabase, user } = result;
 
     const { searchParams } = new URL(request.url);
     const appId = searchParams.get("id");
+
+    console.log('user', user)
+    console.log('appId', appId)
     
     // If an appId is provided, get just that specific app
     if (appId) {
