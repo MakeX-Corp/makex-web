@@ -110,8 +110,6 @@ export function SessionProvider({
 
   // Initialize the app with an appId and fetch its configuration
   const initializeApp = async (newAppId: string) => {
-
-    console.log('initializing app', newAppId)
     try {
       setAppId(newAppId);
       setIsAppReady(false);
@@ -143,10 +141,10 @@ export function SessionProvider({
       }
 
       setSupabaseProject(data.supabase_project);
-      setIsAppReady(true);
 
       // Now load the sessions for this app
       await loadSessions(newAppId);
+      setIsAppReady(true);
     } catch (error) {
       console.error("Failed to initialize app:", error);
       setSessionsError("Failed to initialize app");
@@ -156,13 +154,9 @@ export function SessionProvider({
 
   // Load sessions for an app
   const loadSessions = async (newAppId: string) => {
-    console.log('loading sessions', newAppId)
     try {
       // If appId is the same, don't reload unless forced
       if (appId === newAppId && sessions.length > 0) {
-        console.log(
-          `Sessions already loaded for app ${newAppId}, skipping reload`
-        );
         return;
       }
       setLoadingSessions(true);
@@ -182,14 +176,10 @@ export function SessionProvider({
         sessionsList.some((session) => session.id === urlSessionId)
       ) {
         // Use session ID from URL if it's valid
-        console.log(`Using session ID from URL: ${urlSessionId}`);
-        // await switchSession(urlSessionId);
+        await switchSession(urlSessionId);
+      } else {
+        await createSession();
       }
-      // // Only select first session if we don't have a current session and no valid URL session ID
-      // else if (sessionsList.length > 0 && !currentSessionId) {
-      //   console.log(`Auto-selecting first session: ${sessionsList[0].id}`);
-      //   await switchSession(sessionsList[0].id);
-      // }
     } catch (error) {
       console.error("Failed to load sessions:", error);
       setSessionsError("Failed to load sessions");
@@ -213,7 +203,6 @@ export function SessionProvider({
         window.history.pushState({ path: url.toString() }, "", url.toString());
       }
 
-      console.log('TK switching session', sessionId)
       // Load the session data
       const sessionData = await getSession(appId, sessionId);
 
@@ -295,7 +284,7 @@ export function SessionProvider({
         if (sessionId === currentSessionId) {
           const remainingSessions = sessions.filter((s) => s.id !== sessionId);
           if (remainingSessions.length > 0) {
-            // await switchSession(remainingSessions[0].id);
+            await switchSession(remainingSessions[0].id);
           } else {
             // If no sessions left, clear current session
             setCurrentSession(null);
