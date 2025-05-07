@@ -24,8 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SessionSelector } from "@/components/workspace/session-selector";
 import { SessionsError } from "@/components/workspace/sessions-error";
-import { getAuthToken } from "@/utils/client/auth";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { dataURLToBlob } from "@/lib/screenshot-service";
 interface WorkspaceContentProps {
   initialSessionId: string | null;
@@ -46,11 +45,7 @@ export default function WorkspaceContent({
     initializeApp,
     switchSession,
     createSession,
-
   } = useSession();
-
-
-  const [authToken, setAuthToken] = useState<string | null>(null);
 
   // State for UI elements
   const [activeView, setActiveView] = useState<"chat" | "preview">("chat");
@@ -67,76 +62,73 @@ export default function WorkspaceContent({
   const [windowWidth, setWindowWidth] = useState(0);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
 
-  const [containerState, setContainerState] = useState<"starting" | "active" | "paused" | "resuming" | "pausing">("starting");
-  const supabase = createClientComponentClient();
+  const [containerState, setContainerState] = useState<
+    "starting" | "active" | "paused" | "resuming" | "pausing"
+  >("starting");
+  const [appState, setAppState] = useState<any>(null);
+  const supabase = createClient();
   useEffect(() => {
-    if (appId && authToken) {
+    if (appId) {
       // Initial fetch
       const fetchInitialState = async () => {
         const res = await fetch("/api/sandbox?appId=" + appId, {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-        })
+        });
 
-        const data = await res.json()
+        const data = await res.json();
         if (data.error) {
-          console.error('Initial fetch error:', data.error)
+          console.error("Initial fetch error:", data.error);
         } else {
-          setContainerState(data?.sandbox_status)
-          console.log(data)
+          setContainerState(data?.sandbox_status);
+          setAppState(data?.app_status);
+          console.log(data);
           if (data?.sandbox_status === "paused") {
             await resumeSandbox();
           }
         }
-      }
+      };
 
-      fetchInitialState()
+      fetchInitialState();
 
       // Realtime subscription
       const channel = supabase
         .channel(`realtime:user_sandboxes:${appId}`)
         .on(
-          'postgres_changes',
+          "postgres_changes",
           {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'user_sandboxes',
-            filter: `app_id=eq.${appId}`
+            event: "UPDATE",
+            schema: "public",
+            table: "user_sandboxes",
+            filter: `app_id=eq.${appId}`,
           },
           (payload) => {
-            console.log('🔁 Realtime update:', payload)
-            setContainerState(payload.new.sandbox_status)
+            console.log("🔁 Realtime update:", payload);
+            setContainerState(payload.new.sandbox_status);
+            setAppState(payload.new.app_status);
           }
         )
-        .subscribe()
+        .subscribe();
 
       return () => {
-        supabase.removeChannel(channel)
-      }
+        supabase.removeChannel(channel);
+      };
     }
-  }, [appId, authToken])
+  }, [appId]);
 
   const resumeSandbox = async () => {
     try {
       const response = await fetch("/api/sandbox", {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
         body: JSON.stringify({
           appId,
           appName,
-          targetState: 'resume',
+          targetState: "resume",
         }),
       });
     } catch (error) {
       console.error("Error creating sandbox:", error);
     }
   };
-
 
   // Effect to set window width on mount and resize
   useEffect(() => {
@@ -152,12 +144,6 @@ export default function WorkspaceContent({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Get auth token once on client side
-  useEffect(() => {
-    const token = getAuthToken();
-    setAuthToken(token);
-  }, []);
-
   // Load sessions when component mounts or appId changes
   useEffect(() => {
     if (appId) {
@@ -166,43 +152,6 @@ export default function WorkspaceContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appId]); // Only depend on appId
 
-  // Fix for the useEffect that handles session switching
-  useEffect(() => {
-    if (!appId || loadingSessions) return;
-
-    // Add a flag to prevent multiple calls
-    let isHandled = false;
-
-    const handleInitialSession = async () => {
-      // Prevent duplicate calls
-      if (isHandled || currentSessionId) return;
-      isHandled = true;
-
-      // First, check URL for sessionId
-      const urlSessionId =
-        typeof window !== "undefined"
-          ? new URL(window.location.href).searchParams.get("sessionId")
-          : null;
-
-      if (urlSessionId) {
-        // Use session ID from URL if available
-        await switchSession(urlSessionId);
-      } else if (initialSessionId) {
-        // Use provided initial session ID if URL doesn't have one
-        await switchSession(initialSessionId);
-      } else if (sessions.length > 0) {
-        // Use first session as fallback
-        await switchSession(sessions[0].id);
-      } else {
-        // Create new session if no sessions exist
-        await createSession();
-      }
-    };
-
-    handleInitialSession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appId, initialSessionId, loadingSessions, sessions.length]);
-
   const exportCode = async () => {
     setIsExporting(true);
     try {
@@ -210,7 +159,6 @@ export default function WorkspaceContent({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           apiUrl: apiUrl,
@@ -253,7 +201,6 @@ export default function WorkspaceContent({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer " + authToken,
         },
         body: JSON.stringify({
           appId,
@@ -272,9 +219,9 @@ export default function WorkspaceContent({
   // Function to refresh the iframe
   const refreshPreview = async () => {
     setIsRefreshing(true);
-    setIframeKey(Math.random().toString(36).substring(2, 15))
-    if (containerState == 'paused' || containerState == 'pausing') {
-      setContainerState('resuming')
+    setIframeKey(Math.random().toString(36).substring(2, 15));
+    if (containerState == "paused" || containerState == "pausing") {
+      setContainerState("resuming");
       await resumeSandbox();
     }
     setTimeout(() => {
@@ -538,11 +485,8 @@ export default function WorkspaceContent({
                   <Chat
                     sessionId={currentSessionId || ""}
                     onResponseComplete={handleResponseComplete}
-                    onSessionError={() => { }}
-                    authToken={authToken}
+                    onSessionError={() => {}}
                     containerState={containerState}
-                    resumeSandbox={resumeSandbox}
-
                   />
 
                   {/* Right panel - Preview */}
@@ -553,6 +497,7 @@ export default function WorkspaceContent({
                     onRefresh={refreshPreview}
                     containerState={containerState}
                     onScreenshotCaptured={handleScreenshotCaptured}
+                    appState={appState}
                   />
                 </div>
               ) : (
@@ -586,22 +531,22 @@ export default function WorkspaceContent({
                     <div className="flex-1 relative">
                       {/* Both components are always rendered, but we control visibility with CSS */}
                       <div
-                        className={`absolute inset-0 ${activeView === "chat" ? "block" : "hidden"
-                          }`}
+                        className={`absolute inset-0 ${
+                          activeView === "chat" ? "block" : "hidden"
+                        }`}
                       >
                         <Chat
                           sessionId={currentSessionId || ""}
                           onResponseComplete={handleResponseComplete}
-                          onSessionError={() => { }}
-                          authToken={authToken}
+                          onSessionError={() => {}}
                           containerState={containerState}
-                          resumeSandbox={resumeSandbox}
                         />
                       </div>
 
                       <div
-                        className={`absolute inset-0 ${activeView === "preview" ? "block" : "hidden"
-                          }`}
+                        className={`absolute inset-0 ${
+                          activeView === "preview" ? "block" : "hidden"
+                        }`}
                       >
                         <Preview
                           iframeKey={iframeKey}
@@ -609,6 +554,7 @@ export default function WorkspaceContent({
                           onRefresh={refreshPreview}
                           containerState={containerState}
                           onScreenshotCaptured={handleScreenshotCaptured}
+                          appState={appState}
                         />
                       </div>
                     </div>

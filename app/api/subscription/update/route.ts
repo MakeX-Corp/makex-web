@@ -1,13 +1,13 @@
 // pages/api/subscriptions/update.js or app/api/subscriptions/update/route.ts
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 export async function POST(request: Request) {
-  const { subscriptionId, priceId, userId } = await request.json();
-  const result = await getSupabaseWithUser(request);
-
-  if (!subscriptionId || !priceId || !userId) {
-    return NextResponse.json(
+  const { subscriptionId, priceId } = await request.json();
+  const result = await getSupabaseWithUser(request as NextRequest);
+  if (result instanceof NextResponse || 'error' in result) return result;
+  if (!subscriptionId || !priceId) {
+    return NextResponse.json( 
       { error: "Missing required parameters" },
       { status: 400 }
     );

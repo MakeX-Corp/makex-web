@@ -1,45 +1,19 @@
 import { resumeContainer } from "@/trigger/resume-container";
 import { pauseContainer } from "@/trigger/pause-container"
 import { deleteContainer } from "@/trigger/delete-container";
-import { createContainer } from "@/trigger/create-container";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const result = await getSupabaseWithUser(req);
 
-    if (result instanceof NextResponse) return result;
-
-    const { user } = result;
-    const { appId, appName, targetState } = body;
-
-    // start new container 
-    await createContainer.trigger({
-      userId: user.id,
-      appId,
-      appName,
-    });
-    
-    return NextResponse.json(
-      { message: "Sandbox management started in background" },
-      { status: 202 }
-    );
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err?.message || "Unknown server error" },
-      { status: 500 }
-    );
-  }
 }
 
 export async function GET(req: Request) {
   try {
-    const result = await getSupabaseWithUser(req);
+    const result = await getSupabaseWithUser(req as NextRequest);
 
-    if (result instanceof NextResponse) return result;
+    if (result instanceof NextResponse || 'error' in result ) return result;
 
     const { supabase, user } = result;
 
@@ -54,7 +28,7 @@ export async function GET(req: Request) {
 
     const { data, error } = await supabase
       .from('user_sandboxes')
-      .select('sandbox_id, sandbox_status, sandbox_updated_at')
+      .select('sandbox_id, sandbox_status, sandbox_updated_at, app_status')
       .eq('app_id', appId)
       .order('sandbox_updated_at', { ascending: false })
       .limit(1);
@@ -88,9 +62,9 @@ export async function GET(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const result = await getSupabaseWithUser(req);
+    const result = await getSupabaseWithUser(req as NextRequest);
 
-    if (result instanceof NextResponse) return result;
+    if (result instanceof NextResponse || 'error' in result ) return result;
 
     const { user } = result;
     const { appId, appName } = await req.json();
@@ -112,19 +86,36 @@ export async function DELETE(req: Request) {
 export async function PATCH(req: Request) {
   
   try {
-    const result = await getSupabaseWithUser(req);
+    const result = await getSupabaseWithUser(req as NextRequest);
 
-    if (result instanceof NextResponse) return result;
+    if (result instanceof NextResponse || 'error' in result ) return result;
 
-    const { user } = result;
+    const { user, supabase } = result;
     
     const { appId, appName, targetState } = await req.json();
+
+    
+    // get app details
+    const { data: app, error: appError } = await supabase
+      .from("user_apps")
+      .select("*")
+      .eq("id", appId)
+      .single();  
+
+    if (appError) {
+      return NextResponse.json(
+        { error: appError.message },
+        { status: 500 }
+      );
+    } 
+
+    const appNameFetched = app.app_name;
 
     if (targetState == 'resume') {
       await resumeContainer.trigger({
         userId: user.id,
         appId,
-        appName,
+        appName: appNameFetched,
       });
     }
 
@@ -132,7 +123,7 @@ export async function PATCH(req: Request) {
       await pauseContainer.trigger({
         userId: user.id,
         appId,
-        appName,
+        appName: appNameFetched,
       });
     }
 

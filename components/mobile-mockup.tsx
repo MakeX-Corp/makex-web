@@ -5,17 +5,20 @@ interface MobileMockupProps {
   appUrl: string | null;
   iframeKey: any;
   containerState: "starting" | "active" | "paused" | "resuming" | "pausing";
+  appState: any;
 }
 
 export default function MobileMockup({
   appUrl,
   iframeKey,
   containerState,
+  appState
 }: MobileMockupProps) {
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200
   );
 
+  console.log('appState', appState)
   useEffect(() => {
     // Track window size
     const handleResize = () => {
@@ -68,8 +71,16 @@ export default function MobileMockup({
         {/* Phone Container */}
         <div className="relative w-[300px] h-[580px] rounded-[48px] mx-[4px]">
           <div className="absolute inset-0 rounded-[48px] overflow-hidden">
-            {containerState != "active" ? (
-              <div className="flex flex-col items-center justify-center h-full">
+            {/* Always render iframe */}
+            <iframe
+              key={[iframeKey, containerState, appState].toString()}
+              src={appUrl || undefined}
+              className="w-full h-full"
+            />
+            
+            {/* Overlay status message when containerState is not active */}
+            {containerState !== "active" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
                 <span>The Server is {containerState}</span>
                 {containerState === "paused" || containerState === "pausing" ? (
                   <span>Due to inactivity</span>
@@ -77,12 +88,14 @@ export default function MobileMockup({
                   <Loader2 className="h-4 w-4 animate-spin mt-2" />
                 )}
               </div>
-            ) : (
-              <iframe
-                key={iframeKey}
-                src={appUrl || undefined}
-                className="w-full h-full"
-              />
+            )}
+
+            {/* Overlay status message when appState is not active AND containerState IS active */}
+            {containerState === "active" && appState !== "active" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
+                <span>App is starting</span>
+                <Loader2 className="h-4 w-4 animate-spin mt-2" />
+              </div>
             )}
           </div>
 

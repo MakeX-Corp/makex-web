@@ -1,37 +1,53 @@
-import { NextResponse } from 'next/server'
-import { createClient, SupabaseClient, User } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient as createTokenClient, SupabaseClient, User } from '@supabase/supabase-js'
+import { createClient as createCookieClient } from '@/utils/supabase/server'
 
-export async function getSupabaseWithUser(request: Request): Promise<
-    | { supabase: SupabaseClient; user: User, token: string }
-    | NextResponse
-> {
-    const authHeader = request.headers.get('Authorization')
-    const token = authHeader?.startsWith('Bearer ')
-        ? authHeader.slice(7)
-        : null
+type AuthResult =
+  | { supabase: SupabaseClient<any>; user: User; token: string }
+  | { error: NextResponse }
 
-    if (!token) {
-        return NextResponse.json(
-            { error: 'No authorization token provided' },
-            { status: 401 }
-        )
-    }
+export async function getSupabaseWithUser(request: NextRequest): Promise<AuthResult> {
+  const authHeader = request.headers.get('authorization')
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
 
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            global: {
-                headers: { Authorization: `Bearer ${token}` },
-            },
-        }
+  // ✅ 1. Token-based (React Native / external clients)
+  if (token) {
+    const supabase = createTokenClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      }
     )
 
-    const { data: { user }, error } = await supabase.auth.getUser(token)
+    const { data, error } = await supabase.auth.getUser(token)
 
-    if (error || !user) {
-        return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    if (error || !data?.user) {
+      return {
+        error: NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 }),
+      }
     }
 
-    return { supabase, user, token }
-} 
+    return { supabase, user: data.user, token }
+  }
+
+  // ✅ 2. Cookie-based (Next.js frontend)
+  try {
+    const supabase = await createCookieClient()
+    const { data, error } = await supabase.auth.getUser()
+
+    if (error || !data?.user) {
+      return {
+        error: NextResponse.json({ error: 'Not authenticated' }, { status: 401 }),
+      }
+    }
+
+    return { supabase, user: data.user, token: 'cookie' }
+  } catch {
+    return {
+      error: NextResponse.json({ error: 'Authentication failed' }, { status: 401 }),
+    }
+  }
+}

@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { useSession } from "@/context/session-context";
 import { QRCodeDisplay } from "@/components/qr-code";
 import MobileMockup from "@/components/mobile-mockup";
-import { getAuthToken } from "@/utils/client/auth";
 import { ScreenshotButton } from "./screenshot-button";
 
 interface PreviewProps {
@@ -16,6 +15,7 @@ interface PreviewProps {
   onRefresh: () => void; // Refresh function from parent
   containerState: "starting" | "active" | "paused" | "resuming" | "pausing";
   onScreenshotCaptured?: (dataUrl: string) => void; // Function to send screenshot to chat
+  appState?: any; // Add appState prop
 }
 
 
@@ -25,15 +25,12 @@ export function Preview({
   onRefresh, 
   containerState,
   onScreenshotCaptured,
+  appState,
 }: PreviewProps) {
   const [viewMode, setViewMode] = useState<"mobile" | "qr">("mobile");
   const { appId, appUrl, appName } = useSession();
-  const authToken = getAuthToken();
 
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
-
-
-
 
   // Handle taking a screenshot
   const handleCaptureScreenshot = async () => {
@@ -45,10 +42,6 @@ export function Preview({
       // Call our screenshot API endpoint
       const response = await fetch("/api/screenshot", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
         body: JSON.stringify({
           url: appUrl,
           appId: appId,
@@ -154,6 +147,7 @@ export function Preview({
                 appUrl={appUrl || ""}
                 iframeKey={iframeKey}
                 containerState={containerState}
+                appState={appState}
               />
             </div>
           ) : (

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { getMessageCount } from "@/utils/server/check-daily-limit"; // Import existing function
 import { DEFAULT_LIMITS } from "@/const/const";
@@ -9,8 +9,8 @@ import { DEFAULT_LIMITS } from "@/const/const";
 export async function POST(req: Request) {
   try {
     // Get the user API client
-    const userResult = await getSupabaseWithUser(req);
-    if (userResult instanceof NextResponse) return userResult;
+    const userResult = await getSupabaseWithUser(req as NextRequest);
+    if (userResult instanceof NextResponse || 'error' in userResult) return userResult;
     const { supabase, user } = userResult;
 
     // Get subscription data from request body

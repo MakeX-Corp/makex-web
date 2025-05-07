@@ -49,13 +49,17 @@ export function SessionSelector() {
   const currentSession = sessions.find(
     (session) => session.id === currentSessionId
   );
+
   useEffect(() => {
-    if (currentSession?.title) {
-      setSessionName(currentSession.title);
-    } else {
-      setSessionName("Select Session");
+    // Only run this effect when the loading is COMPLETE and we have sessions loaded
+    if (!isLoading && sessions.length > 0) {
+      if (currentSession?.title) {
+        setSessionName(currentSession.title);
+      } else {
+        setSessionName("Select Session");
+      }
     }
-  }, [currentSession, setSessionName]);
+  }, [currentSession, sessions, isLoading]);
 
   // Handle creating a new session
   const handleCreateSession = async () => {

@@ -1,8 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { generateAppName } from "@/utils/server/app-name-generator";
 import { tasks } from "@trigger.dev/sdk/v3";
-import { insertAgentResponseDb } from "@/trigger/insert-agent-response-db";
 
 export const maxDuration = 800;
 
@@ -85,12 +84,6 @@ async function handleStreamingResponse(
               }
             }
           }
-
-          await insertAgentResponseDb.trigger({
-            appId,
-            userId,
-            agentResponse: collectedResponse,
-          });
         } catch (error) {
           console.error('Error in stream processing:', error);
           controller.error(error);
@@ -112,8 +105,8 @@ async function handleStreamingResponse(
 }
 
 export async function POST(request: Request) {
-  const result = await getSupabaseWithUser(request);
-  if (result instanceof NextResponse) return result;
+  const result = await getSupabaseWithUser(request as NextRequest);
+  if (result instanceof NextResponse || 'error' in result) return result;
   const { supabase, user } = result;
 
   try {
@@ -187,8 +180,8 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const result = await getSupabaseWithUser(request);
-  if (result instanceof NextResponse) return result;
+  const result = await getSupabaseWithUser(request as NextRequest);
+  if (result instanceof NextResponse || 'error' in result) return result;
   const { supabase, user } = result;
 
   const { appUrl, prompt } = await request.json();

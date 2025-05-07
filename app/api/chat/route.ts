@@ -1,7 +1,7 @@
 import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
 import { generateText, streamText } from "ai";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { checkMessageLimit } from "@/utils/server/check-daily-limit";
 import { createTools } from "@/utils/server/tool-factory";
@@ -13,8 +13,9 @@ export const maxDuration = 300;
 // GET /api/chat - Get all messages for a specific session
 export async function GET(req: Request) {
   try {
-    const userResult = await getSupabaseWithUser(req);
+    const userResult = await getSupabaseWithUser(req as NextRequest);
     if (userResult instanceof NextResponse) return userResult;
+    if ('error' in userResult) return userResult.error;
     const { supabase, user } = userResult;
 
     // Get session ID from query params
@@ -88,8 +89,8 @@ export async function POST(req: Request) {
     const lastUserMessage = messages[messages.length - 1];
 
     // Get the user API client
-    const userResult = await getSupabaseWithUser(req);
-    if (userResult instanceof NextResponse) return userResult;
+    const userResult = await getSupabaseWithUser(req as NextRequest );
+    if (userResult instanceof NextResponse || 'error' in userResult) return userResult;
     const { supabase, user, token } = userResult;
     // Check daily message limit using the new utility function
     const limitCheck = await checkMessageLimit(supabase, user, subscription);
@@ -100,7 +101,22 @@ export async function POST(req: Request) {
       );
     }
 
-    const apiClient = createFileBackendApiClient(apiUrl);
+    // Get app details from the database
+    const { data: app, error: appError } = await supabase
+      .from("user_apps")
+      .select("*")
+      .eq("id", appId)
+      .single();
+
+    if (appError) {
+      return NextResponse.json(
+        { error: "Failed to fetch app details" },
+        { status: 500 }
+      );
+    }
+
+   
+    const apiClient = createFileBackendApiClient(app.api_url);
     let connectionUri = undefined;
 
     if (supabase_project) {
@@ -114,7 +130,7 @@ export async function POST(req: Request) {
     const modelName = "claude-3-5-sonnet-latest";
 
     const tools = createTools({
-      apiUrl: apiUrl,
+      apiUrl: app.api_url,
       connectionUri: connectionUri,
     });
 
@@ -198,6 +214,11 @@ export async function POST(req: Request) {
         console.error("Detailed chat error:", error);
         // Just log the error, don't return a response
       },
+      onFinish: async (finishData) => {
+        console.log("--- Whole Streamed Message (Server-side) ---");
+        console.log(finishData.text);
+        console.log("--- End of Server-side Message ---");
+      }
     });
 
     return result.toDataStreamResponse({
