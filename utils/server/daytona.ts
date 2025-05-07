@@ -83,69 +83,53 @@ export async function startExpoInContainer(containerId: string) {
 
 
 
-export async function resumeDaytonaContainer(sandboxId: string) {
+export async function initiateResumeDaytonaContainer(sandboxId: string) {
   const container = await daytona.get(sandboxId);
-
   const containerInfo = await container.info();
 
   if (containerInfo.state == 'stopped') {
     await container.start();
-
-    const sessionId = 'dual-process-session';
+    const sessionId = 'fast-api-session';
     await container.process.createSession(sessionId);
     const fastApiResult = await startFastAPI(container, sessionId);
-    const appPreview = await container.getPreviewLink(8000);
-
-    const expoResult = await startExpo(container, sessionId, appPreview);
     return {
-      containerInfo,
-      ...expoResult
+      apiPreview: fastApiResult.url
     };
   }
 
-  const processInfo = {
-    apiPreview: await container.getPreviewLink(8001),
-    appPreview: await container.getPreviewLink(8000),
-  }
-
-  // Start all processes
-  return {
-    containerInfo,
-    ...processInfo
-  };
 }
 
 export async function pauseDaytonaContainer(sandboxId: string) {
-  const container = await daytona.get(sandboxId);
-  const containerInfo = await container.info(); 
-  if (containerInfo.state == 'started') {
-    await container.stop();
+    const container = await daytona.get(sandboxId);
+    const containerInfo = await container.info();
+    if (containerInfo.state == 'started') {
+      await container.stop();
+    }
+    return {
+      containerInfo,
+    };
   }
-  return {
-    containerInfo,
-  };
-}
 
-export async function killDaytonaContainer(sandboxId: string) {
-  const container = await daytona.get(sandboxId);
+  export async function killDaytonaContainer(sandboxId: string) {
+    const container = await daytona.get(sandboxId);
 
-  const containerInfo = await container.info();
+    const containerInfo = await container.info();
 
-  if (containerInfo.state == 'destroyed') {
+    if (containerInfo.state == 'destroyed') {
+      return {
+        containerInfo,
+      }
+    }
+
+    // if the container is running, stop itcn
+    if (containerInfo.state == 'started') {
+      await container.stop();
+
+    }
+
+    await daytona.remove(container);
+
     return {
       containerInfo,
     }
   }
-
-  // if the container is running, stop itcn
-  if (containerInfo.state == 'started') {
-    await container.stop();
-
-  }
-
-  await daytona.remove(container);
-
-  return {
-    containerInfo,
-  }
-}

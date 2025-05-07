@@ -139,13 +139,6 @@ export async function POST(request: Request) {
       ...insertedApp,
       sessionId: session.id,
       redirectUrl: `/dashboard/${insertedApp.id}?sessionId=${session.id}`,
-      timings: {
-        authAndSetup: `${timings.authAndSetup.toFixed(2)}ms`,
-        appCreation: `${timings.appCreation.toFixed(2)}ms`,
-        containerInitiation: `${timings.containerInitiation.toFixed(2)}ms`,
-        sessionCreation: `${timings.sessionCreation.toFixed(2)}ms`,
-        totalTime: `${timings.totalTime.toFixed(2)}ms`
-      }
     });
   } catch (error) {
     console.error("Error in app creation:", error);

@@ -5,12 +5,14 @@ interface MobileMockupProps {
   appUrl: string | null;
   iframeKey: any;
   containerState: "starting" | "active" | "paused" | "resuming" | "pausing";
+  appState: any;
 }
 
 export default function MobileMockup({
   appUrl,
   iframeKey,
   containerState,
+  appState
 }: MobileMockupProps) {
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200
@@ -70,13 +72,13 @@ export default function MobileMockup({
           <div className="absolute inset-0 rounded-[48px] overflow-hidden">
             {/* Always render iframe */}
             <iframe
-              key={iframeKey}
+              key={[iframeKey, containerState, appState].toString()}
               src={appUrl || undefined}
               className="w-full h-full"
             />
             
-            {/* Overlay status message when not active */}
-            {containerState != "active" && (
+            {/* Overlay status message when containerState is not active */}
+            {containerState !== "active" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
                 <span>The Server is {containerState}</span>
                 {containerState === "paused" || containerState === "pausing" ? (
@@ -84,6 +86,14 @@ export default function MobileMockup({
                 ) : (
                   <Loader2 className="h-4 w-4 animate-spin mt-2" />
                 )}
+              </div>
+            )}
+
+            {/* Overlay status message when appState is not active AND containerState IS active */}
+            {containerState === "active" && appState !== "active" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
+                <span>App is starting</span>
+                <Loader2 className="h-4 w-4 animate-spin mt-2" />
               </div>
             )}
           </div>

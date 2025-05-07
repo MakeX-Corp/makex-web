@@ -116,15 +116,32 @@ export async function PATCH(req: Request) {
 
     if (result instanceof NextResponse || 'error' in result ) return result;
 
-    const { user } = result;
+    const { user, supabase } = result;
     
     const { appId, appName, targetState } = await req.json();
+
+    
+    // get app details
+    const { data: app, error: appError } = await supabase
+      .from("user_apps")
+      .select("*")
+      .eq("id", appId)
+      .single();  
+
+    if (appError) {
+      return NextResponse.json(
+        { error: appError.message },
+        { status: 500 }
+      );
+    } 
+
+    const appNameFetched = app.app_name;
 
     if (targetState == 'resume') {
       await resumeContainer.trigger({
         userId: user.id,
         appId,
-        appName,
+        appName: appNameFetched,
       });
     }
 
@@ -132,7 +149,7 @@ export async function PATCH(req: Request) {
       await pauseContainer.trigger({
         userId: user.id,
         appId,
-        appName,
+        appName: appNameFetched,
       });
     }
 

@@ -15,6 +15,7 @@ interface PreviewProps {
   onRefresh: () => void; // Refresh function from parent
   containerState: "starting" | "active" | "paused" | "resuming" | "pausing";
   onScreenshotCaptured?: (dataUrl: string) => void; // Function to send screenshot to chat
+  appState?: any; // Add appState prop
 }
 
 
@@ -24,6 +25,7 @@ export function Preview({
   onRefresh, 
   containerState,
   onScreenshotCaptured,
+  appState,
 }: PreviewProps) {
   const [viewMode, setViewMode] = useState<"mobile" | "qr">("mobile");
   const { appId, appUrl, appName } = useSession();
@@ -145,6 +147,7 @@ export function Preview({
                 appUrl={appUrl || ""}
                 iframeKey={iframeKey}
                 containerState={containerState}
+                appState={appState}
               />
             </div>
           ) : (

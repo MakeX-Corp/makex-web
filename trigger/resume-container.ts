@@ -1,8 +1,9 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { resumeDaytonaContainer } from "@/utils/server/daytona";
+import { initiateResumeDaytonaContainer } from "@/utils/server/daytona";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { resumeE2BContainer } from "@/utils/server/e2b";
+import { startExpo } from "./start-expo";
 export const resumeContainer = task({
   id: "resume-container",
   retry: {
@@ -35,8 +36,7 @@ export const resumeContainer = task({
 
       switch (activeSandbox[0]?.sandbox_provider) {
         case "daytona":
-          const { apiPreview, appPreview } = await resumeDaytonaContainer(sandboxId);
-          await redisUrlSetter(appName, appPreview.url, apiPreview.url);
+          const daytonaContainer = await initiateResumeDaytonaContainer(sandboxId);
           break;
         case "e2b":
           const { appHost, apiHost } = await resumeE2BContainer(sandboxId);
@@ -44,11 +44,23 @@ export const resumeContainer = task({
           break;
       }
 
+      // sleep for 5 seconds
       await adminSupabase
         .from("user_sandboxes")
         .update({ sandbox_status: "active" })
         .eq("id", sandboxDbId);
+
+      await startExpo.trigger(
+        {
+          userId: userId,
+          appId: appId,
+          appName: appName,
+          containerId: sandboxId,
+          sandboxId: sandboxDbId,
+        }
+      );
     };
+
 
     if (activeSandbox && activeSandbox.length > 0) {
       const sandboxStatus = activeSandbox[0].sandbox_status;

@@ -60,6 +60,7 @@ export const containerInitiate = task({
       appId,
       appName,
       containerId,
+      sandboxId: sandboxDbId,
     });
 
   },

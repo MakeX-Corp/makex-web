@@ -1,8 +1,6 @@
 import { schedules } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { pauseE2BContainer } from "@/utils/server/e2b";
-import { UserSandbox } from "@/types/sandbox";
-import { redisUrlSetter } from "@/utils/server/redis-client";
+import { pauseContainer } from "./pause-container";
 
 export const firstScheduledTask = schedules.task({
   id: "auto-pause-containers",
@@ -77,62 +75,18 @@ export const firstScheduledTask = schedules.task({
                 console.log("Diff minutes:", diffMinutes);
 
                 if (diffMinutes > 10) {
-                    try {
-                        // pause the sandbox 
-                        const { data: updatedSandbox, error: updatedSandboxError } =
-                            await supabase
-                                .from("user_sandboxes")
-                                .update({
-                                    sandbox_status: "pausing",
-                                })
-                                .eq("id", sandbox.id)
-                                .select()
-                                .overrideTypes<UserSandbox[]>();
-
-                        if (updatedSandboxError) {
-                            console.error("Error updating sandbox:", updatedSandboxError.message);
-                            return;
+                    stoppedApps.push(sandbox.id);
+                    console.log("Pausing sandbox:", sandbox.id);
+                    await pauseContainer.trigger(
+                        {
+                            userId: sandbox.user_id,
+                            appId: sandbox.app_id,
+                            appName: sandbox.app_name,
+                        },
+                        {
+                            queue: { name: "auto-pause-containers" },
                         }
-
-                        stoppedApps.push(sandbox.id);
-
-                        // pause the sandbox
-                        await pauseE2BContainer(sandbox.sandbox_id);
-
-                        // get the app 
-                        const { data: app, error: appError } =
-                            await supabase
-                                .from("apps")
-                                .select("app_name, app_url, api_url")
-                                .eq("id", sandbox.app_id)
-                                .single();
-
-                        console.log("app",app)
-
-                        await redisUrlSetter(app?.app_name, "https://makex.app/app-not-found", "https://makex.app/app-not-found");
-
-
-
-                        const { data: updatedSandbox2, error: updatedSandbox2Error } =
-                            await supabase
-                                .from("user_sandboxes")
-                                .update({
-                                    sandbox_status: "paused",
-                                })
-                                .eq("id", sandbox.id)
-                                .select()
-                                .overrideTypes<UserSandbox[]>();
-
-                        if (updatedSandbox2Error) {
-                            console.error("Error updating sandbox final status:", updatedSandbox2Error.message);
-                            return;
-                        }
-                    } catch (exportError) {
-                        console.error(
-                            `Error paussing sandbox for app ${sandbox.id}:`,
-                            exportError
-                        );
-                    }
+                    );
                 }
             } catch (appError) {
                 console.error(`Error processing app ${sandbox.id}:`, appError);

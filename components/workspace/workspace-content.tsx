@@ -65,9 +65,12 @@ export default function WorkspaceContent({
   const [containerState, setContainerState] = useState<
     "starting" | "active" | "paused" | "resuming" | "pausing"
   >("starting");
+  const [appState, setAppState] = useState<any>(null);
   const supabase = createClient();
   useEffect(() => {
     if (appId) {
+
+      resumeSandbox();
       // Initial fetch
       const fetchInitialState = async () => {
         const res = await fetch("/api/sandbox?appId=" + appId, {
@@ -102,6 +105,7 @@ export default function WorkspaceContent({
           (payload) => {
             console.log("🔁 Realtime update:", payload);
             setContainerState(payload.new.sandbox_status);
+            setAppState(payload.new.app_status);
           }
         )
         .subscribe();
@@ -494,6 +498,7 @@ export default function WorkspaceContent({
                     onRefresh={refreshPreview}
                     containerState={containerState}
                     onScreenshotCaptured={handleScreenshotCaptured}
+                    appState={appState}
                   />
                 </div>
               ) : (
@@ -550,6 +555,7 @@ export default function WorkspaceContent({
                           onRefresh={refreshPreview}
                           containerState={containerState}
                           onScreenshotCaptured={handleScreenshotCaptured}
+                          appState={appState}
                         />
                       </div>
                     </div>
