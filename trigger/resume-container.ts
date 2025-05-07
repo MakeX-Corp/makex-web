@@ -1,8 +1,8 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { resumeE2BContainer } from "@/utils/server/e2b";
+import { resumeDaytonaContainer } from "@/utils/server/daytona";
 import { redisUrlSetter } from "@/utils/server/redis-client";
-
+import { resumeE2BContainer } from "@/utils/server/e2b";
 export const resumeContainer = task({
   id: "resume-container",
   retry: {
@@ -33,9 +33,16 @@ export const resumeContainer = task({
         .update({ sandbox_status: "resuming" })
         .eq("id", sandboxDbId);
 
-      const { appHost, apiHost } = await resumeE2BContainer(sandboxId);
-
-      await redisUrlSetter(appName, appHost, apiHost);
+      switch (activeSandbox[0]?.sandbox_provider) {
+        case "daytona":
+          const { apiPreview, appPreview } = await resumeDaytonaContainer(sandboxId);
+          await redisUrlSetter(appName, appPreview.url, apiPreview.url);
+          break;
+        case "e2b":
+          const { appHost, apiHost } = await resumeE2BContainer(sandboxId);
+          await redisUrlSetter(appName, `https://${appHost}`, `https://${apiHost}`);
+          break;
+      }
 
       await adminSupabase
         .from("user_sandboxes")

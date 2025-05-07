@@ -1,7 +1,8 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { pauseE2BContainer } from "@/utils/server/e2b";
+import { pauseDaytonaContainer } from "@/utils/server/daytona";
 import { redisUrlSetter } from "@/utils/server/redis-client";
+import { pauseE2BContainer } from "@/utils/server/e2b";
 
 export const pauseContainer = task({
   id: "pause-container",
@@ -23,10 +24,20 @@ export const pauseContainer = task({
       throw new Error(`Failed fetching sandbox: ${sandboxError.message}`);
     }
 
-    if (sandbox) {
-      const sandboxId = sandbox.sandbox_id;
-      await pauseE2BContainer(sandboxId);
-    }
+      if (sandbox) {
+        const sandboxId = sandbox.sandbox_id;
+        if (sandbox) {
+          const sandboxId = sandbox.sandbox_id;
+          switch (sandbox.sandbox_provider) {
+            case "daytona":
+              await pauseDaytonaContainer(sandboxId);
+              break;
+            case "e2b":
+              await pauseE2BContainer(sandboxId);
+              break;
+          }
+        }
+      }
 
     // update status to deleted 
     const { error: updateError } = await adminSupabase

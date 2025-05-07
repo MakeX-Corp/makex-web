@@ -17,8 +17,8 @@ export const redisUrlSetter = async (appName: string, appUrl: string, apiUrl: st
 
   console.log("App Deets", appName, appUrl, apiUrl)
 
-  const appUrlSet = await redis.set(`proxy:${appName}.makex.app`, `https://${appUrl}`);
-  const apiUrlSet = await redis.set(`proxy:api-${appName}.makex.app`, `https://${apiUrl}`);
+  const appUrlSet = await redis.set(`proxy:${appName}.makex.app`, `${appUrl}`);
+  const apiUrlSet = await redis.set(`proxy:api-${appName}.makex.app`, `${apiUrl}`);
 
 
   console.log("Redis URLs set successfully", appUrlSet, apiUrlSet);
