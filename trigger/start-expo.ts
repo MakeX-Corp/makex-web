@@ -10,8 +10,8 @@ export const startExpo = task({
   retry: {
     maxAttempts: 1
   },
-  run: async (payload: { userId: string; appId: string; appName: string; containerId: string; sandboxId: string }) => {
-    const { userId, appId, appName, containerId, sandboxId } = payload;
+  run: async (payload: { appId: string; appName: string; containerId: string; sandboxId: string, initial: boolean }) => {
+    const { appId, appName, containerId, sandboxId, initial } = payload;
     const adminSupabase = await getSupabaseAdmin();
 
 
@@ -38,16 +38,6 @@ export const startExpo = task({
     console.log("App preview response:", appPreviewResponse);
     await redisUrlSetter(appName, appPreview, apiPreview);
     // Initialize file backend
-    const filebackendApiClient = await createFileBackendApiClient(`${apiPreview}`);
-
-    // Initial Git commit
-    const res = await filebackendApiClient.post("/checkpoint/save", {
-      name: "initial",
-      message: "Initial commit",
-    });
-
-    console.log("Initial commit response:", res);
-
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
       .update({
@@ -61,18 +51,30 @@ export const startExpo = task({
       throw new Error(`Failed updating sandbox with container info: ${updateError.message}`);
     }
 
-    // update the app with the current commit 
-    const { data: updatedApp, error: updateAppError } = await adminSupabase
-      .from("user_apps")
-      .update({
-        initial_commit: res.commit || res.current_commit,
-      })
-      .eq("id", appId);
+    const filebackendApiClient = await createFileBackendApiClient(`${apiPreview}`);
 
-    console.log("Updated app with initial commit:", updatedApp);
+    if (initial) {
+      // Initial Git commit
+      const res = await filebackendApiClient.post("/checkpoint/save", {
+        name: "initial",
+        message: "Initial commit",
+      });
 
-    if (updateAppError) {
-      throw new Error(`Failed updating app with initial commit: ${updateAppError.message}`);
+      console.log("Initial commit response:", res);
+
+      // update the app with the current commit 
+      const { data: updatedApp, error: updateAppError } = await adminSupabase
+        .from("user_apps")
+        .update({
+          initial_commit: res.commit || res.current_commit,
+        })
+        .eq("id", appId);
+
+      console.log("Updated app with initial commit:", updatedApp);
+
+      if (updateAppError) {
+        throw new Error(`Failed updating app with initial commit: ${updateAppError.message}`);
+      }
     }
   },
 });

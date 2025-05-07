@@ -99,11 +99,11 @@ export async function POST(request: Request) {
     }
 
     await startExpo.trigger({
-      userId: user.id,
       appId: insertedApp.id,
       appName,
       containerId,
       sandboxId: sandboxDbId,
+      initial: true,
     });
     timings.containerInitiation = performance.now() - containerStartTime;
 
