@@ -43,16 +43,7 @@ export const firstScheduledTask = schedules.task({
                     .limit(1)
                     .single();
 
-                // also get it from agent_history table
-                const { data: agentHistory, error: agentHistoryError } = await supabase
-                    .from("agent_history")
-                    .select("created_at")
-                    .eq("app_id", sandbox.app_id)
-                    .order("created_at", { ascending: false })
-                    .limit(1)
-                    .single();
-                // For apps with no messages, use the app creation time
-                // Otherwise use the latest message time
+
                 let mostRecentActivity = new Date(sandbox.sandbox_updated_at);
                 if (latestMessage) {
                     const lastMessageTime = new Date(latestMessage.created_at + "Z");
@@ -60,12 +51,7 @@ export const firstScheduledTask = schedules.task({
                         mostRecentActivity = lastMessageTime;
                     }
                 }
-                if (agentHistory) {
-                    const lastAgentMessageTime = new Date(agentHistory.created_at + "Z");
-                    if (lastAgentMessageTime > mostRecentActivity) {
-                        mostRecentActivity = lastAgentMessageTime;
-                    }
-                }
+                
 
                 console.log("RECENT TIME", new Date().getTime())
                 const diffMinutes = Math.floor(
@@ -74,7 +60,7 @@ export const firstScheduledTask = schedules.task({
 
                 console.log("Diff minutes:", diffMinutes);
 
-                if (diffMinutes > 10) {
+                if (diffMinutes > 5) {
                     stoppedApps.push(sandbox.id);
                     console.log("Pausing sandbox:", sandbox.id);
                     await pauseContainer.trigger(

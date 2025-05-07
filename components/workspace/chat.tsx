@@ -2,7 +2,6 @@
 
 import { useChat } from "@ai-sdk/react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, Image as ImageIcon, X } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
@@ -103,8 +102,11 @@ export function Chat({
       if (!sessionId || !appId || messagesApiCalled.current) {
         return;
       }
+
+
       // Check if there's a stored prompt in localStorage
       const storedPrompt = localStorage.getItem("makeX_prompt");
+      
       // If there's a stored prompt, don't load messages or set loading state
       if (storedPrompt) {
         return;
@@ -113,7 +115,6 @@ export function Chat({
       // Only set loading and fetch messages if no stored prompt
       messagesApiCalled.current = true;
       setIsLoading(true);
-
       try {
         const messages = await fetchChatMessages(
           sessionId,
@@ -177,6 +178,13 @@ export function Chat({
         onResponseComplete();
       }
       try {
+        await saveAIMessage(
+          sessionId,
+          appId || "",
+          apiUrl,
+          options,
+          message,
+        );
         // If this is the first AI response and title hasn't been updated yet
         if (
           messages.length === 0 &&
