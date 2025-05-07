@@ -1,38 +1,12 @@
 import { resumeContainer } from "@/trigger/resume-container";
 import { pauseContainer } from "@/trigger/pause-container"
 import { deleteContainer } from "@/trigger/delete-container";
-import { containerInitiate } from "@/trigger/container-initiate";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const result = await getSupabaseWithUser(req as NextRequest);
 
-    if (result instanceof NextResponse || 'error' in result ) return result;
-
-    const { user } = result;
-    const { appId, appName, targetState } = body;
-
-    // start new container 
-    await containerInitiate.trigger({
-      userId: user.id,
-      appId,
-      appName,
-    });
-    
-    return NextResponse.json(
-      { message: "Sandbox management started in background" },
-      { status: 202 }
-    );
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err?.message || "Unknown server error" },
-      { status: 500 }
-    );
-  }
 }
 
 export async function GET(req: Request) {
@@ -54,7 +28,7 @@ export async function GET(req: Request) {
 
     const { data, error } = await supabase
       .from('user_sandboxes')
-      .select('sandbox_id, sandbox_status, sandbox_updated_at')
+      .select('sandbox_id, sandbox_status, sandbox_updated_at, app_status')
       .eq('app_id', appId)
       .order('sandbox_updated_at', { ascending: false })
       .limit(1);

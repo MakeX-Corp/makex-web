@@ -18,6 +18,7 @@ export default function MobileMockup({
     typeof window !== "undefined" ? window.innerWidth : 1200
   );
 
+  console.log('appState', appState)
   useEffect(() => {
     // Track window size
     const handleResize = () => {

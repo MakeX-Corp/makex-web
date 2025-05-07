@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { generateAppName } from "@/utils/server/app-name-generator";
 import { deleteContainer } from "@/trigger/delete-container";
-import { tasks } from "@trigger.dev/sdk/v3";
 import { createClient } from "@/utils/supabase/server";
-import { redisUrlSetter } from "@/utils/server/redis-client";
 import { initiateDaytonaContainer } from "@/utils/server/daytona";
 import { startExpo } from "@/trigger/start-expo";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
@@ -105,6 +103,7 @@ export async function POST(request: Request) {
       appId: insertedApp.id,
       appName,
       containerId,
+      sandboxId: sandboxDbId,
     });
     timings.containerInitiation = performance.now() - containerStartTime;
 

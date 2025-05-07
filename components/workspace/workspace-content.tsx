@@ -69,8 +69,6 @@ export default function WorkspaceContent({
   const supabase = createClient();
   useEffect(() => {
     if (appId) {
-
-      resumeSandbox();
       // Initial fetch
       const fetchInitialState = async () => {
         const res = await fetch("/api/sandbox?appId=" + appId, {
@@ -82,6 +80,7 @@ export default function WorkspaceContent({
           console.error("Initial fetch error:", data.error);
         } else {
           setContainerState(data?.sandbox_status);
+          setAppState(data?.app_status);
           console.log(data);
           if (data?.sandbox_status === "paused") {
             await resumeSandbox();
