@@ -138,9 +138,12 @@ export default function DashboardPage() {
 
     try {
       setIsCreating(true);
+
       // Store the prompt in localStorage for persistence
       localStorage.setItem("makeX_home_prompt", prompt.trim());
 
+      // Redirect to dashboard
+      router.push("/dashboard");
     } catch (error) {
       console.error("Error creating app:", error);
       setIsCreating(false);
