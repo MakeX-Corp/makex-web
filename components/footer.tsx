@@ -26,16 +26,16 @@ export function Footer() {
   return (
     <footer className="py-8 border-t mt-auto">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <div className="text-sm text-muted-foreground">
             © 2025 MakeX
           </div>
-          <div className="flex gap-6 text-sm text-muted-foreground">
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-6 text-sm text-muted-foreground">
             <a
               href="https://discord.com/invite/3EsUgb53Zp"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-foreground flex items-center gap-2"
+              className="hover:text-foreground flex items-center gap-2 py-1"
             >
               <DiscordIcon />
               Discord
@@ -44,18 +44,18 @@ export function Footer() {
               href="https://twitter.com/makexapp"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-foreground flex items-center gap-2"
+              className="hover:text-foreground flex items-center gap-2 py-1"
             >
               <Twitter className="w-4 h-4" />
               Twitter
             </a>
-            <a href="/terms" className="hover:text-foreground">
+            <a href="/terms" className="hover:text-foreground py-1">
               Terms
             </a>
-            <a href="/privacy" className="hover:text-foreground">
+            <a href="/privacy" className="hover:text-foreground py-1">
               Privacy
             </a>
-            <a href="/refund" className="hover:text-foreground">
+            <a href="/refund" className="hover:text-foreground py-1">
               Refund Policy
             </a>
           </div>
@@ -63,4 +63,4 @@ export function Footer() {
       </div>
     </footer>
   );
-} 
+}  
