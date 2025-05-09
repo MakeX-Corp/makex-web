@@ -123,6 +123,11 @@ export function Chat({
       maxSteps: 30,
       onResponse: async (response) => {
         console.log("Chat response:", response);
+        //if 429, limit reached
+        if (response.status === 429) {
+          setIsAIResponding(false);
+          setLimitReached(true);
+        }
       },
       onFinish: async (message, options) => {
         console.log("Chat finished:", message, options);
@@ -178,6 +183,13 @@ export function Chat({
       });
     }
   }, [storedPrompt, append, setIsAIResponding]);
+  // Add cleanup function to set isAIResponding to false when component unmounts
+  useEffect(() => {
+    return () => {
+      // This runs on unmount
+      setIsAIResponding(false);
+    };
+  }, [setIsAIResponding]);
 
   // Fetch initial messages - only if no stored prompt exists
   useEffect(() => {
@@ -231,7 +243,7 @@ export function Chat({
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (containerState !== "active") {
-      alert("Please refresh the page and try again");
+      alert("Please refresh the page and try again, your app was paused");
       return;
     }
     // Don't proceed if there's nothing to send
