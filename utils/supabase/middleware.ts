@@ -40,14 +40,20 @@ export async function updateSession(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
   const hasBearerToken = authHeader && authHeader.startsWith('Bearer ');
 
+  const pagesWithoutAuth = [
+    '/login',
+    '/auth/callback',
+    '/signup',
+    '/support',
+    '/privacy',
+    '/refund',
+    '/about',
+    '/pricing',
+  ]
+
   if (
     !user && !hasBearerToken &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth/callback') &&
-    !request.nextUrl.pathname.startsWith('/signup') &&
-    !request.nextUrl.pathname.startsWith('/support') &&
-    !request.nextUrl.pathname.startsWith('/privacy') &&
-    !request.nextUrl.pathname.startsWith('/refund') &&
+    !pagesWithoutAuth.includes(request.nextUrl.pathname) &&
     !request.nextUrl.pathname.startsWith('/terms') &&
     request.nextUrl.pathname !== '/'
   ) {

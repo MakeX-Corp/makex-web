@@ -4,7 +4,9 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PostHogProvider } from "@/components/providers/PostHogProvider";
-import { Footer } from "./components/footer";
+import { Footer } from "../components/footer";
+import { Header } from "../components/header";
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -61,6 +63,7 @@ export default function RootLayout({
             enableSystem={false}
             disableTransitionOnChange
           >
+            <Header />
             <main className="flex-1">{children}</main>
             <Footer />
             <Analytics />

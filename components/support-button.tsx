@@ -15,7 +15,7 @@ export function DiscordSupportButton() {
   return (
     <div className="fixed bottom-8 right-8 z-50">
       <a
-        href="https://discord.gg/3EsUgb53Zp"
+        href="https://discord.com/invite/3EsUgb53Zp"
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2 px-4 py-2 bg-[#5865F2] text-white rounded-full hover:bg-[#4752C4] transition-colors shadow-lg"
