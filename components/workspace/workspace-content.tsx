@@ -357,23 +357,43 @@ export default function WorkspaceContent({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="cursor-pointer opacity-50"
                   disabled={true}
                 >
                   <Globe className="h-4 w-4 mr-2" />
                   Web (Coming Soon)
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => window.open('https://discord.gg/3EsUgb53Zp', '_blank')}
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open("https://discord.gg/3EsUgb53Zp", "_blank")
+                  }
                 >
-                  <img src={theme === 'dark' ? "/icons/apple-dark.svg" : "/icons/apple.svg"} alt="App Store" className="h-4 w-4 mr-2" />
+                  <img
+                    src={
+                      theme === "dark"
+                        ? "/icons/apple-dark.svg"
+                        : "/icons/apple.svg"
+                    }
+                    alt="App Store"
+                    className="h-4 w-4 mr-2"
+                  />
                   App Store
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => window.open('https://discord.gg/3EsUgb53Zp', '_blank')}
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open("https://discord.gg/3EsUgb53Zp", "_blank")
+                  }
                 >
-                  <img src={theme === 'dark' ? "/icons/play-store-dark.svg" : "/icons/play-store.svg"} alt="Play Store" className="h-4 w-4 mr-2" />
+                  <img
+                    src={
+                      theme === "dark"
+                        ? "/icons/play-store-dark.svg"
+                        : "/icons/play-store.svg"
+                    }
+                    alt="Play Store"
+                    className="h-4 w-4 mr-2"
+                  />
                   Play Store
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -427,25 +447,47 @@ export default function WorkspaceContent({
                   Deploy
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="cursor-pointer opacity-50"
-                    onClick={() => window.open('https://discord.gg/3EsUgb53Zp', '_blank')}
+                    onClick={() =>
+                      window.open("https://discord.gg/3EsUgb53Zp", "_blank")
+                    }
                   >
                     <Globe className="h-4 w-4 mr-2" />
                     Web
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="cursor-pointer opacity-50"
-                    onClick={() => window.open('https://discord.gg/3EsUgb53Zp', '_blank')}
+                    onClick={() =>
+                      window.open("https://discord.gg/3EsUgb53Zp", "_blank")
+                    }
                   >
-                    <img src={theme === 'dark' ? "/icons/apple-dark.svg" : "/icons/apple.svg"} alt="App Store" className="h-4 w-4 mr-2" />
+                    <img
+                      src={
+                        theme === "dark"
+                          ? "/icons/apple-dark.svg"
+                          : "/icons/apple.svg"
+                      }
+                      alt="App Store"
+                      className="h-4 w-4 mr-2"
+                    />
                     App Store
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="cursor-pointer opacity-50"
-                    onClick={() => window.open('https://discord.gg/3EsUgb53Zp', '_blank')}
+                    onClick={() =>
+                      window.open("https://discord.gg/3EsUgb53Zp", "_blank")
+                    }
                   >
-                    <img src={theme === 'dark' ? "/icons/play-store-dark.svg" : "/icons/play-store.svg"} alt="Play Store" className="h-4 w-4 mr-2" />
+                    <img
+                      src={
+                        theme === "dark"
+                          ? "/icons/play-store-dark.svg"
+                          : "/icons/play-store.svg"
+                      }
+                      alt="Play Store"
+                      className="h-4 w-4 mr-2"
+                    />
                     Play Store
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
@@ -501,25 +543,47 @@ export default function WorkspaceContent({
                     Deploy
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       className="cursor-pointer opacity-50"
-                      onClick={() => window.open('https://discord.gg/3EsUgb53Zp', '_blank')}
+                      onClick={() =>
+                        window.open("https://discord.gg/3EsUgb53Zp", "_blank")
+                      }
                     >
                       <Globe className="h-4 w-4 mr-2" />
                       Web
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       className="cursor-pointer opacity-50"
-                      onClick={() => window.open('https://discord.gg/3EsUgb53Zp', '_blank')}
+                      onClick={() =>
+                        window.open("https://discord.gg/3EsUgb53Zp", "_blank")
+                      }
                     >
-                      <img src={theme === 'dark' ? "/icons/apple-dark.svg" : "/icons/apple.svg"} alt="App Store" className="h-4 w-4 mr-2" />
+                      <img
+                        src={
+                          theme === "dark"
+                            ? "/icons/apple-dark.svg"
+                            : "/icons/apple.svg"
+                        }
+                        alt="App Store"
+                        className="h-4 w-4 mr-2"
+                      />
                       App Store
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       className="cursor-pointer opacity-50"
-                      onClick={() => window.open('https://discord.gg/3EsUgb53Zp', '_blank')}
+                      onClick={() =>
+                        window.open("https://discord.gg/3EsUgb53Zp", "_blank")
+                      }
                     >
-                      <img src={theme === 'dark' ? "/icons/play-store-dark.svg" : "/icons/play-store.svg"} alt="Play Store" className="h-4 w-4 mr-2" />
+                      <img
+                        src={
+                          theme === "dark"
+                            ? "/icons/play-store-dark.svg"
+                            : "/icons/play-store.svg"
+                        }
+                        alt="Play Store"
+                        className="h-4 w-4 mr-2"
+                      />
                       Play Store
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>
@@ -583,7 +647,7 @@ export default function WorkspaceContent({
                   {/* Left panel - Chat */}
 
                   <Chat
-                    sessionId={currentSessionId || ""}
+                    sessionId={currentSessionId || initialSessionId || ""}
                     onResponseComplete={handleResponseComplete}
                     onSessionError={() => {}}
                     containerState={containerState}
@@ -636,7 +700,7 @@ export default function WorkspaceContent({
                         }`}
                       >
                         <Chat
-                          sessionId={currentSessionId || ""}
+                          sessionId={currentSessionId || initialSessionId || ""}
                           onResponseComplete={handleResponseComplete}
                           onSessionError={() => {}}
                           containerState={containerState}

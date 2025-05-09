@@ -40,9 +40,15 @@ export function Chat({
     supabaseProject,
     sessionName,
     setSessionName,
+    justCreatedSessionId,
   } = useSession();
   const { subscription, isAIResponding, setIsAIResponding } = useApp();
   const router = useRouter();
+
+  const storedPrompt =
+    typeof window !== "undefined" ? localStorage.getItem("makeX_prompt") : null;
+
+  // State for initial messages - initialize as empty array
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
@@ -52,6 +58,10 @@ export function Chat({
   const [remainingMessages, setRemainingMessages] = useState<number | null>(
     null
   );
+
+  // Flag to track if we've processed the stored prompt
+  const processedPromptRef = useRef(false);
+
   // Refs for the input and form elements
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -96,30 +106,96 @@ export function Chat({
     }
   };
 
-  // Fetch initial messages
+  // Initialize useChat
+  const { messages, input, handleInputChange, handleSubmit, error, append } =
+    useChat({
+      id: sessionId,
+      api: `/api/chat/`,
+      initialMessages: storedPrompt ? [] : initialMessages,
+      body: {
+        apiUrl,
+        appId,
+        appName,
+        sessionId,
+        supabaseProject,
+        subscription,
+      },
+      maxSteps: 30,
+      onResponse: async (response) => {
+        console.log("Chat response:", response);
+      },
+      onFinish: async (message, options) => {
+        console.log("Chat finished:", message, options);
+        // Save the AI message
+        setIsAIResponding(false);
+        if (onResponseComplete) {
+          onResponseComplete();
+        }
+        try {
+          await saveAIMessage(sessionId, appId || "", apiUrl, options, message);
+          // If this is the first AI response and title hasn't been updated yet
+          if (
+            messages.length === 0 &&
+            message.role === "assistant" &&
+            sessionName === "New Chat"
+          ) {
+            const userMessage = messages[0]?.content || "";
+            // Get the AI response (the current message)
+            const aiResponse = message.content || "";
+            const newTitle = await updateSessionTitle(
+              userMessage,
+              aiResponse,
+              sessionId
+            );
+            if (newTitle) {
+              setSessionName(newTitle);
+            }
+          }
+          // Update message limit after successful message
+          const result = await checkMessageLimit(subscription);
+          if (result) {
+            const { remainingMessages, reachedLimit } = result;
+            setRemainingMessages(remainingMessages);
+            setLimitReached(reachedLimit);
+          }
+        } catch (error) {
+          console.error("Error saving AI message:", error);
+        }
+      },
+    });
+
+  useEffect(() => {
+    // Only do this once
+    if (storedPrompt && !processedPromptRef.current) {
+      processedPromptRef.current = true;
+      setIsAIResponding(true);
+
+      // Remove the prompt from storage
+      localStorage.removeItem("makeX_prompt");
+
+      // Send the prompt using append
+      append({
+        content: storedPrompt,
+        role: "user",
+      });
+    }
+  }, [storedPrompt, append, setIsAIResponding]);
+
+  // Fetch initial messages - only if no stored prompt exists
   useEffect(() => {
     const getMessages = async () => {
-      if (!sessionId || !appId || messagesApiCalled.current) {
+      if (!sessionId || !appId || messagesApiCalled.current || storedPrompt) {
+        return;
+      }
+      if (justCreatedSessionId) {
+        setInitialMessages([]);
         return;
       }
 
-
-      // Check if there's a stored prompt in localStorage
-      const storedPrompt = localStorage.getItem("makeX_prompt");
-      
-      // If there's a stored prompt, don't load messages or set loading state
-      if (storedPrompt) {
-        return;
-      }
-
-      // Only set loading and fetch messages if no stored prompt
       messagesApiCalled.current = true;
       setIsLoading(true);
       try {
-        const messages = await fetchChatMessages(
-          sessionId,
-          appId,
-        );
+        const messages = await fetchChatMessages(sessionId, appId);
         setInitialMessages(messages);
       } catch (error) {
         console.error("Error fetching messages:", error);
@@ -132,7 +208,7 @@ export function Chat({
     };
 
     getMessages();
-  }, [sessionId, appId]);
+  }, [sessionId, appId, onSessionError, storedPrompt]);
 
   useEffect(() => {
     let isMounted = true;
@@ -153,85 +229,6 @@ export function Chat({
       isMounted = false;
     };
   }, [subscription]);
-
-  const { messages, input, handleInputChange, handleSubmit, error, append } = useChat({
-    id: sessionId,
-    api: `/api/chat/`,
-    initialMessages: initialMessages,
-    body: {
-      apiUrl,
-      appId,
-      appName,
-      sessionId,
-      supabaseProject,
-      subscription,
-    },
-    maxSteps: 30,
-    onResponse: async (response) => {
-      console.log('Chat response:', response);
-    },
-    onFinish: async (message, options) => {
-      console.log('Chat finished:', message, options);
-      // Save the AI message
-      setIsAIResponding(false);
-      if (onResponseComplete) {
-        onResponseComplete();
-      }
-      try {
-        await saveAIMessage(
-          sessionId,
-          appId || "",
-          apiUrl,
-          options,
-          message,
-        );
-        // If this is the first AI response and title hasn't been updated yet
-        if (
-          messages.length === 0 &&
-          message.role === "assistant" &&
-          sessionName === "New Chat"
-        ) {
-          const userMessage = messages[0]?.content || "";
-          // Get the AI response (the current message)
-          const aiResponse = message.content || "";
-          const newTitle = await updateSessionTitle(
-            userMessage,
-            aiResponse,
-            sessionId,
-          );
-          if (newTitle) {
-            setSessionName(newTitle);
-          }
-        }
-        // Update message limit after successful message
-        const result = await checkMessageLimit(subscription);
-        if (result) {
-          const { remainingMessages, reachedLimit } = result;
-          setRemainingMessages(remainingMessages);
-          setLimitReached(reachedLimit);
-        }
-      } catch (error) {
-        console.error("Error saving AI message:", error);
-      }
-    },
-  });
-
-  useEffect(() => {
-    if (messages.length === 0) {
-      const storedPrompt = localStorage.getItem("makeX_prompt");
-      if (storedPrompt) {
-        setIsAIResponding(true);
-        // Remove the prompt from storage
-        localStorage.removeItem("makeX_prompt");
-        
-        // Send the prompt using append
-        append({
-          content: storedPrompt,
-          role: "user"
-        });
-      }
-    }
-  }, [messages]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -291,7 +288,7 @@ export function Chat({
       } else {
         // Regular text submission
         handleSubmit(e);
-      }      // Reset textarea height after submission
+      } // Reset textarea height after submission
       resetTextareaHeight();
     } catch (error) {
       console.error("Error processing message with images:", error);
