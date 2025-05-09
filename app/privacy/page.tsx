@@ -1,43 +1,152 @@
-export default function PrivacyPage() {
+"use client";
+
+import React from "react";
+import { ShieldCheck, UserCheck, Lock, FileText } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+
+const PrivacyPage = () => {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-8">Privacy Policy</h1>
-      
-      <div className="prose prose-zinc">
-        <p>This Privacy Policy ("Policy") describes in detail how MakeX ("we," "our," "us," or "the Company") collects, uses, maintains, protects, and discloses your personal information when you use our services, websites, and applications (collectively referred to as the "Services"). We are committed to protecting your privacy and handling your data in an open and transparent manner. By accessing or using our Services, you expressly acknowledge that you have read, understood, and agree to be bound by all terms outlined in this comprehensive policy.</p>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-background to-muted/20 p-4">
+      <Card className="w-full max-w-3xl mx-4 shadow-xl border-t-4 border-t-primary">
+        <CardContent className="p-0">
+          <div className="bg-muted p-6 flex justify-center">
+            <div className="bg-primary text-primary-foreground p-4 rounded-full">
+              <ShieldCheck size={32} />
+            </div>
+          </div>
 
-        <h2>1. Information We Collect</h2>
-        <ul>
-          <li>Account and Identity Information: This includes, but is not limited to, your email address, full name, profile pictures, authentication credentials, account preferences, and any other personal identifiers you voluntarily provide during account creation, profile updates, or through your interactions with our customer support team</li>
-          <li>Service Usage and AI Interaction Data: We collect detailed information about your interactions with our AI system, including but not limited to: your queries and prompts, response preferences, interaction patterns, feature usage statistics, session duration, frequency of use, AI model preferences, and any feedback or ratings you provide regarding generated content</li>
-          <li>Generated Content and Configuration Data: This encompasses all content, applications, and configurations created through our platform, including application source code, design preferences, customization parameters, deployment configurations, version history, and any associated metadata that helps us maintain and improve your experience</li>
-          <li>Technical and Device Information: We automatically collect comprehensive technical data including, but not limited to, your Internet Protocol (IP) address, browser type and version, operating system and platform, device identifiers, mobile network information, access timestamps, time zone settings, browser plug-in types and versions, and other technology identifiers on the devices you use to access our Services</li>
-        </ul>
+          <div className="p-8 space-y-8">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold mb-3">Privacy Policy</h1>
+              <p className="text-muted-foreground leading-relaxed">
+                This Privacy Policy explains what data we collect, how we use
+                it, and your rights. We are committed to transparency and data
+                protection.
+              </p>
+            </div>
 
-        <h2>2. How We Use Your Information</h2>
-        <ul>
-          <li>Service Provision and Enhancement: We utilize your information to provide, maintain, and continuously enhance our AI app generation service. This includes: personalizing your user experience, optimizing AI model responses, improving code generation accuracy, customizing interface layouts, managing your account preferences, processing your requests, and delivering customer support. We also use this data to develop new features and services that better meet our users' evolving needs</li>
-          <li>Communications and Engagement: We may use your contact information to send you important communications regarding your account, including but not limited to: service updates, technical notices, security alerts, support messages, maintenance notifications, feature announcements, newsletter subscriptions (where opted-in), billing information, and administrative messages. We may also send you educational content about maximizing the value of our Services</li>
-          <li>Performance Analysis and Service Optimization: Your information helps us conduct detailed analysis of our service performance, including: monitoring system stability, analyzing usage patterns, tracking feature adoption, measuring service reliability, optimizing resource allocation, identifying potential improvements, conducting A/B testing, and maintaining quality standards. This analysis is crucial for ensuring optimal service delivery and user satisfaction</li>
-          <li>Legal Compliance and Rights Protection: We process your information to comply with applicable legal obligations, respond to legal requests, enforce our terms of service, detect and prevent fraud, maintain security, and protect our rights and the rights of our users. This includes maintaining appropriate records for internal administrative purposes and defending our legal interests</li>
-        </ul>
+            <div className="space-y-6 text-sm text-muted-foreground">
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-primary" />
+                  1. Information We Collect
+                </h2>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li>
+                    <strong>Account and Identity Information:</strong> Your
+                    email address, full name, profile pictures, authentication
+                    credentials, account preferences, and other identifiers you
+                    voluntarily provide during sign-up or support.
+                  </li>
+                  <li>
+                    <strong>Service Usage and AI Interaction Data:</strong> This
+                    includes your queries and prompts, interaction patterns,
+                    usage statistics, session duration, feature engagement, and
+                    feedback on AI responses.
+                  </li>
+                  <li>
+                    <strong>Generated Content and Configuration Data:</strong>{" "}
+                    Content and applications you create, including source code,
+                    design settings, deployment configurations, and metadata for
+                    personalization and service improvement.
+                  </li>
+                  <li>
+                    <strong>Technical and Device Information:</strong> IP
+                    address, browser version, operating system, device
+                    identifiers, access logs, time zones, and general device
+                    diagnostics.
+                  </li>
+                </ul>
+              </div>
 
-        <h2>3. Data Security</h2>
-        <p>We implement comprehensive, industry-standard security measures and follow stringent best practices to protect your personal information throughout its lifecycle. Our multi-layered security approach includes: end-to-end encryption for data transmission, secure socket layer (SSL) technology, advanced firewalls, intrusion detection systems, regular security audits, vulnerability assessments, penetration testing, secure data storage with encryption at rest, access control mechanisms, authentication protocols, and regular security training for our personnel. We maintain documented security policies and procedures that are regularly reviewed and updated to address emerging threats and technological advances. Despite these extensive measures, no method of electronic storage or transmission is 100% secure, and we cannot guarantee absolute security.</p>
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Lock className="w-5 h-5 text-primary" />
+                  2. How We Use Your Information
+                </h2>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li>
+                    <strong>Service Delivery:</strong> To provide and
+                    personalize your experience, optimize AI responses, and
+                    manage your account.
+                  </li>
+                  <li>
+                    <strong>Analytics & Improvement:</strong> To monitor usage
+                    patterns and enhance functionality and performance.
+                  </li>
+                  <li>
+                    <strong>Communication:</strong> For essential updates,
+                    customer support, and service-related notifications.
+                  </li>
+                  <li>
+                    <strong>Legal & Security:</strong> To comply with laws,
+                    prevent abuse, and safeguard rights and data.
+                  </li>
+                </ul>
+              </div>
 
-        <h2>4. Contact Us</h2>
-        <p>For any privacy-related inquiries, concerns, requests for information access, or data-related rights exercise, please don't hesitate to contact our dedicated Privacy Team through any of the following channels:<br /><br />
-        Email: contact@makex.app<br /><br />
-        Official Mailing Address:<br />
-        Privacy Department<br />
-        Bit Wise LLC<br />
-        131 Continental Dr, Suite 305<br />
-        Newark, Delaware 19713<br />
-        United States<br /><br />
-        We strive to respond to all privacy-related inquiries within 5 business days of receipt.</p>
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-primary" />
+                  3. Your Privacy & Rights
+                </h2>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li>
+                    <strong>No Tracking:</strong> We do not track you across
+                    apps or websites.
+                  </li>
+                  <li>
+                    <strong>No Third-Party Sharing:</strong> We do not sell or
+                    share your data with third parties.
+                  </li>
+                  <li>
+                    <strong>Data Linked to You:</strong> Only your name and
+                    email are linked to your identity, solely for account access
+                    and functionality.
+                  </li>
+                  <li>
+                    <strong>Data Deletion:</strong> You may request deletion or
+                    access to your data at any time.
+                  </li>
+                </ul>
+              </div>
 
-        <p className="text-sm text-gray-500 mt-8">Last updated: {new Date().toLocaleDateString()}</p>
-      </div>
+              <div className="space-y-2 pt-2 border-t border-muted-foreground/20">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  4. Contact Us
+                </h2>
+                <p>
+                  If you have questions about your privacy, want to access or
+                  delete your data, or need support regarding this policy, you
+                  can reach us at:
+                </p>
+                <p>
+                  <strong>Email:</strong> contact@makex.app
+                  <br />
+                  <strong>Mailing Address:</strong>
+                  <br />
+                  Privacy Department
+                  <br />
+                  Bit Wise LLC
+                  <br />
+                  131 Continental Dr, Suite 305
+                  <br />
+                  Newark, Delaware 19713
+                  <br />
+                  United States
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center mt-4">
+              Last updated: {new Date().toLocaleDateString()}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
-  )
-} 
+  );
+};
+
+export default PrivacyPage;
