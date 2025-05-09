@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 
 interface ChatProps {
   sessionId: string;
-  onResponseComplete?: () => void;
+  onResponseComplete: () => void;
   onSessionError?: (error: string) => void;
   containerState: string;
 }
@@ -128,9 +128,7 @@ export function Chat({
         console.log("Chat finished:", message, options);
         // Save the AI message
         setIsAIResponding(false);
-        if (onResponseComplete) {
-          onResponseComplete();
-        }
+        onResponseComplete();
         try {
           await saveAIMessage(sessionId, appId || "", apiUrl, options, message);
           // If this is the first AI response and title hasn't been updated yet
@@ -336,7 +334,7 @@ export function Chat({
     } catch (error) {
       console.error("Error restoring checkpoint:", error);
     } finally {
-      onResponseComplete?.();
+      onResponseComplete();
       setRestoringMessageId(null);
     }
   };
