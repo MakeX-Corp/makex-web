@@ -39,6 +39,7 @@ interface SessionContextType {
   currentSessionId: string | null;
   loadingCurrentSession: boolean;
   currentSessionError: string | null;
+  justCreatedSessionId: string | null;
 
   // Session name
   sessionName: string;
@@ -88,6 +89,9 @@ export function SessionProvider({
   const [currentSessionError, setCurrentSessionError] = useState<string | null>(
     null
   );
+  const [justCreatedSessionId, setJustCreatedSessionId] = useState<
+    string | null
+  >(null);
 
   // Session name state
   const [sessionName, setSessionName] = useState<string>("");
@@ -196,6 +200,8 @@ export function SessionProvider({
       setLoadingCurrentSession(true);
       setCurrentSessionError(null);
 
+      setJustCreatedSessionId(null);
+
       // Update the URL without causing a page reload
       if (typeof window !== "undefined") {
         const url = new URL(window.location.href);
@@ -233,6 +239,8 @@ export function SessionProvider({
       const newSession = await createNewSession(appId);
 
       if (newSession) {
+        setJustCreatedSessionId(newSession.id);
+
         // Update sessions list
         setSessions((prev) => [newSession, ...prev]);
 
@@ -359,6 +367,7 @@ export function SessionProvider({
     currentSessionId,
     loadingCurrentSession,
     currentSessionError,
+    justCreatedSessionId,
     sessionName,
     setSessionName,
     loadSessions,
