@@ -37,6 +37,10 @@ export const startExpo = task({
     const appPreviewResponse = await fetch(appPreview);
     console.log("App preview response:", appPreviewResponse);
     await redisUrlSetter(appName, appPreview, apiPreview);
+
+    // sleep for 6 seconds
+    await new Promise(resolve => setTimeout(resolve, 6000));
+
     // Initialize file backend
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
@@ -51,10 +55,11 @@ export const startExpo = task({
       throw new Error(`Failed updating sandbox with container info: ${updateError.message}`);
     }
 
-    const filebackendApiClient = await createFileBackendApiClient(`${apiPreview}`);
 
     if (initial) {
       // Initial Git commit
+      const filebackendApiClient = await createFileBackendApiClient(`${apiPreview}`);
+
       const res = await filebackendApiClient.post("/checkpoint/save", {
         name: "initial",
         message: "Initial commit",
