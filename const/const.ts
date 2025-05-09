@@ -4,3 +4,14 @@ export const DEFAULT_LIMITS = {
   pro: 500, // 500 messages per month
 };
     
+
+export const FOOTER_AND_HEADER_PATHS = [
+  "/",
+  "/about",
+  "/pricing",
+  "/login",
+  "/signup",
+  "/refund",
+  "/privacy",
+  "/terms",
+];

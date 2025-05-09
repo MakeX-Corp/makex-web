@@ -160,18 +160,10 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      {/* Add login button in top right */}
-      <div className="absolute top-4 right-4">
-        <Button onClick={() => router.push("/dashboard")} variant="outline">
-          <LogIn className="mr-2 h-4 w-4" />
-          Login
-        </Button>
-      </div>
-
+    <div className="flex flex-col items-center justify-center h-full p-4">
       <div className="w-full max-w-2xl mx-auto">
         {/* Header with logo */}
-        <div className="mb-10 text-center">
+        <div className="mb-6 text-center">
           <div className="mb-2">
             <Image
               src="/logo.png"
@@ -181,13 +173,13 @@ export default function DashboardPage() {
               className="mx-auto"
             />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight mb-3">
-            What do you want to build?
+          <h1 className="text-4xl font-bold tracking-tight mb-2">
+            Build any mobile app
           </h1>
         </div>
 
         {/* Moving suggestion pills in three rows */}
-        <div className="mb-8">
+        <div className="mb-6">
           {/* Row 1 - scrolling left */}
           <div className="overflow-hidden mb-2">
             <div
