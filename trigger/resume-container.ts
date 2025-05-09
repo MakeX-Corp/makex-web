@@ -34,31 +34,35 @@ export const resumeContainer = task({
         .update({ sandbox_status: "resuming" })
         .eq("id", sandboxDbId);
 
+        
+
       switch (activeSandbox[0]?.sandbox_provider) {
         case "daytona":
           const daytonaContainer = await initiateResumeDaytonaContainer(sandboxId);
+          await startExpo.trigger(
+            {
+              appId: appId,
+              appName: appName,
+              containerId: sandboxId,
+              sandboxId: sandboxDbId,
+              initial: false,
+            }
+          );
           break;
         case "e2b":
           const { appHost, apiHost } = await resumeE2BContainer(sandboxId);
-          await redisUrlSetter(appName, `https://${appHost}`, `https://${apiHost}`);
+          await redisUrlSetter(appName, `${appHost}`, `${apiHost}`);
           break;
       }
 
       // sleep for 5 seconds
       await adminSupabase
         .from("user_sandboxes")
-        .update({ sandbox_status: "active" })
+        .update({ 
+          sandbox_status: "active",
+          ...(activeSandbox[0]?.sandbox_provider === "e2b" ? { app_status: "active" } : {})
+        })
         .eq("id", sandboxDbId);
-
-      await startExpo.trigger(
-        {
-          appId: appId,
-          appName: appName,
-          containerId: sandboxId,
-          sandboxId: sandboxDbId,
-          initial: false,
-        }
-      );
     };
 
 

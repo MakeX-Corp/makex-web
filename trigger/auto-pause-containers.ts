@@ -60,7 +60,7 @@ export const firstScheduledTask = schedules.task({
 
                 console.log("Diff minutes:", diffMinutes);
 
-                if (diffMinutes > 5) {
+                if (diffMinutes > 4) {
                     stoppedApps.push(sandbox.id);
                     console.log("Pausing sandbox:", sandbox.id);
                     await pauseContainer.trigger(

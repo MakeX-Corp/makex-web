@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { generateAppName } from "@/utils/server/app-name-generator";
 import { deleteContainer } from "@/trigger/delete-container";
-import { createClient } from "@/utils/supabase/server";
-import { initiateDaytonaContainer } from "@/utils/server/daytona";
-import { startExpo } from "@/trigger/start-expo";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
+import { createE2BContainer } from "@/utils/server/e2b";
+import { redisUrlSetter } from "@/utils/server/redis-client";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
@@ -46,7 +45,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const containerStartTime = performance.now();
+
     const adminSupabase = await getSupabaseAdmin();
 
     const { data: newSandbox, error: newSandboxError } = await adminSupabase
@@ -57,7 +56,7 @@ export async function POST(request: Request) {
         sandbox_status: "starting",
         sandbox_created_at: new Date().toISOString(),
         sandbox_updated_at: new Date().toISOString(),
-        sandbox_provider: "daytona",
+        sandbox_provider: "e2b",
         app_status: "starting",
       })
       .select()
@@ -72,40 +71,45 @@ export async function POST(request: Request) {
       throw new Error("Failed to create initial sandbox record (missing ID)");
     }
 
-    const { containerId, apiUrl } = await initiateDaytonaContainer();
+    const containerStartTime = performance.now();
 
-    console.log('daytona containerId', containerId)
-    console.log('daytona apiUrl', apiUrl)
+    const { appHost, apiHost , containerId } = await createE2BContainer({
+      userId: user.id,
+      appId: insertedApp.id,
+      appName: appName,
+    });
+
+    console.log('appHost', appHost)
+
+    timings.containerInitiation = performance.now() - containerStartTime;
+
+
+    console.log('e2b containerId', containerId)
+    console.log('e2b apiUrl', apiHost)
 
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
       .update({
         sandbox_status: "active",
+        app_status: "active",
         sandbox_id: containerId,
-        api_url: apiUrl,
+        api_url: apiHost,
       })
       .eq("id", sandboxDbId);
 
+    await redisUrlSetter(appName, appHost, apiHost);
     
     // update the app_url and api_url in the user_apps table
     const { error: updateAppError } = await supabase
       .from("user_apps")
       .update({
-        api_url: apiUrl,
+        api_url: apiHost,
       })
       .eq("id", insertedApp.id);
     if (updateError) {
       throw new Error(`Failed updating sandbox with container info: ${updateError.message}`);
     }
 
-    await startExpo.trigger({
-      appId: insertedApp.id,
-      appName,
-      containerId,
-      sandboxId: sandboxDbId,
-      initial: true,
-    });
-    timings.containerInitiation = performance.now() - containerStartTime;
 
     // Create the session in the same transaction
     const sessionStartTime = performance.now();
