@@ -38,9 +38,6 @@ export function Header() {
                     {/* Desktop navigation */}
                     <div className="hidden md:flex items-center space-x-4">
                         <Button variant="ghost" asChild>
-                            <Link href="/about">About</Link>
-                        </Button>
-                        <Button variant="ghost" asChild>
                             <Link href="/pricing">Pricing</Link>
                         </Button>
                         <Button variant="outline" asChild>
@@ -71,9 +68,6 @@ export function Header() {
                 {/* Mobile menu */}
                 {mobileMenuOpen && (
                     <div className="md:hidden py-2 space-y-2 pb-4">
-                        <Button variant="ghost" className="w-full justify-start" asChild>
-                            <Link href="/about">About</Link>
-                        </Button>
                         <Button variant="ghost" className="w-full justify-start" asChild>
                             <Link href="/pricing">Pricing</Link>
                         </Button>
