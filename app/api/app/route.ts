@@ -5,6 +5,7 @@ import { deleteContainer } from "@/trigger/delete-container";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
+import { startExpo } from "@/trigger/start-expo";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
@@ -91,7 +92,6 @@ export async function POST(request: Request) {
       .from("user_sandboxes")
       .update({
         sandbox_status: "active",
-        app_status: "active",
         sandbox_id: containerId,
         api_url: apiHost,
       })
@@ -136,6 +136,14 @@ export async function POST(request: Request) {
     timings.totalTime = performance.now() - startTime;
 
     console.log("Timings:", timings);
+    
+    await startExpo.trigger({
+      appId: insertedApp.id,
+      appName: appName,
+      sandboxId: sandboxDbId,
+      containerId: containerId,
+      initial: true,
+    });
 
     // Return the app data along with session ID, redirect URL, and timings
     return NextResponse.json({
@@ -164,7 +172,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const appId = searchParams.get("id");
 
-    console.log('user', user)
     console.log('appId', appId)
     
     // If an appId is provided, get just that specific app

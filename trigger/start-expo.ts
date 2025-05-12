@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { startExpoInContainer } from "@/utils/server/daytona";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { redisUrlSetter } from "@/utils/server/redis-client";
-import { AArrowDown } from "lucide-react";
+import { startExpoInContainer as startExpoInContainerE2B } from "@/utils/server/e2b";
 
 export const startExpo = task({
   id: "start-expo",
@@ -28,15 +28,15 @@ export const startExpo = task({
     }
 
 
-    const { apiPreview, appPreview } = await startExpoInContainer(containerId);
+    const { appUrl, apiUrl } = await startExpoInContainerE2B(containerId);
 
     // sleep for 6 seconds
     await new Promise(resolve => setTimeout(resolve, 6000));
 
     // do a GET request to appPreview to check if it's ready
-    const appPreviewResponse = await fetch(appPreview);
+    const appPreviewResponse = await fetch(appUrl);
     console.log("App preview response:", appPreviewResponse);
-    await redisUrlSetter(appName, appPreview, apiPreview);
+    await redisUrlSetter(appName, appUrl, apiUrl);
 
     // sleep for 6 seconds
     await new Promise(resolve => setTimeout(resolve, 6000));
@@ -45,8 +45,8 @@ export const startExpo = task({
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
       .update({
-        api_url: apiPreview,
-        app_url: appPreview,
+        api_url: apiUrl,
+        app_url: appUrl,
         app_status: "active",
       })
       .eq("id", sandboxId);
@@ -58,7 +58,7 @@ export const startExpo = task({
 
     if (initial) {
       // Initial Git commit
-      const filebackendApiClient = await createFileBackendApiClient(`${apiPreview}`);
+      const filebackendApiClient = await createFileBackendApiClient(`${apiUrl}`);
 
       const res = await filebackendApiClient.post("/checkpoint/save", {
         name: "initial",
