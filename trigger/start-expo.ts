@@ -31,7 +31,7 @@ export const startExpo = task({
     const { appUrl, apiUrl } = await startExpoInContainerE2B(containerId);
 
     // sleep for 6 seconds
-    await new Promise(resolve => setTimeout(resolve, 6000));
+    await new Promise(resolve => setTimeout(resolve, 12000));
 
     // do a GET request to appPreview to check if it's ready
     const appPreviewResponse = await fetch(appUrl);
