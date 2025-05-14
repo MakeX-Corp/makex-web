@@ -140,7 +140,7 @@ export function Chat({
           if (
             messages.length === 0 &&
             message.role === "assistant" &&
-            sessionName === "New Chat"
+            (sessionName === "New Chat" || !sessionName)
           ) {
             const userMessage = messages[0]?.content || "";
             // Get the AI response (the current message)
