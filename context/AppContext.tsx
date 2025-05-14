@@ -8,12 +8,10 @@ import {
   useEffect,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  getPlanName,
-} from "@/utils/client/auth";
+import { getPlanName } from "@/utils/client/auth";
 import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
-
+import posthog from "posthog-js";
 // Define app data interface based on the API response
 export interface AppData {
   id: string;
@@ -114,7 +112,6 @@ const getAppIdFromPath = (pathname: string): string | null => {
 export function AppProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  
 
   // Sidebar state
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -136,8 +133,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Determine current app ID from path using the helper function
   const currentAppId = getAppIdFromPath(pathname);
 
-
-  // const email 
+  // const email
   const [user, setUser] = useState<User | null>(null);
 
   // Toggle function for sidebar
@@ -147,7 +143,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Create app function
   const createApp = async (prompt: string): Promise<string> => {
-
     try {
       const response = await fetch("/api/app", {
         method: "POST",
@@ -175,7 +170,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch(`/api/app?id=${appId}`, {
         method: "DELETE",
-
       });
       if (!response.ok) {
         throw new Error("Failed to delete app");
@@ -191,8 +185,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const fetchApps = async () => {
     try {
       // Fetch user apps
-      const appsResponse = await fetch("/api/app", {
-      });
+      const appsResponse = await fetch("/api/app", {});
 
       if (!appsResponse.ok) {
         const error = await appsResponse.json();
@@ -209,7 +202,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Function to fetch subscription data
   const fetchSubscription = async () => {
     try {
-
       // Fetch subscription data
       const subscriptionResponse = await fetch("/api/subscription");
 
@@ -236,10 +228,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         setIsLoading(true);
 
-        const supabase = await createClient()
-        const { data } = await supabase.auth.getUser()
-        setUser(data.user || null)
-
+        const supabase = await createClient();
+        const { data } = await supabase.auth.getUser();
+        setUser(data.user || null);
+        posthog.identify(data.user?.email || "", {
+          email: data.user?.email || "",
+          supabase_id: data.user?.id,
+        });
         // Only fetch apps and subscription data on initial load
         // DO NOT fetch sessions here - let the workspace component handle that
         await Promise.all([fetchApps(), fetchSubscription()]);
