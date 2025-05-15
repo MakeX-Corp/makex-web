@@ -122,12 +122,12 @@ export function Preview({
             </Badge>
 
             {/* Screenshot button using inline approach rather than a separate component */}
-            {/* {viewMode === "mobile" && containerState === "active" && (
+            {viewMode === "mobile" && containerState === "active" && (
               <ScreenshotButton
                 onCapture={handleCaptureScreenshot}
                 isCapturing={isCapturingScreenshot}
               />
-            )} */}
+            )}
 
             <Button
               size="icon"

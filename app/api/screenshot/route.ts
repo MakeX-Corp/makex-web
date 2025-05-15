@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import puppeteer from "puppeteer";
+import crypto from 'crypto';
+
+// Capture.page API credentials
+const API_KEY = process.env.CAPTURE_API_KEY;
+const API_SECRET = process.env.CAPTURE_API_SECRET;
+
+console.log('API_KEY:', API_KEY);
+console.log('API_SECRET:', API_SECRET);
+
+// Function to generate request hash
+function generateRequestHash(url: string): string {
+  const encodedUrl = encodeURIComponent(url);
+  const data = API_SECRET + 'url=' + encodedUrl;
+  return crypto.createHash('md5').update(data).digest('hex');
+}
 
 // POST handler for taking screenshots
 export async function POST(request: NextRequest) {
@@ -24,47 +38,68 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Launch a headless browser
-    const browser = await puppeteer.launch({
-      //headless: "new", // Use new headless mode
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    // Generate request hash
+    const hash = generateRequestHash(url);
+    const encodedUrl = encodeURIComponent(url);
+
+    // Use Capture.page API to get the screenshot
+    const captureUrl = `https://cdn.capture.page/${API_KEY}/${hash}/image?url=${encodedUrl}`;
+    
+    console.log('Attempting to capture screenshot from:', url);
+    console.log('Using Capture.page URL:', captureUrl);
+    console.log('Generated hash:', hash);
+    console.log('Hash input:', API_SECRET + 'url=' + encodedUrl);
+
+    // Fetch the image from Capture.page with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
     try {
-      // Open a new page
-      const page = await browser.newPage();
-
-      // Set viewport to match mobile mockup dimensions
-      await page.setViewport({
-        width: 300,
-        height: 580,
-        deviceScaleFactor: 2, // For higher quality screenshots
+      const response = await fetch(captureUrl, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'image/png'
+        }
       });
 
-      // Navigate to the URL
-      await page.goto(url, {
-        waitUntil: "networkidle0", // Wait until network is idle
-        timeout: 10000, // Timeout after 10 seconds
-      });
+      clearTimeout(timeoutId);
 
-      // Take the screenshot
-      const screenshot = await page.screenshot({
-        type: "png",
-        encoding: "base64",
-      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Capture.page API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+          hash: hash,
+          hashInput: API_SECRET + 'url=' + encodedUrl
+        });
+        throw new Error(`Failed to capture screenshot: ${response.status} ${response.statusText}`);
+      }
+
+      // Convert the image to base64
+      const arrayBuffer = await response.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString('base64');
+
+      console.log('Successfully captured screenshot');
 
       // Return the screenshot as a data URL
       return NextResponse.json({
-        dataUrl: `data:image/png;base64,${screenshot}`,
+        dataUrl: `data:image/png;base64,${base64}`,
       });
-    } finally {
-      // Make sure browser is closed even if there's an error
-      await browser.close();
+    } catch (fetchError: unknown) {
+      clearTimeout(timeoutId);
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        throw new Error('Screenshot capture timed out after 30 seconds');
+      }
+      throw fetchError;
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Screenshot error:", error);
     return NextResponse.json(
-      { error: "Failed to capture screenshot" },
+      { 
+        error: error instanceof Error ? error.message : "Failed to capture screenshot",
+        details: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }

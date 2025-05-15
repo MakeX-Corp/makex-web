@@ -60,7 +60,7 @@ export default function MobileMockup({
   };
 
   return (
-    <div style={containerStyle}>
+    <div className="mobile-mockup" style={containerStyle}>
       <div style={phoneStyle}>
         {/* Side buttons */}
         <div className="absolute top-[90px] left-0 w-[4px] h-[30px] bg-black rounded-l-md shadow-lg"></div>

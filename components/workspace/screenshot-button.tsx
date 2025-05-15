@@ -35,7 +35,7 @@ export function ScreenshotButton({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Take a screenshot of your app</p>
+          <p>Capture a screenshot using Capture.page</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
