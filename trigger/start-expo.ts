@@ -30,12 +30,15 @@ export const startExpo = task({
 
     const { appUrl, apiUrl } = await startExpoInContainerE2B(containerId);
 
+    await new Promise(resolve => setTimeout(resolve, 6000));
+
     // do a GET request to appPreview to check if it's ready
     const appPreviewResponse = await fetch(appUrl);
     console.log("App preview response:", appPreviewResponse);
     await redisUrlSetter(appName, appUrl, apiUrl);
 
-    await new Promise(resolve => setTimeout(resolve, 6000));
+
+    // do the curl to app
 
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
@@ -57,9 +60,20 @@ export const startExpo = task({
     })
     .eq("id", sandboxId);
 
-    await new Promise(resolve => setTimeout(resolve, 12000));
+    await new Promise(resolve => setTimeout(resolve, 6000));
 
     const { error: updateError3 } = await adminSupabase
+    .from("user_sandboxes")
+    .update({
+      api_url: apiUrl,
+      app_url: appUrl,
+      app_status: "bundling",
+    })
+    .eq("id", sandboxId);
+
+    await new Promise(resolve => setTimeout(resolve, 6000));
+
+    const { error: updateError4 } = await adminSupabase
     .from("user_sandboxes")
     .update({
       api_url: apiUrl,
