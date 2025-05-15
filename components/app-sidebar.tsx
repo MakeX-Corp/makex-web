@@ -17,6 +17,7 @@ import {
   Edit,
   Check,
   X,
+  MessageSquare,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FeedbackFish } from '@feedback-fish/react';
 
 // Theme toggle component
 function ThemeToggle() {
@@ -425,6 +427,24 @@ export function AppSidebar() {
           )}
         </div>
 
+        {/* Feedback button directly below Dark Mode */}
+        <div className={expanded ? "px-3 pb-2" : "flex justify-center pb-2"}>
+          <FeedbackFish projectId="3012bf1e2d0eab">
+            <button
+              type="button"
+              className={cn(
+                "flex items-center h-10 px-3 w-full rounded-md text-sm transition-colors font-medium",
+                "text-foreground hover:bg-muted",
+                !expanded && "justify-center"
+              )}
+              style={{ textAlign: expanded ? 'left' : 'center' }}
+            >
+              <MessageSquare className="w-5 h-5 text-foreground" />
+              {expanded && <span className="ml-3">Send Feedback</span>}
+            </button>
+          </FeedbackFish>
+        </div>
+
         {/* Navigation - moved to bottom */}
         <div className="py-4 mt-2 border-t border-muted/40">
           <div className={expanded ? "px-3 pb-2" : "px-0 pb-2"}>
@@ -438,39 +458,45 @@ export function AppSidebar() {
             </h2>
           </div>
           <nav className="space-y-1 px-2">
-            {navItems.map((item) =>
-              item.external ? (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "flex items-center h-10 px-3 rounded-md text-sm transition-colors font-medium",
-                    "text-muted-foreground hover:bg-muted hover:text-foreground",
-                    !expanded && "justify-center"
-                  )}
-                >
-                  {renderIcon(item.icon)}
-                  {expanded && <span className="ml-3">{item.label}</span>}
-                </a>
-              ) : (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center h-10 px-3 rounded-md text-sm transition-colors font-medium",
-                    pathname === item.href
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                    !expanded && "justify-center"
-                  )}
-                >
-                  <item.icon className="w-5 h-5" />
-                  {expanded && <span className="ml-3">{item.label}</span>}
-                </Link>
-              )
-            )}
+            {navItems.map((item, idx) => {
+              if (item.external) {
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(
+                      "flex items-center h-10 px-3 rounded-md text-sm transition-colors font-medium",
+                      "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      !expanded && "justify-center"
+                    )}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    {expanded && <span className="ml-3">{item.label}</span>}
+                  </a>
+                );
+              }
+              if (item.href) {
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center h-10 px-3 rounded-md text-sm transition-colors font-medium",
+                      pathname === item.href
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      !expanded && "justify-center"
+                    )}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    {expanded && <span className="ml-3">{item.label}</span>}
+                  </Link>
+                );
+              }
+              return null;
+            })}
           </nav>
         </div>
       </div>

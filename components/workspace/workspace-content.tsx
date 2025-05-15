@@ -34,7 +34,7 @@ import { SessionSelector } from "@/components/workspace/session-selector";
 import { SessionsError } from "@/components/workspace/sessions-error";
 import { createClient } from "@/utils/supabase/client";
 import { dataURLToBlob } from "@/lib/screenshot-service";
-import { DiscordSupportButton } from "@/components/support-button";
+
 
 interface WorkspaceContentProps {
   initialSessionId: string | null;
@@ -729,7 +729,6 @@ export default function WorkspaceContent({
           )}
         </div>
       </main>
-      <DiscordSupportButton />
     </div>
   );
 }

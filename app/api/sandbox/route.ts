@@ -92,7 +92,7 @@ export async function PATCH(req: Request) {
 
     const { user, supabase } = result;
     
-    const { appId, appName, targetState } = await req.json();
+    const { appId, targetState } = await req.json();
 
     
     // get app details
@@ -109,13 +109,34 @@ export async function PATCH(req: Request) {
       );
     } 
 
-    const appNameFetched = app.app_name;
+    // get the sandbox details
+    const { data: sandbox, error: sandboxError } = await supabase
+      .from("user_sandboxes")
+      .select("*")
+      .eq("app_id", appId)
+      .single();
+
+    if (sandboxError) {
+      return NextResponse.json(
+        { error: sandboxError.message },
+        { status: 500 }
+      );
+    }
+
+    if (sandbox.sandbox_status == 'active' || sandbox.sandbox_status == 'starting' ) {
+      return NextResponse.json(
+        { error: "App is active, cannot change state" },
+        { status: 200 }
+      );
+    }
+    
+
 
     if (targetState == 'resume') {
       await resumeContainer.trigger({
         userId: user.id,
         appId,
-        appName: appNameFetched,
+        appName: app.app_name,
       });
     }
 
@@ -123,7 +144,7 @@ export async function PATCH(req: Request) {
       await pauseContainer.trigger({
         userId: user.id,
         appId,
-        appName: appNameFetched,
+        appName: app.app_name,
       });
     }
 
