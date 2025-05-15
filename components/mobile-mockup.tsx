@@ -71,12 +71,14 @@ export default function MobileMockup({
         {/* Phone Container */}
         <div className="relative w-[300px] h-[580px] rounded-[48px] mx-[4px]">
           <div className="absolute inset-0 rounded-[48px] overflow-hidden">
-            {/* Always render iframe */}
-            <iframe
-              key={[iframeKey, containerState, appState].toString()}
-              src={appUrl || undefined}
-              className="w-full h-full"
-            />
+            {/* Add padding wrapper for iframe */}
+            <div className="w-full h-full p-3 box-border">
+              <iframe
+                key={[iframeKey, containerState, appState].toString()}
+                src={appUrl || undefined}
+                className="w-full h-full rounded-[32px]"
+              />
+            </div>
             
             {/* Overlay status message when containerState is not active */}
             {containerState !== "active" && (
@@ -93,7 +95,7 @@ export default function MobileMockup({
             {/* Overlay status message when appState is not active AND containerState IS active */}
             {containerState === "active" && appState !== "active" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
-                <span>App is starting</span>
+                <span>App is {appState}</span>
                 <Loader2 className="h-4 w-4 animate-spin mt-2" />
               </div>
             )}

@@ -30,29 +30,54 @@ export const startExpo = task({
 
     const { appUrl, apiUrl } = await startExpoInContainerE2B(containerId);
 
-    // sleep for 6 seconds
-    await new Promise(resolve => setTimeout(resolve, 12000));
-
     // do a GET request to appPreview to check if it's ready
     const appPreviewResponse = await fetch(appUrl);
     console.log("App preview response:", appPreviewResponse);
     await redisUrlSetter(appName, appUrl, apiUrl);
 
-    // sleep for 6 seconds
     await new Promise(resolve => setTimeout(resolve, 6000));
 
-    // Initialize file backend
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
       .update({
         api_url: apiUrl,
         app_url: appUrl,
-        app_status: "active",
+        app_status: "rendering",
       })
       .eq("id", sandboxId);
 
+    await new Promise(resolve => setTimeout(resolve, 6000));
+
+    const { error: updateError2 } = await adminSupabase
+    .from("user_sandboxes")
+    .update({
+      api_url: apiUrl,
+      app_url: appUrl,
+      app_status: "loading",
+    })
+    .eq("id", sandboxId);
+
+    await new Promise(resolve => setTimeout(resolve, 12000));
+
+    const { error: updateError3 } = await adminSupabase
+    .from("user_sandboxes")
+    .update({
+      api_url: apiUrl,
+      app_url: appUrl,
+      app_status: "active",
+    })
+    .eq("id", sandboxId);
+
+
+    
+
+
     if (updateError) {
       throw new Error(`Failed updating sandbox with container info: ${updateError.message}`);
+    }
+
+    if (updateError2) {
+      throw new Error(`Failed updating sandbox with container info: ${updateError2.message}`);
     }
 
 

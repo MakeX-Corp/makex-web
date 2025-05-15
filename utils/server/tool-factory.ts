@@ -224,6 +224,30 @@ export function createTools(config: ToolConfig = {}) {
       },
     }),
 
+    grepSearch: tool({
+      description: "Search for text patterns in files using regex",
+      parameters: z.object({
+        pattern: z.string().describe("The regex pattern to search for"),
+        include_pattern: z.string().describe("File pattern to include in search (e.g. '*.ts')").default("*"),
+        case_sensitive: z.boolean().describe("Whether the search should be case sensitive").default(false),
+      }),
+      execute: async ({ pattern, include_pattern, case_sensitive }) => {
+        try {
+          const data = await apiClient.post("/grep", {
+            pattern,
+            include_pattern,
+            case_sensitive,
+          });
+          return { success: true, data };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || "Unknown error occurred",
+          };
+        }
+      },
+    }),
+
     webSearch: tool({
       description: 'Search the web for up-to-date information',
       parameters: z.object({

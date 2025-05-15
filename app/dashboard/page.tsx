@@ -31,6 +31,12 @@ import {
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { checkMessageLimit } from "@/lib/chat-service";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Expanded app suggestion chips for multiple rows
 const APP_SUGGESTIONS = [
@@ -104,6 +110,7 @@ export default function DashboardPage() {
   const [prompt, setPrompt] = useState("");
   const [initialPromptLoaded, setInitialPromptLoaded] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
   // Create refs with explicit typing
   const row1Ref = useRef<HTMLDivElement>(null);
   const row2Ref = useRef<HTMLDivElement>(null);
@@ -193,19 +200,27 @@ export default function DashboardPage() {
       return;
     }
     setIsCreating(true);
-    try {
-      //check if user can create app
-      // const result = await checkMessageLimit(subscription);
-      // if (result) {
-      //   const { reachedLimit } = result;
+    setCurrentStep(0);
 
-      //   if (reachedLimit) {
-      //     setLimitReached(true);
-      //     return;
-      //   }
-      // }
+    try {
+      // Simulate setup steps while waiting for response
+      const steps = [
+        "Setting up your files...",
+        "Configuring cloud environment...",
+        "Warming up AI models...",
+        "Finalizing setup..."
+      ];
+
+      // Start the step animation
+      const stepInterval = setInterval(() => {
+        setCurrentStep(prev => (prev < steps.length - 1 ? prev + 1 : prev));
+      }, 1000);
+
       localStorage.setItem("makeX_prompt", prompt);
       const redirectUrl = await createApp(prompt);
+      
+      // Clear the interval and redirect
+      clearInterval(stepInterval);
       router.push(redirectUrl);
     } catch (error) {
       console.error("Error creating app:", error);
@@ -382,6 +397,47 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        <Dialog open={isCreating} onOpenChange={() => {}}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-center">Setting Up Your App</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col gap-6 py-4">
+              {[
+                "Setting up your files...",
+                "Configuring cloud environment...",
+                "Warming up AI models...",
+                "Finalizing setup..."
+              ].map((step, index) => (
+                <div key={index} className="flex items-center gap-3">
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                    index === currentStep 
+                      ? "bg-primary text-primary-foreground animate-pulse"
+                      : index < currentStep 
+                        ? "bg-primary/20 text-primary"
+                        : "bg-muted text-muted-foreground"
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium">{step}</div>
+                  </div>
+                  {index === currentStep && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-r-transparent"></div>
+                  )}
+                  {index < currentStep && (
+                    <div className="text-primary">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
