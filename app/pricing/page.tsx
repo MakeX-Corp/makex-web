@@ -10,9 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { Skeleton } from "@/components/ui/skeleton";
-
+import { useRouter } from "next/navigation";
 interface PlanProps {
   name: string;
   description: string;
@@ -104,59 +102,11 @@ const comparisonFeatures = [
   },
 ];
 
-const PricingSkeleton = () => {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-      {[1, 2, 3].map((i) => (
-        <Card key={i} className="flex flex-col">
-          <CardHeader>
-            <Skeleton className="h-8 w-24 mb-2" />
-            <Skeleton className="h-4 w-full" />
-          </CardHeader>
-          <CardContent className="flex-grow">
-            <div className="mb-6">
-              <Skeleton className="h-10 w-20" />
-            </div>
-            <ul className="space-y-2">
-              {[1, 2, 3, 4].map((j) => (
-                <li key={j} className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-4 rounded-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-          <CardFooter>
-            <Skeleton className="h-10 w-full" />
-          </CardFooter>
-        </Card>
-      ))}
-    </div>
-  );
-};
-
 export default function PricingPage() {
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<string | null>(null);
-
+  const router = useRouter();
   const handleCheckout = async (priceId: string) => {
-    try {
-      setIsLoading(priceId);
-      // Simulate checkout process
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      toast({
-        title: "Success",
-        description: "Redirecting to checkout...",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to initiate checkout",
-      });
-    } finally {
-      setIsLoading(null);
-    }
+    router.push(`/dashboard/pricing`);
   };
 
   return (

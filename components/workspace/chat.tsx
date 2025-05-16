@@ -1,23 +1,23 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, Image as ImageIcon, X } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
 import ToolInvocation from "@/components/tool-render";
-import { useImageUpload } from "@/hooks/use-image-upload";
 import { useSession } from "@/context/session-context";
+import { useApp } from "@/context/AppContext";
+import { useRouter } from "next/navigation";
+import { useImageUpload } from "@/hooks/use-image-upload";
 import {
   fetchChatMessages,
   saveAIMessage,
-  restoreCheckpoint,
   checkMessageLimit,
+  restoreCheckpoint,
 } from "@/lib/chat-service";
-import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
 import { updateSessionTitle } from "@/utils/client/session-utils";
-import { useApp } from "@/context/AppContext";
-import { useRouter } from "next/navigation";
+import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
 
 interface ChatProps {
   sessionId: string;
@@ -32,7 +32,6 @@ export function Chat({
   onSessionError,
   containerState,
 }: ChatProps) {
-  // Get app context from the SessionContext
   const {
     appId,
     apiUrl,
@@ -45,12 +44,11 @@ export function Chat({
   const { subscription, isAIResponding, setIsAIResponding } = useApp();
   const router = useRouter();
 
-  const storedPrompt =
-    typeof window !== "undefined" ? localStorage.getItem("makeX_prompt") : null;
-
-  // State for initial messages - initialize as empty array
   const [initialMessages, setInitialMessages] = useState<any[]>([]);
+  const [booted, setBooted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [storedPrompt, setStoredPrompt] = useState<string | null>(null);
+  const [promptChecked, setPromptChecked] = useState(false);
   const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
     null
   );
@@ -59,10 +57,7 @@ export function Chat({
     null
   );
 
-  // Flag to track if we've processed the stored prompt
-  const processedPromptRef = useRef(false);
-
-  // Refs for the input and form elements
+  const injectedPromptRef = useRef(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -82,144 +77,60 @@ export function Chat({
     handleDrop,
   } = useImageUpload();
 
-  // Refs for tracking API calls - specific to this component instance
-  const messagesApiCalled = useRef(false);
-
-  // Keep track of the current session/app for proper reset
-  const currentSessionId = useRef(sessionId);
-  const currentAppId = useRef(appId);
-
-  // Reset tracking if session/app changes
-  if (
-    currentSessionId.current !== sessionId ||
-    currentAppId.current !== appId
-  ) {
-    messagesApiCalled.current = false;
-    currentSessionId.current = sessionId;
-    currentAppId.current = appId;
-  }
-
   // Function to reset textarea height
   const resetTextareaHeight = () => {
     if (inputRef.current) {
-      inputRef.current.style.height = "auto"; // Reset to default height
+      inputRef.current.style.height = "auto";
     }
   };
 
-  // Initialize useChat
-  const { messages, input, handleInputChange, handleSubmit, error, append } =
-    useChat({
-      id: sessionId,
-      api: `/api/chat/`,
-      initialMessages: storedPrompt ? [] : initialMessages,
-      body: {
-        apiUrl,
-        appId,
-        appName,
-        sessionId,
-        supabaseProject,
-        subscription,
-      },
-      maxSteps: 30,
-      onResponse: async (response) => {
-        console.log("Chat response:", response);
-        //if 429, limit reached
-        if (response.status === 429) {
-          setIsAIResponding(false);
-          setLimitReached(true);
-        }
-      },
-      onFinish: async (message, options) => {
-        console.log("Chat finished:", message, options);
-        // Save the AI message
-        setIsAIResponding(false);
-        onResponseComplete();
-        try {
-          await saveAIMessage(sessionId, appId || "", apiUrl, options, message);
-          // If this is the first AI response and title hasn't been updated yet
-          if (
-            messages.length === 0 &&
-            message.role === "assistant" &&
-            (sessionName === "New Chat" || !sessionName)
-          ) {
-            const userMessage = messages[0]?.content || "";
-            // Get the AI response (the current message)
-            const aiResponse = message.content || "";
-            const newTitle = await updateSessionTitle(
-              userMessage,
-              aiResponse,
-              sessionId
-            );
-            if (newTitle) {
-              setSessionName(newTitle);
-            }
-          }
-          // Update message limit after successful message
-          const result = await checkMessageLimit(subscription);
-          if (result) {
-            const { remainingMessages, reachedLimit } = result;
-            setRemainingMessages(remainingMessages);
-            setLimitReached(reachedLimit);
-          }
-        } catch (error) {
-          console.error("Error saving AI message:", error);
-        }
-      },
-    });
-
+  // 1. Load storedPrompt from localStorage
   useEffect(() => {
-    // Only do this once
-    if (storedPrompt && !processedPromptRef.current) {
-      processedPromptRef.current = true;
-      setIsAIResponding(true);
-
-      // Remove the prompt from storage
+    const prompt =
+      typeof window !== "undefined"
+        ? localStorage.getItem("makeX_prompt")
+        : null;
+    if (prompt) {
+      setStoredPrompt(prompt);
       localStorage.removeItem("makeX_prompt");
-
-      // Send the prompt using append
-      append({
-        content: storedPrompt,
-        role: "user",
-      });
     }
-  }, [storedPrompt, append, setIsAIResponding]);
-  // Add cleanup function to set isAIResponding to false when component unmounts
-  useEffect(() => {
-    return () => {
-      // This runs on unmount
-      setIsAIResponding(false);
-    };
-  }, [setIsAIResponding]);
+    setPromptChecked(true);
+  }, []);
 
-  // Fetch initial messages - only if no stored prompt exists
+  // 2. Boot logic: fetch messages only if there's no prompt
   useEffect(() => {
-    const getMessages = async () => {
-      if (!sessionId || !appId || messagesApiCalled.current || storedPrompt) {
-        return;
-      }
-      if (justCreatedSessionId) {
+    if (!promptChecked) return;
+
+    const runBoot = async () => {
+      if (storedPrompt) {
         setInitialMessages([]);
+        setBooted(true);
         return;
       }
 
-      messagesApiCalled.current = true;
+      if (!sessionId || !appId || justCreatedSessionId) {
+        setInitialMessages([]);
+        setBooted(true);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const messages = await fetchChatMessages(sessionId, appId);
         setInitialMessages(messages);
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-        if (onSessionError) {
-          onSessionError("Failed to fetch messages");
-        }
+      } catch (err) {
+        console.error("[Chat Boot] Fetch error:", err);
+        onSessionError?.("Failed to fetch messages");
       } finally {
         setIsLoading(false);
+        setBooted(true);
       }
     };
 
-    getMessages();
-  }, [sessionId, appId, onSessionError, storedPrompt]);
+    runBoot();
+  }, [promptChecked, storedPrompt, sessionId, appId, justCreatedSessionId]);
 
+  // 3. Check message limits
   useEffect(() => {
     let isMounted = true;
 
@@ -240,16 +151,94 @@ export function Chat({
     };
   }, [subscription]);
 
+  // 4. Initialize useChat
+  const { messages, input, handleInputChange, handleSubmit, error, append } =
+    useChat({
+      id: sessionId,
+      api: `/api/chat/`,
+      initialMessages: booted && !storedPrompt ? initialMessages : [],
+      body: {
+        apiUrl,
+        appId,
+        appName,
+        sessionId,
+        supabaseProject,
+        subscription,
+      },
+      maxSteps: 30,
+      onResponse: async (response) => {
+        if (response.status === 429) {
+          setIsAIResponding(false);
+          setLimitReached(true);
+        }
+      },
+      onFinish: async (message, options) => {
+        setIsAIResponding(false);
+        onResponseComplete();
+        try {
+          await saveAIMessage(sessionId, appId || "", apiUrl, options, message);
+          if (
+            messages.length === 0 &&
+            message.role === "assistant" &&
+            (sessionName === "New Chat" || !sessionName)
+          ) {
+            const newTitle = await updateSessionTitle(
+              messages[0]?.content || "",
+              message.content || "",
+              sessionId
+            );
+            if (newTitle) setSessionName(newTitle);
+          }
+
+          const result = await checkMessageLimit(subscription);
+          if (result) {
+            const { remainingMessages, reachedLimit } = result;
+            setRemainingMessages(remainingMessages);
+            setLimitReached(reachedLimit);
+          }
+        } catch (error) {
+          console.error("Error saving AI message:", error);
+        }
+      },
+    });
+
+  // 5. Handle cleanup on unmount
+  useEffect(() => {
+    return () => {
+      setIsAIResponding(false);
+    };
+  }, [setIsAIResponding]);
+
+  // 6. Inject prompt once
+  useEffect(() => {
+    if (storedPrompt && !injectedPromptRef.current && booted) {
+      injectedPromptRef.current = true;
+      setIsAIResponding(true);
+      append({ content: storedPrompt, role: "user" });
+    }
+  }, [storedPrompt, booted, append, setIsAIResponding]);
+
+  // 7. Auto-scroll to bottom when messages change
+  useEffect(() => {
+    const messagesContainer = document.querySelector(".messages-container");
+    if (messagesContainer) {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+  }, [messages, isAIResponding]);
+
+  // Handle form submission with image support
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (containerState !== "active") {
       alert("Please refresh the page and try again, your app was paused");
       return;
     }
+
     // Don't proceed if there's nothing to send
     if (!input.trim() && selectedImages.length === 0) {
       return;
     }
+
     setIsAIResponding(true);
 
     try {
@@ -263,7 +252,6 @@ export function Chat({
         }));
 
         // Create properly formatted content for Claude
-        // Claude expects each image to be a separate part in the array
         const messageContent: any[] = [];
 
         // Add text content first (if any)
@@ -287,7 +275,6 @@ export function Chat({
             appId,
             sessionId,
             supabaseProject,
-            // Use the array of message parts
             multiModal: true, // Flag to indicate we're using the multimodal format
             messageParts: messageContent,
           },
@@ -298,21 +285,15 @@ export function Chat({
       } else {
         // Regular text submission
         handleSubmit(e);
-      } // Reset textarea height after submission
+      }
+
+      // Reset textarea height after submission
       resetTextareaHeight();
     } catch (error) {
       console.error("Error processing message with images:", error);
       setIsAIResponding(false);
     }
   };
-
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    const messagesContainer = document.querySelector(".messages-container");
-    if (messagesContainer) {
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-  }, [messages, isAIResponding]);
 
   // Render message part based on type
   const renderMessagePart = (part: any) => {
@@ -339,6 +320,7 @@ export function Chat({
     }
   };
 
+  // Handle checkpoint restoration
   const handleRestore = async (messageId: string) => {
     try {
       setRestoringMessageId(messageId);
@@ -354,13 +336,13 @@ export function Chat({
   return (
     <div
       ref={chatContainerRef}
-      className="flex flex-col h-full overflow-hidden border rounded-md chat-component relative"
+      className="flex flex-col h-full border rounded-md overflow-hidden relative"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Drag overlay indicator with improved visibility */}
+      {/* Drag overlay indicator */}
       {isDragging && (
         <div className="absolute top-0 left-0 right-0 bottom-0 bg-primary/20 backdrop-blur-sm z-20 flex items-center justify-center border-4 border-dashed border-primary rounded pointer-events-none">
           <div className="text-center p-4 bg-background rounded shadow-lg">
@@ -369,7 +351,8 @@ export function Chat({
           </div>
         </div>
       )}
-      {/* Messages area - added fixed height with messages-container class */}
+
+      {/* Messages area */}
       <div className="flex-1 overflow-hidden">
         <div className="messages-container h-full overflow-y-auto px-4 py-4 space-y-4">
           {isLoading ? (
@@ -377,66 +360,69 @@ export function Chat({
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
-            <>
-              {messages.map((message, index) => (
-                <div
-                  key={message.id || `message-${index}`}
-                  className={`flex flex-col ${
-                    message.role === "user" ? "items-end" : "items-start"
+            messages.map((message, index) => (
+              <div
+                key={message.id || `message-${index}`}
+                className={`flex flex-col ${
+                  message.role === "user" ? "items-end" : "items-start"
+                }`}
+              >
+                <Card
+                  className={`max-w-[80%] ${
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-card-foreground"
                   }`}
                 >
-                  <Card
-                    className={`max-w-[80%] ${
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card text-card-foreground"
-                    }`}
+                  <CardContent className="p-4 overflow-hidden">
+                    {/* Display multiple images if they exist */}
+                    {message?.experimental_attachments && (
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {message.experimental_attachments.map(
+                          (attachment: any, i: number) => (
+                            <img
+                              key={i}
+                              src={attachment.url}
+                              alt={`Uploaded image ${i + 1}`}
+                              className="rounded border border-border shadow-sm"
+                              style={{
+                                cursor: "pointer",
+                                height: "150px",
+                                objectFit: "cover",
+                              }}
+                            />
+                          )
+                        )}
+                      </div>
+                    )}
+
+                    {message.parts?.length ? (
+                      message.parts.map((part: any, i: number) => (
+                        <div key={i}>{renderMessagePart(part)}</div>
+                      ))
+                    ) : (
+                      <div className="text-sm whitespace-pre-wrap break-words">
+                        {message.content}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Restore checkpoint button */}
+                {message.role === "assistant" && (
+                  <button
+                    className="text-[10px] text-muted-foreground hover:text-foreground mt-0.5 flex items-center gap-1"
+                    onClick={() => handleRestore(message.id)}
+                    disabled={restoringMessageId !== null}
                   >
-                    <CardContent className="p-4">
-                      {/* Display multiple images if they exist */}
-                      {message?.experimental_attachments && (
-                        <div className="mb-3 flex flex-wrap gap-2">
-                          {message.experimental_attachments.map(
-                            (attachment: any, i: number) => (
-                              <img
-                                key={i}
-                                src={attachment.url}
-                                alt={`Uploaded image ${i + 1}`}
-                                className="rounded border border-border shadow-sm"
-                                style={{
-                                  cursor: "pointer",
-                                  height: "150px",
-                                  objectFit: "cover",
-                                }}
-                              />
-                            )
-                          )}
-                        </div>
-                      )}
-                      {message.parts?.length ? (
-                        message.parts.map((part: any, i: number) => (
-                          <div key={i}>{renderMessagePart(part)}</div>
-                        ))
-                      ) : (
-                        <div className="text-sm">{message.content}</div>
-                      )}
-                    </CardContent>
-                  </Card>
-                  {message.role === "assistant" && (
-                    <button
-                      className="text-[10px] text-muted-foreground hover:text-foreground mt-0.5 flex items-center gap-1"
-                      onClick={() => handleRestore(message.id)}
-                      disabled={restoringMessageId !== null}
-                    >
-                      {restoringMessageId === message.id && (
-                        <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                      )}
-                      Restore Checkpoint
-                    </button>
-                  )}
-                </div>
-              ))}
-            </>
+                    {restoringMessageId === message.id && (
+                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                    )}
+                    Restore Checkpoint
+                  </button>
+                )}
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -513,9 +499,9 @@ export function Chat({
               }
             }}
             placeholder="Type your message or drop images anywhere..."
-            className="flex-1 min-h-[38px] max-h-[200px] py-2 px-3 rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-            disabled={isAIResponding || isLoading}
+            className="flex-1 min-h-[38px] max-h-[200px] resize-none py-2 px-3 rounded-md border focus-visible:outline-none"
             rows={1}
+            disabled={isAIResponding || isLoading}
           />
 
           {/* File input for images (hidden) */}
@@ -558,6 +544,8 @@ export function Chat({
             )}
           </Button>
         </form>
+
+        {/* Remaining messages counter */}
         {remainingMessages !== null && !limitReached && (
           <div className="text-xs text-muted-foreground flex justify-end mt-2">
             <span>
