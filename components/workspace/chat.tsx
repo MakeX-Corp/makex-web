@@ -37,8 +37,9 @@ export function Chat({
     apiUrl,
     appName,
     supabaseProject,
-    sessionName,
-    setSessionName,
+    getCurrentSessionTitle, // New function
+    updateSessionTitle: contextUpdateSessionTitle,
+
     justCreatedSessionId,
   } = useSession();
   const { subscription, isAIResponding, setIsAIResponding } = useApp();
@@ -180,14 +181,17 @@ export function Chat({
           if (
             messages.length === 0 &&
             message.role === "assistant" &&
-            (sessionName === "New Chat" || !sessionName)
+            getCurrentSessionTitle() === "New Chat"
           ) {
             const newTitle = await updateSessionTitle(
               messages[0]?.content || "",
               message.content || "",
               sessionId
             );
-            if (newTitle) setSessionName(newTitle);
+            if (newTitle) {
+              // Update the session title in our context
+              await contextUpdateSessionTitle(sessionId, newTitle);
+            }
           }
 
           const result = await checkMessageLimit(subscription);
