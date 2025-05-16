@@ -7,7 +7,7 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import { useApp } from "@/context/AppContext"; // Import the AppContext hook
+import { useApp } from "@/context/AppContext";
 import {
   getSessionsForApp,
   createNewSession,
@@ -41,10 +41,6 @@ interface SessionContextType {
   currentSessionError: string | null;
   justCreatedSessionId: string | null;
 
-  // Session name
-  sessionName: string;
-  setSessionName: (name: string) => void;
-
   // Actions
   loadSessions: (appId: string) => Promise<void>;
   switchSession: (sessionId: string) => Promise<void>;
@@ -52,6 +48,9 @@ interface SessionContextType {
   deleteSession: (sessionId: string) => Promise<boolean>;
   updateSessionTitle: (sessionId: string, title: string) => Promise<boolean>;
   initializeApp: (newAppId: string) => Promise<void>;
+
+  // Get current session title helper
+  getCurrentSessionTitle: () => string;
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
@@ -64,7 +63,7 @@ export function SessionProvider({
   initialAppId?: string | null;
 }) {
   // Get app data from AppContext
-  const { apps } = useApp(); // Access the parent AppContext
+  const { apps } = useApp();
 
   // App data
   const [appId, setAppId] = useState<string | null>(initialAppId);
@@ -93,8 +92,13 @@ export function SessionProvider({
     string | null
   >(null);
 
-  // Session name state
-  const [sessionName, setSessionName] = useState<string>("");
+  // Helper function to get current session title - single source of truth
+  const getCurrentSessionTitle = () => {
+    if (!currentSessionId || sessions.length === 0) return "New Chat";
+
+    const session = sessions.find((s) => s.id === currentSessionId);
+    return session?.title || "New Chat";
+  };
 
   // Effect to sync app name with AppContext
   useEffect(() => {
@@ -152,7 +156,7 @@ export function SessionProvider({
     } catch (error) {
       console.error("Failed to initialize app:", error);
       setSessionsError("Failed to initialize app");
-      setIsAppReady(false); // Make sure we set this to false if there's an error
+      setIsAppReady(false);
     }
   };
 
@@ -215,8 +219,17 @@ export function SessionProvider({
       if (sessionData) {
         setCurrentSession(sessionData);
         setCurrentSessionId(sessionId);
-        // Update the session name when switching sessions
-        setSessionName(sessionData.title || "");
+
+        // Update the sessions array if we have a new title from the API
+        if (sessionData.title) {
+          setSessions((prevSessions) => {
+            return prevSessions.map((session) =>
+              session.id === sessionId
+                ? { ...session, title: sessionData.title || "New Chat" }
+                : session
+            );
+          });
+        }
       } else {
         setCurrentSessionError(`Session ${sessionId} not found`);
       }
@@ -239,21 +252,25 @@ export function SessionProvider({
       const newSession = await createNewSession(appId);
 
       if (newSession) {
-        setJustCreatedSessionId(newSession.id);
+        // Force a clean title if one isn't provided
+        const sessionWithTitle = {
+          ...newSession,
+          title: newSession.title || "New Chat",
+        };
 
-        // Update sessions list
-        setSessions((prev) => [newSession, ...prev]);
+        setJustCreatedSessionId(sessionWithTitle.id);
 
-        // Switch to the new session
-        setCurrentSession(newSession);
-        setCurrentSessionId(newSession.id);
-        // Set the session name for the new session
-        setSessionName(newSession.title || "");
+        // Update sessions list with this new session
+        setSessions((prev) => [sessionWithTitle, ...prev]);
+
+        // Set as current session
+        setCurrentSession(sessionWithTitle);
+        setCurrentSessionId(sessionWithTitle.id);
 
         // Update URL
         if (typeof window !== "undefined") {
           const url = new URL(window.location.href);
-          url.searchParams.set("sessionId", newSession.id);
+          url.searchParams.set("sessionId", sessionWithTitle.id);
           window.history.pushState(
             { path: url.toString() },
             "",
@@ -261,7 +278,7 @@ export function SessionProvider({
           );
         }
 
-        return newSession;
+        return sessionWithTitle;
       } else {
         setCurrentSessionError("Failed to create new session");
         return null;
@@ -297,7 +314,6 @@ export function SessionProvider({
             // If no sessions left, clear current session
             setCurrentSession(null);
             setCurrentSessionId(null);
-            setSessionName(""); // Reset session name
           }
         }
 
@@ -319,26 +335,25 @@ export function SessionProvider({
     try {
       if (!appId || !title.trim()) return false;
 
+      // Call the API to update the title
       const result = await updateSessionTitleApi(sessionId, title.trim());
 
       if (result) {
         // Update the sessions list with the new title
-        setSessions((prev) =>
-          prev.map((session) =>
+        setSessions((prevSessions) =>
+          prevSessions.map((session) =>
             session.id === sessionId
               ? { ...session, title: title.trim() }
               : session
           )
         );
 
-        // If this is the current session, update it too
+        // Also update the current session object if this is the current session
         if (sessionId === currentSessionId && currentSession) {
           setCurrentSession({
             ...currentSession,
             title: title.trim(),
           });
-          // Update session name when title changes
-          setSessionName(title.trim());
         }
 
         return true;
@@ -368,14 +383,13 @@ export function SessionProvider({
     loadingCurrentSession,
     currentSessionError,
     justCreatedSessionId,
-    sessionName,
-    setSessionName,
     loadSessions,
     switchSession,
     createSession,
     deleteSession,
     updateSessionTitle,
     initializeApp,
+    getCurrentSessionTitle,
   };
 
   return (

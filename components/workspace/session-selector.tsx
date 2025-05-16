@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useSession } from "@/context/session-context";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
@@ -30,8 +30,7 @@ export function SessionSelector() {
     updateSessionTitle,
     loadingSessions,
     loadingCurrentSession,
-    sessionName,
-    setSessionName,
+    getCurrentSessionTitle,
   } = useSession();
   const { isAIResponding } = useApp();
 
@@ -44,22 +43,6 @@ export function SessionSelector() {
   const editInputRef = useRef<HTMLInputElement>(null);
 
   const isLoading = loadingSessions || loadingCurrentSession;
-
-  // Find the current session
-  const currentSession = sessions.find(
-    (session) => session.id === currentSessionId
-  );
-
-  useEffect(() => {
-    // Only run this effect when the loading is COMPLETE and we have sessions loaded
-    if (!isLoading && sessions.length > 0) {
-      if (currentSession?.title) {
-        setSessionName(currentSession.title);
-      } else {
-        setSessionName("Select Session");
-      }
-    }
-  }, [currentSession, sessions, isLoading]);
 
   // Handle creating a new session
   const handleCreateSession = async () => {
@@ -154,6 +137,9 @@ export function SessionSelector() {
     setEditSessionName(session.title || "");
   };
 
+  // Get the current session title from the sessions array
+  const currentTitle = getCurrentSessionTitle();
+
   return (
     <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
       <DropdownMenuTrigger asChild>
@@ -168,7 +154,7 @@ export function SessionSelector() {
               Loading...
             </span>
           ) : (
-            sessionName
+            currentTitle
           )}
           <ChevronDown size={16} />
         </Button>
@@ -249,10 +235,9 @@ export function SessionSelector() {
                                 : "text-foreground hover:bg-muted"
                             )}
                           >
+                            {/* Always use the title from the sessions array */}
                             <span className="truncate">
-                              {session.id === currentSessionId && sessionName
-                                ? sessionName
-                                : session.title || "Untitled Session"}
+                              {session.title || "Untitled Session"}
                             </span>
                           </div>
                           <div className="absolute right-1 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 transition-opacity">
