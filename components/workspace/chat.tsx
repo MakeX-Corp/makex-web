@@ -340,7 +340,7 @@ export function Chat({
   return (
     <div
       ref={chatContainerRef}
-      className="flex flex-col h-full border rounded-md overflow-hidden relative"
+      className="flex flex-col h-full border rounded-md overflow-hidden relative chat-component"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -503,7 +503,7 @@ export function Chat({
               }
             }}
             placeholder="Type your message or drop images anywhere..."
-            className="flex-1 min-h-[38px] max-h-[200px] resize-none py-2 px-3 rounded-md border focus-visible:outline-none"
+            className="flex-1 min-h-[38px] max-h-[200px] resize-none py-2 px-3 rounded-md border focus-visible:outline-none bg-background "
             rows={1}
             disabled={isAIResponding || isLoading}
           />
