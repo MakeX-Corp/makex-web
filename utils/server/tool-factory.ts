@@ -3,6 +3,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { createFileBackendApiClient } from "./file-backend-api-client";
 import Exa from 'exa-js';
+import { getRelevantContext } from "../ai/rag/getRelevantContext";
 
 type ToolConfig = {
   apiUrl?: string;
@@ -248,40 +249,18 @@ export function createTools(config: ToolConfig = {}) {
       },
     }),
 
-    webSearch: tool({
-      description: 'Search the web for up-to-date information',
+    getDocumentation: tool({
+      description: "Search the Expo documentation for relevant answers.",
       parameters: z.object({
-        query: z.string().min(1).max(100).describe('The search query'),
+        query: z.string().describe("The user's question or technical topic"),
       }),
       execute: async ({ query }) => {
-        if (!exa) {
-          return {
-            success: false,
-            error: "Exa API key not configured",
-          };
-        }
-        try {
-          const { results } = await exa.searchAndContents(query, {
-            livecrawl: 'always',
-            numResults: 3,
-          });
-          return {
-            success: true,
-            data: results.map(result => ({
-              title: result.title,
-              url: result.url,
-              content: result.text.slice(0, 1000),
-              publishedDate: result.publishedDate,
-            }))
-          };
-        } catch (error: any) {
-          return {
-            success: false,
-            error: error.message || "Unknown error occurred",
-          };
-        }
+        const context = await getRelevantContext(query);
+        return context.join("\n\n");
       },
     }),
+
+  
   };
 
   // Add database tools if enabled

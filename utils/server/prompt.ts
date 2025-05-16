@@ -32,6 +32,7 @@ Delete files that are clearly redundant.
 Don't call the same tool again and again.
 
 <operating_principles>
+• Use the getDocumentation tool to search the Expo documentation for relevant answers when needed
 • Do the minimum necessary tool calls, but the maximum correctness
 • Write clean, modular code. Do not jam all logic into one file
 • Keep responses short and focused—only talk when absolutely necessary
