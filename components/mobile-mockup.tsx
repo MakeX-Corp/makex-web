@@ -12,13 +12,12 @@ export default function MobileMockup({
   appUrl,
   iframeKey,
   containerState,
-  appState
+  appState,
 }: MobileMockupProps) {
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200
   );
 
-  console.log('appState', appState)
   useEffect(() => {
     // Track window size
     const handleResize = () => {
@@ -29,84 +28,162 @@ export default function MobileMockup({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Determine scale based on window width
-  const getScale = () => {
-    if (windowWidth > 1200) return 1;
-    if (windowWidth > 992) return 0.9;
-    if (windowWidth > 768) return 0.8;
-    if (windowWidth > 576) return 0.7;
-    if (windowWidth > 400) return 0.6;
-    return 0.5;
+  // Base dimensions for the phone frame
+  const basePadding = 10;
+  const basePhoneWidth = 300;
+  const basePhoneHeight = 580;
+
+  // Calculate scale factor based on window width
+  const getScaleFactor = () => {
+    if (windowWidth > 1200) return 1; // Full size on large screens
+    if (windowWidth > 992) return 0.9; // 90% on medium-large screens
+    if (windowWidth > 768) return 0.8; // 80% on medium screens
+    if (windowWidth > 576) return 0.7; // 70% on small-medium screens
+    if (windowWidth > 400) return 0.6; // 60% on small screens
+    return 0.5; // 50% on very small screens
   };
 
-  const scale = getScale();
+  const scaleFactor = getScaleFactor();
 
-  // Container styles with flex centering
-  const containerStyle = {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
-    height: "100%",
-    padding: "10px",
-  };
+  // Scaled dimensions
+  const phoneWidth = basePhoneWidth * scaleFactor;
+  const phoneHeight = basePhoneHeight * scaleFactor;
+  const padding = basePadding * scaleFactor;
 
-  // Mockup phone styles with scaling
-  const phoneStyle = {
-    position: "relative" as const,
-    transform: `scale(${scale})`,
-    transformOrigin: "center center",
-    transition: "transform 0.2s ease",
-  };
+  // Content dimensions (phone size minus border thickness)
+  const contentWidth = phoneWidth - padding * 2;
+  const contentHeight = phoneHeight - padding * 2;
 
   return (
-    <div className="mobile-mockup" style={containerStyle}>
-      <div style={phoneStyle}>
-        {/* Side buttons */}
-        <div className="absolute top-[90px] left-0 w-[4px] h-[30px] bg-black rounded-l-md shadow-lg"></div>
-        <div className="absolute top-[135px] left-0 w-[4px] h-[30px] bg-black rounded-l-md shadow-lg"></div>
-        {/* Power Button */}
-        <div className="absolute top-[90px] right-0 w-[4px] h-[45px] bg-black rounded-r-md shadow-lg"></div>
+    <div className="w-full h-full flex items-center justify-center">
+      {/* Phone frame - with responsive scaling */}
+      <div
+        className="relative"
+        style={{
+          width: `${phoneWidth}px`,
+          height: `${phoneHeight}px`,
+        }}
+      >
+        {/* Side buttons - scaled with the phone */}
+        <div
+          className="absolute rounded-l-md shadow-lg bg-black"
+          style={{
+            top: `${90 * scaleFactor}px`,
+            left: "0",
+            width: `${4 * scaleFactor}px`,
+            height: `${30 * scaleFactor}px`,
+          }}
+        ></div>
+        <div
+          className="absolute rounded-l-md shadow-lg bg-black"
+          style={{
+            top: `${135 * scaleFactor}px`,
+            left: "0",
+            width: `${4 * scaleFactor}px`,
+            height: `${30 * scaleFactor}px`,
+          }}
+        ></div>
+        {/* Power Button - scaled with the phone */}
+        <div
+          className="absolute rounded-r-md shadow-lg bg-black"
+          style={{
+            top: `${90 * scaleFactor}px`,
+            right: "0",
+            width: `${4 * scaleFactor}px`,
+            height: `${45 * scaleFactor}px`,
+          }}
+        ></div>
 
-        {/* Phone Container */}
-        <div className="relative w-[300px] h-[580px] rounded-[48px] mx-[4px]">
-          <div className="absolute inset-0 rounded-[48px] overflow-hidden">
-            {/* Add padding wrapper for iframe */}
-            <div className="w-full h-full p-3 box-border">
-              <iframe
-                key={[iframeKey, containerState, appState].toString()}
-                src={appUrl || undefined}
-                className="w-full h-full rounded-[32px]"
+        {/* Content area - scaled with the phone */}
+        <div
+          className="absolute overflow-hidden"
+          style={{
+            top: "0",
+            left: "0",
+            right: "0",
+            bottom: "0",
+            borderRadius: `${48 * scaleFactor}px`,
+          }}
+        >
+          {/* Iframe with exact dimensions based on scale */}
+          <iframe
+            key={[iframeKey, containerState, appState].toString()}
+            src={appUrl || undefined}
+            style={{
+              width: `${contentWidth}px`,
+              height: `${contentHeight}px`,
+              marginTop: `${padding}px`,
+              marginLeft: `${padding}px`,
+              border: "none",
+            }}
+          />
+
+          {/* Overlay messages positioned absolutely over the iframe - scaled with the phone */}
+          {containerState !== "active" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
+              <span style={{ fontSize: `${14 * scaleFactor}px` }}>
+                The Server is {containerState}
+              </span>
+              {containerState === "paused" || containerState === "pausing" ? (
+                <span style={{ fontSize: `${14 * scaleFactor}px` }}>
+                  Due to inactivity
+                </span>
+              ) : (
+                <Loader2
+                  className="animate-spin mt-2"
+                  style={{
+                    height: `${16 * scaleFactor}px`,
+                    width: `${16 * scaleFactor}px`,
+                  }}
+                />
+              )}
+            </div>
+          )}
+
+          {containerState === "active" && appState !== "active" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
+              <span style={{ fontSize: `${14 * scaleFactor}px` }}>
+                App is starting
+              </span>
+              <Loader2
+                className="animate-spin mt-2"
+                style={{
+                  height: `${16 * scaleFactor}px`,
+                  width: `${16 * scaleFactor}px`,
+                }}
               />
             </div>
-            
-            {/* Overlay status message when containerState is not active */}
-            {containerState !== "active" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
-                <span>The Server is {containerState}</span>
-                {containerState === "paused" || containerState === "pausing" ? (
-                  <span>Due to inactivity</span>
-                ) : (
-                  <Loader2 className="h-4 w-4 animate-spin mt-2" />
-                )}
-              </div>
-            )}
-
-            {/* Overlay status message when appState is not active AND containerState IS active */}
-            {containerState === "active" && appState !== "active" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
-                <span>App is {appState}</span>
-                <Loader2 className="h-4 w-4 animate-spin mt-2" />
-              </div>
-            )}
-          </div>
-
-          {/* Phone border overlay */}
-          <div className="absolute inset-0 rounded-[48px] border-[10px] border-black pointer-events-none" />
-
-          {/* iPhone Notch */}
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[120px] h-[25px] bg-black rounded-b-[14px] pointer-events-none"></div>
+          )}
         </div>
+
+        {/* Phone border overlay - scaled with the phone */}
+        <div
+          className="absolute pointer-events-none bg-transparent"
+          style={{
+            top: "0",
+            left: "0",
+            right: "0",
+            bottom: "0",
+            borderRadius: `${48 * scaleFactor}px`,
+            borderWidth: `${10 * scaleFactor}px`,
+            borderStyle: "solid",
+            borderColor: "black",
+          }}
+        />
+
+        {/* iPhone Notch - scaled with the phone */}
+        <div
+          className="absolute bg-black pointer-events-none"
+          style={{
+            top: "0",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: `${120 * scaleFactor}px`,
+            height: `${25 * scaleFactor}px`,
+            borderBottomLeftRadius: `${14 * scaleFactor}px`,
+            borderBottomRightRadius: `${14 * scaleFactor}px`,
+          }}
+        />
       </div>
     </div>
   );
