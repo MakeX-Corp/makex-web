@@ -4,18 +4,18 @@ import { z } from "zod";
 import { createFileBackendApiClient } from "./file-backend-api-client";
 import Exa from 'exa-js';
 import { getRelevantContext } from "../ai/rag/getRelevantContext";
+import FirecrawlApp, { ScrapeResponse, Action } from '@mendable/firecrawl-js';
 
 type ToolConfig = {
   apiUrl?: string;
   connectionUri?: string;
-  exaApiKey?: string;
 };
 
 export function createTools(config: ToolConfig = {}) {
   const apiClient = createFileBackendApiClient(config.apiUrl || "");
   const dbTool = new DatabaseTool();
   const connectionUri = config.connectionUri || undefined;
-  const exa = config.exaApiKey ? new Exa(config.exaApiKey) : null;
+  const firecrawl = process.env.FIRECRAWL_API_KEY ? new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY }) : null;
   const tools: Record<string, any> = {
     readFile: tool({
       description: "Read contents of a file",
@@ -276,7 +276,51 @@ export function createTools(config: ToolConfig = {}) {
       },
     }),
 
-  
+    scrapeWebContent: tool({
+      description: "Scrape web content from a URL using Firecrawl and return it in a format suitable for AI processing whenever a url is provided",
+      parameters: z.object({
+        url: z.string().describe("The URL to scrape"),
+        formats: z.array(z.enum(["markdown", "html", "rawHtml", "content", "links", "screenshot", "screenshot@fullPage", "extract", "json", "changeTracking"])).describe("The formats to return").default(["markdown"]),
+        actions: z.array(z.object({
+          type: z.enum(["wait", "click", "write", "press", "scrape", "screenshot"]).describe("Action type"),
+          milliseconds: z.number().optional().describe("Milliseconds to wait"),
+          selector: z.string().optional().describe("CSS selector for click action"),
+          text: z.string().optional().describe("Text to write"),
+          key: z.string().optional().describe("Key to press"),
+        })).optional().describe("Actions to perform before scraping"),
+      }),
+      execute: async ({ url, formats, actions }) => {
+        if (!firecrawl) {
+          return {
+            success: false,
+            error: "Firecrawl API key not configured",
+          };
+        }
+
+        try {
+          const result = await firecrawl.scrapeUrl(url, {
+            formats,
+            actions: actions as Action[],
+          });
+
+          if (!result.success) {
+            return {
+              success: false,
+              error: result.error || "Failed to scrape URL",
+            };
+          }
+          console.log(result);
+
+          return { success: true, data: result };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || "Unknown error occurred",
+          };
+        }
+      },
+    }),
+
   };
 
   // Add database tools if enabled
