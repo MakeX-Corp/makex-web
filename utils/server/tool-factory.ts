@@ -250,13 +250,29 @@ export function createTools(config: ToolConfig = {}) {
     }),
 
     getDocumentation: tool({
-      description: "Search the Expo documentation for relevant answers.",
+      description: "Search the Expo documentation for relevant answers whenever you install expo related packages or need to know more about the expo ecosystem.",
       parameters: z.object({
         query: z.string().describe("The user's question or technical topic"),
       }),
       execute: async ({ query }) => {
         const context = await getRelevantContext(query);
         return context.join("\n\n");
+      },
+    }),
+
+    linterRun: tool({
+      description: "Run the linter on specified file or directory",
+      parameters: z.object({
+        path: z.string().describe("The file or directory path to lint").optional(),
+      }),
+      execute: async ({ path }) => { 
+        try {
+          const command = path ? `npx eslint ${path}` : "npx eslint .";
+          const data = await apiClient.post("/command", { command });
+          return { success: true, data };
+        } catch (error: any) {
+          return { success: false, error: error.message || "Unknown error occurred" };
+        }
       },
     }),
 
