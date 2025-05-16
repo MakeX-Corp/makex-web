@@ -35,7 +35,6 @@ import { SessionsError } from "@/components/workspace/sessions-error";
 import { createClient } from "@/utils/supabase/client";
 import { dataURLToBlob } from "@/lib/screenshot-service";
 
-
 interface WorkspaceContentProps {
   initialSessionId: string | null;
 }
@@ -63,6 +62,7 @@ export default function WorkspaceContent({
   const [activeView, setActiveView] = useState<"chat" | "preview">("chat");
   const [isResetting, setIsResetting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
 
   // State to manage the iframe refresh
   const [iframeKey, setIframeKey] = useState<string>(
@@ -203,6 +203,41 @@ export default function WorkspaceContent({
       alert("Failed to export app. Please try again.");
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const deployWeb = async () => {
+    setIsDeploying(true);
+    try {
+      const response = await fetch("/api/code/deploy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          apiUrl: apiUrl,
+          appId,
+          platform: "web",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Deployment failed");
+      }
+
+      const data = await response.json();
+
+      if (data.deploymentUrl) {
+        // Open the deployed site in a new tab
+        window.open(data.deploymentUrl, "_blank");
+      } else {
+        alert("Deployment successful!");
+      }
+    } catch (error) {
+      console.error("Error deploying app:", error);
+      alert("Failed to deploy app. Please try again.");
+    } finally {
+      setIsDeploying(false);
     }
   };
 
@@ -358,11 +393,21 @@ export default function WorkspaceContent({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem
-                  className="cursor-pointer opacity-50"
-                  disabled={true}
+                  className="cursor-pointer"
+                  onClick={deployWeb}
+                  disabled={isDeploying}
                 >
-                  <Globe className="h-4 w-4 mr-2" />
-                  Web (Coming Soon)
+                  {isDeploying ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deploying...
+                    </>
+                  ) : (
+                    <>
+                      <Globe className="h-4 w-4 mr-2" />
+                      Web
+                    </>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() =>
@@ -448,13 +493,21 @@ export default function WorkspaceContent({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    className="cursor-pointer opacity-50"
-                    onClick={() =>
-                      window.open("https://discord.gg/3EsUgb53Zp", "_blank")
-                    }
+                    className="cursor-pointer"
+                    onClick={deployWeb}
+                    disabled={isDeploying}
                   >
-                    <Globe className="h-4 w-4 mr-2" />
-                    Web
+                    {isDeploying ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Deploying...
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="h-4 w-4 mr-2" />
+                        Web
+                      </>
+                    )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="cursor-pointer opacity-50"
@@ -544,13 +597,21 @@ export default function WorkspaceContent({
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuItem
-                      className="cursor-pointer opacity-50"
-                      onClick={() =>
-                        window.open("https://discord.gg/3EsUgb53Zp", "_blank")
-                      }
+                      className="cursor-pointer"
+                      onClick={deployWeb}
+                      disabled={isDeploying}
                     >
-                      <Globe className="h-4 w-4 mr-2" />
-                      Web
+                      {isDeploying ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Deploying...
+                        </>
+                      ) : (
+                        <>
+                          <Globe className="h-4 w-4 mr-2" />
+                          Web
+                        </>
+                      )}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="cursor-pointer opacity-50"
