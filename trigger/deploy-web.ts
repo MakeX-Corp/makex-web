@@ -59,63 +59,80 @@ export const deployWeb = task({
     deploymentId: string;
   }) => {
     const { appId, apiUrl, deploymentId } = payload;
-
-    const deploymentBasePath = `${appId}/${deploymentId}`;
     const supabase = await getSupabaseAdmin();
-    //const apiUrl = "http://localhost:8001";
-    const fileClient = createFileBackendApiClient(apiUrl);
 
-    const { data } = await fileClient.getFile("/deploy-web");
-    const zipBuffer =
-      data instanceof Readable ? await streamToBuffer(data) : data;
+    try {
+      const deploymentBasePath = `${appId}/${deploymentId}`;
+      //const apiUrl2 = "http://localhost:8001";
+      const fileClient = createFileBackendApiClient(apiUrl);
 
-    // Unzip and upload files
-    const zip = new AdmZip(zipBuffer);
-    const zipEntries = zip.getEntries();
-    const hasDistDir = zipEntries.some((entry: any) =>
-      entry.entryName.startsWith("dist/")
-    );
-    const baseDirToRemove = hasDistDir ? "dist/" : "";
+      const { data } = await fileClient.getFile(
+        `/deploy-web?appId=${appId}&deploymentId=${deploymentId}`
+      );
+      const zipBuffer =
+        data instanceof Readable ? await streamToBuffer(data) : data;
 
-    const uploadPromises = zipEntries
-      .filter((entry: any) => !entry.isDirectory)
-      .filter((entry: any) =>
-        hasDistDir ? entry.entryName.startsWith(baseDirToRemove) : true
-      )
-      .map((entry: any) => {
-        const relativePath = hasDistDir
-          ? entry.entryName.substring(baseDirToRemove.length)
-          : entry.entryName;
+      // Unzip and upload files
+      const zip = new AdmZip(zipBuffer);
+      const zipEntries = zip.getEntries();
+      const hasDistDir = zipEntries.some((entry: any) =>
+        entry.entryName.startsWith("dist/")
+      );
+      const baseDirToRemove = hasDistDir ? "dist/" : "";
 
-        return s3Client.send(
-          new PutObjectCommand({
-            Bucket: BUCKET_NAME,
-            Key: `${deploymentBasePath}/${relativePath}`,
-            Body: entry.getData(),
-            ContentType: getMimeType(entry.entryName),
-            CacheControl:
-              getMimeType(entry.entryName).includes("image/") ||
-              entry.entryName.includes("assets/")
-                ? "public, max-age=31536000"
-                : "no-cache",
-          })
-        );
-      });
+      const uploadPromises = zipEntries
+        .filter((entry: any) => !entry.isDirectory)
+        .filter((entry: any) =>
+          hasDistDir ? entry.entryName.startsWith(baseDirToRemove) : true
+        )
+        .map((entry: any) => {
+          const relativePath = hasDistDir
+            ? entry.entryName.substring(baseDirToRemove.length)
+            : entry.entryName;
 
-    await Promise.all(uploadPromises);
+          return s3Client.send(
+            new PutObjectCommand({
+              Bucket: BUCKET_NAME,
+              Key: `${deploymentBasePath}/${relativePath}`,
+              Body: entry.getData(),
+              ContentType: getMimeType(entry.entryName),
+              CacheControl:
+                getMimeType(entry.entryName).includes("image/") ||
+                entry.entryName.includes("assets/")
+                  ? "public, max-age=31536000"
+                  : "no-cache",
+            })
+          );
+        });
 
-    const deploymentUrl = `${PUBLIC_URL_BASE}/${deploymentBasePath}/index.html`;
+      await Promise.all(uploadPromises);
 
-    await supabase
-      .from("user_deployments")
-      .update({
-        url: deploymentUrl,
-        status: "completed",
-      })
-      .eq("id", deploymentId);
+      const deploymentUrl = `${PUBLIC_URL_BASE}/${deploymentBasePath}/index.html`;
 
-    return {
-      deploymentUrl,
-    };
+      await supabase
+        .from("user_deployments")
+        .update({
+          url: deploymentUrl,
+          status: "completed",
+        })
+        .eq("id", deploymentId);
+
+      return {
+        deploymentUrl,
+      };
+    } catch (error) {
+      console.error("Deployment failed:", error);
+
+      // Update the database to mark the deployment as failed
+      await supabase
+        .from("user_deployments")
+        .update({
+          status: "failed",
+        })
+        .eq("id", deploymentId);
+
+      // Rethrow or return error information
+      throw error;
+    }
   },
 });
