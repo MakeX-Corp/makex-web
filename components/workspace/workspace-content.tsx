@@ -217,7 +217,6 @@ export default function WorkspaceContent({
         body: JSON.stringify({
           apiUrl: apiUrl,
           appId,
-          platform: "web",
         }),
       });
 
@@ -228,9 +227,6 @@ export default function WorkspaceContent({
       const data = await response.json();
 
       if (data.deploymentUrl) {
-        // Open the deployed site in a new tab
-        window.open(data.deploymentUrl, "_blank");
-      } else {
         alert("Deployment successful!");
       }
     } catch (error) {

@@ -92,6 +92,7 @@
   },
   "devDependencies": {
     "@trigger.dev/build": "^3.3.17",
+    "@types/adm-zip": "^0.5.7",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",

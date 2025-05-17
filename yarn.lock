@@ -3911,6 +3911,13 @@
     uuid "^9.0.0"
     ws "^8.11.0"
 
+"@types/adm-zip@^0.5.7":
+  version "0.5.7"
+  resolved "https://registry.yarnpkg.com/@types/adm-zip/-/adm-zip-0.5.7.tgz#eec10b6f717d3948beb64aca0abebc4b344ac7e9"
+  integrity sha512-DNEs/QvmyRLurdQPChqq0Md4zGvPwHerAJYWk9l2jCbD1VPpnzRJorOdiq4zsw09NFbYnhfsoEhWtxIzXpn2yw==
+  dependencies:
+    "@types/node" "*"
+
 "@types/connect@3.4.38":
   version "3.4.38"
   resolved "https://registry.yarnpkg.com/@types/connect/-/connect-3.4.38.tgz#5ba7f3bc4fbbdeaff8dded952e5ff2cc53f8d858"
