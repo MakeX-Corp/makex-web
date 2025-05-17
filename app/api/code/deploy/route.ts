@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   if ("error" in result) return result.error;
   const { supabase, user } = result;
   // Create the deployment record
-  const { data: deploymentRecord } = await supabase
+  const { data: deploymentRecord, error: deploymentError } = await supabase
     .from("user_deployments")
     .insert({
       app_id: appId,
@@ -19,28 +19,23 @@ export async function POST(req: Request) {
     .select()
     .single();
 
+  if (deploymentError) {
+    console.error("Error creating deployment record:", deploymentError);
+    return NextResponse.json(
+      { error: deploymentError.message },
+      { status: 500 }
+    );
+  }
+
   const deploymentId = deploymentRecord.id;
 
-  const taskResult = await tasks.triggerAndPoll(
-    "deploy-web",
-    {
-      userId: user.id,
-      apiUrl,
-      appId,
-      deploymentId,
-    },
-    {
-      pollIntervalMs: 3000,
-    }
-  );
-  // If job finished within timeout
-  if (taskResult.status === "COMPLETED") {
-    return NextResponse.json({
-      success: true,
-      deploymentId,
-      url: taskResult.output?.url,
-    });
-  }
+  tasks.trigger("deploy-web", {
+    userId: user.id,
+    apiUrl,
+    appId,
+    deploymentId,
+  });
+
   return NextResponse.json({
     success: true,
     deploymentId,
