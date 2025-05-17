@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "@/context/session-context";
 import { useTheme } from "next-themes";
 import {
@@ -9,12 +9,9 @@ import {
   RefreshCw,
   Download,
   MoreVertical,
-  Database,
   Loader2,
   UploadCloud,
   Globe,
-  Apple,
-  Play,
 } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -34,8 +31,7 @@ import { SessionSelector } from "@/components/workspace/session-selector";
 import { SessionsError } from "@/components/workspace/sessions-error";
 import { createClient } from "@/utils/supabase/client";
 import { dataURLToBlob } from "@/lib/screenshot-service";
-
-
+import { DeployButton } from "@/components/workspace/deploy";
 interface WorkspaceContentProps {
   initialSessionId: string | null;
 }
@@ -63,6 +59,7 @@ export default function WorkspaceContent({
   const [activeView, setActiveView] = useState<"chat" | "preview">("chat");
   const [isResetting, setIsResetting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
 
   // State to manage the iframe refresh
   const [iframeKey, setIframeKey] = useState<string>(
@@ -349,55 +346,7 @@ export default function WorkspaceContent({
               )}
             </Button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <UploadCloud className="h-4 w-4" />
-                  <span>Deploy</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem
-                  className="cursor-pointer opacity-50"
-                  disabled={true}
-                >
-                  <Globe className="h-4 w-4 mr-2" />
-                  Web (Coming Soon)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    window.open("https://discord.gg/3EsUgb53Zp", "_blank")
-                  }
-                >
-                  <img
-                    src={
-                      theme === "dark"
-                        ? "/icons/apple-dark.svg"
-                        : "/icons/apple.svg"
-                    }
-                    alt="App Store"
-                    className="h-4 w-4 mr-2"
-                  />
-                  App Store
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    window.open("https://discord.gg/3EsUgb53Zp", "_blank")
-                  }
-                >
-                  <img
-                    src={
-                      theme === "dark"
-                        ? "/icons/play-store-dark.svg"
-                        : "/icons/play-store.svg"
-                    }
-                    alt="Play Store"
-                    className="h-4 w-4 mr-2"
-                  />
-                  Play Store
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <DeployButton appId={appId} apiUrl={apiUrl} />
           </div>
         </div>
 
@@ -448,13 +397,23 @@ export default function WorkspaceContent({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    className="cursor-pointer opacity-50"
+                    className="cursor-pointer"
                     onClick={() =>
                       window.open("https://discord.gg/3EsUgb53Zp", "_blank")
                     }
+                    disabled={isDeploying}
                   >
-                    <Globe className="h-4 w-4 mr-2" />
-                    Web
+                    {isDeploying ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Deploying...
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="h-4 w-4 mr-2" />
+                        Web
+                      </>
+                    )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="cursor-pointer opacity-50"
@@ -492,10 +451,6 @@ export default function WorkspaceContent({
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
-              <DropdownMenuItem className="cursor-pointer">
-                <Database className="h-4 w-4 mr-2" />
-                Supabase Connect
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -544,13 +499,23 @@ export default function WorkspaceContent({
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuItem
-                      className="cursor-pointer opacity-50"
+                      className="cursor-pointer"
                       onClick={() =>
                         window.open("https://discord.gg/3EsUgb53Zp", "_blank")
                       }
+                      disabled={isDeploying}
                     >
-                      <Globe className="h-4 w-4 mr-2" />
-                      Web
+                      {isDeploying ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Deploying...
+                        </>
+                      ) : (
+                        <>
+                          <Globe className="h-4 w-4 mr-2" />
+                          Web
+                        </>
+                      )}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="cursor-pointer opacity-50"
@@ -588,10 +553,6 @@ export default function WorkspaceContent({
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
-                <DropdownMenuItem className="cursor-pointer">
-                  <Database className="h-4 w-4 mr-2" />
-                  Supabase Connect
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
