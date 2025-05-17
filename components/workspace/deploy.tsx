@@ -243,6 +243,16 @@ export function DeployButton({
           onClick={() => window.open("https://discord.gg/3EsUgb53Zp", "_blank")}
         >
           <img
+            src={"/logo.png"}
+            alt="MakeX Store"
+            className="h-4 w-4 mr-2"
+          />
+          Deploy to MakeX Store
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => window.open("https://discord.gg/3EsUgb53Zp", "_blank")}
+        >
+          <img
             src={
               theme === "dark" ? "/icons/apple-dark.svg" : "/icons/apple.svg"
             }

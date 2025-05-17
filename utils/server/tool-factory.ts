@@ -3,7 +3,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { createFileBackendApiClient } from "./file-backend-api-client";
 import Exa from 'exa-js';
-import { getRelevantContext } from "../ai/rag/getRelevantContext";
+import { getRelevantContext } from "./getRelevantContext";
 import FirecrawlApp, { ScrapeResponse, Action } from '@mendable/firecrawl-js';
 
 type ToolConfig = {
