@@ -62,7 +62,8 @@ export const deployWeb = task({
 
     const deploymentBasePath = `${appId}/${deploymentId}`;
     const supabase = await getSupabaseAdmin();
-    const fileClient = createFileBackendApiClient("http://localhost:8001");
+    //const apiUrl = "http://localhost:8001";
+    const fileClient = createFileBackendApiClient(apiUrl);
 
     const { data } = await fileClient.getFile("/deploy-web");
     const zipBuffer =
