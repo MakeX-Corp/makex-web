@@ -54,6 +54,9 @@ function getMimeType(filename: string): string {
 
 export const deployWeb = task({
   id: "deploy-web",
+  retry: {
+    maxAttempts: 0
+  },
   run: async (payload: { appId: string; apiUrl: string; userId: string }) => {
     const { appId } = payload;
 
