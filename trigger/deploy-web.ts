@@ -4,6 +4,7 @@ import AdmZip from "adm-zip";
 import { Readable } from "stream";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
+import { proxySetter } from "@/utils/server/redis-client";
 
 function streamToBuffer(stream: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -54,13 +55,26 @@ function getMimeType(filename: string): string {
 export const deployWeb = task({
   id: "deploy-web",
   run: async (payload: { appId: string; apiUrl: string; userId: string }) => {
-    const { appId, apiUrl, userId } = payload;
+    const { appId } = payload;
+
     const supabase = await getSupabaseAdmin();
+    const { data: appRecord } = await supabase
+      .from("user_apps")
+      .select("api_url,user_id,app_name")
+      .eq("id", appId)
+      .single();
+
+    if (!appRecord) {
+      throw new Error("App record not found");
+    }
+
+    const { api_url, user_id, app_name } = appRecord;
+
     const { data: deploymentRecord } = await supabase
       .from("user_deployments")
       .insert({
         app_id: appId,
-        user_id: userId,
+        user_id: user_id,
         status: "uploading",
         type: "web",
       })
@@ -74,8 +88,7 @@ export const deployWeb = task({
     const deploymentId = deploymentRecord.id;
     try {
       const deploymentBasePath = `${appId}/${deploymentId}`;
-      //const apiUrl2 = "http://localhost:8001";
-      const fileClient = createFileBackendApiClient(apiUrl);
+      const fileClient = createFileBackendApiClient(api_url);
 
       const { data } = await fileClient.getBuffer(
         `/deploy-web?appId=${appId}&deploymentId=${deploymentId}`
@@ -120,11 +133,16 @@ export const deployWeb = task({
 
       const deploymentUrl = `${PUBLIC_URL_BASE}/${deploymentBasePath}/`;
 
+      const displayUrl = `web-${app_name}.makex.app`;
+
+      await proxySetter(displayUrl, deploymentUrl);
+
       await supabase
         .from("user_deployments")
         .update({
           url: deploymentUrl,
           status: "completed",
+          display_url: displayUrl,
         })
         .eq("id", deploymentId);
 

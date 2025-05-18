@@ -9,6 +9,8 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +30,7 @@ interface Deployment {
   status: "uploading" | "completed" | "failed";
   created_at: string;
   error_message?: string;
+  display_url?: string;
 }
 
 export function DeployButton({
@@ -43,6 +46,7 @@ export function DeployButton({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Initialize Supabase client
   const supabase = createClient();
@@ -100,6 +104,7 @@ export function DeployButton({
             url: payload.new.url || "",
             status: payload.new.status,
             created_at: payload.new.created_at,
+            display_url: payload.new.display_url || "",
           });
         }
       )
@@ -110,6 +115,16 @@ export function DeployButton({
       supabase.removeChannel(channel);
     };
   }, [appId, supabase]);
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
 
   // Deploy web function with improved error handling
   const deployWeb = useCallback(
@@ -125,7 +140,7 @@ export function DeployButton({
         const response = await fetch("/api/code/deploy", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ apiUrl, appId }),
+          body: JSON.stringify({ appId, type: "web" }),
         });
 
         if (!response.ok) {
@@ -143,6 +158,7 @@ export function DeployButton({
 
         // Update local state for immediate feedback
         const newDeployment = {
+          id: data.deploymentId,
           url: data.url || "",
           status: "uploading" as const,
           created_at: new Date().toISOString(),
@@ -216,6 +232,34 @@ export function DeployButton({
         {/* Deploy action buttons */}
         <DropdownMenuLabel>Deploy Options</DropdownMenuLabel>
 
+        {!isLoading && !error && lastDeployment && lastDeployment.url && lastDeployment.status === "completed" && (
+          <div className="px-2 py-1 text-sm">
+            <div className="flex items-center gap-2 bg-muted/50 rounded-md p-2">
+              <span className="truncate flex-1">{lastDeployment.url}</span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => copyToClipboard(lastDeployment.url)}
+                  className="p-1 hover:bg-muted rounded-sm transition-colors"
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </button>
+                <a
+                  href={lastDeployment.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1 hover:bg-muted rounded-sm transition-colors"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         <DropdownMenuItem
           onClick={deployWeb}
           disabled={isDeploying}
@@ -228,22 +272,14 @@ export function DeployButton({
               Deploying to web...
             </>
           ) : (
-            <>Deploy to web</>
+            <>Web</>
           )}
         </DropdownMenuItem>
 
         <DropdownMenuItem
           onClick={() => window.open("https://discord.gg/3EsUgb53Zp", "_blank")}
-        >
-          <img
-            src={"/logo.png"}
-            alt="MakeX Store"
-            className="h-4 w-4 mr-2"
-          />
-          Deploy to MakeX Store
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => window.open("https://discord.gg/3EsUgb53Zp", "_blank")}
+          disabled={true}
+          className="cursor-not-allowed opacity-50"
         >
           <img
             src={
@@ -252,10 +288,13 @@ export function DeployButton({
             alt="App Store"
             className="h-4 w-4 mr-2"
           />
-          Deploy to App Store
+          App Store (Coming Soon)
         </DropdownMenuItem>
+
         <DropdownMenuItem
           onClick={() => window.open("https://discord.gg/3EsUgb53Zp", "_blank")}
+          disabled={true}
+          className="cursor-not-allowed opacity-50"
         >
           <img
             src={
@@ -266,7 +305,7 @@ export function DeployButton({
             alt="Play Store"
             className="h-4 w-4 mr-2"
           />
-          Deploy to Play Store
+          Play Store (Coming Soon)
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
@@ -323,21 +362,6 @@ export function DeployButton({
                   </div>
                 )}
             </div>
-
-            {lastDeployment.url && lastDeployment.status === "completed" && (
-              <>
-                <DropdownMenuItem
-                  className="cursor-pointer mt-1 flex items-center justify-between"
-                  onClick={() => window.open(lastDeployment.url, "_blank")}
-                >
-                  <span className="flex items-center">
-                    <Globe className="h-4 w-4 mr-2" />
-                    {formatUrl(lastDeployment.url)}
-                  </span>
-                  <ExternalLink className="h-3 w-3 ml-2" />
-                </DropdownMenuItem>
-              </>
-            )}
           </>
         )}
       </DropdownMenuContent>
