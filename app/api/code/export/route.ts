@@ -8,12 +8,13 @@ export async function POST(req: Request) {
 
     // Get user info and validate authentication
     const userResult = await getSupabaseWithUser(req as NextRequest);
-    if (userResult instanceof NextResponse || 'error' in userResult) return userResult;
+    if (userResult instanceof NextResponse || "error" in userResult)
+      return userResult;
     const { user } = userResult;
 
     try {
       const client = createFileBackendApiClient(apiUrl);
-      const { data, headers } = await client.getFile("/export-code");
+      const { data, headers } = await client.getBuffer("/export-code");
 
       // Convert Axios headers to a format compatible with Response
       const responseHeaders = new Headers();
@@ -23,7 +24,10 @@ export async function POST(req: Request) {
         }
       });
       responseHeaders.set("Content-Type", "application/zip");
-      responseHeaders.set("Content-Disposition", 'attachment; filename="export.zip"');
+      responseHeaders.set(
+        "Content-Disposition",
+        'attachment; filename="export.zip"'
+      );
 
       return new Response(data, {
         status: 200,

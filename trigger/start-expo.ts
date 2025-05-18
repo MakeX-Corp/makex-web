@@ -119,6 +119,14 @@ export const startExpo = task({
       if (updateAppError) {
         throw new Error(`Failed updating app with initial commit: ${updateAppError.message}`);
       }
+
+      // Update app configuration
+      const appConfigResponse = await filebackendApiClient.post("/app-config", {
+        name: appName,
+        slug: appName.toLowerCase().replace(/\s+/g, '-'),
+      });
+
+      console.log("App configuration updated successfully:", appConfigResponse);
     }
   },
 });

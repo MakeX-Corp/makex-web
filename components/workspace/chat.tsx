@@ -37,8 +37,9 @@ export function Chat({
     apiUrl,
     appName,
     supabaseProject,
-    sessionName,
-    setSessionName,
+    getCurrentSessionTitle, // New function
+    updateSessionTitle: contextUpdateSessionTitle,
+
     justCreatedSessionId,
   } = useSession();
   const { subscription, isAIResponding, setIsAIResponding } = useApp();
@@ -180,14 +181,17 @@ export function Chat({
           if (
             messages.length === 0 &&
             message.role === "assistant" &&
-            (sessionName === "New Chat" || !sessionName)
+            getCurrentSessionTitle() === "New Chat"
           ) {
             const newTitle = await updateSessionTitle(
               messages[0]?.content || "",
               message.content || "",
               sessionId
             );
-            if (newTitle) setSessionName(newTitle);
+            if (newTitle) {
+              // Update the session title in our context
+              await contextUpdateSessionTitle(sessionId, newTitle);
+            }
           }
 
           const result = await checkMessageLimit(subscription);
@@ -301,7 +305,11 @@ export function Chat({
       case "text":
         return <div className="text-sm">{part.text}</div>;
       case "tool-invocation":
-        return <ToolInvocation part={part} />;
+        return (
+          <div className="overflow-x-auto max-w-full">
+            <ToolInvocation part={part} />
+          </div>
+        );
       case "image":
         return (
           <img
@@ -336,7 +344,7 @@ export function Chat({
   return (
     <div
       ref={chatContainerRef}
-      className="flex flex-col h-full border rounded-md overflow-hidden relative"
+      className="flex flex-col h-full border rounded-md overflow-hidden relative chat-component"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -499,7 +507,7 @@ export function Chat({
               }
             }}
             placeholder="Type your message or drop images anywhere..."
-            className="flex-1 min-h-[38px] max-h-[200px] resize-none py-2 px-3 rounded-md border focus-visible:outline-none"
+            className="flex-1 min-h-[38px] max-h-[200px] resize-none py-2 px-3 rounded-md border focus-visible:outline-none bg-background "
             rows={1}
             disabled={isAIResponding || isLoading}
           />

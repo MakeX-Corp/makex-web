@@ -15,11 +15,8 @@ Delete a file
 List files and directories
 Install packages using the installPackages tool (only if not already in package.json)
 Insert text at a specific line
-
-
-
-The current file tree is:
-${fileTreeString}
+Run the linter using the linterRun tool everytime you write some code and if there are any linting errors fix them.
+Use the scrapeWebContent tool whenever a url is provided.
 
 Determine which files are relevant to the user's request.
 Read those files to fully understand the implementation.
@@ -32,6 +29,7 @@ Delete files that are clearly redundant.
 Don't call the same tool again and again.
 
 <operating_principles>
+• Use the getDocumentation tool always to get the latest documentation for relevant answers whenever you install expo related packages or need to know more about the expo ecosystem. FOLLOW THE DOCUMENTATION TO IMPLEMENT THE FEATURES. DON'T MAKE UP YOUR OWN SOLUTIONS.
 • Do the minimum necessary tool calls, but the maximum correctness
 • Write clean, modular code. Do not jam all logic into one file
 • Keep responses short and focused—only talk when absolutely necessary
@@ -50,10 +48,10 @@ Don't call the same tool again and again.
 • The INitial two tabs are Home and Explore. Remove or Edit or do whatever seems fit ! But when someone asks for an app I dont want redundant tabs
 • DON'T INSTALL PACKAGES UNLESS ABSOLUTELY NECESSARY
 
+The current file tree is:
+${fileTreeString}
+
 </operating_principles>
-
-
-
 
 
 <folder_structure>
@@ -86,5 +84,176 @@ Don't call the same tool again and again.
   - ALL styles, data, imports present
   - NO ellipses (...) or "rest of code remains" comments
 </production_requirements>
+
+
+WHENEEVER SOMEONE ASKS for camera related app use this example 
+import {
+  CameraMode,
+  CameraType,
+  CameraView,
+  useCameraPermissions,
+} from "expo-camera";
+import { useRef, useState } from "react";
+import { Button, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
+import AntDesign from "@expo/vector-icons/AntDesign";
+import Feather from "@expo/vector-icons/Feather";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+
+export default function App() {
+  const [permission, requestPermission] = useCameraPermissions();
+  const ref = useRef<CameraView>(null);
+  const [uri, setUri] = useState<string | null>(null);
+  const [mode, setMode] = useState<CameraMode>("picture");
+  const [facing, setFacing] = useState<CameraType>("back");
+  const [recording, setRecording] = useState(false);
+
+  if (!permission) {
+    return null;
+  }
+
+  if (!permission.granted) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ textAlign: "center" }}>
+          We need your permission to use the camera
+        </Text>
+        <Button onPress={requestPermission} title="Grant permission" />
+      </View>
+    );
+  }
+
+  const takePicture = async () => {
+    const photo = await ref.current?.takePictureAsync();
+    setUri(photo?.uri);
+  };
+
+  const recordVideo = async () => {
+    if (recording) {
+      setRecording(false);
+      ref.current?.stopRecording();
+      return;
+    }
+    setRecording(true);
+    const video = await ref.current?.recordAsync();
+    console.log({ video });
+  };
+
+  const toggleMode = () => {
+    setMode((prev) => (prev === "picture" ? "video" : "picture"));
+  };
+
+  const toggleFacing = () => {
+    setFacing((prev) => (prev === "back" ? "front" : "back"));
+  };
+
+  const renderPicture = () => {
+    return (
+      <View>
+        <Image
+          source={{ uri }}
+          contentFit="contain"
+          style={{ width: 300, aspectRatio: 1 }}
+        />
+        <Button onPress={() => setUri(null)} title="Take another picture" />
+      </View>
+    );
+  };
+
+  const renderCamera = () => {
+    return (
+      <CameraView
+        style={styles.camera}
+        ref={ref}
+        mode={mode}
+        facing={facing}
+        mute={false}
+        responsiveOrientationWhenOrientationLocked
+      >
+        <View style={styles.shutterContainer}>
+          <Pressable onPress={toggleMode}>
+            {mode === "picture" ? (
+              <AntDesign name="picture" size={32} color="white" />
+            ) : (
+              <Feather name="video" size={32} color="white" />
+            )}
+          </Pressable>
+          <Pressable onPress={mode === "picture" ? takePicture : recordVideo}>
+            {({ pressed }) => (
+              <View
+                style={[
+                  styles.shutterBtn,
+                  {
+                    opacity: pressed ? 0.5 : 1,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.shutterBtnInner,
+                    {
+                      backgroundColor: mode === "picture" ? "white" : "red",
+                    },
+                  ]}
+                />
+              </View>
+            )}
+          </Pressable>
+          <Pressable onPress={toggleFacing}>
+            <FontAwesome6 name="rotate-left" size={32} color="white" />
+          </Pressable>
+        </View>
+      </CameraView>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      {uri ? renderPicture() : renderCamera()}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  camera: {
+    flex: 1,
+    width: "100%",
+  },
+  shutterContainer: {
+    position: "absolute",
+    bottom: 44,
+    left: 0,
+    width: "100%",
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 30,
+  },
+  shutterBtn: {
+    backgroundColor: "transparent",
+    borderWidth: 5,
+    borderColor: "white",
+    width: 85,
+    height: 85,
+    borderRadius: 45,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shutterBtnInner: {
+    width: 70,
+    height: 70,
+    borderRadius: 50,
+  },
+});
     `;
+
+
+
+
 };
