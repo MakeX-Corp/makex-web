@@ -1,46 +1,59 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { tasks } from "@trigger.dev/sdk/v3";
+import { deployEAS } from "@/trigger/deploy-eas";
 
 export async function POST(req: Request) {
-  const { apiUrl, appId } = await req.json();
+  const { apiUrl, appId, type = "web" } = await req.json();
   const result = await getSupabaseWithUser(req as NextRequest);
   if (result instanceof NextResponse) return result;
   if ("error" in result) return result.error;
   const { supabase, user } = result;
-  // Create the deployment record
-  const { data: deploymentRecord, error: deploymentError } = await supabase
-    .from("user_deployments")
-    .insert({
-      app_id: appId,
-      user_id: user.id,
-      status: "uploading",
-    })
-    .select()
-    .single();
 
-  if (deploymentError) {
-    console.error("Error creating deployment record:", deploymentError);
-    return NextResponse.json(
-      { error: deploymentError.message },
-      { status: 500 }
-    );
+  if (type === "mobile") {
+    tasks.trigger("deploy-eas", {
+      appId,
+    });
+    return NextResponse.json({
+      success: true,
+      message: "Mobile deployment started in background",
+    });
+  } else {
+    // Create the deployment record for web deployments
+    const { data: deploymentRecord, error: deploymentError } = await supabase
+      .from("user_deployments")
+      .insert({
+        app_id: appId,
+        user_id: user.id,
+        status: "uploading",
+        type,
+      })
+      .select()
+      .single();
+
+    if (deploymentError) {
+      console.error("Error creating deployment record:", deploymentError);
+      return NextResponse.json(
+        { error: deploymentError.message },
+        { status: 500 }
+      );
+    }
+
+    const deploymentId = deploymentRecord.id;
+
+    tasks.trigger("deploy-web", {
+      userId: user.id,
+      apiUrl,
+      appId,
+      deploymentId,
+    });
+
+    return NextResponse.json({
+      success: true,
+      deploymentId,
+      message: "Web deployment started in background",
+    });
   }
-
-  const deploymentId = deploymentRecord.id;
-
-  tasks.trigger("deploy-web", {
-    userId: user.id,
-    apiUrl,
-    appId,
-    deploymentId,
-  });
-
-  return NextResponse.json({
-    success: true,
-    deploymentId,
-    message: "Deployment started in background",
-  });
 }
 
 export async function GET(req: NextRequest) {

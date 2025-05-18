@@ -131,7 +131,55 @@ export function DeployButton({
         const response = await fetch("/api/code/deploy", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ apiUrl, appId }),
+          body: JSON.stringify({ apiUrl, appId, type: "web" }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error || `Deployment failed (${response.status})`
+          );
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || "Unknown deployment error");
+        }
+
+        // Update local state for immediate feedback
+        const newDeployment = {
+          id: data.deploymentId,
+          url: data.url || "",
+          status: "uploading" as const,
+          created_at: new Date().toISOString(),
+        };
+
+        setLastDeployment(newDeployment);
+      } catch (error: any) {
+        console.error("Error deploying app:", error);
+        setError(error.message || "Failed to deploy app");
+      } finally {
+        setIsDeploying(false);
+      }
+    },
+    [apiUrl, appId]
+  );
+
+  const deployMobile = useCallback(
+    async (e: React.MouseEvent) => {
+      // Prevent the dropdown from closing
+      e.preventDefault();
+      e.stopPropagation();
+
+      setIsDeploying(true);
+      setError(null);
+
+      try {
+        const response = await fetch("/api/code/deploy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ apiUrl, appId, type: "mobile" }),
         });
 
         if (!response.ok) {
@@ -240,14 +288,27 @@ export function DeployButton({
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => window.open("https://discord.gg/3EsUgb53Zp", "_blank")}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            deployMobile(e);
+          }}
+          disabled={isDeploying}
+          className="cursor-pointer"
         >
           <img
             src={"/logo.png"}
             alt="MakeX Store"
             className="h-4 w-4 mr-2"
           />
-          Deploy to MakeX Store
+          {isDeploying ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Deploying to MakeX Store...
+            </>
+          ) : (
+            <>Deploy to MakeX Store</>
+          )}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => window.open("https://discord.gg/3EsUgb53Zp", "_blank")}
