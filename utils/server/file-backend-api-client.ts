@@ -1,17 +1,17 @@
-import axios from 'axios';
+import axios from "axios";
 
 const API_KEY = process.env.FILE_BACKEND_API_KEY;
 
 if (!API_KEY) {
-  throw new Error('FILE_BACKEND_API_KEY environment variable is not set');
+  throw new Error("FILE_BACKEND_API_KEY environment variable is not set");
 }
 
 export const createFileBackendApiClient = (baseURL: string) => {
   const client = axios.create({
     baseURL,
     headers: {
-      'X-API-Key': API_KEY,
-      'Content-Type': 'application/json',
+      "X-API-Key": API_KEY,
+      "Content-Type": "application/json",
     },
   });
 
@@ -20,13 +20,13 @@ export const createFileBackendApiClient = (baseURL: string) => {
       const response = await client.get(url, { params });
       return response.data;
     },
-    getFile: async (url: string, params?: any) => {
-      const response = await client.get(url, { 
+    getBuffer: async (url: string, params?: any) => {
+      const response = await client.get(url, {
         params,
-        responseType: 'arraybuffer',
+        responseType: "arraybuffer",
         headers: {
-          'X-API-Key': API_KEY,
-        }
+          "X-API-Key": API_KEY,
+        },
       });
       return {
         data: response.data,
@@ -46,4 +46,4 @@ export const createFileBackendApiClient = (baseURL: string) => {
       return response.data;
     },
   };
-}; 
+};

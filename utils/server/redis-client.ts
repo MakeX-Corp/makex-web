@@ -28,3 +28,19 @@ export const redisUrlSetter = async (appName: string, appUrl: string, apiUrl: st
     await redis.disconnect();
   }
 };
+
+
+export const proxySetter = async (currentUrl: string, newUrl: string) => {
+  // connect to redis
+  await connectRedis();
+
+  // set the new url
+  const setUrl = await redis.set(`proxy:${newUrl}`, `${currentUrl}`);
+
+  console.log("Redis URL set successfully", setUrl);
+
+  // disconnect from redis
+  if (redis.isOpen) {
+    await redis.disconnect();
+  }
+};

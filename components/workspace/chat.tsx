@@ -305,7 +305,11 @@ export function Chat({
       case "text":
         return <div className="text-sm">{part.text}</div>;
       case "tool-invocation":
-        return <ToolInvocation part={part} />;
+        return (
+          <div className="overflow-x-auto max-w-full">
+            <ToolInvocation part={part} />
+          </div>
+        );
       case "image":
         return (
           <img

@@ -8,7 +8,6 @@ export async function POST(req: Request) {
   const result = await getSupabaseWithUser(req as NextRequest);
   if (result instanceof NextResponse) return result;
   if ("error" in result) return result.error;
-  const { supabase, user } = result;
 
   if (type === "mobile") {
     tasks.trigger("deploy-eas", {
@@ -18,39 +17,14 @@ export async function POST(req: Request) {
       success: true,
       message: "Mobile deployment started in background",
     });
+
   } else {
-    // Create the deployment record for web deployments
-    const { data: deploymentRecord, error: deploymentError } = await supabase
-      .from("user_deployments")
-      .insert({
-        app_id: appId,
-        user_id: user.id,
-        status: "uploading",
-        type,
-      })
-      .select()
-      .single();
-
-    if (deploymentError) {
-      console.error("Error creating deployment record:", deploymentError);
-      return NextResponse.json(
-        { error: deploymentError.message },
-        { status: 500 }
-      );
-    }
-
-    const deploymentId = deploymentRecord.id;
-
     tasks.trigger("deploy-web", {
-      userId: user.id,
-      apiUrl,
       appId,
-      deploymentId,
     });
 
     return NextResponse.json({
       success: true,
-      deploymentId,
       message: "Web deployment started in background",
     });
   }
