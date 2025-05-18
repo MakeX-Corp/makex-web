@@ -18,8 +18,8 @@ const s3Client = new S3Client({
   region: "us-east-2",
   endpoint: "https://s3.us-east-2.amazonaws.com",
   credentials: {
-    accessKeyId: process.env.DEPLOYMENT_AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.DEPLOYMENT_AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });
 
@@ -53,25 +53,36 @@ function getMimeType(filename: string): string {
 
 export const deployWeb = task({
   id: "deploy-web",
-  run: async (payload: {
-    appId: string;
-    apiUrl: string;
-    deploymentId: string;
-  }) => {
-    const { appId, apiUrl, deploymentId } = payload;
+  run: async (payload: { appId: string; apiUrl: string; userId: string }) => {
+    const { appId, apiUrl, userId } = payload;
     const supabase = await getSupabaseAdmin();
+    const { data: deploymentRecord } = await supabase
+      .from("user_deployments")
+      .insert({
+        app_id: appId,
+        user_id: userId,
+        status: "uploading",
+        type: "web",
+      })
+      .select()
+      .single();
 
+    if (!deploymentRecord) {
+      throw new Error("Deployment record not found");
+    }
+
+    const deploymentId = deploymentRecord.id;
     try {
       const deploymentBasePath = `${appId}/${deploymentId}`;
-      //const apiUrl2 = "http://localhost:8001";
-      const fileClient = createFileBackendApiClient(apiUrl);
+      const apiUrl2 = "http://localhost:8001";
+      const fileClient = createFileBackendApiClient(apiUrl2);
 
-      const { data } = await fileClient.getFile(
+      const { data } = await fileClient.getBuffer(
         `/deploy-web?appId=${appId}&deploymentId=${deploymentId}`
       );
+
       const zipBuffer =
         data instanceof Readable ? await streamToBuffer(data) : data;
-
       // Unzip and upload files
       const zip = new AdmZip(zipBuffer);
       const zipEntries = zip.getEntries();
@@ -107,7 +118,7 @@ export const deployWeb = task({
 
       await Promise.all(uploadPromises);
 
-      const deploymentUrl = `${PUBLIC_URL_BASE}/${deploymentBasePath}/index.html`;
+      const deploymentUrl = `${PUBLIC_URL_BASE}/${deploymentBasePath}/`;
 
       await supabase
         .from("user_deployments")
