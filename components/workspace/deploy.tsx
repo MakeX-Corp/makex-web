@@ -24,7 +24,6 @@ import { format } from "date-fns";
 import { createClient } from "@/utils/supabase/client";
 
 interface Deployment {
-  id: string;
   url: string;
   status: "uploading" | "completed" | "failed";
   created_at: string;
@@ -98,18 +97,13 @@ export function DeployButton({
         (payload) => {
           // Update local state with deployment info
           setLastDeployment({
-            id: payload.new.id,
             url: payload.new.url || "",
             status: payload.new.status,
             created_at: payload.new.created_at,
           });
         }
       )
-      .subscribe((status) => {
-        if (status !== "SUBSCRIBED") {
-          console.error("Failed to subscribe to deployment updates");
-        }
-      });
+      .subscribe((status) => {});
 
     // Cleanup subscription on unmount
     return () => {
@@ -149,7 +143,6 @@ export function DeployButton({
 
         // Update local state for immediate feedback
         const newDeployment = {
-          id: data.deploymentId,
           url: data.url || "",
           status: "uploading" as const,
           created_at: new Date().toISOString(),
