@@ -74,8 +74,8 @@ export const deployWeb = task({
     const deploymentId = deploymentRecord.id;
     try {
       const deploymentBasePath = `${appId}/${deploymentId}`;
-      const apiUrl2 = "http://localhost:8001";
-      const fileClient = createFileBackendApiClient(apiUrl2);
+      //const apiUrl2 = "http://localhost:8001";
+      const fileClient = createFileBackendApiClient(apiUrl);
 
       const { data } = await fileClient.getBuffer(
         `/deploy-web?appId=${appId}&deploymentId=${deploymentId}`
