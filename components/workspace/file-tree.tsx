@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import useSWRImmutable from "swr/immutable";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
@@ -26,7 +25,7 @@ import {
   FileTerminal,
   AlertCircle,
 } from "lucide-react";
-
+import { useSession } from "@/context/session-context";
 type Node =
   | { type: "file"; name: string; path: string; language: string; size: number }
   | { type: "folder"; name: string; path: string };
@@ -40,13 +39,14 @@ export default function FileTree({
   onSelect: (f: { path: string; language: string }) => void;
   selectedPath?: string | null;
 }) {
+  const { apiUrl } = useSession();
   const {
     data: root,
     error,
     isLoading,
-  } = useSWRImmutable<Node[]>("/api/files?path=/", fetchJSON);
+  } = useSWRImmutable<Node[]>(`/api/files?path=/&api_url=${apiUrl}`, fetchJSON);
 
-  if (isLoading)
+  if (isLoading || !root)
     return (
       <div className="p-4 space-y-3">
         <Skeleton className="h-6 w-full" />
@@ -211,9 +211,9 @@ function FolderItem({
           <ChevronRight className="h-4 w-4 flex-none" />
         )}
         {open ? (
-          <FolderOpen className="h-4 w-4 flex-none text-amber-500 dark:text-amber-400" />
+          <FolderOpen className="h-4 w-4 flex-none text-black dark:text-white" />
         ) : (
-          <Folder className="h-4 w-4 flex-none text-amber-500 dark:text-amber-400" />
+          <Folder className="h-4 w-4 flex-none text-black dark:text-white" />
         )}
         <span>{node.name}</span>
       </div>

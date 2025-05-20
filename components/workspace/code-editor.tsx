@@ -5,11 +5,10 @@ import useSWR from "swr";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, FileCode, CodeXml } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-
+import { useSession } from "@/context/session-context";
 const Monaco = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 const fetchJSON = (u: string) => fetch(u).then((r) => r.json());
 
@@ -20,14 +19,16 @@ export default function CodeEditor({
 }) {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
-
+  const { apiUrl } = useSession();
   // Ensure we have access to the theme after hydration
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const { data, error, isLoading } = useSWR<{ code: string }>(
-    file ? `/api/file?path=${encodeURIComponent(file.path)}` : null,
+    file
+      ? `/api/file?path=${encodeURIComponent(file.path)}&api_url=${apiUrl}`
+      : null,
     fetchJSON
   );
 

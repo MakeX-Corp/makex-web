@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FileTree from "@/components/workspace/file-tree";
 import CodeEditor from "@/components/workspace/code-editor";
 import {
@@ -8,9 +8,7 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code, FolderTree } from "lucide-react";
+import { FolderTree } from "lucide-react";
 
 export default function CodeView() {
   const [selectedFile, setSelectedFile] = useState<{
@@ -18,63 +16,99 @@ export default function CodeView() {
     language: string;
   } | null>(null);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+    return () => window.removeEventListener("resize", checkIfMobile);
+  }, []);
+
+  // Different styling for mobile vs desktop
+  const containerStyle = isMobile
+    ? {
+        height: "100%",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column" as const,
+        overflow: "hidden",
+      }
+    : {
+        height: "100%",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column" as const,
+        overflow: "hidden",
+        maxHeight: "calc(100vh - 200px)",
+      };
+
   return (
-    <Card className="h-full w-full border overflow-hidden">
-      <Tabs defaultValue="explorer" className="h-full flex flex-col">
-        <div className="border-b">
-          <TabsList className="h-10 w-full justify-start rounded-none border-b bg-muted/50">
-            <TabsTrigger
-              value="explorer"
-              className="data-[state=active]:bg-background rounded-none border-r px-4"
-            >
-              <FolderTree className="h-4 w-4 mr-2" />
-              Explorer
-            </TabsTrigger>
-            {/*<TabsTrigger
-              value="editor"
-              className="data-[state=active]:bg-background rounded-none px-4"
-            >
-              <Code className="h-4 w-4 mr-2" />
-              Editor
-            </TabsTrigger>*/}
-          </TabsList>
-        </div>
+    <div style={containerStyle}>
+      {/* Header */}
+      <div
+        style={{
+          flexShrink: 0,
+          borderBottom: "1px solid var(--border)",
+          backgroundColor: "var(--muted)",
+          padding: "8px 16px",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        <FolderTree
+          style={{ height: "16px", width: "16px", marginRight: "8px" }}
+        />
+        <span>Explorer</span>
+      </div>
 
-        <TabsContent value="explorer" className="flex-1 p-0 mt-0">
-          <ResizablePanelGroup
-            direction="horizontal"
-            className="h-full rounded-none"
+      {/* Main content with ResizablePanelGroup */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          maxHeight: isMobile ? "none" : "calc(100vh - 250px)",
+          overflow: "hidden",
+        }}
+      >
+        <ResizablePanelGroup
+          direction="horizontal"
+          style={{ height: "100%", width: "100%" }}
+        >
+          {/* File tree sidebar */}
+          <ResizablePanel
+            defaultSize={25}
+            minSize={15}
+            style={{
+              borderRight: "1px solid var(--border)",
+              backgroundColor: "var(--muted-40)",
+              overflow: "auto",
+              maxHeight: "100%",
+            }}
           >
-            {/* File tree sidebar */}
-            <ResizablePanel
-              defaultSize={22}
-              minSize={15}
-              className="border-r border-border bg-muted/40"
-            >
-              <div className="h-full flex flex-col">
-                <FileTree
-                  onSelect={setSelectedFile}
-                  selectedPath={selectedFile?.path ?? null}
-                />
-              </div>
-            </ResizablePanel>
+            <FileTree
+              onSelect={setSelectedFile}
+              selectedPath={selectedFile?.path ?? null}
+            />
+          </ResizablePanel>
 
-            {/* Resizable handle */}
-            <ResizableHandle withHandle className="bg-border" />
+          {/* Resizable handle */}
+          <ResizableHandle withHandle />
 
-            {/* Code editor */}
-            <ResizablePanel defaultSize={78} className="bg-background">
+          {/* Code editor */}
+          <ResizablePanel
+            defaultSize={75}
+            style={{ overflow: "auto", maxHeight: "100%" }}
+          >
+            <div style={{ height: "100%", overflow: "auto" }}>
               <CodeEditor file={selectedFile} />
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </TabsContent>
-
-        {/*<TabsContent value="editor" className="flex-1 p-0 mt-0">
-          <div className="h-full">
-            <CodeEditor file={selectedFile} />
-          </div>
-        </TabsContent>*/}
-      </Tabs>
-    </Card>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+    </div>
   );
 }
