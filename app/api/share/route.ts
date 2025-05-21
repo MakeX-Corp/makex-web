@@ -5,18 +5,23 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const shareId = searchParams.get('share_id');
+    const appId = searchParams.get('app_id');
 
-    if (!shareId) {
-      return NextResponse.json({ error: "share_id is required" }, { status: 400 });
+    if (!shareId && !appId) {
+      return NextResponse.json({ error: "Either share_id or app_id is required" }, { status: 400 });
     }
 
     const supabase = await getSupabaseAdmin();
 
-    const { data, error } = await supabase
-      .from("url_mappings")
-      .select("*")
-      .eq("share_id", shareId)
-      .single();
+    let query = supabase.from("url_mappings").select("*");
+    
+    if (shareId) {
+      query = query.eq("share_id", shareId);
+    } else if (appId) {
+      query = query.eq("app_id", appId);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       return NextResponse.json({ error: "Error fetching URL mapping" }, { status: 500 });

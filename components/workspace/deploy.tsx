@@ -30,7 +30,12 @@ interface Deployment {
   status: "uploading" | "completed" | "failed";
   created_at: string;
   error_message?: string;
-  display_url?: string;
+}
+
+interface ShareInfo {
+  share_url: string;
+  web_url: string;
+  app_url: string;
 }
 
 export function DeployButton({
@@ -43,6 +48,7 @@ export function DeployButton({
   const { theme } = useTheme();
   const [isDeploying, setIsDeploying] = useState(false);
   const [lastDeployment, setLastDeployment] = useState<Deployment | null>(null);
+  const [shareInfo, setShareInfo] = useState<ShareInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -77,6 +83,18 @@ export function DeployButton({
 
         const data = await response.json();
         setLastDeployment(data);
+        
+        // Fetch share URL if deployment exists
+        if (data && data.status === "completed") {
+          console.log("[Deploy] Fetching share URL for app:", appId);
+          const shareResponse = await fetch(`/api/share?app_id=${appId}`);
+          console.log("[Deploy] Share response status:", shareResponse.status);
+          if (shareResponse.ok) {
+            const shareData = await shareResponse.json();
+            console.log("[Deploy] Share data:", shareData);
+            setShareInfo(shareData);
+          }
+        }
       } catch (err) {
         console.error("Error fetching deployment:", err);
         setError("Failed to load deployment info");
@@ -104,8 +122,17 @@ export function DeployButton({
             url: payload.new.url || "",
             status: payload.new.status,
             created_at: payload.new.created_at,
-            display_url: payload.new.display_url || "",
           });
+          
+          // If deployment is completed, fetch share info
+          if (payload.new.status === "completed") {
+            fetch(`/api/share?app_id=${appId}`)
+              .then(response => response.json())
+              .then(shareData => {
+                setShareInfo(shareData);
+              })
+              .catch(console.error);
+          }
         }
       )
       .subscribe((status) => {});
@@ -175,15 +202,6 @@ export function DeployButton({
     [apiUrl, appId]
   );
 
-  // Format URL for display
-  const formatUrl = (url: string) => {
-    try {
-      return new URL(url).hostname;
-    } catch {
-      return url;
-    }
-  };
-
   // Format timestamp
   const formatTime = (timestamp: string) => {
     try {
@@ -232,13 +250,13 @@ export function DeployButton({
         {/* Deploy action buttons */}
         <DropdownMenuLabel>Deploy Options</DropdownMenuLabel>
 
-        {!isLoading && !error && lastDeployment && lastDeployment.url && lastDeployment.status === "completed" && (
+        {!isLoading && !error && lastDeployment && lastDeployment.status === "completed" && shareInfo && (
           <div className="px-2 py-1 text-sm">
             <div className="flex items-center gap-2 bg-muted/50 rounded-md p-2">
-              <span className="truncate flex-1">{lastDeployment.url}</span>
+              <span className="truncate flex-1">{shareInfo.share_url}</span>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => copyToClipboard(lastDeployment.url)}
+                  onClick={() => copyToClipboard(shareInfo.share_url)}
                   className="p-1 hover:bg-muted rounded-sm transition-colors"
                 >
                   {copied ? (
@@ -248,7 +266,7 @@ export function DeployButton({
                   )}
                 </button>
                 <a
-                  href={lastDeployment.url}
+                  href={shareInfo.share_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-1 hover:bg-muted rounded-sm transition-colors"

@@ -73,7 +73,8 @@ async function handleUrlMapping(
   supabase: any,
   appId: string,
   appName: string,
-  deploymentUrl: string
+  deploymentUrl: string,
+  easUrl?: string
 ) {
   try {
     const { data: existingMapping } = await supabase
@@ -88,6 +89,7 @@ async function handleUrlMapping(
         .from("url_mappings")
         .update({
           web_url: deploymentUrl,
+          app_url: easUrl,
         })
         .eq("app_id", appId);
       return { dubLink: { id: existingMapping.dub_id, key: existingMapping.dub_key }, result };
@@ -99,15 +101,16 @@ async function handleUrlMapping(
       url: `https://makex.app/share/${shareId}`,
       proxy: true,
       domain: "makexapp.link",
-      title: `I built this App with MakeX`,
-      image: "https://makex.app/logo.png",
-      description: `Check out this app I built with MakeX's powerful platform. Click to see it in action!`,
+      title: `Check out my app built with MakeX`,
+      image: "https://makex.app/share.png",
+      description: `I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!`,
     });
 
     const result = await supabase.from("url_mappings").insert({
       app_id: appId,
       share_url: dubLink.shortLink || dubLink.url,
       web_url: deploymentUrl,
+      app_url: easUrl,
       dub_id: dubLink.id,
       dub_key: dubLink.key,
       share_id: shareId,
@@ -123,21 +126,30 @@ async function handleUrlMapping(
 async function updateDeploymentStatus(
   supabase: any,
   deploymentId: string,
-  status: "completed" | "failed",
+  status: "uploading" | "completed" | "failed",
   deploymentUrl?: string,
-  displayUrl?: string
+  easUrl?: string
 ) {
   try {
     const updateData: any = { status };
-    if (deploymentUrl) updateData.url = deploymentUrl;
-    if (displayUrl) updateData.display_url = displayUrl;
+    if (deploymentUrl) updateData.web_url = deploymentUrl;
+    if (easUrl) updateData.app_url = easUrl;
 
-    await supabase
+    const { data, error } = await supabase
       .from("user_deployments")
       .update(updateData)
       .eq("id", deploymentId);
+
+    console.log("[DeployWeb] Updated deployment status:", data);
+
+    if (error) {
+      console.error("[DeployWeb] Error updating deployment status:", error);
+      throw error;
+    }
+    
+    console.log(`[DeployWeb] Successfully updated deployment status to ${status}`);
   } catch (error) {
-    console.error("Error updating deployment status:", error);
+    console.error("[DeployWeb] Error updating deployment status:", error);
     throw error;
   }
 }
@@ -188,12 +200,14 @@ export const deployWeb = task({
     maxAttempts: 0
   },
   run: async (payload: { appId: string; apiUrl: string; userId: string }) => {
+    console.log(`[DeployWeb] Starting deployment for appId: ${payload.appId}`);
     const { appId } = payload;
     const supabase = await getSupabaseAdmin();
     let deploymentId: string | undefined;
 
     try {
       // Get app record
+      console.log(`[DeployWeb] Fetching app record for appId: ${appId}`);
       const { data: appRecord } = await supabase
         .from("user_apps")
         .select("api_url,user_id,app_name")
@@ -205,9 +219,11 @@ export const deployWeb = task({
       }
 
       const { api_url, user_id, app_name } = appRecord;
+      console.log(`[DeployWeb] Found app record - name: ${app_name}, userId: ${user_id}`);
 
       // Create deployment record
-      const { data: deploymentRecord } = await supabase
+      console.log(`[DeployWeb] Creating deployment record`);
+      const { data: deploymentRecord, error: createError } = await supabase
         .from("user_deployments")
         .insert({
           app_id: appId,
@@ -218,6 +234,11 @@ export const deployWeb = task({
         .select()
         .single();
 
+      if (createError) {
+        console.error("[DeployWeb] Error creating deployment record:", createError);
+        throw createError;
+      }
+
       if (!deploymentRecord) {
         throw new Error("Deployment record not found");
       }
@@ -226,41 +247,87 @@ export const deployWeb = task({
       if (!deploymentId) {
         throw new Error("Deployment ID not found");
       }
+      console.log(`[DeployWeb] Created deployment record with ID: ${deploymentId}`);
 
       const deploymentBasePath = `${appId}/${deploymentId}`;
       const fileClient = createFileBackendApiClient(api_url);
 
-      // Get and process zip file
-      const { data } = await fileClient.getBuffer(
-        `/deploy-web?appId=${appId}&deploymentId=${deploymentId}`
-      );
+      try {
+        // Get and process zip file
+        console.log(`[DeployWeb] Fetching deployment zip file`);
+        const { data } = await fileClient.getBuffer(
+          `/deploy-web?appId=${appId}&deploymentId=${deploymentId}`
+        );
 
-      const zipBuffer = data instanceof Readable ? await streamToBuffer(data) : data;
-      const zip = new AdmZip(zipBuffer);
-      const hasDistDir = zip.getEntries().some((entry: any) =>
-        entry.entryName.startsWith("dist/")
-      );
+        const zipBuffer = data instanceof Readable ? await streamToBuffer(data) : data;
+        const zip = new AdmZip(zipBuffer);
+        const hasDistDir = zip.getEntries().some((entry: any) =>
+          entry.entryName.startsWith("dist/")
+        );
+        console.log(`[DeployWeb] Processing zip file - has dist directory: ${hasDistDir}`);
 
-      // Upload files to S3
-      await uploadFilesToS3(zip, deploymentBasePath, hasDistDir);
+        // Upload files to S3
+        console.log(`[DeployWeb] Starting S3 upload`);
+        await uploadFilesToS3(zip, deploymentBasePath, hasDistDir);
+        console.log(`[DeployWeb] S3 upload completed`);
 
-      const deploymentUrl = `${PUBLIC_URL_BASE}/${deploymentBasePath}/`;
-      const displayUrl = `web-${app_name}.makex.app`;
+        const deploymentUrl = `${PUBLIC_URL_BASE}/${deploymentBasePath}/`;
+        const displayUrl = `web-${app_name}.makex.app`;
+        console.log(`[DeployWeb] Setting up proxy for display URL: ${displayUrl}`);
 
-      // Set up proxy and update deployment status
-      await proxySetter(displayUrl, deploymentUrl);
-      await updateDeploymentStatus(supabase, deploymentId, "completed", deploymentUrl, displayUrl);
+        // Set up proxy
+        await proxySetter(displayUrl, deploymentUrl);
+        console.log(`[DeployWeb] Proxy setup completed`);
 
-      // Handle URL mapping
-      const { dubLink } = await handleUrlMapping(supabase, appId, app_name, deploymentUrl);
+        // Deploy to EAS
+        let easUrl;
+        try {
+          console.log(`[DeployWeb] Starting EAS deployment`);
+          const easResponse = await fileClient.post("/deploy-eas", {
+            token: process.env.EXPO_ACCESS_TOKEN,
+            message: "Update",
+          });
+          easUrl = `makex://u.expo.dev/${easResponse.project_id}/group/${easResponse.group_id}`;
+          console.log(`[DeployWeb] EAS deployment completed successfully`);
+        } catch (easError) {
+          console.error("[DeployWeb] EAS deployment failed:", easError);
+          // Update status to failed but continue with web deployment
+          await updateDeploymentStatus(supabase, deploymentId, "failed", deploymentUrl);
+          throw new Error("EAS deployment failed: " + (easError instanceof Error ? easError.message : String(easError)));
+        }
 
-      return {
-        deploymentUrl,
-        dubLink,
-      };
+        // Update status to completed
+        console.log(`[DeployWeb] Updating deployment status to completed`);
+        await updateDeploymentStatus(
+          supabase, 
+          deploymentId, 
+          "completed", 
+          deploymentUrl,
+          easUrl
+        );
+
+        // Handle URL mapping with both web and EAS URLs
+        console.log(`[DeployWeb] Setting up URL mapping`);
+        const { dubLink } = await handleUrlMapping(supabase, appId, app_name, deploymentUrl, easUrl);
+        console.log(`[DeployWeb] URL mapping completed`);
+
+        console.log(`[DeployWeb] Deployment completed successfully`);
+        return {
+          deploymentUrl,
+          easUrl,
+          dubLink,
+        };
+      } catch (error) {
+        console.error("[DeployWeb] Error during deployment process:", error);
+        // Update status to failed with any available URLs
+        const deploymentUrl = `${PUBLIC_URL_BASE}/${deploymentBasePath}/`;
+        await updateDeploymentStatus(supabase, deploymentId, "failed", deploymentUrl);
+        throw error;
+      }
     } catch (error) {
-      console.error("Deployment failed:", error);
+      console.error("[DeployWeb] Critical deployment error:", error);
       if (deploymentId) {
+        console.log(`[DeployWeb] Updating deployment status to failed`);
         await updateDeploymentStatus(supabase, deploymentId, "failed");
       }
       throw error;
