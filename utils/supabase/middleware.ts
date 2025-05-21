@@ -49,12 +49,14 @@ export async function updateSession(request: NextRequest) {
     '/refund',
     '/about',
     '/pricing',
+    '/api/share',
   ]
 
   if (
     !user && !hasBearerToken &&
     !pagesWithoutAuth.includes(request.nextUrl.pathname) &&
     !request.nextUrl.pathname.startsWith('/terms') &&
+    !request.nextUrl.pathname.match(/^\/share\/[A-Za-z0-9]+$/) &&
     request.nextUrl.pathname !== '/'
   ) {
     // no user, potentially respond by redirecting the user to the login page
