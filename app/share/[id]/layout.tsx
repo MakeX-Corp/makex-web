@@ -18,13 +18,13 @@ function DiscordIcon() {
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const imageUrl = `https://makex.app/share.png?v=4`;
+  
   return {
     title: 'Check out my app built with MakeX',
     description: 'I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!',
     openGraph: {
       title: 'Check out my app built with MakeX',
       description: 'I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!',
-      url: `https://makex.app/share/${params.id}`,
       siteName: 'MakeX',
       images: [
         {
