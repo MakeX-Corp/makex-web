@@ -6,6 +6,7 @@ import { createFileBackendApiClient } from "@/utils/server/file-backend-api-clie
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { proxySetter } from "@/utils/server/redis-client";
 import { dub } from "@/utils/server/dub";
+import { resumeContainer } from "./resume-container";
 
 function streamToBuffer(stream: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -101,7 +102,7 @@ async function handleUrlMapping(
       url: `https://makex.app/share/${shareId}`,
       proxy: true,
       domain: "makexapp.link",
-      title: `Check out my app built with MakeX`,
+      title: `Checkout this app I created `,
       image: "https://makex.app/share.png",
       description: `I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!`,
     });
@@ -199,13 +200,48 @@ export const deployWeb = task({
   retry: {
     maxAttempts: 0
   },
-  run: async (payload: { appId: string; apiUrl: string; userId: string }) => {
+  run: async (payload: { appId: string }) => {
     console.log(`[DeployWeb] Starting deployment for appId: ${payload.appId}`);
     const { appId } = payload;
     const supabase = await getSupabaseAdmin();
     let deploymentId: string | undefined;
 
     try {
+      // Check sandbox status and resume if needed
+      console.log(`[DeployWeb] Checking sandbox status for appId: ${appId}`);
+      const { data: sandbox, error: sandboxError } = await supabase
+        .from("user_sandboxes")
+        .select("*")
+        .eq("app_id", appId)
+        .order("sandbox_updated_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (sandboxError) {
+        throw new Error(`Failed to fetch sandbox status: ${sandboxError.message}`);
+      }
+
+      if (!sandbox) {
+        throw new Error("No sandbox found for this app");
+      }
+
+      // Update sandbox updated_at time
+      await supabase
+        .from("user_sandboxes")
+        .update({ sandbox_updated_at: new Date().toISOString() })
+        .eq("id", sandbox.id);
+
+      // If sandbox is paused, resume it and wait for completion
+      if (sandbox.sandbox_status === "paused") {
+        console.log(`[DeployWeb] Sandbox is paused, resuming...`);
+        await resumeContainer.triggerAndWait({
+          userId: sandbox.user_id,
+          appId,
+          appName: sandbox.app_name,
+        });
+        console.log(`[DeployWeb] Sandbox is now active`);
+      }
+
       // Get app record
       console.log(`[DeployWeb] Fetching app record for appId: ${appId}`);
       const { data: appRecord } = await supabase
