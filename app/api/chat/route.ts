@@ -210,15 +210,6 @@ export async function POST(req: Request) {
       toolCallStreaming: true,
       system: getPrompt(fileTree, connectionUri),
       maxSteps: 30,
-      onError: (error) => {
-        console.error("Detailed chat error:", error);
-        // Just log the error, don't return a response
-      },
-      onFinish: async (finishData) => {
-        console.log("--- Whole Streamed Message (Server-side) ---");
-        console.log(finishData.text);
-        console.log("--- End of Server-side Message ---");
-      }
     });
 
     return result.toDataStreamResponse({

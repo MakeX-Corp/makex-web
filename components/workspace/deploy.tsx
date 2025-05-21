@@ -243,14 +243,13 @@ export function DeployButton({
         <Button variant="outline" className="flex items-center gap-2">
           <UploadCloud className="h-4 w-4" />
           <span>Deploy</span>
-          {isLoading && <Loader2 className="h-3 w-3 ml-1 animate-spin" />}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         {/* Deploy action buttons */}
         <DropdownMenuLabel>Deploy Options</DropdownMenuLabel>
 
-        {!isLoading && !error && lastDeployment && lastDeployment.status === "completed" && shareInfo && (
+        {!isLoading && !error && shareInfo && (
           <div className="px-2 py-1 text-sm">
             <div className="flex items-center gap-2 bg-muted/50 rounded-md p-2">
               <span className="truncate flex-1">{shareInfo.share_url}</span>
