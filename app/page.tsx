@@ -281,6 +281,57 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      {/* From the Community Section */}
+      <div className="w-full max-w-6xl mx-auto mt-12">
+        <h2 className="text-2xl font-bold mb-4">From the Community</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[
+            {
+              title: "Tic Tac Toe & Memory Game",
+              share_url: "https://makexapp.link/d46enNO",
+              image: "/community/tic-tac-toe.png",
+            },
+            {
+              title: "Water Intake Tracker",
+              share_url: "https://makexapp.link/ayMDqCH",
+              image: "/community/water-intake-tracker.png",
+            },
+            {
+              title: "Notes",
+              share_url: "https://makexapp.link/k6BVM2b",
+              image: "/community/note-taking.png",
+            },
+            {
+              title: "Analytics Dashboard",
+              share_url: "https://makexapp.link/WW3ESIH",
+              image: "/community/analytics.png",
+            },
+          ].map((project, idx) => (
+            <a
+              key={idx}
+              href={project.share_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-card rounded-xl shadow-lg hover:shadow-xl transition-shadow overflow-hidden border border-border"
+            >
+              <div className="relative w-full h-40 bg-gray-100">
+                <Image
+                  src={project.image}
+                  alt={project.title}
+                  fill
+                  style={{ objectFit: "cover" }}
+                  className="transition-transform duration-200 hover:scale-105"
+                />
+              </div>
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-semibold text-base truncate flex-1">{project.title}</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
