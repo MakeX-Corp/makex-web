@@ -80,6 +80,8 @@ export async function POST(request: Request) {
       appName: appName,
     });
 
+    console.log('apiHost', apiHost)
+
     console.log('appHost', appHost)
 
     timings.containerInitiation = performance.now() - containerStartTime;
