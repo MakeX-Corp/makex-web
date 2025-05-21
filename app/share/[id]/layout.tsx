@@ -16,9 +16,43 @@ function DiscordIcon() {
   );
 }
 
-export const metadata: Metadata = {
-  title: 'Shared Content | MakeX',
-  description: 'View shared content on MakeX',
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const imageUrl = `https://makex.app/share.png?v=4`;
+  return {
+    title: 'Check out my app built with MakeX',
+    description: 'I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!',
+    openGraph: {
+      title: 'Check out my app built with MakeX',
+      description: 'I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!',
+      url: `https://makex.app/share/${params.id}`,
+      siteName: 'MakeX',
+      images: [
+        {
+          url: imageUrl,
+          secureUrl: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: 'MakeX Shared Content',
+          type: 'image/png',
+        },
+      ],
+      locale: 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Check out my app built with MakeX',
+      description: 'I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!',
+      images: [imageUrl],
+      creator: '@makexapp',
+    },
+    other: {
+      'og:image:secure_url': imageUrl,
+      'og:image:type': 'image/png',
+      'og:image:width': '1200',
+      'og:image:height': '630',
+    },
+  }
 }
 
 export default function ShareLayout({
