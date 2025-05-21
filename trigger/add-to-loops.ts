@@ -2,12 +2,18 @@ import { task } from "@trigger.dev/sdk/v3";
 
 export const addToLoops = task({
   id: "add-to-loops",
+  retry: {
+    maxAttempts: 0
+  },
   run: async (payload: { email: string }) => {
+    console.log(process.env.LOOPS_API_KEY)
     try {
+      const apiKey = process.env.LOOPS_API_KEY?.trim();
+      
       const options = {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.LOOPS_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
