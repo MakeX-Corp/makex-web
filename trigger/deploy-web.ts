@@ -289,6 +289,23 @@ export const deployWeb = task({
       const fileClient = createFileBackendApiClient(api_url);
 
       try {
+        // Deploy to EAS first
+        let easUrl;
+        try {
+          console.log(`[DeployWeb] Starting EAS deployment`);
+          const easResponse = await fileClient.post("/deploy-eas", {
+            token: process.env.EXPO_ACCESS_TOKEN,
+            message: "Update",
+          });
+          easUrl = `makex://u.expo.dev/${easResponse.project_id}/group/${easResponse.group_id}`;
+          console.log(`[DeployWeb] EAS deployment completed successfully`);
+        } catch (easError) {
+          console.error("[DeployWeb] EAS deployment failed:", easError);
+          // Update status to failed but continue with web deployment
+          await updateDeploymentStatus(supabase, deploymentId, "failed");
+          throw new Error("EAS deployment failed: " + (easError instanceof Error ? easError.message : String(easError)));
+        }
+
         // Get and process zip file
         console.log(`[DeployWeb] Fetching deployment zip file`);
         const { data } = await fileClient.getBuffer(
@@ -314,23 +331,6 @@ export const deployWeb = task({
         // Set up proxy
         await proxySetter(displayUrl, deploymentUrl);
         console.log(`[DeployWeb] Proxy setup completed`);
-
-        // Deploy to EAS
-        let easUrl;
-        try {
-          console.log(`[DeployWeb] Starting EAS deployment`);
-          const easResponse = await fileClient.post("/deploy-eas", {
-            token: process.env.EXPO_ACCESS_TOKEN,
-            message: "Update",
-          });
-          easUrl = `makex://u.expo.dev/${easResponse.project_id}/group/${easResponse.group_id}`;
-          console.log(`[DeployWeb] EAS deployment completed successfully`);
-        } catch (easError) {
-          console.error("[DeployWeb] EAS deployment failed:", easError);
-          // Update status to failed but continue with web deployment
-          await updateDeploymentStatus(supabase, deploymentId, "failed", deploymentUrl);
-          throw new Error("EAS deployment failed: " + (easError instanceof Error ? easError.message : String(easError)));
-        }
 
         // Update status to completed
         console.log(`[DeployWeb] Updating deployment status to completed`);
