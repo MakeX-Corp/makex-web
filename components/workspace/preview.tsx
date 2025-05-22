@@ -6,7 +6,6 @@ import {
   Smartphone,
   QrCode,
   Code,
-  Layout,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +14,7 @@ import { useSession } from "@/context/session-context";
 import { QRCodeDisplay } from "@/components/qr-code";
 import MobileMockup from "@/components/mobile-mockup";
 import CodeView from "./code-view";
-import CanvasView from "./canvas-view";
+
 
 interface PreviewProps {
   iframeKey: string;
@@ -32,7 +31,7 @@ export function Preview({
   containerState,
   appState,
 }: PreviewProps) {
-  const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code" | "canvas">("mobile");
+  const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code">("mobile");
   const { appId, appUrl, appName } = useSession();
 
   return (
@@ -61,17 +60,6 @@ export function Preview({
             >
               <span className="hidden sm:inline">View in Mobile</span>
               <QrCode className="sm:hidden h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("canvas")}
-              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                viewMode === "canvas"
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <span className="hidden sm:inline">Canvas</span>
-              <Layout className="sm:hidden h-4 w-4" />
             </button>
             <Button
               variant="ghost"
@@ -149,11 +137,6 @@ export function Preview({
             </div>
           )}
 
-          {viewMode === "canvas" && (
-            <div className="h-full w-full">
-              <CanvasView />
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
