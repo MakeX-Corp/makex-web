@@ -26,6 +26,14 @@ export function Header() {
                             <span className="text-sm font-medium">MakeX</span>
                         </Link>
                     </div>
+                    <div className="flex items-center">
+                        <Link 
+                            href="/login" 
+                            className="px-4 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-medium transition-colors"
+                        >
+                            Login
+                        </Link>
+                    </div>
                 </div>
             </div>
         </nav>
