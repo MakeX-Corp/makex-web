@@ -7,12 +7,15 @@ export async function GET(req: NextRequest) {
   const userResult = await getSupabaseWithUser(req as NextRequest);
   if (userResult instanceof NextResponse || "error" in userResult)
     return userResult;
-  const path = req.nextUrl.searchParams.get("path") ?? "";
+  
+  // Get and decode the path parameter
+  const encodedPath = req.nextUrl.searchParams.get("path") ?? "";
+  const path = decodeURIComponent(encodedPath);
   const apiUrl = req.nextUrl.searchParams.get("api_url") ?? "";
 
   const fileClient = createFileBackendApiClient(apiUrl);
 
-  const data = await fileClient.get(`/code?path=${path}`);
+  const data = await fileClient.get(`/code?path=${encodeURIComponent(path)}`);
 
   return NextResponse.json(data);
 }

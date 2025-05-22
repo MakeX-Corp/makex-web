@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import useSWRImmutable from "swr/immutable";
+import useSWR from "swr";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
@@ -44,7 +44,7 @@ export default function FileTree({
     data: root,
     error,
     isLoading,
-  } = useSWRImmutable<Node[]>(`/api/files?path=/&api_url=${apiUrl}`, fetchJSON);
+  } = useSWR<Node[]>(`/api/files?path=/&api_url=${apiUrl}`, fetchJSON);
 
   if (isLoading || !root)
     return (
@@ -193,9 +193,10 @@ function FolderItem({
   apiUrl: string;
 }) {
   const [open, setOpen] = useState(false);
-  const { data: children = [], isLoading } = useSWRImmutable<Node[]>(
+  const { data: children = [], isLoading } = useSWR<Node[]>(
     open ? `/api/files?path=${encodeURIComponent(node.path)}&api_url=${apiUrl}` : null,
-    fetchJSON
+    fetchJSON,
+    { refreshInterval: 5000 }
   );
 
   return (
