@@ -7,6 +7,8 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { proxySetter } from "@/utils/server/redis-client";
 import { dub } from "@/utils/server/dub";
 import { resumeContainer } from "./resume-container";
+import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
+import { generateText } from "ai";
 
 function streamToBuffer(stream: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -57,17 +59,129 @@ function getMimeType(filename: string): string {
 function shareIdGenerator(appId: string): string {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
-  
+
   // Use appId as seed by summing its character codes
   const seed = appId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  
+
   // Generate 6 characters using the seed
   for (let i = 0; i < 6; i++) {
     const index = (seed + i * 31) % characters.length; // 31 is a prime number for better distribution
     result += characters[index];
   }
-  
+
   return result;
+}
+
+async function analyzeAppWithClaude(fileClient: any, appName: string): Promise<{ title: string; description: string }> {
+  const bedrock = createAmazonBedrock({
+    region: "us-east-1",
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  });
+
+  const model = bedrock("us.anthropic.claude-3-5-sonnet-20241022-v2:0");
+
+  // First, get the file tree
+  const fileTreeResponse = await fileClient.get("/file-tree");
+  const fileTree = fileTreeResponse.tree;
+
+  // Create a prompt for Claude to analyze the file tree and select relevant files
+  const treeAnalysisPrompt = `Given this file tree structure from a mobile app, identify the most important files that would help understand the app's purpose and functionality. Focus on configuration files, main entry points, and key feature files.
+
+File Tree:
+${JSON.stringify(fileTree, null, 2)}
+
+Respond with a JSON array of file paths that would be most relevant for understanding the app. Maximum 5 files.
+Example response format:
+{
+  "files": ["path/to/file1", "path/to/file2"]
+}
+
+IMPORTANT: Respond ONLY with valid JSON, no additional text or explanation.`;
+
+  // Get Claude's analysis of which files to read
+  const treeAnalysisResult = await generateText({
+    model,
+    prompt: treeAnalysisPrompt,
+    maxTokens: 500,
+    temperature: 0.3,
+  });
+
+  let selectedFiles: string[] = [];
+  try {
+    // Clean the response to ensure it's valid JSON
+    const cleanedResponse = treeAnalysisResult.text.trim();
+    const parsedResponse = JSON.parse(cleanedResponse);
+    if (!Array.isArray(parsedResponse.files)) {
+      throw new Error("Invalid response format: files is not an array");
+    }
+    selectedFiles = parsedResponse.files;
+  } catch (error) {
+    console.error("Error parsing file selection response:", error);
+    // Fallback to some common files if analysis fails
+    selectedFiles = ['package.json', 'app.json', 'app.config.js'];
+  }
+
+  // Read the selected files
+  const fileContents = await Promise.all(
+    selectedFiles.map(async (filepath) => {
+      try {
+        const content = await fileClient.get("/file", { path: filepath });
+        return {
+          name: filepath,
+          content: content
+        };
+      } catch (error) {
+        console.log(`Could not read ${filepath}:`, error);
+        return null;
+      }
+    })
+  );
+
+  // Filter out null results and create the prompt
+  const validFiles = fileContents.filter((file): file is { name: string; content: string } => file !== null);
+
+  const prompt = `Analyze these files from a mobile app and generate:
+1. A catchy title (max 5 words)
+2. A compelling description (max 2 sentences)
+
+Files:
+${validFiles.map(f => `\n${f.name}:\n${f.content.substring(0, 1000)}`).join('\n')}
+
+App name: ${appName}
+
+Respond in JSON format:
+{
+  "title": "string",
+  "description": "string"
+}
+
+IMPORTANT: Respond ONLY with valid JSON, no additional text or explanation.`;
+
+  const result = await generateText({
+    model,
+    prompt,
+    maxTokens: 500,
+    temperature: 0.7,
+  });
+
+  try {
+    // Clean the response to ensure it's valid JSON
+    const cleanedResponse = result.text.trim();
+    const parsedResponse = JSON.parse(cleanedResponse);
+    
+    if (typeof parsedResponse.title !== 'string' || typeof parsedResponse.description !== 'string') {
+      throw new Error("Invalid response format: missing title or description");
+    }
+
+    return {
+      title: parsedResponse.title || `Check out my ${appName} app`,
+      description: parsedResponse.description || `I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!`
+    };
+  } catch (error) {
+    console.error("Error parsing Claude response:", error);
+    throw new Error("Failed to parse Claude's response: " + (error instanceof Error ? error.message : String(error)));
+  }
 }
 
 async function handleUrlMapping(
@@ -75,7 +189,8 @@ async function handleUrlMapping(
   appId: string,
   appName: string,
   deploymentUrl: string,
-  easUrl?: string
+  easUrl?: string,
+  fileClient?: any
 ) {
   try {
     const { data: existingMapping } = await supabase
@@ -84,8 +199,31 @@ async function handleUrlMapping(
       .eq("app_id", appId)
       .single();
 
+    let title = `Check out my ${appName} app`;
+    let description = `I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!`;
+
+    if (fileClient) {
+      try {
+        const { title: generatedTitle, description: generatedDescription } = await analyzeAppWithClaude(fileClient, appName);
+        title = generatedTitle;
+        description = generatedDescription;
+      } catch (error) {
+        console.error("[DeployWeb] Failed to analyze app with Claude:", error);
+        throw new Error("Failed to analyze app with Claude: " + (error instanceof Error ? error.message : String(error)));
+      }
+    }
+
+    console.log(`[DeployWeb] Generated title: ${title}`);
+    console.log(`[DeployWeb] Generated description: ${description}`);
+
     // If mapping exists, update web_url but keep the existing Dub link
     if (existingMapping?.dub_id) {
+      // Update the Dub link with new title and description
+      await dub.links.update(existingMapping.dub_id, {
+        title,
+        description,
+      });
+
       const result = await supabase
         .from("url_mappings")
         .update({
@@ -98,13 +236,14 @@ async function handleUrlMapping(
 
     // Create new Dub link only if it doesn't exist
     const shareId = shareIdGenerator(appId);
+  
     const dubLink = await dub.links.create({
       url: `https://makex.app/share/${shareId}`,
       proxy: true,
       domain: "makexapp.link",
-      title: `Checkout this app I created `,
+      title,
       image: "https://makex.app/share.png",
-      description: `I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!`,
+      description,
     });
 
     const result = await supabase.from("url_mappings").insert({
@@ -147,7 +286,7 @@ async function updateDeploymentStatus(
       console.error("[DeployWeb] Error updating deployment status:", error);
       throw error;
     }
-    
+
     console.log(`[DeployWeb] Successfully updated deployment status to ${status}`);
   } catch (error) {
     console.error("[DeployWeb] Error updating deployment status:", error);
@@ -181,7 +320,7 @@ async function uploadFilesToS3(
             ContentType: getMimeType(entry.entryName),
             CacheControl:
               getMimeType(entry.entryName).includes("image/") ||
-              entry.entryName.includes("assets/")
+                entry.entryName.includes("assets/")
                 ? "public, max-age=31536000"
                 : "no-cache",
           })
@@ -344,7 +483,7 @@ export const deployWeb = task({
 
         // Handle URL mapping with both web and EAS URLs
         console.log(`[DeployWeb] Setting up URL mapping`);
-        const { dubLink } = await handleUrlMapping(supabase, appId, app_name, deploymentUrl, easUrl);
+        const { dubLink } = await handleUrlMapping(supabase, appId, app_name, deploymentUrl, easUrl, fileClient);
         console.log(`[DeployWeb] URL mapping completed`);
 
         console.log(`[DeployWeb] Deployment completed successfully`);

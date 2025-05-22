@@ -267,7 +267,7 @@ export function createTools(config: ToolConfig = {}) {
       }),
       execute: async ({ path }) => { 
         try {
-          const command = path ? `npx eslint ${path}` : "npx eslint .";
+          const command = path ? `npx eslint ${path} --fix` : "npx eslint . --fix";
           const data = await apiClient.post("/command", { command });
           return { success: true, data };
         } catch (error: any) {
@@ -318,6 +318,22 @@ export function createTools(config: ToolConfig = {}) {
             error: error.message || "Unknown error occurred",
           };
         }
+      },
+    }),
+
+    webSearch: tool({
+      description: "Search the web for real-time information and get up-to-date answers with citations",
+      parameters: z.object({
+        query: z.string().describe("The search query to find relevant information"),
+      }),
+    execute: async ({ query }) => {
+        return {
+          type: "web_search_20250305",
+          name: "web_search",
+          input: {
+            query
+          }
+        };
       },
     }),
 
