@@ -90,6 +90,34 @@ export async function POST(request: Request) {
     console.log('e2b containerId', containerId)
     console.log('e2b apiUrl', apiHost)
 
+    // Retry mechanism for API host
+    const maxRetries = 10;
+    const retryDelay = 2000; // 2 seconds
+    let response;
+    let retryCount = 0;
+
+    while (retryCount < maxRetries) {
+      try {
+        response = await fetch(apiHost);
+        if (response.status !== 502) {
+          break;
+        }
+        console.log(`Attempt ${retryCount + 1} failed with 502, retrying in ${retryDelay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        retryCount++;
+      } catch (error) {
+        console.log(`Attempt ${retryCount + 1} failed with error:`, error);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        retryCount++;
+      }
+    }
+
+    if (retryCount === maxRetries) {
+      console.log('Max retries reached, proceeding with container setup...');
+    }
+
+    console.log('response', response)
+
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
       .update({

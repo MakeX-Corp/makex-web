@@ -9,7 +9,6 @@ export async function GET(req: NextRequest) {
     return userResult;
   const path = req.nextUrl.searchParams.get("path") ?? "";
   const apiUrl = req.nextUrl.searchParams.get("api_url") ?? "";
-  //const api_url = "http://localhost:8001";
 
   const fileClient = createFileBackendApiClient(apiUrl);
 

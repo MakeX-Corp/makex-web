@@ -85,6 +85,7 @@ export default function FileTree({
                 node={n}
                 activePath={selectedPath}
                 onSelect={onSelect}
+                apiUrl={apiUrl}
               />
             )
           )}
@@ -184,14 +185,16 @@ function FolderItem({
   node,
   activePath,
   onSelect,
+  apiUrl,
 }: {
   node: Extract<Node, { type: "folder" }>;
   activePath?: string | null;
   onSelect: (f: { path: string; language: string }) => void;
+  apiUrl: string;
 }) {
   const [open, setOpen] = useState(false);
   const { data: children = [], isLoading } = useSWRImmutable<Node[]>(
-    open ? `/api/files?path=${node.path}` : null,
+    open ? `/api/files?path=${encodeURIComponent(node.path)}&api_url=${apiUrl}` : null,
     fetchJSON
   );
 
@@ -240,6 +243,7 @@ function FolderItem({
                   node={n}
                   activePath={activePath}
                   onSelect={onSelect}
+                  apiUrl={apiUrl}
                 />
               )
             )
