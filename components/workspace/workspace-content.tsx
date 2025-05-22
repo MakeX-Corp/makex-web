@@ -621,7 +621,6 @@ export default function WorkspaceContent({
                     isRefreshing={isRefreshing}
                     onRefresh={refreshPreview}
                     containerState={containerState}
-                    onScreenshotCaptured={handleScreenshotCaptured}
                     appState={appState}
                   />
                 </div>
@@ -678,7 +677,6 @@ export default function WorkspaceContent({
                           isRefreshing={isRefreshing}
                           onRefresh={refreshPreview}
                           containerState={containerState}
-                          onScreenshotCaptured={handleScreenshotCaptured}
                           appState={appState}
                         />
                       </div>

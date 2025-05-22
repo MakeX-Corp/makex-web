@@ -36,7 +36,13 @@ Don't call the same tool again and again.
 • Be smart: understand file structure before changing anything
 • ALWAYS use grep search tool first to locate relevant files and code patterns before reading or editing files
 • Use React Native idioms and Expo best practices
-• If user requests functionality that normally needs a backend, use mock data
+• For data persistence, ALWAYS use @react-native-async-storage/async-storage instead of a database
+• Create realistic demo data that mimics real-world scenarios
+• Implement proper data management with AsyncStorage:
+  - Create data models/types for your entities
+  - Implement CRUD operations using AsyncStorage
+  - Add proper error handling and loading states
+  - Include data validation where necessary
 • Make the app visually appealing and use images from unsplash
 • Treat every change as production-quality code
 • ONLY use TypeScript (.tsx) files, NEVER JavaScript (.js)
@@ -45,7 +51,7 @@ Don't call the same tool again and again.
 • Be concise and focus on business value
 • Always ensure components are correctly exported and imported (default vs named) to avoid 'Element type is invalid' errors. Double-check that all imports match their corresponding exports and that no component is undefined at the import site.
 • Use the correct import path for components.
-• The INitial two tabs are Home and Explore. Remove or Edit or do whatever seems fit ! But when someone asks for an app I dont want redundant tabs
+• The Initial two tabs are Home and Explore. Remove or Edit or do whatever seems fit ! But when someone asks for an app I dont want redundant tabs
 • DON'T INSTALL PACKAGES UNLESS ABSOLUTELY NECESSARY
 
 The current file tree is:

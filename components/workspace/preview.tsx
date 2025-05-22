@@ -6,6 +6,7 @@ import {
   Smartphone,
   QrCode,
   Code,
+  Layout,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,16 +14,15 @@ import { Button } from "@/components/ui/button";
 import { useSession } from "@/context/session-context";
 import { QRCodeDisplay } from "@/components/qr-code";
 import MobileMockup from "@/components/mobile-mockup";
-import { ScreenshotButton } from "./screenshot-button";
-import CodeView from "./code-view"; // Import the CodeView component
+import CodeView from "./code-view";
+import CanvasView from "./canvas-view";
 
 interface PreviewProps {
-  iframeKey: string; // Key to force iframe refresh
-  isRefreshing: boolean; // Loading state
-  onRefresh: () => void; // Refresh function from parent
+  iframeKey: string;
+  isRefreshing: boolean;
+  onRefresh: () => void;
   containerState: "starting" | "active" | "paused" | "resuming" | "pausing";
-  onScreenshotCaptured?: (dataUrl: string) => void; // Function to send screenshot to chat
-  appState?: any; // Add appState prop
+  appState?: any;
 }
 
 export function Preview({
@@ -30,47 +30,10 @@ export function Preview({
   isRefreshing,
   onRefresh,
   containerState,
-  onScreenshotCaptured,
   appState,
 }: PreviewProps) {
-  const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code">("mobile");
+  const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code" | "canvas">("mobile");
   const { appId, appUrl, appName } = useSession();
-
-  const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
-
-  // Handle taking a screenshot
-  const handleCaptureScreenshot = async () => {
-    if (!appUrl || containerState !== "active") return;
-
-    setIsCapturingScreenshot(true);
-
-    try {
-      // Call our screenshot API endpoint
-      const response = await fetch("/api/screenshot", {
-        method: "POST",
-        body: JSON.stringify({
-          url: appUrl,
-          appId: appId,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Screenshot failed");
-      }
-
-      const data = await response.json();
-
-      // Pass the data URL to the callback
-      if (onScreenshotCaptured && data.dataUrl) {
-        onScreenshotCaptured(data.dataUrl);
-      }
-    } catch (error) {
-      console.error("Error capturing screenshot:", error);
-    } finally {
-      setIsCapturingScreenshot(false);
-    }
-  };
 
   return (
     <Card className="h-full border rounded-md">
@@ -98,6 +61,17 @@ export function Preview({
             >
               <span className="hidden sm:inline">View in Mobile</span>
               <QrCode className="sm:hidden h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("canvas")}
+              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                viewMode === "canvas"
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span className="hidden sm:inline">Canvas</span>
+              <Layout className="sm:hidden h-4 w-4" />
             </button>
             <Button
               variant="ghost"
@@ -140,14 +114,6 @@ export function Preview({
               {containerState}
             </Badge>
 
-            {/* Screenshot button using inline approach rather than a separate component */}
-            {viewMode === "mobile" && containerState === "active" && (
-              <ScreenshotButton
-                onCapture={handleCaptureScreenshot}
-                isCapturing={isCapturingScreenshot}
-              />
-            )}
-
             <Button
               size="icon"
               variant="ghost"
@@ -180,6 +146,12 @@ export function Preview({
           {viewMode === "code" && (
             <div className="h-full w-full">
               <CodeView />
+            </div>
+          )}
+
+          {viewMode === "canvas" && (
+            <div className="h-full w-full">
+              <CanvasView />
             </div>
           )}
         </div>
