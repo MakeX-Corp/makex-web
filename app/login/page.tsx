@@ -116,7 +116,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-                <Button
+                {/* <Button
                   type="button"
                   variant="link"
                   onClick={handleForgotPassword}
@@ -124,7 +124,7 @@ export default function Login() {
                   className="px-0 h-auto"
                 >
                   Forgot password?
-                </Button>
+                </Button> */}
               </div>
 
               {resetSent && (
@@ -177,8 +177,8 @@ export default function Login() {
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <Link href="/signup" className="text-primary hover:underline">
-                Sign up
+              <Link href="/" className="text-primary hover:underline">
+                Join the waitlist
               </Link>
             </p>
           </CardContent>
