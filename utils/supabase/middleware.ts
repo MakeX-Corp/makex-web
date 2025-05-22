@@ -50,6 +50,8 @@ export async function updateSession(request: NextRequest) {
     '/about',
     '/pricing',
     '/api/share',
+    '/api/waitlist',
+    
   ]
 
   if (

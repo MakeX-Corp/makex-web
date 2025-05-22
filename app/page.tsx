@@ -1,337 +1,373 @@
-"use client";
+"use client"
 
-import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import {
-  ArrowRight,
-  Code,
-  Database,
-  Layout,
-  ShoppingCart,
-  MessageSquare,
-  Calendar,
-  Music,
-  PenTool,
-  Book,
-  Users,
-  Map,
-  CreditCard,
-  Mail,
-  FileText,
-  Video,
-  BarChart,
-  Globe,
-  Search,
-  Briefcase,
-  Image as ImageIcon,
-  Loader2,
-  Sparkles,
-  LogIn,
-} from "lucide-react";
-// Expanded app suggestion chips for multiple rows
-const APP_SUGGESTIONS = [
-  { icon: <Layout size={14} />, label: "Landing page" },
-  { icon: <ShoppingCart size={14} />, label: "E-commerce" },
-  { icon: <Database size={14} />, label: "Dashboard" },
-  { icon: <MessageSquare size={14} />, label: "Chat app" },
-  { icon: <Calendar size={14} />, label: "Calendar" },
-  { icon: <Code size={14} />, label: "Portfolio" },
-  { icon: <ImageIcon size={14} />, label: "Photo gallery" },
-  { icon: <Music size={14} />, label: "Music player" },
-  { icon: <PenTool size={14} />, label: "Blog" },
-  { icon: <Book size={14} />, label: "Knowledge base" },
-  { icon: <Users size={14} />, label: "Social network" },
-  { icon: <Map size={14} />, label: "Travel planner" },
-  { icon: <CreditCard size={14} />, label: "Finance tracker" },
-  { icon: <Mail size={14} />, label: "Email client" },
-  { icon: <FileText size={14} />, label: "Note taking" },
-  { icon: <Video size={14} />, label: "Video streaming" },
-  { icon: <BarChart size={14} />, label: "Analytics" },
-  { icon: <Globe size={14} />, label: "News aggregator" },
-  { icon: <Search size={14} />, label: "Search engine" },
-  { icon: <Briefcase size={14} />, label: "Job board" },
-];
+import { useEffect, useState, useRef } from "react"
+import { Sparkles, Code } from "lucide-react"
+import Image from 'next/image'
+import dynamic from 'next/dynamic'
+import WaitlistContainer from '@/components/waitlist-container'
 
-// Example prompts
-const EXAMPLE_PROMPTS = [
-  "A markdown note-taking app with search and tagging",
-  "A job application tracker that organizes applications by status",
-  "A recipe app that suggests meals based on ingredients you have",
-];
+const TYPING_SPEED = 200 // Slower typing speed
+const TYPING_INITIAL_DELAY = 2000 // Longer initial delay
 
-// Create three rows of suggestions for animation
-const ROW_1 = APP_SUGGESTIONS.slice(0, 7);
-const ROW_2 = APP_SUGGESTIONS.slice(7, 14);
-const ROW_3 = APP_SUGGESTIONS.slice(14);
+export default function LandingPage() {
+  const [mounted, setMounted] = useState(false)
+  const [codeIndex, setCodeIndex] = useState(0)
+  const [gameState, setGameState] = useState(Array(9).fill(null))
+  const [currentPlayer, setCurrentPlayer] = useState("X")
+  const codeRef = useRef<HTMLDivElement>(null)
+  const [step, setStep] = useState(0)
+  const [userPrompt, setUserPrompt] = useState("")
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generatingCode, setGeneratingCode] = useState<string[]>([])
+  const [isTyping, setIsTyping] = useState(false)
+  const demoPrompt = "A tic-tac-toe game"
+  const [isLooping, setIsLooping] = useState(true)
 
-export default function DashboardPage() {
-  const router = useRouter();
-  const [isCreating, setIsCreating] = useState(false);
-  const [prompt, setPrompt] = useState("");
-  // Create refs with explicit typing
-  const row1Ref = useRef<HTMLDivElement>(null);
-  const row2Ref = useRef<HTMLDivElement>(null);
-  const row3Ref = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const codeSnippets = [
+    "function TicTacToe() {",
+    "  const [board, setBoard] = useState(Array(9).fill(null));",
+    "  const [isXNext, setIsXNext] = useState(true);",
+    "",
+    "  const handleClick = (index) => {",
+    "    if (board[index] || calculateWinner(board)) return;",
+    "    const newBoard = [...board];",
+    '    newBoard[index] = isXNext ? "X" : "O";',
+    "    setBoard(newBoard);",
+    "    setIsXNext(!isXNext);",
+    "  };",
+    "",
+    "  const renderSquare = (index) => {",
+    "    return (",
+    '      <button className="square" onClick={() => handleClick(index)}>',
+    "        {board[index]}",
+    "      </button>",
+    "    );",
+    "  };",
+    "",
+    "  return (",
+    '    <div className="game-board">',
+    '      <div className="board-row">',
+    "        {renderSquare(0)}",
+    "        {renderSquare(1)}",
+    "        {renderSquare(2)}",
+    "      </div>",
+    '      <div className="board-row">',
+    "        {renderSquare(3)}",
+    "        {renderSquare(4)}",
+    "        {renderSquare(5)}",
+    '      <div className="board-row">',
+    "        {renderSquare(6)}",
+    "        {renderSquare(7)}",
+    "        {renderSquare(8)}",
+    "      </div>",
+    "    </div>",
+    "  );",
+    "}",
+  ]
 
-  // Animation for moving suggestion pills
+  // Add these realistic React code snippets
+  const realisticCode = [
+    'import React, { useState } from "react"',
+    'import { View, Text, TouchableOpacity } from "react-native"',
+    '',
+    'export default function TicTacToe() {',
+    '  const [board, setBoard] = useState(Array(9).fill(null))',
+    '  const [isXNext, setIsXNext] = useState(true)',
+    '',
+    '  const handlePress = (index) => {',
+    '    const newBoard = [...board]',
+    '    newBoard[index] = isXNext ? "X" : "O"',
+    '    setBoard(newBoard)',
+    '    setIsXNext(!isXNext)',
+    '  }',
+    '',
+    '  const renderSquare = (index) => (',
+    '    <TouchableOpacity',
+    '      style={styles.square}',
+    '      onPress={() => handlePress(index)}>',
+    '      <Text style={styles.text}>{board[index]}</Text>',
+    '    </TouchableOpacity>',
+    '  )',
+    '',
+    '  return (',
+    '    <View style={styles.container}>',
+    '      <Text style={styles.title}>Tic Tac Toe</Text>',
+    '      <View style={styles.board}>',
+    '        <View style={styles.row}>',
+    '          {renderSquare(0)}',
+    '          {renderSquare(1)}',
+    '          {renderSquare(2)}',
+    '        </View>',
+    '      </View>',
+    '    </View>',
+    '  )',
+    '}',
+    '',
+    'const styles = StyleSheet.create({',
+    '  container: { flex: 1, padding: 20 },',
+    '  board: { aspectRatio: 1 },',
+    '  square: { flex: 1, borderWidth: 1 },',
+    '  text: { fontSize: 24, textAlign: "center" }',
+    '})'
+  ]
+
   useEffect(() => {
-    // Modified the function to accept any ref type and handle null check inside
-    const animateRow = (
-      rowRef: { current: HTMLDivElement | null },
-      direction: "left" | "right",
-      speed: number
-    ) => {
-      if (!rowRef.current) return;
+    setMounted(true)
 
-      let position = 0;
-      const row = rowRef.current;
-      const rowWidth = row.scrollWidth;
-      const viewWidth = row.offsetWidth;
-
-      // Set initial position based on direction
-      if (direction === "right") {
-        position = -rowWidth / 2;
-      }
-
-      const animate = () => {
-        if (!row) return;
-
-        // Update position
-        if (direction === "left") {
-          position -= speed;
-          // Reset when enough content has scrolled by
-          if (position <= -rowWidth / 2) {
-            position = 0;
-          }
-        } else {
-          position += speed;
-          // Reset when enough content has scrolled by
-          if (position >= 0) {
-            position = -rowWidth / 2;
-          }
+    // Code typing animation
+    const codeInterval = setInterval(() => {
+      setCodeIndex((prev) => {
+        if (prev < codeSnippets.length - 1) {
+          return prev + 1
         }
+        return prev
+      })
+    }, 150)
 
-        // Apply the transformation
-        row.style.transform = `translateX(${position}px)`;
-        requestAnimationFrame(animate);
-      };
+    // Tic-tac-toe game simulation - only run in step 2
+    let gameInterval: NodeJS.Timeout | null = null
+    if (step === 2) {
+      gameInterval = setInterval(() => {
+        setGameState((prev) => {
+          const emptyCells = prev.map((cell, idx) => (cell === null ? idx : null)).filter((idx) => idx !== null)
+          if (emptyCells.length === 0) {
+            return Array(9).fill(null)
+          }
 
-      requestAnimationFrame(animate);
-    };
-
-    // Start animations for each row with different speeds and directions
-    animateRow(row1Ref, "left", 0.3);
-    animateRow(row2Ref, "right", 0.2);
-    animateRow(row3Ref, "left", 0.3);
-
-    // Cleanup
-    return () => {
-      // Animation cleanup will happen automatically when component unmounts
-    };
-  }, []);
-
-  const handleCreateApp = async () => {
-    if (!prompt.trim()) return;
-
-    try {
-      setIsCreating(true);
-
-      // Store the prompt in localStorage for persistence
-      localStorage.setItem("makeX_home_prompt", prompt.trim());
-
-      // Redirect to dashboard
-      router.push("/dashboard");
-    } catch (error) {
-      console.error("Error creating app:", error);
-      setIsCreating(false);
+          const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)] as number
+          const newState = [...prev]
+          newState[randomIndex] = currentPlayer
+          setCurrentPlayer(currentPlayer === "X" ? "O" : "X")
+          return newState
+        })
+      }, 1000)
     }
-  };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setPrompt(suggestion);
-  };
+    // Scroll code into view as it's typed
+    if (codeRef.current) {
+      codeRef.current.scrollTop = codeRef.current.scrollHeight
+    }
 
-  // Function to duplicate items for continuous scrolling effect
-  const duplicateItemsForScrolling = (items: typeof APP_SUGGESTIONS) => {
-    return [...items, ...items];
-  };
+    return () => {
+      clearInterval(codeInterval)
+      if (gameInterval) clearInterval(gameInterval)
+    }
+  }, [codeIndex, currentPlayer, step])
+
+  useEffect(() => {
+    if (mounted && !isTyping) { // Only start if not already typing
+      simulateTyping()
+    }
+  }, [mounted]) // Remove other dependencies
+
+  const generateRandomCode = () => {
+    const elements = [
+      'import React', 'const App', 'function', 'export default', 'useState',
+      'useEffect', 'StyleSheet', 'View', 'Text', 'TouchableOpacity',
+      'const styles', 'return', 'render', 'props', 'navigation'
+    ]
+    const snippets = [
+      'from "react-native"',
+      'createStackNavigator()',
+      'flex: 1,',
+      'backgroundColor: "#fff",',
+      'padding: 20,',
+      'onPress={() => {}}',
+      '<View style={styles.container}>',
+      '<Text style={styles.text}>',
+      'justifyContent: "center",',
+      'alignItems: "center",'
+    ]
+    const randomElement = elements[Math.floor(Math.random() * elements.length)]
+    const randomSnippet = snippets[Math.floor(Math.random() * snippets.length)]
+    return `${randomElement} ${randomSnippet}`
+  }
+
+  const startGeneration = () => {
+    setStep(1)
+    
+    // Create multiple copies of the code to fill the screen
+    const repeatedCode = Array(5).fill(realisticCode).flat()
+    setGeneratingCode(repeatedCode)
+
+    // Move to game after animation
+    setTimeout(() => {
+      setStep(2)
+      // Reset to home page after showing game for 5 seconds
+      setTimeout(() => {
+        setStep(0)
+        setUserPrompt("")
+        setGameState(Array(9).fill(null))
+        simulateTyping() // Start the loop again
+      }, 5000)
+    }, 4000)
+  }
+
+  const simulateTyping = () => {
+    if (isTyping) return // Prevent multiple typing instances
+    
+    setIsTyping(true)
+    setUserPrompt("") // Clear existing text
+    
+    setTimeout(() => {
+      let i = 0
+      const typingInterval = setInterval(() => {
+        setUserPrompt(demoPrompt.slice(0, i + 1))
+        i++
+        if (i === demoPrompt.length) {
+          clearInterval(typingInterval)
+          setIsTyping(false)
+          // Add small delay before starting generation
+          setTimeout(() => {
+            startGeneration()
+          }, 500)
+        }
+      }, TYPING_SPEED)
+
+      // Cleanup functionoptimise this for phone
+      return () => clearInterval(typingInterval)
+    }, TYPING_INITIAL_DELAY)
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-4">
-      <div className="w-full max-w-2xl mx-auto">
-        {/* Header with logo */}
-        <div className="mb-6 text-center">
-          <div className="mb-2">
-            <Image
-              src="/logo.png"
-              alt="makeX logo"
-              width={128}
-              height={32}
-              className="mx-auto"
-            />
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight mb-2">
-            Build any mobile app
-          </h1>
-        </div>
-
-        {/* Moving suggestion pills in three rows */}
-        <div className="mb-6">
-          {/* Row 1 - scrolling left */}
-          <div className="overflow-hidden mb-2">
-            <div
-              ref={row1Ref}
-              className="flex whitespace-nowrap"
-              style={{ willChange: "transform" }}
-            >
-              {duplicateItemsForScrolling(ROW_1).map((suggestion, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSuggestionClick(suggestion.label)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap"
-                >
-                  {suggestion.icon}
-                  {suggestion.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Row 2 - scrolling right */}
-          <div className="overflow-hidden mb-2">
-            <div
-              ref={row2Ref}
-              className="flex whitespace-nowrap"
-              style={{ willChange: "transform" }}
-            >
-              {duplicateItemsForScrolling(ROW_2).map((suggestion, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSuggestionClick(suggestion.label)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap"
-                >
-                  {suggestion.icon}
-                  {suggestion.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Row 3 - scrolling left */}
-          <div className="overflow-hidden">
-            <div
-              ref={row3Ref}
-              className="flex whitespace-nowrap"
-              style={{ willChange: "transform" }}
-            >
-              {duplicateItemsForScrolling(ROW_3).map((suggestion, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSuggestionClick(suggestion.label)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap"
-                >
-                  {suggestion.icon}
-                  {suggestion.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Main prompt input - Modified to remove background colors */}
-        <div className="mb-8">
-          <div className="relative border rounded-xl shadow-lg overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
-            <textarea
-              ref={inputRef}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe your app idea in detail..."
-              className="w-full px-6 pt-5 pb-16 resize-none focus:outline-none text-base bg-transparent transition-colors"
-              rows={3}
-              style={{ minHeight: "120px" }}
-            />
-
-            {/* Button area with clean design */}
-            <div className="absolute bottom-0 left-0 right-0 py-3 px-4 border-t flex items-center justify-end">
-              <div className="flex items-center mr-2">
-                <Sparkles className="h-5 w-5 text-gray-400" />
-              </div>
-
-              <Button
-                onClick={handleCreateApp}
-                disabled={!prompt.trim() || isCreating}
-                variant="default"
-                className="font-medium rounded-md flex items-center disabled:opacity-50"
-              >
-                {isCreating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  </>
-                ) : (
-                  <>
-                    Create App
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background/95 to-background/90 overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+        <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 bg-primary/5 rounded-full filter blur-3xl animate-blob"></div>
+        <div className="absolute top-1/3 right-1/4 w-1/3 h-1/3 bg-purple-500/5 rounded-full filter blur-3xl animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-1/4 right-1/3 w-1/4 h-1/4 bg-blue-500/5 rounded-full filter blur-3xl animate-blob animation-delay-4000"></div>
       </div>
-      {/* From the Community Section */}
-      <div className="w-full max-w-6xl mx-auto mt-12">
-        <h2 className="text-2xl font-bold mb-4">From the Community</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[
-            {
-              title: "Tic Tac Toe & Memory Game",
-              share_url: "https://makexapp.link/d46enNO",
-              image: "/community/tic-tac-toe.png",
-            },
-            {
-              title: "Water Intake Tracker",
-              share_url: "https://makexapp.link/ayMDqCH",
-              image: "/community/water-intake-tracker.png",
-            },
-            {
-              title: "Notes",
-              share_url: "https://makexapp.link/k6BVM2b",
-              image: "/community/note-taking.png",
-            },
-            {
-              title: "Analytics Dashboard",
-              share_url: "https://makexapp.link/WW3ESIH",
-              image: "/community/analytics.png",
-            },
-          ].map((project, idx) => (
-            <a
-              key={idx}
-              href={project.share_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block bg-card rounded-xl shadow-lg hover:shadow-xl transition-shadow overflow-hidden border border-border"
-            >
-              <div className="relative w-full h-40 bg-gray-100">
-                <Image
-                  src={project.image}
-                  alt={project.title}
-                  fill
-                  style={{ objectFit: "cover" }}
-                  className="transition-transform duration-200 hover:scale-105"
-                />
-              </div>
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-base truncate flex-1">{project.title}</span>
+
+      <main className="flex-1 flex flex-col items-center justify-center relative z-10 mt-0">
+        <div className="container px-4 py-1 flex flex-col items-center text-center">
+          <div className="flex items-center justify-center mb-1">
+            <div className="relative">
+              <Image 
+                src="/logo.png"
+                alt="MakeX Logo"
+                width={48}
+                height={48}
+                className="h-12 w-12 md:h-16 md:w-16"
+              />
+            </div>
+          </div>
+
+          <h1 className="text-3xl md:text-7xl font-bold tracking-tight mb-2 md:mb-4 animate-fade-in bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-500">
+            MakeX
+          </h1>
+
+          <p className="text-lg md:text-2xl text-muted-foreground max-w-[600px] mb-4 md:mb-8 animate-fade-in-delay">
+            An app that builds apps
+          </p>
+
+          <div className="w-full max-w-md mb-4 md:mb-8 animate-fade-in-delay-2">
+            <WaitlistContainer />
+          </div>
+
+          {/* Updated iPhone Mockup with better mobile responsiveness */}
+          <div className="relative mx-auto animate-float-slow mb-4 md:mb-8 scale-90 md:scale-100">
+            <div className="relative w-[240px] sm:w-[280px] h-[488px] sm:h-[570px] rounded-[44px] bg-black p-[10px] sm:p-[12px] shadow-2xl">
+              {/* Notch */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[20px] sm:h-[25px] w-[120px] sm:w-[150px] bg-black rounded-b-[14px] z-20" />
+              
+              {/* Screen */}
+              <div className="relative h-full w-full rounded-[28px] sm:rounded-[32px] overflow-hidden bg-white">
+                <div className="flex h-full flex-col">
+                  {/* App Header */}
+                  <div className="flex-none h-10 sm:h-14 bg-white border-b flex items-center justify-between px-3 sm:px-4">
+                    <div className="flex items-center space-x-2">
+                      <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                      <span className="text-xs sm:text-sm font-medium text-gray-900">MakeX</span>
+                    </div>
+                  </div>
+
+                  {/* App Content */}
+                  <div className="flex-grow overflow-hidden p-2 sm:p-4">
+                    {step === 0 && (
+                      <div className="h-full flex flex-col items-center justify-center space-y-3 sm:space-y-6 px-2 sm:px-4">
+                        <div className="text-center space-y-1 sm:space-y-2">
+                          <h3 className="text-base sm:text-xl font-semibold text-gray-900">What would you like to build?</h3>
+                          <p className="text-xs sm:text-sm text-gray-500">Describe your app idea in simple words</p>
+                        </div>
+                        <input
+                          type="text"
+                          value={userPrompt}
+                          readOnly
+                          placeholder="e.g. A tic-tac-toe game"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm"
+                        />
+                        <button
+                          onClick={simulateTyping}
+                          disabled={isTyping}
+                          className="w-full bg-primary text-white rounded-xl py-2 sm:py-3 font-medium disabled:opacity-50 text-xs sm:text-sm"
+                        >
+                          {isTyping ? "Typing..." : "Generate App →"}
+                        </button>
+                      </div>
+                    )}
+
+                    {step === 1 && (
+                      <div className="h-full w-full bg-white overflow-hidden">
+                        <div 
+                          className="h-full font-mono text-[10px] sm:text-xs whitespace-pre animate-scroll-up"
+                          style={{
+                            willChange: 'transform'
+                          }}
+                        >
+                          {generatingCode.map((line, i) => (
+                            <div 
+                              key={i} 
+                              className="text-gray-800 leading-4 sm:leading-5"
+                              style={{ opacity: 0.8 }}
+                            >
+                              {line}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {step === 2 && (
+                      <div className="h-full w-full bg-white flex items-center justify-center p-2 sm:p-4">
+                        <div className="w-full max-w-xs">
+                          <div className="text-sm sm:text-lg text-center text-gray-900 mb-3 sm:mb-6 font-semibold">Tic Tac Toe</div>
+                          <div className="grid grid-cols-3 gap-1.5 sm:gap-3 aspect-square w-full">
+                            {gameState.map((cell, index) => (
+                              <div
+                                key={index}
+                                className={`
+                                  flex items-center justify-center rounded-md sm:rounded-xl text-lg sm:text-2xl font-bold bg-gray-50 border border-gray-100
+                                  ${cell === "X" ? "text-primary animate-pop-in" : cell === "O" ? "text-purple-500 animate-pop-in" : ""}
+                                `}
+                                style={{
+                                  aspectRatio: "1/1"
+                                }}
+                              >
+                                {cell}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bottom Bar */}
+                  <div className="flex-none h-10 sm:h-16 border-t bg-white flex items-center justify-center">
+                    <div className="w-20 sm:w-32 h-1 bg-gray-200 rounded-full"></div>
+                  </div>
                 </div>
               </div>
-            </a>
-          ))}
+
+              {/* Power Button */}
+              <div className="absolute right-[-2px] top-[100px] sm:top-[120px] w-[3px] h-[25px] sm:h-[30px] bg-neutral-800 rounded-l-sm" />
+              
+              {/* Volume Buttons */}
+              <div className="absolute left-[-2px] top-[85px] sm:top-[100px] w-[3px] h-[25px] sm:h-[30px] bg-neutral-800 rounded-r-sm" />
+              <div className="absolute left-[-2px] top-[120px] sm:top-[140px] w-[3px] h-[50px] sm:h-[60px] bg-neutral-800 rounded-r-sm" />
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
-  );
+  )
 }
