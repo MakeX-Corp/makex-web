@@ -33,9 +33,12 @@ interface Deployment {
 }
 
 interface ShareInfo {
+  share_id: string;
+  app_id: string;
   share_url: string;
   web_url: string;
   app_url: string;
+  created_at: string;
 }
 
 export function DeployButton({
@@ -57,6 +60,21 @@ export function DeployButton({
   // Initialize Supabase client
   const supabase = createClient();
 
+  // Reusable function to fetch share URL
+  const fetchShareUrl = async (appId: string) => {
+    try {
+      const response = await fetch(`/api/share?app_id=${appId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data) {
+          setShareInfo(data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching share URL:', error);
+    }
+  };
+
   // Set up Supabase realtime subscription for deployment status
   useEffect(() => {
     if (!appId) return;
@@ -67,6 +85,9 @@ export function DeployButton({
       setError(null);
 
       try {
+        // Always fetch share URL first
+        await fetchShareUrl(appId);
+
         const response = await fetch(`/api/code/deploy?appId=${appId}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
@@ -83,18 +104,6 @@ export function DeployButton({
 
         const data = await response.json();
         setLastDeployment(data);
-        
-        // Fetch share URL if deployment exists
-        if (data && data.status === "completed") {
-          console.log("[Deploy] Fetching share URL for app:", appId);
-          const shareResponse = await fetch(`/api/share?app_id=${appId}`);
-          console.log("[Deploy] Share response status:", shareResponse.status);
-          if (shareResponse.ok) {
-            const shareData = await shareResponse.json();
-            console.log("[Deploy] Share data:", shareData);
-            setShareInfo(shareData);
-          }
-        }
       } catch (err) {
         console.error("Error fetching deployment:", err);
         setError("Failed to load deployment info");
@@ -126,12 +135,10 @@ export function DeployButton({
           
           // If deployment is completed, fetch share info
           if (payload.new.status === "completed") {
-            fetch(`/api/share?app_id=${appId}`)
-              .then(response => response.json())
-              .then(shareData => {
-                setShareInfo(shareData);
-              })
-              .catch(console.error);
+            // Add a small delay to ensure backend is ready
+            setTimeout(() => {
+              fetchShareUrl(appId);
+            }, 1000); // 1 second delay
           }
         }
       )

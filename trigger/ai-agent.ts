@@ -20,6 +20,16 @@ export const aiAgent = task({
       // Get Supabase admin client
       const supabase = await getSupabaseAdmin();
 
+      // Update sandbox status to changing
+      const { error: updateError } = await supabase
+        .from("user_sandboxes")
+        .update({ app_status: "changing" })
+        .eq("app_id", appId);
+
+      if (updateError) {
+        throw new Error("Failed to update sandbox status");
+      }
+
       // Get app details from the database
       const { data: app, error: appError } = await supabase
         .from("user_apps")
@@ -103,11 +113,32 @@ export const aiAgent = task({
         console.log(`${LOG_PREFIX} Reasoning:`, result.reasoning);
       }
 
+      // Set sandbox status back to active
+      const { error: finalUpdateError } = await supabase
+        .from("user_sandboxes")
+        .update({ app_status: "active" })
+        .eq("app_id", appId);
+
+      if (finalUpdateError) {
+        console.error(`${LOG_PREFIX} Failed to update sandbox status back to active:`, finalUpdateError);
+      }
+
       return {
         success: true,
         response: result,
       };
     } catch (error) {
+      // Ensure we set the status back to active even if there's an error
+      try {
+        const supabase = await getSupabaseAdmin();
+        await supabase
+          .from("user_sandboxes")
+          .update({ app_status: "active" })
+          .eq("app_id", payload.appId);
+      } catch (recoveryError) {
+        console.error(`${LOG_PREFIX} Failed to recover sandbox status:`, recoveryError);
+      }
+
       console.error(`${LOG_PREFIX} Error:`, error);
       throw error;
     }
