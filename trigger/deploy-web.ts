@@ -56,22 +56,6 @@ function getMimeType(filename: string): string {
   return mimeTypes[ext.toLowerCase()] || "application/octet-stream";
 }
 
-function shareIdGenerator(appId: string): string {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-
-  // Use appId as seed by summing its character codes
-  const seed = appId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-
-  // Generate 6 characters using the seed
-  for (let i = 0; i < 6; i++) {
-    const index = (seed + i * 31) % characters.length; // 31 is a prime number for better distribution
-    result += characters[index];
-  }
-
-  return result;
-}
-
 async function analyzeAppWithClaude(fileClient: any, appName: string): Promise<{ title: string; description: string }> {
   const bedrock = createAmazonBedrock({
     region: "us-east-1",
@@ -184,6 +168,48 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text or explanation.`;
   }
 }
 
+async function shareIdGenerator(appId: string, supabase: any): Promise<string> {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const maxAttempts = 3; // Maximum number of attempts to generate a unique ID
+
+  // Use appId as seed by summing its character codes
+  const seed = appId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  
+  // Add timestamp component (last 4 digits of current timestamp)
+  const timestamp = Date.now().toString().slice(-4);
+  
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    let result = '';
+    
+    // Generate 6 characters using the seed and attempt number
+    for (let i = 0; i < 6; i++) {
+      const index = (seed + i * 31 + attempt * 17) % characters.length; // Added attempt number for variation
+      result += characters[index];
+    }
+    
+    // Combine with timestamp
+    const shareId = `${result}${timestamp}`;
+    
+    // Check if this ID already exists
+    const { data: existingMapping } = await supabase
+      .from("url_mappings")
+      .select("share_id")
+      .eq("share_id", shareId)
+      .single();
+      
+    if (!existingMapping) {
+      return shareId;
+    }
+  }
+  
+  // If all attempts failed, generate a completely random ID
+  let randomId = '';
+  for (let i = 0; i < 6; i++) {
+    randomId += characters[Math.floor(Math.random() * characters.length)];
+  }
+  return `${randomId}${timestamp}`;
+}
+
 async function handleUrlMapping(
   supabase: any,
   appId: string,
@@ -235,7 +261,7 @@ async function handleUrlMapping(
     }
 
     // Create new Dub link only if it doesn't exist
-    const shareId = shareIdGenerator(appId);
+    const shareId = await shareIdGenerator(appId, supabase);
   
     const dubLink = await dub.links.create({
       url: `https://makex.app/share/${shareId}`,
