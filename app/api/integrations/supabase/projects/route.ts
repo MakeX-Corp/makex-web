@@ -1,5 +1,5 @@
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { uniqueNamesGenerator, Config, adjectives, colors, animals } from 'unique-names-generator';
 import crypto from 'crypto';
 import { EnvVarManager } from "@/utils/server/env-var-manager";
@@ -11,7 +11,7 @@ export const maxDuration = 300;
 export async function POST(request: Request) {
   try {
     // Verify user authentication
-    const result = await getSupabaseWithUser(request);
+    const result = await getSupabaseWithUser(request as NextRequest);
     if (result instanceof NextResponse) return result;
     const { supabase, user } = result;
     if (!user) {

@@ -13,7 +13,8 @@ export const firstScheduledTask = schedules.task({
             await supabase
                 .from("user_sandboxes")
                 .select("*")
-                .in("sandbox_status", ["active"]);
+                .in("sandbox_status", ["active"])
+                .neq("app_status", "changing");
 
         if (activeSandboxError) {
             console.error("Error fetching active apps:", activeSandboxError);

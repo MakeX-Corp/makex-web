@@ -199,13 +199,13 @@ export async function POST(req: Request) {
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     });
 
-    const model = bedrock("us.anthropic.claude-3-5-sonnet-20241022-v2:0");
+    const model = bedrock("us.anthropic.claude-sonnet-4-20250514-v1:0");
     const modelv4 = anthropic("claude-4-sonnet-20250514");
 
     // Check if there are any active sandboxes no just hit the get endpoint
 
     const result = streamText({
-      model: modelv4,
+      model: model,
       messages: formattedMessages,
       tools: tools,
       toolCallStreaming: true,
