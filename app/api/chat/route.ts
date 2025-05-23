@@ -200,13 +200,12 @@ export async function POST(req: Request) {
     });
 
     const model = bedrock("us.anthropic.claude-3-5-sonnet-20241022-v2:0");
-    const modelv37 = anthropic("claude-3-7-sonnet-20250219");
     const modelv4 = anthropic("claude-4-sonnet-20250514");
 
     // Check if there are any active sandboxes no just hit the get endpoint
 
     const result = streamText({
-      model: modelv37,
+      model: modelv4,
       messages: formattedMessages,
       tools: tools,
       toolCallStreaming: true,
