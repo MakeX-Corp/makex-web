@@ -1,5 +1,4 @@
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
-import { generateText, streamText } from "ai";
+import { streamText } from "ai";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
