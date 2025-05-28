@@ -6,6 +6,8 @@ import { getPrompt } from "@/utils/server/prompt";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { resumeContainer } from "./resume-container";
+import { getBedrockClient } from "@/utils/server/bedrock-client";
+import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
 
 const LOG_PREFIX = "[AI Agent]";
 
@@ -109,13 +111,9 @@ export const aiAgent = task({
       });
 
       // Initialize Bedrock client
-      const bedrock = createAmazonBedrock({
-        region: "us-east-1",
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      });
+      const bedrock = getBedrockClient();
 
-      const model = bedrock("us.anthropic.claude-sonnet-4-20250514-v1:0");
+      const model = bedrock(CLAUDE_SONNET_4_MODEL);
 
       // Create message with user prompt
       const messages: Message[] = [{
