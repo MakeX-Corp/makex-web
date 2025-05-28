@@ -6,9 +6,9 @@ import { NextRequest } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     // Get authenticated user
-    // const userResult = await getSupabaseWithUser(request);
-    // if (userResult instanceof NextResponse) return userResult;
-    // if ('error' in userResult) return userResult.error;
+    const userResult = await getSupabaseWithUser(request);
+    if (userResult instanceof NextResponse) return userResult;
+    if ('error' in userResult) return userResult.error;
 
     const body = await request.json();
     const { appId, userPrompt } = body;
