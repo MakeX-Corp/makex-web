@@ -7,6 +7,7 @@ import { checkMessageLimit } from "@/utils/server/check-daily-limit";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
+import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
 
@@ -92,130 +93,215 @@ export async function POST(req: Request) {
     const userResult = await getSupabaseWithUser(req as NextRequest );
     if (userResult instanceof NextResponse || 'error' in userResult) return userResult;
     const { supabase, user, token } = userResult;
-    // Check daily message limit using the new utility function
-    const limitCheck = await checkMessageLimit(supabase, user, subscription);
-    if (limitCheck.error) {
-      return NextResponse.json(
-        { error: limitCheck.error },
-        { status: limitCheck.status }
-      );
-    }
 
-    // Get app details from the database
-    const { data: app, error: appError } = await supabase
-      .from("user_apps")
-      .select("*")
-      .eq("id", appId)
+    // Check if app is already being changed
+    const { data: appStatus, error: statusError } = await supabase
+      .from("user_sandboxes")
+      .select("app_status")
+      .eq("app_id", appId)
       .single();
 
-    if (appError) {
+    if (statusError) {
       return NextResponse.json(
-        { error: "Failed to fetch app details" },
+        { error: "Failed to check app status" },
         { status: 500 }
       );
     }
 
-   
-    const apiClient = createFileBackendApiClient(app.api_url);
-    let connectionUri = undefined;
-
-    if (supabase_project) {
-      connectionUri = `postgresql://postgres.${supabase_project.id}:${supabase_project.db_pass}@aws-0-us-east-1.pooler.supabase.com:6543/postgres`;
+    if (appStatus?.app_status === "changing") {
+      return NextResponse.json(
+        { error: "App is currently being modified. Please try again later." },
+        { status: 409 }
+      );
     }
 
-    // Get the file tree
-    const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
-    const fileTree = fileTreeResponse;
-
-    const modelName = "claude-3-5-sonnet-latest";
-
-    const tools = createTools({
-      apiUrl: app.api_url,
-      connectionUri: connectionUri,
+    // Lock the app
+    const trimmedAppId = appId.trim();
+    console.log('Debug appId:', {
+      original: appId,
+      trimmed: trimmedAppId,
+      length: trimmedAppId.length,
+      hasWhitespace: appId !== trimmedAppId
     });
 
-    // Format messages for the model
-    const formattedMessages = messages.map((message: any, index: number) => {
-      // Check if this is the last user message and we're using multi-modal format
-      if (
-        index === messages.length - 1 &&
-        message.role === "user" &&
-        multiModal &&
-        messageParts
-      ) {
-        return {
-          role: message.role,
-          content: messageParts,
-        };
-      }
-      // For messages with experimental_attachments
-      else if (message.experimental_attachments?.length) {
-        const content = [{ type: "text", text: message.content || "" }];
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { error: lockError, data: lockData, count } = await supabaseAdmin
+      .from("user_sandboxes")
+      .update({ 
+        app_status: "changing",
+        sandbox_updated_at: new Date().toISOString()
+      })
+      .eq("app_id", trimmedAppId)
+      .select();
 
-        // Add each attachment as a separate image part
-        for (const attachment of message.experimental_attachments) {
-          // Check if it's a base64 image
-          if (attachment.url && attachment.url.startsWith("data:image/")) {
-            content.push({
-              type: "image",
-              // @ts-ignore
-              image: attachment.url,
-            });
+    console.log('App lock attempt:', {
+      appId: trimmedAppId,
+      success: !lockError,
+      error: lockError,
+      data: lockData,
+      count,
+      timestamp: new Date().toISOString()
+    });
+
+    // Check if we actually found and updated a record
+    if (!lockError && (!lockData || lockData.length === 0)) {
+      console.warn(`No record found to update for app_id: ${trimmedAppId}`);
+    }
+
+    if (lockError) {
+      return NextResponse.json(
+        { error: "Failed to lock app" },
+        { status: 500 }
+      );
+    }
+
+    try {
+      // Check daily message limit using the new utility function
+      const limitCheck = await checkMessageLimit(supabase, user, subscription);
+      if (limitCheck.error) {
+        return NextResponse.json(
+          { error: limitCheck.error },
+          { status: limitCheck.status }
+        );
+      }
+
+      // Get app details from the database
+      const { data: app, error: appError } = await supabase
+        .from("user_apps")
+        .select("*")
+        .eq("id", trimmedAppId)
+        .single();
+
+      if (appError) {
+        return NextResponse.json(
+          { error: "Failed to fetch app details" },
+          { status: 500 }
+        );
+      }
+
+      const apiClient = createFileBackendApiClient(app.api_url);
+
+ 
+
+      // Get the file tree
+      const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
+      const fileTree = fileTreeResponse;
+
+      const modelName = "claude-3-5-sonnet-latest";
+
+      const tools = createTools({
+        apiUrl: app.api_url,
+      });
+
+      // Format messages for the model
+      const formattedMessages = messages.map((message: any, index: number) => {
+        // Check if this is the last user message and we're using multi-modal format
+        if (
+          index === messages.length - 1 &&
+          message.role === "user" &&
+          multiModal &&
+          messageParts
+        ) {
+          return {
+            role: message.role,
+            content: messageParts,
+          };
+        }
+        // For messages with experimental_attachments
+        else if (message.experimental_attachments?.length) {
+          const content = [{ type: "text", text: message.content || "" }];
+
+          // Add each attachment as a separate image part
+          for (const attachment of message.experimental_attachments) {
+            // Check if it's a base64 image
+            if (attachment.url && attachment.url.startsWith("data:image/")) {
+              content.push({
+                type: "image",
+                // @ts-ignore
+                image: attachment.url,
+              });
+            }
+          }
+
+          return {
+            role: message.role,
+            content: content,
+          };
+        }
+        // Regular text message
+        else {
+          return {
+            role: message.role,
+            content: message.content,
+          };
+        }
+      });
+
+      await supabase.from("app_chat_history").insert({
+        app_id: trimmedAppId,
+        user_id: user.id,
+        content: lastUserMessage.content,
+        role: "user",
+        model_used: modelName,
+        metadata: {
+          streamed: false,
+          parts: messageParts || undefined,
+        },
+        session_id: sessionId,
+        message_id: lastUserMessage.id,
+      });
+
+      // Check if there are any active sandboxes no just hit the get endpoint
+      const bedrock = createAmazonBedrock({
+        region: "us-east-1",
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      });
+
+      const model = bedrock("us.anthropic.claude-sonnet-4-20250514-v1:0");
+      const modelv4 = anthropic("claude-4-sonnet-20250514");
+
+      // Check if there are any active sandboxes no just hit the get endpoint
+
+      const result = streamText({
+        model: model,
+        messages: formattedMessages,
+        tools: tools,
+        toolCallStreaming: true,
+        system: getPrompt(fileTree),
+        maxSteps: 30,
+        onFinish: async () => {
+          // Set app status back to active
+          try {
+            const { error: finalUpdateError } = await supabaseAdmin
+              .from("user_sandboxes")
+              .update({ app_status: "active" })
+              .eq("app_id", trimmedAppId);
+
+            if (finalUpdateError) {
+              console.error("Failed to update app status back to active:", finalUpdateError);
+            }
+          } catch (recoveryError) {
+            console.error("Failed to recover app status:", recoveryError);
           }
         }
+      });
 
-        return {
-          role: message.role,
-          content: content,
-        };
-      }
-      // Regular text message
-      else {
-        return {
-          role: message.role,
-          content: message.content,
-        };
-      }
-    });
-
-    await supabase.from("app_chat_history").insert({
-      app_id: appId,
-      user_id: user.id,
-      content: lastUserMessage.content,
-      role: "user",
-      model_used: modelName,
-      metadata: {
-        streamed: false,
-        parts: messageParts || undefined,
-      },
-      session_id: sessionId,
-      message_id: lastUserMessage.id,
-    });
-
-    // Check if there are any active sandboxes no just hit the get endpoint
-    const bedrock = createAmazonBedrock({
-      region: "us-east-1",
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    });
-
-    const model = bedrock("us.anthropic.claude-sonnet-4-20250514-v1:0");
-    const modelv4 = anthropic("claude-4-sonnet-20250514");
-
-    // Check if there are any active sandboxes no just hit the get endpoint
-
-    const result = streamText({
-      model: model,
-      messages: formattedMessages,
-      tools: tools,
-      toolCallStreaming: true,
-      system: getPrompt(fileTree, connectionUri),
-      maxSteps: 30,
-    });
-
-    return result.toDataStreamResponse({
-      sendReasoning: true,
-    });
+      return result.toDataStreamResponse({
+        sendReasoning: true,
+      });
+    } catch (error) {
+      // Comprehensive error handling
+      console.error("Detailed chat error:", error);
+      return NextResponse.json(
+        {
+          error:
+            "Internal Server Error: " +
+            (error instanceof Error ? error.message : String(error)),
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     // Comprehensive error handling
     console.error("Detailed chat error:", error);

@@ -8,13 +8,11 @@ import FirecrawlApp, { ScrapeResponse, Action } from '@mendable/firecrawl-js';
 
 type ToolConfig = {
   apiUrl?: string;
-  connectionUri?: string;
 };
 
 export function createTools(config: ToolConfig = {}) {
   const apiClient = createFileBackendApiClient(config.apiUrl || "");
   const dbTool = new DatabaseTool();
-  const connectionUri = config.connectionUri || undefined;
   const firecrawl = process.env.FIRECRAWL_API_KEY ? new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY }) : null;
   const tools: Record<string, any> = {
     readFile: tool({
@@ -339,26 +337,7 @@ export function createTools(config: ToolConfig = {}) {
 
   };
 
-  // Add database tools if enabled
-  if (connectionUri !== undefined) {
-    tools.runSql = tool({
-      description: "Run a sql query",
-      parameters: z.object({
-        query: z.string().describe("The sql query to run"),
-      }),
-      execute: async ({ query }) => {
-        try {
-          const result = await dbTool.execute(connectionUri, query);
-          return { success: true, data: result };
-        } catch (error: any) {
-          return {
-            success: false,
-            error: error.message || "Unknown error occurred",
-          };
-        }
-      },
-    });
-  }
+
 
   return tools;
 }
