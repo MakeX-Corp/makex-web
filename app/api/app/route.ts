@@ -229,7 +229,8 @@ export async function GET(request: Request) {
         .from("user_apps")
         .select("*")
         .eq("user_id", user?.id)
-        .or("status.is.null");
+        .or("status.is.null")
+        .order('created_at', { ascending: false });
 
       if (error) {
         return NextResponse.json(

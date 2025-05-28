@@ -1,4 +1,4 @@
-export const getPrompt = (fileTree: any, connectionUri: string | undefined) => {
+export const getPrompt = (fileTree: any) => {
   const fileTreeString = JSON.stringify(fileTree, null, 2);
 
   return `

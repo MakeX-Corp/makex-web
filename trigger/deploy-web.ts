@@ -390,11 +390,23 @@ export const deployWeb = task({
         throw new Error("No sandbox found for this app");
       }
 
-      // Update sandbox updated_at time
-      await supabase
+      // Check if sandbox is already being changed
+      if (sandbox.app_status === "changing") {
+        throw new Error("Sandbox is currently being modified. Please try again later.");
+      }
+
+      // Update sandbox updated_at time and lock the sandbox
+      const { error: lockError } = await supabase
         .from("user_sandboxes")
-        .update({ sandbox_updated_at: new Date().toISOString() })
+        .update({ 
+          sandbox_updated_at: new Date().toISOString(),
+          app_status: "changing"
+        })
         .eq("id", sandbox.id);
+
+      if (lockError) {
+        throw new Error(`Failed to lock sandbox: ${lockError.message}`);
+      }
 
       // If sandbox is paused, resume it and wait for completion
       if (sandbox.sandbox_status === "paused") {
@@ -524,6 +536,20 @@ export const deployWeb = task({
         const deploymentUrl = `${PUBLIC_URL_BASE}/${deploymentBasePath}/`;
         await updateDeploymentStatus(supabase, deploymentId, "failed", deploymentUrl);
         throw error;
+      } finally {
+        // Set sandbox status back to active
+        try {
+          const { error: finalUpdateError } = await supabase
+            .from("user_sandboxes")
+            .update({ app_status: "active" })
+            .eq("app_id", appId);
+
+          if (finalUpdateError) {
+            console.error("[DeployWeb] Failed to update sandbox status back to active:", finalUpdateError);
+          }
+        } catch (recoveryError) {
+          console.error("[DeployWeb] Failed to recover sandbox status:", recoveryError);
+        }
       }
     } catch (error) {
       console.error("[DeployWeb] Critical deployment error:", error);

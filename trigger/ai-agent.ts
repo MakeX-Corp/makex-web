@@ -5,6 +5,7 @@ import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
+import { resumeContainer } from "./resume-container";
 
 const LOG_PREFIX = "[AI Agent]";
 
@@ -19,6 +20,60 @@ export const aiAgent = task({
 
       // Get Supabase admin client
       const supabase = await getSupabaseAdmin();
+
+      // Get the latest session for this app
+      const { data: latestSession, error: sessionError } = await supabase
+        .from("chat_sessions")
+        .select("*")
+        .eq("app_id", appId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (sessionError) {
+        throw new Error(`Failed to fetch latest session: ${sessionError.message}`);
+      }
+
+      if (!latestSession) {
+        throw new Error("No session found for this app");
+      }
+
+      const sessionId = latestSession.id;
+
+      // Check sandbox status and resume if needed
+      console.log(`${LOG_PREFIX} Checking sandbox status for appId: ${appId}`);
+      const { data: sandbox, error: sandboxError } = await supabase
+        .from("user_sandboxes")
+        .select("*")
+        .eq("app_id", appId)
+        .order("sandbox_updated_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (sandboxError) {
+        throw new Error(`Failed to fetch sandbox status: ${sandboxError.message}`);
+      }
+
+      if (!sandbox) {
+        throw new Error("No sandbox found for this app");
+      }
+
+      // Update sandbox updated_at time
+      await supabase
+        .from("user_sandboxes")
+        .update({ sandbox_updated_at: new Date().toISOString() })
+        .eq("id", sandbox.id);
+
+      // If sandbox is paused, resume it and wait for completion
+      if (sandbox.sandbox_status === "paused") {
+        console.log(`${LOG_PREFIX} Sandbox is paused, resuming...`);
+        await resumeContainer.triggerAndWait({
+          userId: sandbox.user_id,
+          appId,
+          appName: sandbox.app_name,
+        });
+        console.log(`${LOG_PREFIX} Sandbox is now active`);
+      }
 
       // Update sandbox status to changing
       const { error: updateError } = await supabase
@@ -69,6 +124,20 @@ export const aiAgent = task({
         id: crypto.randomUUID()
       }];
 
+      // Insert user message into chat history
+      await supabase.from("app_chat_history").insert({
+        app_id: appId,
+        user_id: latestSession.user_id,
+        content: userPrompt,
+        role: "user",
+        model_used: "claude-sonnet-4",
+        metadata: {
+          streamed: false
+        },
+        session_id: sessionId,
+        message_id: messages[0].id,
+      });
+
       console.log(`${LOG_PREFIX} Starting generation:`, {
         appId,
         model: "claude-sonnet-4",
@@ -81,8 +150,33 @@ export const aiAgent = task({
         model: model,
         messages: messages,
         tools: tools,
-        system: getPrompt(fileTree, undefined),
-        maxSteps: 30,
+        system: getPrompt(fileTree),
+        maxSteps: 50,
+      });
+
+      // Calculate cost based on both input and output tokens
+      const inputCost = result.usage?.promptTokens * 0.000003; // $3/million tokens
+      const outputCost = result.usage?.completionTokens * 0.000015; // $15/million tokens
+      const totalCost = inputCost + outputCost;
+
+      // Insert assistant's message into chat history
+      await supabase.from("app_chat_history").insert({
+        app_id: appId,
+        user_id: latestSession.user_id,
+        content: result.text,
+        role: "assistant",
+        model_used: "claude-sonnet-4",
+        metadata: {
+          streamed: false,
+          reasoning: result.reasoning,
+          toolCalls: result.toolCalls,
+          toolResults: result.toolResults
+        },
+        input_tokens_used: result.usage?.promptTokens,
+        output_tokens_used: result.usage?.completionTokens,
+        cost: totalCost,
+        session_id: sessionId,
+        message_id: crypto.randomUUID(),
       });
 
       // Enhanced logging of the generation result
@@ -113,6 +207,17 @@ export const aiAgent = task({
         console.log(`${LOG_PREFIX} Reasoning:`, result.reasoning);
       }
 
+      // Log cost calculation for both input and output tokens
+      console.log(`${LOG_PREFIX} Cost Calculation:`, {
+        inputTokens: result.usage?.promptTokens,
+        outputTokens: result.usage?.completionTokens,
+        inputCostPerToken: 0.000003,
+        outputCostPerToken: 0.000015,
+        inputCost,
+        outputCost,
+        totalCost
+      });
+
       // Set sandbox status back to active
       const { error: finalUpdateError } = await supabase
         .from("user_sandboxes")
@@ -126,6 +231,7 @@ export const aiAgent = task({
       return {
         success: true,
         response: result,
+        sessionId
       };
     } catch (error) {
       // Ensure we set the status back to active even if there's an error

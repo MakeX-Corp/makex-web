@@ -99,7 +99,7 @@ export default function MobileMockup({
         {containerState === "active" && appState !== "active" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
             <span style={{ fontSize: `${14 * scaleFactor}px` }}>
-              App is starting
+              App is {appState}
             </span>
             <Loader2
               className="animate-spin mt-2"
