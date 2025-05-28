@@ -6,7 +6,6 @@ import { createFileBackendApiClient } from "@/utils/server/file-backend-api-clie
 import { checkMessageLimit } from "@/utils/server/check-daily-limit";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
-import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { getBedrockClient } from "@/utils/server/bedrock-client";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
