@@ -78,7 +78,6 @@ export const startExpo = task({
     .update({
       api_url: apiUrl,
       app_url: appUrl,
-      app_status: "active",
     })
     .eq("id", sandboxId);
 

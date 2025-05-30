@@ -1,13 +1,13 @@
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
-import { generateText, streamText } from "ai";
+import { streamText } from "ai";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { checkMessageLimit } from "@/utils/server/check-daily-limit";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
-import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
+import { getBedrockClient } from "@/utils/server/bedrock-client";
+import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
 
@@ -252,14 +252,9 @@ export async function POST(req: Request) {
       });
 
       // Check if there are any active sandboxes no just hit the get endpoint
-      const bedrock = createAmazonBedrock({
-        region: "us-east-1",
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      });
+      const bedrock = getBedrockClient();
 
-      const model = bedrock("us.anthropic.claude-sonnet-4-20250514-v1:0");
-      const modelv4 = anthropic("claude-4-sonnet-20250514");
+      const model = bedrock(CLAUDE_SONNET_4_MODEL);
 
       // Check if there are any active sandboxes no just hit the get endpoint
 

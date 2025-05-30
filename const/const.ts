@@ -15,3 +15,6 @@ export const FOOTER_AND_HEADER_PATHS = [
   "/privacy",
   "/terms",
 ];
+
+export const CLAUDE_SONNET_4_MODEL = "us.anthropic.claude-sonnet-4-20250514-v1:0";
+export const CLAUDE_3_5_SONNET_LATEST = "claude-3-5-sonnet-latest";
