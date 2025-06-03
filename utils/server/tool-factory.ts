@@ -178,29 +178,29 @@ export function createTools(config: ToolConfig = {}) {
       },
     }),
 
-    replaceInFile: tool({
-      description: "Replace text in a file",
-      parameters: z.object({
-        path: z.string().describe("The path to the file"),
-        find: z.string().describe("The text to find"),
-        replace_with: z.string().describe("The text to replace with"),
-      }),
-      execute: async ({ path, find, replace_with }) => {
-        try {
-          const response = await apiClient.put("/file/replace", {
-            path,
-            find,
-            replace_with,
-          });
-          return { success: true, data: response.data };
-        } catch (error: any) {
-          return {
-            success: false,
-            error: error.message || "Unknown error occurred",
-          };
-        }
-      },
-    }),
+    // replaceInFile: tool({
+    //   description: "Replace text in a file",
+    //   parameters: z.object({
+    //     path: z.string().describe("The path to the file"),
+    //     find: z.string().describe("The text to find"),
+    //     replace_with: z.string().describe("The text to replace with"),
+    //   }),
+    //   execute: async ({ path, find, replace_with }) => {
+    //     try {
+    //       const response = await apiClient.put("/file/replace", {
+    //         path,
+    //         find,
+    //         replace_with,
+    //       });
+    //       return { success: true, data: response.data };
+    //     } catch (error: any) {
+    //       return {
+    //         success: false,
+    //         error: error.message || "Unknown error occurred",
+    //       };
+    //     }
+    //   },
+    // }),
 
     getFileTree: tool({
       description: "Get the directory tree structure",
