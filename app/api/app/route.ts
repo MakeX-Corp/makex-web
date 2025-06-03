@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
   const result = await getSupabaseWithUser(request as NextRequest);
   if (result instanceof NextResponse) return result;
-  if ('error' in result) return result.error;
+  if ("error" in result) return result.error;
   const { supabase, user } = result;
 
   try {
@@ -46,7 +46,6 @@ export async function POST(request: Request) {
       );
     }
 
-
     const adminSupabase = await getSupabaseAdmin();
 
     const { data: newSandbox, error: newSandboxError } = await adminSupabase
@@ -64,7 +63,9 @@ export async function POST(request: Request) {
       .limit(1);
 
     if (newSandboxError) {
-      throw new Error(`Failed inserting new sandbox: ${newSandboxError.message}`);
+      throw new Error(
+        `Failed inserting new sandbox: ${newSandboxError.message}`
+      );
     }
 
     const sandboxDbId = newSandbox?.[0]?.id;
@@ -74,21 +75,20 @@ export async function POST(request: Request) {
 
     const containerStartTime = performance.now();
 
-    const { appHost, apiHost , containerId } = await createE2BContainer({
+    const { appHost, apiHost, containerId } = await createE2BContainer({
       userId: user.id,
       appId: insertedApp.id,
       appName: appName,
     });
 
-    console.log('apiHost', apiHost)
+    console.log("apiHost", apiHost);
 
-    console.log('appHost', appHost)
+    console.log("appHost", appHost);
 
     timings.containerInitiation = performance.now() - containerStartTime;
 
-
-    console.log('e2b containerId', containerId)
-    console.log('e2b apiUrl', apiHost)
+    console.log("e2b containerId", containerId);
+    console.log("e2b apiUrl", apiHost);
 
     // Retry mechanism for API host
     const maxRetries = 10;
@@ -102,21 +102,25 @@ export async function POST(request: Request) {
         if (response.status !== 502) {
           break;
         }
-        console.log(`Attempt ${retryCount + 1} failed with 502, retrying in ${retryDelay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        console.log(
+          `Attempt ${
+            retryCount + 1
+          } failed with 502, retrying in ${retryDelay}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
         retryCount++;
       } catch (error) {
         console.log(`Attempt ${retryCount + 1} failed with error:`, error);
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
         retryCount++;
       }
     }
 
     if (retryCount === maxRetries) {
-      console.log('Max retries reached, proceeding with container setup...');
+      console.log("Max retries reached, proceeding with container setup...");
     }
 
-    console.log('response', response)
+    console.log("response", response);
 
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
@@ -128,7 +132,7 @@ export async function POST(request: Request) {
       .eq("id", sandboxDbId);
 
     await redisUrlSetter(appName, appHost, apiHost);
-    
+
     // update the app_url and api_url in the user_apps table
     const { error: updateAppError } = await supabase
       .from("user_apps")
@@ -137,9 +141,10 @@ export async function POST(request: Request) {
       })
       .eq("id", insertedApp.id);
     if (updateError) {
-      throw new Error(`Failed updating sandbox with container info: ${updateError.message}`);
+      throw new Error(
+        `Failed updating sandbox with container info: ${updateError.message}`
+      );
     }
-
 
     // Create the session in the same transaction
     const sessionStartTime = performance.now();
@@ -166,7 +171,7 @@ export async function POST(request: Request) {
     timings.totalTime = performance.now() - startTime;
 
     console.log("Timings:", timings);
-    
+
     await startExpo.trigger({
       appId: insertedApp.id,
       appName: appName,
@@ -195,15 +200,15 @@ export async function GET(request: Request) {
   try {
     const result = await getSupabaseWithUser(request as NextRequest);
     if (result instanceof NextResponse) return result;
-    if ('error' in result) return result.error;
+    if ("error" in result) return result.error;
 
     const { supabase, user } = result;
 
     const { searchParams } = new URL(request.url);
     const appId = searchParams.get("id");
 
-    console.log('appId', appId)
-    
+    console.log("appId", appId);
+
     // If an appId is provided, get just that specific app
     if (appId) {
       const { data: app, error } = await supabase
@@ -227,10 +232,15 @@ export async function GET(request: Request) {
     else {
       const { data: apps, error } = await supabase
         .from("user_apps")
-        .select("*")
+        .select(
+          `
+        *,
+        chat_sessions(id)
+      `
+        )
         .eq("user_id", user?.id)
         .or("status.is.null")
-        .order('created_at', { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) {
         return NextResponse.json(
@@ -239,7 +249,12 @@ export async function GET(request: Request) {
         );
       }
 
-      return NextResponse.json(apps);
+      // Transform to include session_id field
+      const appsWithSessionId = apps?.map((app) => ({
+        ...app,
+        session_id: app.chat_sessions?.[0]?.id || "",
+      }));
+      return NextResponse.json(appsWithSessionId);
     }
   } catch (error) {
     return NextResponse.json(
@@ -254,7 +269,7 @@ export async function DELETE(request: Request) {
   try {
     const result = await getSupabaseWithUser(request as NextRequest);
     if (result instanceof NextResponse) return result;
-    if ('error' in result) return result.error;
+    if ("error" in result) return result.error;
 
     const { supabase, user } = result;
 
@@ -312,7 +327,7 @@ export async function PATCH(request: Request) {
   try {
     const result = await getSupabaseWithUser(request as NextRequest);
     if (result instanceof NextResponse) return result;
-    if ('error' in result) return result.error;
+    if ("error" in result) return result.error;
 
     const { supabase, user } = result;
 

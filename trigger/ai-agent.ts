@@ -14,7 +14,7 @@ const LOG_PREFIX = "[AI Agent]";
 export const aiAgent = task({
   id: "ai-agent",
   retry: {
-    maxAttempts: 0
+    maxAttempts: 0,
   },
   run: async (payload: { appId: string; userPrompt: string }) => {
     try {
@@ -33,7 +33,9 @@ export const aiAgent = task({
         .single();
 
       if (sessionError) {
-        throw new Error(`Failed to fetch latest session: ${sessionError.message}`);
+        throw new Error(
+          `Failed to fetch latest session: ${sessionError.message}`
+        );
       }
 
       if (!latestSession) {
@@ -53,7 +55,9 @@ export const aiAgent = task({
         .single();
 
       if (sandboxError) {
-        throw new Error(`Failed to fetch sandbox status: ${sandboxError.message}`);
+        throw new Error(
+          `Failed to fetch sandbox status: ${sandboxError.message}`
+        );
       }
 
       if (!sandbox) {
@@ -77,16 +81,6 @@ export const aiAgent = task({
         console.log(`${LOG_PREFIX} Sandbox is now active`);
       }
 
-      // Update sandbox status to changing
-      const { error: updateError } = await supabase
-        .from("user_sandboxes")
-        .update({ app_status: "changing" })
-        .eq("app_id", appId);
-
-      if (updateError) {
-        throw new Error("Failed to update sandbox status");
-      }
-
       // Get app details from the database
       const { data: app, error: appError } = await supabase
         .from("user_apps")
@@ -100,7 +94,7 @@ export const aiAgent = task({
 
       // Initialize API client
       const apiClient = createFileBackendApiClient(app.api_url);
-      
+
       // Get file tree
       const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
       const fileTree = fileTreeResponse;
@@ -116,11 +110,13 @@ export const aiAgent = task({
       const model = bedrock(CLAUDE_SONNET_4_MODEL);
 
       // Create message with user prompt
-      const messages: Message[] = [{
-        role: "user",
-        content: userPrompt,
-        id: crypto.randomUUID()
-      }];
+      const messages: Message[] = [
+        {
+          role: "user",
+          content: userPrompt,
+          id: crypto.randomUUID(),
+        },
+      ];
 
       // Insert user message into chat history
       await supabase.from("app_chat_history").insert({
@@ -130,7 +126,7 @@ export const aiAgent = task({
         role: "user",
         model_used: "claude-sonnet-4",
         metadata: {
-          streamed: false
+          streamed: false,
         },
         session_id: sessionId,
         message_id: messages[0].id,
@@ -140,7 +136,7 @@ export const aiAgent = task({
         appId,
         model: "claude-sonnet-4",
         messageCount: messages.length,
-        toolCount: tools.length
+        toolCount: tools.length,
       });
 
       // Generate response using Vercel AI SDK
@@ -156,7 +152,20 @@ export const aiAgent = task({
       const inputCost = result.usage?.promptTokens * 0.000003; // $3/million tokens
       const outputCost = result.usage?.completionTokens * 0.000015; // $15/million tokens
       const totalCost = inputCost + outputCost;
-
+      let commitHash = null;
+      try {
+        const checkpointResponse = await apiClient.post("/checkpoint/save", {
+          name: "ai-assistant-checkpoint",
+          message: "Checkpoint after AI assistant changes",
+        });
+        console.log("checkpointResponse", checkpointResponse);
+        // Store the commit hash from the response
+        commitHash =
+          checkpointResponse.commit || checkpointResponse.current_commit;
+      } catch (error) {
+        console.error("Failed to save checkpoint:", error);
+        throw error;
+      }
       // Insert assistant's message into chat history
       await supabase.from("app_chat_history").insert({
         app_id: appId,
@@ -168,13 +177,14 @@ export const aiAgent = task({
           streamed: false,
           reasoning: result.reasoning,
           toolCalls: result.toolCalls,
-          toolResults: result.toolResults
+          toolResults: result.toolResults,
         },
         input_tokens_used: result.usage?.promptTokens,
         output_tokens_used: result.usage?.completionTokens,
         cost: totalCost,
         session_id: sessionId,
         message_id: crypto.randomUUID(),
+        commit_hash: commitHash,
       });
 
       // Enhanced logging of the generation result
@@ -183,13 +193,13 @@ export const aiAgent = task({
         usage: {
           promptTokens: result.usage?.promptTokens,
           completionTokens: result.usage?.completionTokens,
-          totalTokens: result.usage?.totalTokens
+          totalTokens: result.usage?.totalTokens,
         },
         hasReasoning: !!result.reasoning,
         toolCalls: result.toolCalls?.length || 0,
         toolResults: result.toolResults?.length || 0,
         steps: result.steps?.length || 0,
-        warnings: result.warnings?.length || 0
+        warnings: result.warnings?.length || 0,
       });
 
       // Log the actual response text
@@ -213,7 +223,7 @@ export const aiAgent = task({
         outputCostPerToken: 0.000015,
         inputCost,
         outputCost,
-        totalCost
+        totalCost,
       });
 
       // Set sandbox status back to active
@@ -223,13 +233,16 @@ export const aiAgent = task({
         .eq("app_id", appId);
 
       if (finalUpdateError) {
-        console.error(`${LOG_PREFIX} Failed to update sandbox status back to active:`, finalUpdateError);
+        console.error(
+          `${LOG_PREFIX} Failed to update sandbox status back to active:`,
+          finalUpdateError
+        );
       }
 
       return {
         success: true,
         response: result,
-        sessionId
+        sessionId,
       };
     } catch (error) {
       // Ensure we set the status back to active even if there's an error
@@ -240,7 +253,10 @@ export const aiAgent = task({
           .update({ app_status: "active" })
           .eq("app_id", payload.appId);
       } catch (recoveryError) {
-        console.error(`${LOG_PREFIX} Failed to recover sandbox status:`, recoveryError);
+        console.error(
+          `${LOG_PREFIX} Failed to recover sandbox status:`,
+          recoveryError
+        );
       }
 
       console.error(`${LOG_PREFIX} Error:`, error);
