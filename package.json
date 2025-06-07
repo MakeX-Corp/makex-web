@@ -58,6 +58,7 @@
     "@vercel/analytics": "^1.5.0",
     "adm-zip": "^0.5.16",
     "ai": "^4.3.2",
+    "apn": "^2.2.0",
     "autoprefixer": "^10.4.20",
     "axios": "^1.8.4",
     "class-variance-authority": "^0.7.1",
