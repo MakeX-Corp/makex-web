@@ -9,6 +9,7 @@ import { dub } from "@/utils/server/dub";
 import { resumeContainer } from "./resume-container";
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { generateText } from "ai";
+import apn, { Notification } from "apn";
 
 function streamToBuffer(stream: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -56,7 +57,10 @@ function getMimeType(filename: string): string {
   return mimeTypes[ext.toLowerCase()] || "application/octet-stream";
 }
 
-async function analyzeAppWithClaude(fileClient: any, appName: string): Promise<{ title: string; description: string }> {
+async function analyzeAppWithClaude(
+  fileClient: any,
+  appName: string
+): Promise<{ title: string; description: string }> {
   const bedrock = createAmazonBedrock({
     region: "us-east-1",
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -103,7 +107,7 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text or explanation.`;
   } catch (error) {
     console.error("Error parsing file selection response:", error);
     // Fallback to some common files if analysis fails
-    selectedFiles = ['package.json', 'app.json', 'app.config.js'];
+    selectedFiles = ["package.json", "app.json", "app.config.js"];
   }
 
   // Read the selected files
@@ -113,7 +117,7 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text or explanation.`;
         const content = await fileClient.get("/file", { path: filepath });
         return {
           name: filepath,
-          content: content
+          content: content,
         };
       } catch (error) {
         console.log(`Could not read ${filepath}:`, error);
@@ -123,14 +127,18 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text or explanation.`;
   );
 
   // Filter out null results and create the prompt
-  const validFiles = fileContents.filter((file): file is { name: string; content: string } => file !== null);
+  const validFiles = fileContents.filter(
+    (file): file is { name: string; content: string } => file !== null
+  );
 
   const prompt = `Analyze these files from a mobile app and generate:
 1. A catchy title (max 5 words)
 2. A compelling description (max 2 sentences)
 
 Files:
-${validFiles.map(f => `\n${f.name}:\n${f.content.substring(0, 1000)}`).join('\n')}
+${validFiles
+  .map((f) => `\n${f.name}:\n${f.content.substring(0, 1000)}`)
+  .join("\n")}
 
 App name: ${appName}
 
@@ -153,57 +161,67 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text or explanation.`;
     // Clean the response to ensure it's valid JSON
     const cleanedResponse = result.text.trim();
     const parsedResponse = JSON.parse(cleanedResponse);
-    
-    if (typeof parsedResponse.title !== 'string' || typeof parsedResponse.description !== 'string') {
+
+    if (
+      typeof parsedResponse.title !== "string" ||
+      typeof parsedResponse.description !== "string"
+    ) {
       throw new Error("Invalid response format: missing title or description");
     }
 
     return {
       title: parsedResponse.title || `Check out my ${appName} app`,
-      description: parsedResponse.description || `I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!`
+      description:
+        parsedResponse.description ||
+        `I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!`,
     };
   } catch (error) {
     console.error("Error parsing Claude response:", error);
-    throw new Error("Failed to parse Claude's response: " + (error instanceof Error ? error.message : String(error)));
+    throw new Error(
+      "Failed to parse Claude's response: " +
+        (error instanceof Error ? error.message : String(error))
+    );
   }
 }
 
 async function shareIdGenerator(appId: string, supabase: any): Promise<string> {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   const maxAttempts = 3; // Maximum number of attempts to generate a unique ID
 
   // Use appId as seed by summing its character codes
-  const seed = appId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  
+  const seed = appId
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+
   // Add timestamp component (last 4 digits of current timestamp)
   const timestamp = Date.now().toString().slice(-4);
-  
+
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    let result = '';
-    
+    let result = "";
+
     // Generate 6 characters using the seed and attempt number
     for (let i = 0; i < 6; i++) {
       const index = (seed + i * 31 + attempt * 17) % characters.length; // Added attempt number for variation
       result += characters[index];
     }
-    
+
     // Combine with timestamp
     const shareId = `${result}${timestamp}`;
-    
+
     // Check if this ID already exists
     const { data: existingMapping } = await supabase
       .from("url_mappings")
       .select("share_id")
       .eq("share_id", shareId)
       .single();
-      
+
     if (!existingMapping) {
       return shareId;
     }
   }
-  
+
   // If all attempts failed, generate a completely random ID
-  let randomId = '';
+  let randomId = "";
   for (let i = 0; i < 6; i++) {
     randomId += characters[Math.floor(Math.random() * characters.length)];
   }
@@ -230,12 +248,16 @@ async function handleUrlMapping(
 
     if (fileClient) {
       try {
-        const { title: generatedTitle, description: generatedDescription } = await analyzeAppWithClaude(fileClient, appName);
+        const { title: generatedTitle, description: generatedDescription } =
+          await analyzeAppWithClaude(fileClient, appName);
         title = generatedTitle;
         description = generatedDescription;
       } catch (error) {
         console.error("[DeployWeb] Failed to analyze app with Claude:", error);
-        throw new Error("Failed to analyze app with Claude: " + (error instanceof Error ? error.message : String(error)));
+        throw new Error(
+          "Failed to analyze app with Claude: " +
+            (error instanceof Error ? error.message : String(error))
+        );
       }
     }
 
@@ -257,12 +279,15 @@ async function handleUrlMapping(
           app_url: easUrl,
         })
         .eq("app_id", appId);
-      return { dubLink: { id: existingMapping.dub_id, key: existingMapping.dub_key }, result };
+      return {
+        dubLink: { id: existingMapping.dub_id, key: existingMapping.dub_key },
+        result,
+      };
     }
 
     // Create new Dub link only if it doesn't exist
     const shareId = await shareIdGenerator(appId, supabase);
-  
+
     const dubLink = await dub.links.create({
       url: `https://makex.app/share/${shareId}`,
       proxy: true,
@@ -313,7 +338,9 @@ async function updateDeploymentStatus(
       throw error;
     }
 
-    console.log(`[DeployWeb] Successfully updated deployment status to ${status}`);
+    console.log(
+      `[DeployWeb] Successfully updated deployment status to ${status}`
+    );
   } catch (error) {
     console.error("[DeployWeb] Error updating deployment status:", error);
     throw error;
@@ -346,7 +373,7 @@ async function uploadFilesToS3(
             ContentType: getMimeType(entry.entryName),
             CacheControl:
               getMimeType(entry.entryName).includes("image/") ||
-                entry.entryName.includes("assets/")
+              entry.entryName.includes("assets/")
                 ? "public, max-age=31536000"
                 : "no-cache",
           })
@@ -363,7 +390,7 @@ async function uploadFilesToS3(
 export const deployWeb = task({
   id: "deploy-web",
   retry: {
-    maxAttempts: 0
+    maxAttempts: 0,
   },
   run: async (payload: { appId: string }) => {
     console.log(`[DeployWeb] Starting deployment for appId: ${payload.appId}`);
@@ -383,7 +410,9 @@ export const deployWeb = task({
         .single();
 
       if (sandboxError) {
-        throw new Error(`Failed to fetch sandbox status: ${sandboxError.message}`);
+        throw new Error(
+          `Failed to fetch sandbox status: ${sandboxError.message}`
+        );
       }
 
       if (!sandbox) {
@@ -392,15 +421,17 @@ export const deployWeb = task({
 
       // Check if sandbox is already being changed
       if (sandbox.app_status === "changing") {
-        throw new Error("Sandbox is currently being modified. Please try again later.");
+        throw new Error(
+          "Sandbox is currently being modified. Please try again later."
+        );
       }
 
       // Update sandbox updated_at time and lock the sandbox
       const { error: lockError } = await supabase
         .from("user_sandboxes")
-        .update({ 
+        .update({
           sandbox_updated_at: new Date().toISOString(),
-          app_status: "changing"
+          app_status: "changing",
         })
         .eq("id", sandbox.id);
 
@@ -432,7 +463,9 @@ export const deployWeb = task({
       }
 
       const { api_url, user_id, app_name } = appRecord;
-      console.log(`[DeployWeb] Found app record - name: ${app_name}, userId: ${user_id}`);
+      console.log(
+        `[DeployWeb] Found app record - name: ${app_name}, userId: ${user_id}`
+      );
 
       // Create deployment record
       console.log(`[DeployWeb] Creating deployment record`);
@@ -448,7 +481,10 @@ export const deployWeb = task({
         .single();
 
       if (createError) {
-        console.error("[DeployWeb] Error creating deployment record:", createError);
+        console.error(
+          "[DeployWeb] Error creating deployment record:",
+          createError
+        );
         throw createError;
       }
 
@@ -460,7 +496,9 @@ export const deployWeb = task({
       if (!deploymentId) {
         throw new Error("Deployment ID not found");
       }
-      console.log(`[DeployWeb] Created deployment record with ID: ${deploymentId}`);
+      console.log(
+        `[DeployWeb] Created deployment record with ID: ${deploymentId}`
+      );
 
       const deploymentBasePath = `${appId}/${deploymentId}`;
       const fileClient = createFileBackendApiClient(api_url);
@@ -480,7 +518,10 @@ export const deployWeb = task({
           console.error("[DeployWeb] EAS deployment failed:", easError);
           // Update status to failed but continue with web deployment
           await updateDeploymentStatus(supabase, deploymentId, "failed");
-          throw new Error("EAS deployment failed: " + (easError instanceof Error ? easError.message : String(easError)));
+          throw new Error(
+            "EAS deployment failed: " +
+              (easError instanceof Error ? easError.message : String(easError))
+          );
         }
 
         // Get and process zip file
@@ -489,12 +530,15 @@ export const deployWeb = task({
           `/deploy-web?appId=${appId}&deploymentId=${deploymentId}`
         );
 
-        const zipBuffer = data instanceof Readable ? await streamToBuffer(data) : data;
+        const zipBuffer =
+          data instanceof Readable ? await streamToBuffer(data) : data;
         const zip = new AdmZip(zipBuffer);
-        const hasDistDir = zip.getEntries().some((entry: any) =>
-          entry.entryName.startsWith("dist/")
+        const hasDistDir = zip
+          .getEntries()
+          .some((entry: any) => entry.entryName.startsWith("dist/"));
+        console.log(
+          `[DeployWeb] Processing zip file - has dist directory: ${hasDistDir}`
         );
-        console.log(`[DeployWeb] Processing zip file - has dist directory: ${hasDistDir}`);
 
         // Upload files to S3
         console.log(`[DeployWeb] Starting S3 upload`);
@@ -503,7 +547,9 @@ export const deployWeb = task({
 
         const deploymentUrl = `${PUBLIC_URL_BASE}/${deploymentBasePath}/`;
         const displayUrl = `web-${app_name}.makex.app`;
-        console.log(`[DeployWeb] Setting up proxy for display URL: ${displayUrl}`);
+        console.log(
+          `[DeployWeb] Setting up proxy for display URL: ${displayUrl}`
+        );
 
         // Set up proxy
         await proxySetter(displayUrl, deploymentUrl);
@@ -512,16 +558,23 @@ export const deployWeb = task({
         // Update status to completed
         console.log(`[DeployWeb] Updating deployment status to completed`);
         await updateDeploymentStatus(
-          supabase, 
-          deploymentId, 
-          "completed", 
+          supabase,
+          deploymentId,
+          "completed",
           deploymentUrl,
           easUrl
         );
 
         // Handle URL mapping with both web and EAS URLs
         console.log(`[DeployWeb] Setting up URL mapping`);
-        const { dubLink } = await handleUrlMapping(supabase, appId, app_name, deploymentUrl, easUrl, fileClient);
+        const { dubLink } = await handleUrlMapping(
+          supabase,
+          appId,
+          app_name,
+          deploymentUrl,
+          easUrl,
+          fileClient
+        );
         console.log(`[DeployWeb] URL mapping completed`);
 
         console.log(`[DeployWeb] Deployment completed successfully`);
@@ -534,7 +587,12 @@ export const deployWeb = task({
         console.error("[DeployWeb] Error during deployment process:", error);
         // Update status to failed with any available URLs
         const deploymentUrl = `${PUBLIC_URL_BASE}/${deploymentBasePath}/`;
-        await updateDeploymentStatus(supabase, deploymentId, "failed", deploymentUrl);
+        await updateDeploymentStatus(
+          supabase,
+          deploymentId,
+          "failed",
+          deploymentUrl
+        );
         throw error;
       } finally {
         // Set sandbox status back to active
@@ -545,10 +603,60 @@ export const deployWeb = task({
             .eq("app_id", appId);
 
           if (finalUpdateError) {
-            console.error("[DeployWeb] Failed to update sandbox status back to active:", finalUpdateError);
+            console.error(
+              "[DeployWeb] Failed to update sandbox status back to active:",
+              finalUpdateError
+            );
           }
         } catch (recoveryError) {
-          console.error("[DeployWeb] Failed to recover sandbox status:", recoveryError);
+          console.error(
+            "[DeployWeb] Failed to recover sandbox status:",
+            recoveryError
+          );
+        }
+        // send notification to user
+        //fetch device objects from supabase
+        const { data: devices, error: deviceError } = await supabase
+          .from("user_devices")
+          .select("device_token")
+          .eq("user_id", sandbox.user_id)
+          .not("device_token", "is", null);
+
+        if (deviceError) {
+          console.error("Failed to fetch devices:", deviceError);
+          throw deviceError;
+        }
+
+        const deviceTokens = devices?.map((d) => d.device_token) || [];
+        const title = "MakeX";
+        const body = "Your App has been deployed successfully.";
+        const apnProvider = new apn.Provider({
+          token: {
+            key: process.env.APN_KEY_CONTENTS || "",
+            keyId: process.env.APN_KEY_ID || "",
+            teamId: process.env.APN_TEAM_ID || "",
+          },
+          production: false,
+        });
+        const notification = new Notification({
+          alert: { title, body },
+          topic: process.env.APN_BUNDLE_ID || "",
+          sound: "default",
+          payload: { customData: "MakeX" },
+        });
+
+        console.log("notification", notification);
+
+        for (const token of deviceTokens) {
+          try {
+            const result = await apnProvider.send(notification, token);
+            console.log(
+              `✅ Notification sent to ${token}:`,
+              JSON.stringify(result, null, 2)
+            );
+          } catch (err) {
+            console.error(`❌ Error sending to ${token}:`, err);
+          }
         }
       }
     } catch (error) {

@@ -8,6 +8,7 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { resumeContainer } from "./resume-container";
 import { getBedrockClient } from "@/utils/server/bedrock-client";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
+import apn, { Notification } from "apn";
 
 const LOG_PREFIX = "[AI Agent]";
 
@@ -239,6 +240,50 @@ export const aiAgent = task({
         );
       }
 
+      //fetch device objects from supabase
+      const { data: devices, error: deviceError } = await supabase
+        .from("user_devices")
+        .select("device_token")
+        .eq("user_id", latestSession.user_id)
+        .not("device_token", "is", null);
+
+      if (deviceError) {
+        console.error("Failed to fetch devices:", deviceError);
+        throw deviceError;
+      }
+
+      const deviceTokens = devices?.map((d) => d.device_token) || [];
+      const title = "MakeX";
+      const body = "Your App is ready to use.";
+
+      const apnProvider = new apn.Provider({
+        token: {
+          key: process.env.APN_KEY_CONTENTS || "",
+          keyId: process.env.APN_KEY_ID || "",
+          teamId: process.env.APN_TEAM_ID || "",
+        },
+        production: false,
+      });
+      const notification = new Notification({
+        alert: { title, body },
+        topic: process.env.APN_BUNDLE_ID || "",
+        sound: "default",
+        payload: { customData: "MakeX" },
+      });
+
+      console.log("notification", notification);
+
+      for (const token of deviceTokens) {
+        try {
+          const result = await apnProvider.send(notification, token);
+          console.log(
+            `✅ Notification sent to ${token}:`,
+            JSON.stringify(result, null, 2)
+          );
+        } catch (err) {
+          console.error(`❌ Error sending to ${token}:`, err);
+        }
+      }
       return {
         success: true,
         response: result,
