@@ -14,7 +14,7 @@ export const firstScheduledTask = schedules.task({
                 .from("user_sandboxes")
                 .select("*")
                 .in("sandbox_status", ["active"])
-                .neq("app_status", "changing");
+                .eq("app_status", "active");
 
         if (activeSandboxError) {
             console.error("Error fetching active apps:", activeSandboxError);
