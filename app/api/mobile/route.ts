@@ -69,7 +69,7 @@ export async function GET(request: Request) {
       console.log("No subscription found for user", user.id);
       return NextResponse.json({
         hasActiveSubscription: false,
-        messagesSent: 0, // Default fallback
+        canSendMessage: false,
       });
     }
 
@@ -83,9 +83,24 @@ export async function GET(request: Request) {
       subscriptionEnd !== null &&
       subscriptionEnd > now;
 
+    //logic for determining if the user can send a message
+    const subscriptionType = subscription.subscription_type;
+    const messagesSent = subscription.messages_used_this_period ?? 0;
+
+    const starterPlanLimit =
+      Number(process.env.NEXT_PUBLIC_STARTER_PLAN_LIMIT) || 250;
+    const freePlanLimit = Number(process.env.NEXT_PUBLIC_FREE_PLAN_LIMIT) || 20;
+    let canSendMessage = false;
+    if (subscriptionType === "starter") {
+      canSendMessage = messagesSent < starterPlanLimit;
+    } else {
+      //if no plan
+      canSendMessage = messagesSent < freePlanLimit;
+    }
+
     return NextResponse.json({
       hasActiveSubscription: isActive,
-      messagesSent: subscription.messages_used_this_period ?? 0,
+      canSendMessage: canSendMessage,
     });
   } catch (err) {
     console.error("Failed to fetch subscription:", err);
