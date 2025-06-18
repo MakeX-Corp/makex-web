@@ -15,7 +15,7 @@ Delete a file
 List files and directories
 Install packages using the installPackages tool (only if not already in package.json)
 Insert text at a specific line
-Run the linter using the linterRun tool everytime you write some code and if there are any linting errors fix them.
+Run the linter using the linterRun tool everytime you write some code and if there are any linting errors fix them. Don't Fix warnings.
 Use the scrapeWebContent tool whenever a url is provided.
 
 Determine which files are relevant to the user's request.

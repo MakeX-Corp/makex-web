@@ -265,7 +265,7 @@ export function createTools(config: ToolConfig = {}) {
       }),
       execute: async ({ path }) => { 
         try {
-          const command = path ? `npx eslint ${path} --fix` : "npx eslint . --fix";
+          const command = path ? `npx eslint ${path} --fix --quiet` : "npx eslint . --fix --quiet";
           const data = await apiClient.post("/command", { command });
           return { success: true, data };
         } catch (error: any) {
