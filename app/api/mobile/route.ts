@@ -65,11 +65,31 @@ export async function GET(request: Request) {
       .single();
 
     if (error || !subscription) {
-      console.log("error", error);
       console.log("No subscription found for user", user.id);
+
+      // create a default "free" subscription record
+      const admin = await getSupabaseAdmin();
+
+      const { error: insertError } = await admin
+        .from("mobile_subscriptions")
+        .insert({
+          user_id: user.id,
+          subscription_type: "free",
+          subscription_status: "inactive",
+          messages_used_this_period: 0,
+        });
+
+      if (insertError) {
+        console.error("Failed to create default subscription", insertError);
+        return NextResponse.json(
+          { error: "Failed to create subscription" },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json({
         hasActiveSubscription: false,
-        canSendMessage: false,
+        canSendMessage: true,
       });
     }
 
@@ -93,9 +113,11 @@ export async function GET(request: Request) {
     let canSendMessage = false;
     if (subscriptionType === "starter") {
       canSendMessage = messagesSent < starterPlanLimit;
-    } else {
+    } else if (subscriptionType === "free") {
       //if no plan
       canSendMessage = messagesSent < freePlanLimit;
+    } else {
+      canSendMessage = false;
     }
 
     return NextResponse.json({
