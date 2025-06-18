@@ -8,6 +8,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
+  console.log("RevenueCat webhook received");
+
   try {
     const body = await request.json();
 
@@ -32,20 +34,38 @@ export async function POST(request: Request) {
 
     const admin = await getSupabaseAdmin();
 
-    const { error } = await admin.from("mobile_subscriptions").upsert(
-      {
-        user_id: userId,
-        subscription_type: "starter",
-        subscription_status: status,
-        subscription_start: purchaseDate.toISOString(),
-        subscription_end: expirationDate.toISOString(),
-        messages_used_this_period: 0,
-      },
-      { onConflict: "user_id" }
-    );
+    // First, check if user already exists
+    const { data: existing, error: fetchError } = await admin
+      .from("mobile_subscriptions")
+      .select("messages_used_this_period")
+      .eq("user_id", userId)
+      .single();
 
-    if (error) {
-      console.error("Failed to update subscription", error);
+    if (fetchError && fetchError.code !== "PGRST116") {
+      console.error("Fetch error:", fetchError);
+      return NextResponse.json({ error: "DB Read Error" }, { status: 500 });
+    }
+
+    const isNew = !existing;
+    console.log("isNew", isNew);
+    const { error: upsertError } = await admin
+      .from("mobile_subscriptions")
+      .upsert(
+        {
+          user_id: userId,
+          subscription_type: "starter",
+          subscription_status: status,
+          subscription_start: purchaseDate.toISOString(),
+          subscription_end: expirationDate.toISOString(),
+          messages_used_this_period: isNew
+            ? 0
+            : existing.messages_used_this_period,
+        },
+        { onConflict: "user_id" }
+      );
+
+    if (upsertError) {
+      console.error("Failed to update subscription", upsertError);
       return NextResponse.json({ error: "DB Error" }, { status: 500 });
     }
 

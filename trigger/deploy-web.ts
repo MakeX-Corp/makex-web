@@ -9,7 +9,7 @@ import { dub } from "@/utils/server/dub";
 import { resumeContainer } from "./resume-container";
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { generateText } from "ai";
-import apn, { Notification } from "apn";
+import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
 
 function streamToBuffer(stream: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -615,49 +615,12 @@ export const deployWeb = task({
           );
         }
         // send notification to user
-        //fetch device objects from supabase
-        const { data: devices, error: deviceError } = await supabase
-          .from("user_devices")
-          .select("device_token")
-          .eq("user_id", sandbox.user_id)
-          .not("device_token", "is", null);
-
-        if (deviceError) {
-          console.error("Failed to fetch devices:", deviceError);
-          throw deviceError;
-        }
-
-        const deviceTokens = devices?.map((d) => d.device_token) || [];
-        const title = "MakeX";
-        const body = "Your App has been deployed successfully.";
-        const apnProvider = new apn.Provider({
-          token: {
-            key: process.env.APN_KEY_CONTENTS || "",
-            keyId: process.env.APN_KEY_ID || "",
-            teamId: process.env.APN_TEAM_ID || "",
-          },
-          production: false,
+        await sendPushNotifications({
+          supabase,
+          userId: sandbox.user_id,
+          title: "Deployment completed",
+          body: "Your app has been deployed successfully",
         });
-        const notification = new Notification({
-          alert: { title, body },
-          topic: process.env.APN_BUNDLE_ID || "",
-          sound: "default",
-          payload: { customData: "MakeX" },
-        });
-
-        console.log("notification", notification);
-
-        for (const token of deviceTokens) {
-          try {
-            const result = await apnProvider.send(notification, token);
-            console.log(
-              `✅ Notification sent to ${token}:`,
-              JSON.stringify(result, null, 2)
-            );
-          } catch (err) {
-            console.error(`❌ Error sending to ${token}:`, err);
-          }
-        }
       }
     } catch (error) {
       console.error("[DeployWeb] Critical deployment error:", error);
