@@ -35,13 +35,12 @@ export async function sendPushNotifications({
 
   const apnProvider = new apn.Provider({
     token: {
-      key: process.env.APN_KEY_CONTENTS || "",
+      key: `-----BEGIN PRIVATE KEY-----\n${process.env.APN_KEY_CONTENTS}\n-----END PRIVATE KEY-----`,
       keyId: process.env.APN_KEY_ID || "",
       teamId: process.env.APN_TEAM_ID || "",
     },
-    production: process.env.NODE_ENV === "production",
+    production: false, //process.env.NODE_ENV === "production",
   });
-
   const notification = new Notification({
     alert: { title, body },
     topic: process.env.APN_BUNDLE_ID || "",
