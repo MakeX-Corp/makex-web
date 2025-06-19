@@ -55,9 +55,7 @@ export async function updateSession(request: NextRequest) {
 
   // Check if user is new (created after May 21, 2025)
   if (user) {
-    const cutoffDate = new Date('2025-05-21')
-    const userCreatedAt = new Date(user.created_at)
-    const isNewUser = userCreatedAt > cutoffDate
+    const isNewUser = false
     
     // For new users, only allow access to specific pages
     if (isNewUser && 
