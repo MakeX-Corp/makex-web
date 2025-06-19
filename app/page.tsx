@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react"
 import { Sparkles, Code } from "lucide-react"
 import Image from 'next/image'
-import dynamic from 'next/dynamic'
 import WaitlistContainer from '@/components/waitlist-container'
 
 const TYPING_SPEED = 200 // Slower typing speed
@@ -264,8 +263,8 @@ export default function LandingPage() {
           </div>
 
           {/* Updated iPhone Mockup with better mobile responsiveness */}
-          <div className="relative mx-auto animate-float-slow mb-4 md:mb-8 scale-90 md:scale-100">
-            <div className="relative w-[240px] sm:w-[280px] h-[488px] sm:h-[570px] rounded-[44px] bg-black p-[10px] sm:p-[12px] shadow-2xl">
+          <div className="relative mx-auto animate-float-slow mb-4 md:mb-8 scale-110 md:scale-125">
+            <div className="relative w-[280px] sm:w-[320px] h-[570px] sm:h-[650px] rounded-[44px] bg-black p-[10px] sm:p-[12px] shadow-2xl">
               {/* Notch */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[20px] sm:h-[25px] w-[120px] sm:w-[150px] bg-black rounded-b-[14px] z-20" />
               

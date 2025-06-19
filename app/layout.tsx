@@ -57,17 +57,11 @@ export default function RootLayout({
       </head>
       <body className="overflow-x-hidden antialiased min-h-screen flex flex-col">
         <PostHogProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            enableSystem={false}
-            disableTransitionOnChange
-          >
+
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
             <Analytics />
-          </ThemeProvider>
         </PostHogProvider>
       </body>
     </html>
