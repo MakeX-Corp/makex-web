@@ -50,7 +50,8 @@ export async function updateSession(request: NextRequest) {
     '/about',
     '/pricing',
     '/api/share',
-    '/api/waitlist',
+    '/api/newsletter-signup',
+    '/newsletter',
   ]
 
   // Check if user is new (created after May 21, 2025)

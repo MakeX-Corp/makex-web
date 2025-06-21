@@ -1,0 +1,48 @@
+name: Deploy to Trigger.dev Staging
+
+on:
+  push:
+    branches:
+      - stdev
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build project
+        run: yarn build
+
+      - name: Deploy to Trigger.dev Staging
+        env:
+          TRIGGER_SECRET_KEY: ${{ secrets.TRIGGER_STAGING_SECRET_KEY }}
+        run: |
+          npx trigger.dev@latest deploy --env staging --config ./trigger.config.ts
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Successfully deployed to Trigger.dev staging environment"
+          echo "Environment: staging"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Failed to deploy to Trigger.dev staging environment"
+          echo "Please check the logs above for more details" 

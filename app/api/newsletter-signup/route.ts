@@ -6,9 +6,8 @@ export async function POST(request: Request) {
     const { email } = await request.json()
 
     // Trigger the waitlist registration task
-    await tasks.trigger("waitlist-registration", {
-      email,
-      referer: request.headers.get('referer') || '',
+    await tasks.trigger("email-signup", {
+      email
     });
 
     return NextResponse.json({ success: true })
