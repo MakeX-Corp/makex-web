@@ -26,7 +26,7 @@ jobs:
 
       - name: Deploy to Trigger.dev Staging
         env:
-          TRIGGER_SECRET_KEY: ${{ secrets.TRIGGER_STAGING_SECRET_KEY }}
+          TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
         run: |
           npx trigger.dev@latest deploy --env staging --config ./trigger.config.ts
 
