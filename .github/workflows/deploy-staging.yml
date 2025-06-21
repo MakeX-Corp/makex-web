@@ -3,7 +3,7 @@ name: Deploy to Trigger.dev Staging
 on:
   push:
     branches:
-      - stdev
+      - dev
   workflow_dispatch: # Allow manual triggering
 
 jobs:
