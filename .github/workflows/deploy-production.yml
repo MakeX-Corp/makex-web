@@ -26,9 +26,9 @@ jobs:
 
       - name: Deploy to Trigger.dev Production
         env:
-          TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_PRODUCTION_SECRET_KEY }}
+          TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
         run: |
-          npx trigger.dev@latest deploy --env production --config ./trigger.config.ts
+          npx trigger.dev@latest deploy --env prod --config ./trigger.config.ts
 
       - name: Notify deployment success
         if: success()
