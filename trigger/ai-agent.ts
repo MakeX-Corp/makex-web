@@ -245,7 +245,11 @@ export const aiAgent = task({
         userId: latestSession.user_id,
         title: "MakeX",
         body: "Your App is ready to use.",
-        payload: { customData: "MakeX" },
+        payload: {
+          appId,
+          appName: app.app_name,
+          appUrl: app.app_url,
+        },
       });
       return {
         success: true,
