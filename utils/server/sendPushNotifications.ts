@@ -39,7 +39,7 @@ export async function sendPushNotifications({
       keyId: process.env.APN_KEY_ID || "",
       teamId: process.env.APN_TEAM_ID || "",
     },
-    production: false, //process.env.NODE_ENV === "production",
+    production: true, //process.env.NODE_ENV === "production",
   });
   const notification = new Notification({
     alert: { title, body },
