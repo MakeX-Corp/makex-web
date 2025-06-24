@@ -64,7 +64,7 @@ export async function startExpoInContainer(sandboxId: string) {
   console.log('API URL:', apiUrl);
 
   await sbx.commands.run(
-    `sudo EXPO_PACKAGER_PROXY_URL=${appUrl} npx expo start --port 8000 > ~/expo_logs.txt 2>&1 &`,
+    `sudo EXPO_NO_SIGN_REQUESTS=1 EXPO_OFFLINE=true EXPO_PACKAGER_PROXY_URL=${appUrl} npx expo start --port 8000 > ~/expo_logs.txt 2>&1 &`,
     { 
       background: true,
       cwd: '/app/expo-app',
