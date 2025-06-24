@@ -10,6 +10,7 @@ import { resumeContainer } from "./resume-container";
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { generateText } from "ai";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
+import { killDefaultExpo, startExpoInContainer } from "@/utils/server/e2b";
 
 function streamToBuffer(stream: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -576,6 +577,20 @@ export const deployWeb = task({
           fileClient
         );
         console.log(`[DeployWeb] URL mapping completed`);
+
+        // Kill and restart Expo process on port 8000
+        console.log(`[DeployWeb] Killing existing Expo process on port 8000`);
+        try {
+          await killDefaultExpo(sandbox.sandbox_id);
+          console.log(`[DeployWeb] Successfully killed Expo process`);
+          
+          console.log(`[DeployWeb] Restarting Expo process on port 8000`);
+          await startExpoInContainer(sandbox.sandbox_id);
+          console.log(`[DeployWeb] Successfully restarted Expo process`);
+        } catch (expoError) {
+          console.error("[DeployWeb] Error managing Expo process:", expoError);
+          // Don't throw here as deployment was successful, just log the error
+        }
 
         console.log(`[DeployWeb] Deployment completed successfully`);
         return {
