@@ -87,21 +87,10 @@ export async function killDefaultExpo(sandboxId: string) {
     const port = sbx.getHost(8000);
     console.log('Connected to sandbox:', sbx.sandboxId);
 
-
-    return
-    // Kill the main expo process
+    // Kill all node processes
     try {
-      // Get the PID of the main expo process
-      const findPid = await sbx.commands.run('ps aux | grep "node /app/expo-app/node_modules/.bin/expo start --port 8000" | grep -v grep | awk \'{print $2}\'');
-      console.log('Found main expo PID:', findPid.stdout);
-
-      if (findPid.stdout) {
-        const pid = findPid.stdout.trim();
-        const killResult = await sbx.commands.run(`sudo kill -9 ${pid}`);
-        console.log(`Killed main expo process ${pid}:`, killResult);
-      } else {
-        console.log('No main expo process found');
-      }
+      const killResult = await sbx.commands.run('sudo kill -9 $(ps aux | grep node | grep -v grep | awk \'{print $2}\') 2>/dev/null || true');
+      console.log('Kill all node processes result:', killResult);
     } catch (error) {
       console.log('Error during process kill:', error);
     }
