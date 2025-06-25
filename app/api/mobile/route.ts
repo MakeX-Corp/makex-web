@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     if ("error" in userResult) return userResult.error;
 
     const body = await request.json();
-    const { appId, userPrompt } = body;
+    const { appId, userPrompt, images } = body;
 
     if (!appId || !userPrompt) {
       return NextResponse.json(
@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
     const result = await aiAgent.trigger({
       appId,
       userPrompt,
+      images,
     });
 
     return NextResponse.json({ success: true, result });

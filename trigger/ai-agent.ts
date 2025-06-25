@@ -17,9 +17,13 @@ export const aiAgent = task({
   retry: {
     maxAttempts: 0,
   },
-  run: async (payload: { appId: string; userPrompt: string }) => {
+  run: async (payload: {
+    appId: string;
+    userPrompt: string;
+    images?: string[];
+  }) => {
     try {
-      const { appId, userPrompt } = payload;
+      const { appId, userPrompt, images = [] } = payload;
 
       // Get Supabase admin client
       const supabase = await getSupabaseAdmin();
@@ -111,13 +115,32 @@ export const aiAgent = task({
       const model = bedrock(CLAUDE_SONNET_4_MODEL);
 
       // Create message with user prompt
-      const messages: Message[] = [
-        {
+      const messages: Message[] = [];
+
+      if (images && images.length > 0) {
+        const userMessage = {
+          role: "user" as const,
+          content: [
+            {
+              type: "text" as const,
+              text: userPrompt,
+            },
+            ...images.map((data) => ({
+              type: "image" as const,
+              image: data,
+            })),
+          ],
+        };
+
+        messages.push(userMessage as any);
+      } else {
+        // For text-only content
+        messages.push({
           role: "user",
           content: userPrompt,
           id: crypto.randomUUID(),
-        },
-      ];
+        });
+      }
 
       // Insert user message into chat history
       await supabase.from("app_chat_history").insert({
@@ -128,6 +151,7 @@ export const aiAgent = task({
         model_used: "claude-sonnet-4",
         metadata: {
           streamed: false,
+          //images: images, //save in metadata to render, could be done later
         },
         session_id: sessionId,
         message_id: messages[0].id,
