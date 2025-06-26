@@ -239,6 +239,18 @@ export const aiAgent = task({
           finalUpdateError
         );
       }
+      console.log("Sending push notification to the user");
+      console.log("this is payload", {
+        supabase,
+        userId: latestSession.user_id,
+        title: "MakeX",
+        body: "Your App is ready to use.",
+        payload: {
+          appId,
+          appName: app.app_name,
+          appUrl: app.app_url,
+        },
+      });
       //send push notification to the user
       await sendPushNotifications({
         supabase,
