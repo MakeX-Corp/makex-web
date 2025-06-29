@@ -8,7 +8,7 @@ export default function WaitlistContainer() {
     <div className="w-full flex justify-center my-8">
       <Button asChild size="lg" className="text-lg">
         <a
-          href="https://testflight.apple.com/join/yuPwpH4t"
+          href="https://testflight.apple.com/join/J6rGPwrU"
           target="_blank"
           rel="noopener noreferrer"
         >
