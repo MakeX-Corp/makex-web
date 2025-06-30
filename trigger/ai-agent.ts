@@ -1,13 +1,12 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { generateText, type Message } from "ai";
-import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { resumeContainer } from "./resume-container";
 import { getBedrockClient } from "@/utils/server/bedrock-client";
-import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
+import { anthropic } from "@ai-sdk/anthropic";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
 
 const LOG_PREFIX = "[AI Agent]";
@@ -112,7 +111,7 @@ export const aiAgent = task({
       // Initialize Bedrock client
       const bedrock = getBedrockClient();
 
-      const model = bedrock(CLAUDE_SONNET_4_MODEL);
+      const model = anthropic("claude-4-sonnet-20250514");
 
       // Create message with user prompt
       const messages: Message[] = [];
