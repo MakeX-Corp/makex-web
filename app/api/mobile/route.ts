@@ -24,16 +24,104 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // === CHECK SUBSCRIPTION STATUS ===
+    const admin = await getSupabaseAdmin();
+
+    let { data: subscription, error: subError } = await admin
+      .from("mobile_subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    console.log("this is subscription", subscription);
+    if (subError || !subscription) {
+      // create default free plan if missing
+      const { error: insertError } = await admin
+        .from("mobile_subscriptions")
+        .insert({
+          user_id: user.id,
+          subscription_type: "free",
+          subscription_status: "inactive",
+          messages_used_this_period: 0,
+        });
+
+      if (insertError) {
+        console.error("Failed to insert default subscription", insertError);
+        return NextResponse.json(
+          { error: "Subscription setup failed" },
+          { status: 500 }
+        );
+      }
+
+      // re-query
+      const { data } = await admin
+        .from("mobile_subscriptions")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      subscription = data;
+    }
+
+    const now = new Date();
+    const type = subscription.subscription_type;
+    const used = subscription.messages_used_this_period ?? 0;
+
+    const subscriptionStart = subscription.subscription_start
+      ? new Date(subscription.subscription_start)
+      : null;
+    const subscriptionEnd = subscription.subscription_end
+      ? new Date(subscription.subscription_end)
+      : null;
+
+    const isActive =
+      subscription.subscription_status === "active" &&
+      subscriptionStart &&
+      subscriptionEnd &&
+      now >= subscriptionStart &&
+      now <= subscriptionEnd;
+
+    const freeLimit = Number(process.env.NEXT_PUBLIC_FREE_PLAN_LIMIT) || 20;
+    const starterLimit =
+      Number(process.env.NEXT_PUBLIC_STARTER_PLAN_LIMIT) || 250;
+
+    let limit = 0;
+    let canSend = false;
+
+    if (type === "free") {
+      limit = freeLimit;
+      canSend = used < limit;
+    } else if (type === "starter" && isActive) {
+      limit = starterLimit;
+      canSend = used < limit;
+    }
+
+    if (!canSend) {
+      return NextResponse.json({ error: "LIMIT_REACHED" }, { status: 429 });
+    }
+
+    // === Proceed to increment message count now ===
+    const { error: updateCountError } = await admin
+      .from("mobile_subscriptions")
+      .update({ messages_used_this_period: used + 1 })
+      .eq("user_id", user.id);
+
+    if (updateCountError) {
+      console.error("Failed to increment message count", updateCountError);
+      return NextResponse.json(
+        { error: "Subscription update failed" },
+        { status: 500 }
+      );
+    }
+
+    // === Continue with existing build logic ===
     let finalAppId = appId;
     let appName: string = "";
     let sessionId: string | undefined;
     let apiHost: string = "";
     let appUrl: string = "";
 
-    const adminSupabase = await getSupabaseAdmin();
-
     if (isNewApp) {
-      // === CREATE APP FLOW ===
       appName = generateAppName();
 
       const { data: insertedApp, error: insertError } = await supabase
@@ -51,7 +139,7 @@ export async function POST(request: NextRequest) {
       finalAppId = insertedApp.id;
       appUrl = insertedApp.app_url;
 
-      const { data: newSandbox, error: sandboxError } = await adminSupabase
+      const { data: newSandbox, error: sandboxError } = await admin
         .from("user_sandboxes")
         .insert({
           user_id: user.id,
@@ -78,7 +166,7 @@ export async function POST(request: NextRequest) {
 
       await redisUrlSetter(appName, container.appHost, container.apiHost);
 
-      const { error: updateError } = await adminSupabase
+      const { error: updateError } = await admin
         .from("user_sandboxes")
         .update({
           sandbox_status: "active",
@@ -122,13 +210,11 @@ export async function POST(request: NextRequest) {
         initial: true,
       });
 
-      // Immediately mark app status changing for AI
-      await adminSupabase
+      await admin
         .from("user_sandboxes")
         .update({ app_status: "changing" })
         .eq("app_id", finalAppId);
     } else {
-      // === EDIT EXISTING APP FLOW ===
       if (!finalAppId) {
         return NextResponse.json(
           { error: "Missing appId for existing app update" },
@@ -136,7 +222,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const { error } = await adminSupabase
+      const { error } = await admin
         .from("user_sandboxes")
         .update({ app_status: "changing" })
         .eq("app_id", finalAppId);
@@ -144,7 +230,6 @@ export async function POST(request: NextRequest) {
       if (error) throw new Error("Failed to update sandbox status");
     }
 
-    // === Trigger AI agent ===
     const result = await aiAgent.trigger({
       appId: finalAppId,
       userPrompt,
