@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { aiAgent } from "@/trigger/ai-agent";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
@@ -6,7 +6,8 @@ import { generateAppName } from "@/utils/server/app-name-generator";
 import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { startExpo } from "@/trigger/start-expo";
-import { NextRequest } from "next/server";
+import { checkSubscription } from "@/utils/server/check-subscription";
+
 export async function POST(request: NextRequest) {
   try {
     const userResult = await getSupabaseWithUser(request);
@@ -24,16 +25,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const canSend = await checkSubscription(user.id);
+    if (!canSend) {
+      return NextResponse.json({ error: "LIMIT_REACHED" }, { status: 429 });
+    }
+
     let finalAppId = appId;
-    let appName: string = "";
+    let appName = "";
     let sessionId: string | undefined;
-    let apiHost: string = "";
-    let appUrl: string = "";
+    let apiHost = "";
+    let appUrl = "";
 
-    const adminSupabase = await getSupabaseAdmin();
-
+    const admin = await getSupabaseAdmin();
     if (isNewApp) {
-      // === CREATE APP FLOW ===
       appName = generateAppName();
 
       const { data: insertedApp, error: insertError } = await supabase
@@ -51,7 +55,7 @@ export async function POST(request: NextRequest) {
       finalAppId = insertedApp.id;
       appUrl = insertedApp.app_url;
 
-      const { data: newSandbox, error: sandboxError } = await adminSupabase
+      const { data: newSandbox, error: sandboxError } = await admin
         .from("user_sandboxes")
         .insert({
           user_id: user.id,
@@ -78,7 +82,7 @@ export async function POST(request: NextRequest) {
 
       await redisUrlSetter(appName, container.appHost, container.apiHost);
 
-      const { error: updateError } = await adminSupabase
+      const { error: updateError } = await admin
         .from("user_sandboxes")
         .update({
           sandbox_status: "active",
@@ -122,13 +126,11 @@ export async function POST(request: NextRequest) {
         initial: true,
       });
 
-      // Immediately mark app status changing for AI
-      await adminSupabase
+      await admin
         .from("user_sandboxes")
         .update({ app_status: "changing" })
         .eq("app_id", finalAppId);
     } else {
-      // === EDIT EXISTING APP FLOW ===
       if (!finalAppId) {
         return NextResponse.json(
           { error: "Missing appId for existing app update" },
@@ -136,7 +138,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const { error } = await adminSupabase
+      const { error } = await admin
         .from("user_sandboxes")
         .update({ app_status: "changing" })
         .eq("app_id", finalAppId);
@@ -144,8 +146,7 @@ export async function POST(request: NextRequest) {
       if (error) throw new Error("Failed to update sandbox status");
     }
 
-    // === Trigger AI agent ===
-    const result = await aiAgent.trigger({
+    await aiAgent.trigger({
       appId: finalAppId,
       userPrompt,
       images,
@@ -247,62 +248,6 @@ export async function GET(request: Request) {
     });
   } catch (err) {
     console.error("Failed to fetch subscription:", err);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PATCH(request: Request) {
-  const result = await getSupabaseWithUser(request as NextRequest);
-
-  if (result instanceof NextResponse || "error" in result) {
-    return result;
-  }
-
-  const { user } = result;
-
-  try {
-    const body = await request.json();
-    const { messagesDelta } = body;
-
-    if (typeof messagesDelta !== "number" || messagesDelta < 0) {
-      return NextResponse.json({ error: "Invalid delta" }, { status: 400 });
-    }
-
-    const admin = await getSupabaseAdmin();
-
-    const { data, error: fetchError } = await admin
-      .from("mobile_subscriptions")
-      .select("messages_used_this_period")
-      .eq("user_id", user.id)
-      .single();
-
-    if (fetchError || !data) {
-      console.error("No subscription row found:", fetchError);
-      return NextResponse.json(
-        { error: "No subscription found" },
-        { status: 404 }
-      );
-    }
-
-    const currentCount = data.messages_used_this_period ?? 0;
-    const newCount = currentCount + messagesDelta;
-
-    const { error: updateError } = await admin
-      .from("mobile_subscriptions")
-      .update({ messages_used_this_period: newCount })
-      .eq("user_id", user.id);
-
-    if (updateError) {
-      console.error("Failed to update message count:", updateError);
-      return NextResponse.json({ error: "Update failed" }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("PATCH handler error:", err);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
