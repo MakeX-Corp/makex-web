@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { aiAgent } from "@/trigger/ai-agent";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
@@ -6,7 +6,8 @@ import { generateAppName } from "@/utils/server/app-name-generator";
 import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { startExpo } from "@/trigger/start-expo";
-import { NextRequest } from "next/server";
+import { checkSubscription } from "@/utils/server/check-subscription";
+
 export async function POST(request: NextRequest) {
   try {
     const userResult = await getSupabaseWithUser(request);
@@ -24,103 +25,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // === CHECK SUBSCRIPTION STATUS ===
-    const admin = await getSupabaseAdmin();
-
-    let { data: subscription, error: subError } = await admin
-      .from("mobile_subscriptions")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    console.log("this is subscription", subscription);
-    if (subError || !subscription) {
-      // create default free plan if missing
-      const { error: insertError } = await admin
-        .from("mobile_subscriptions")
-        .insert({
-          user_id: user.id,
-          subscription_type: "free",
-          subscription_status: "inactive",
-          messages_used_this_period: 0,
-        });
-
-      if (insertError) {
-        console.error("Failed to insert default subscription", insertError);
-        return NextResponse.json(
-          { error: "Subscription setup failed" },
-          { status: 500 }
-        );
-      }
-
-      // re-query
-      const { data } = await admin
-        .from("mobile_subscriptions")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
-
-      subscription = data;
-    }
-
-    const now = new Date();
-    const type = subscription.subscription_type;
-    const used = subscription.messages_used_this_period ?? 0;
-
-    const subscriptionStart = subscription.subscription_start
-      ? new Date(subscription.subscription_start)
-      : null;
-    const subscriptionEnd = subscription.subscription_end
-      ? new Date(subscription.subscription_end)
-      : null;
-
-    const isActive =
-      subscription.subscription_status === "active" &&
-      subscriptionStart &&
-      subscriptionEnd &&
-      now >= subscriptionStart &&
-      now <= subscriptionEnd;
-
-    const freeLimit = Number(process.env.NEXT_PUBLIC_FREE_PLAN_LIMIT) || 20;
-    const starterLimit =
-      Number(process.env.NEXT_PUBLIC_STARTER_PLAN_LIMIT) || 250;
-
-    let limit = 0;
-    let canSend = false;
-
-    if (type === "free") {
-      limit = freeLimit;
-      canSend = used < limit;
-    } else if (type === "starter" && isActive) {
-      limit = starterLimit;
-      canSend = used < limit;
-    }
-
+    const canSend = await checkSubscription(user.id);
     if (!canSend) {
       return NextResponse.json({ error: "LIMIT_REACHED" }, { status: 429 });
     }
 
-    // === Proceed to increment message count now ===
-    const { error: updateCountError } = await admin
-      .from("mobile_subscriptions")
-      .update({ messages_used_this_period: used + 1 })
-      .eq("user_id", user.id);
-
-    if (updateCountError) {
-      console.error("Failed to increment message count", updateCountError);
-      return NextResponse.json(
-        { error: "Subscription update failed" },
-        { status: 500 }
-      );
-    }
-
-    // === Continue with existing build logic ===
     let finalAppId = appId;
-    let appName: string = "";
+    let appName = "";
     let sessionId: string | undefined;
-    let apiHost: string = "";
-    let appUrl: string = "";
+    let apiHost = "";
+    let appUrl = "";
 
+    const admin = await getSupabaseAdmin();
     if (isNewApp) {
       appName = generateAppName();
 
@@ -230,7 +146,7 @@ export async function POST(request: NextRequest) {
       if (error) throw new Error("Failed to update sandbox status");
     }
 
-    const result = await aiAgent.trigger({
+    await aiAgent.trigger({
       appId: finalAppId,
       userPrompt,
       images,
@@ -332,62 +248,6 @@ export async function GET(request: Request) {
     });
   } catch (err) {
     console.error("Failed to fetch subscription:", err);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PATCH(request: Request) {
-  const result = await getSupabaseWithUser(request as NextRequest);
-
-  if (result instanceof NextResponse || "error" in result) {
-    return result;
-  }
-
-  const { user } = result;
-
-  try {
-    const body = await request.json();
-    const { messagesDelta } = body;
-
-    if (typeof messagesDelta !== "number" || messagesDelta < 0) {
-      return NextResponse.json({ error: "Invalid delta" }, { status: 400 });
-    }
-
-    const admin = await getSupabaseAdmin();
-
-    const { data, error: fetchError } = await admin
-      .from("mobile_subscriptions")
-      .select("messages_used_this_period")
-      .eq("user_id", user.id)
-      .single();
-
-    if (fetchError || !data) {
-      console.error("No subscription row found:", fetchError);
-      return NextResponse.json(
-        { error: "No subscription found" },
-        { status: 404 }
-      );
-    }
-
-    const currentCount = data.messages_used_this_period ?? 0;
-    const newCount = currentCount + messagesDelta;
-
-    const { error: updateError } = await admin
-      .from("mobile_subscriptions")
-      .update({ messages_used_this_period: newCount })
-      .eq("user_id", user.id);
-
-    if (updateError) {
-      console.error("Failed to update message count:", updateError);
-      return NextResponse.json({ error: "Update failed" }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("PATCH handler error:", err);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
