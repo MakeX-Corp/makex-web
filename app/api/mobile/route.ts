@@ -176,75 +176,17 @@ export async function GET(request: Request) {
     return result;
   }
 
-  const { supabase, user } = result;
-
+  const { user } = result;
+  const admin = await getSupabaseAdmin();
   try {
-    // Fetch subscription record
-    const { data: subscription, error } = await supabase
+    const { data } = await admin
       .from("mobile_subscriptions")
       .select("*")
       .eq("user_id", user.id)
       .single();
 
-    if (error || !subscription) {
-      console.log("No subscription found for user", user.id);
-
-      // create a default "free" subscription record
-      const admin = await getSupabaseAdmin();
-
-      const { error: insertError } = await admin
-        .from("mobile_subscriptions")
-        .insert({
-          user_id: user.id,
-          subscription_type: "free",
-          subscription_status: "inactive",
-          messages_used_this_period: 0,
-        });
-
-      if (insertError) {
-        console.error("Failed to create default subscription", insertError);
-        return NextResponse.json(
-          { error: "Failed to create subscription" },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({
-        hasActiveSubscription: false,
-        canSendMessage: true,
-      });
-    }
-
-    // Determine subscription active status
-    const now = new Date();
-    const subscriptionEnd = subscription.subscription_end
-      ? new Date(subscription.subscription_end)
-      : null;
-    const isActive =
-      subscription.subscription_status === "active" &&
-      subscriptionEnd !== null &&
-      subscriptionEnd > now;
-
-    //logic for determining if the user can send a message
-    const subscriptionType = subscription.subscription_type;
-    const messagesSent = subscription.messages_used_this_period ?? 0;
-
-    const starterPlanLimit =
-      Number(process.env.NEXT_PUBLIC_STARTER_PLAN_LIMIT) || 250;
-    const freePlanLimit = Number(process.env.NEXT_PUBLIC_FREE_PLAN_LIMIT) || 20;
-    let canSendMessage = false;
-    if (subscriptionType === "starter") {
-      canSendMessage = messagesSent < starterPlanLimit;
-    } else if (subscriptionType === "free") {
-      //if no plan
-      canSendMessage = messagesSent < freePlanLimit;
-    } else {
-      canSendMessage = false;
-    }
-
     return NextResponse.json({
-      hasActiveSubscription: isActive,
-      canSendMessage: canSendMessage,
+      hasActiveSubscription: data?.subscription_status === "active",
     });
   } catch (err) {
     console.error("Failed to fetch subscription:", err);
