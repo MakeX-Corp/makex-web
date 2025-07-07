@@ -168,35 +168,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-export async function GET(request: Request) {
-  const result = await getSupabaseWithUser(request as NextRequest);
-
-  if (result instanceof NextResponse || "error" in result) {
-    return result;
-  }
-
-  const { user } = result;
-  console.log("user", user);
-  console.log("user.id", user.id);
-  const admin = await getSupabaseAdmin();
-  try {
-    const { data } = await admin
-      .from("mobile_subscriptions")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    console.log("data", data);
-    console.log("data?.subscription_status", data?.subscription_status);
-    return NextResponse.json({
-      hasActiveSubscription: data?.subscription_status === "active",
-    });
-  } catch (err) {
-    console.error("Failed to fetch subscription:", err);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
