@@ -177,6 +177,8 @@ export async function GET(request: Request) {
   }
 
   const { user } = result;
+  console.log("user", user);
+  console.log("user.id", user.id);
   const admin = await getSupabaseAdmin();
   try {
     const { data } = await admin
@@ -185,6 +187,8 @@ export async function GET(request: Request) {
       .eq("user_id", user.id)
       .single();
 
+    console.log("data", data);
+    console.log("data?.subscription_status", data?.subscription_status);
     return NextResponse.json({
       hasActiveSubscription: data?.subscription_status === "active",
     });
