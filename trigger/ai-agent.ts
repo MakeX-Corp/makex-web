@@ -8,6 +8,7 @@ import { resumeContainer } from "./resume-container";
 import { getBedrockClient } from "@/utils/server/bedrock-client";
 import { anthropic } from "@ai-sdk/anthropic";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
+import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
 
 const LOG_PREFIX = "[AI Agent]";
 
@@ -108,10 +109,9 @@ export const aiAgent = task({
         apiUrl: app.api_url,
       });
 
-      // Initialize Bedrock client
+      // Initialize Bedrock client for Claude 4
       const bedrock = getBedrockClient();
-
-      const model = anthropic("claude-4-sonnet-20250514");
+      const model = bedrock(CLAUDE_SONNET_4_MODEL);
 
       // Create message with user prompt
       const messages: Message[] = [];
