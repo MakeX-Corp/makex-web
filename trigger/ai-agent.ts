@@ -111,7 +111,9 @@ export const aiAgent = task({
 
       // Initialize Bedrock client for Claude 4
       const bedrock = getBedrockClient();
-      const model = bedrock(CLAUDE_SONNET_4_MODEL);
+      // const model = bedrock(CLAUDE_SONNET_4_MODEL);
+
+      const model = anthropic("claude-4-sonnet-20250514");
 
       // Create message with user prompt
       const messages: Message[] = [];
@@ -264,7 +266,6 @@ export const aiAgent = task({
       }
       console.log("Sending push notification to the user");
       console.log("this is payload", {
-        supabase,
         userId: latestSession.user_id,
         title: "MakeX",
         body: "Your App is ready to use.",
