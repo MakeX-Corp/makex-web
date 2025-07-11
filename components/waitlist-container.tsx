@@ -1,21 +1,16 @@
 'use client'
 
-import { AppleIcon } from '@/components/icon-utils'
-import { Button } from '@/components/ui/button'
-
 export default function WaitlistContainer() {
   return (
-    <div className="w-full flex justify-center my-8">
-      <Button asChild size="lg" className="text-lg">
-        <a
-          href="https://testflight.apple.com/join/J6rGPwrU"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <AppleIcon className="w-6 h-6" />
-          Download Beta
-        </a>
-      </Button>
+    <div className="mb-12 mt-8 relative flex justify-center">
+      <a
+        href="https://makexapp.link/app"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block"
+      >
+        <img src="/app-store.svg" alt="Pre-order on the App Store" className="h-[62px] w-[180px] md:h-[82px] md:w-[240px]" />
+      </a>
     </div>
   )
 } 
