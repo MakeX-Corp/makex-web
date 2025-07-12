@@ -247,13 +247,24 @@ export function createTools(config: ToolConfig = {}) {
       },
     }),
 
-    getDocumentation: tool({
+    getExpoDocumentation: tool({
       description: "Search the Expo documentation for relevant answers whenever you install expo related packages or need to know more about the expo ecosystem.",
       parameters: z.object({
         query: z.string().describe("The user's question or technical topic"),
       }),
       execute: async ({ query }) => {
-        const context = await getRelevantContext(query);
+        const context = await getRelevantContext(query, 5, 'expo');
+        return context.join("\n\n");
+      },
+    }),
+
+    getOpenAIDocumentation: tool({
+      description: "Search the OpenAI documentation when you need to integrate OpenAI APIs into your project for any AI features",
+      parameters: z.object({
+        query: z.string().describe("The user's question or technical topic"),
+      }),
+      execute: async ({ query }) => {
+        const context = await getRelevantContext(query, 5, 'openai');
         return context.join("\n\n");
       },
     }),
