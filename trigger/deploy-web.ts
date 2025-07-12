@@ -583,7 +583,7 @@ export const deployWeb = task({
         try {
           await killDefaultExpo(sandbox.sandbox_id);
           console.log(`[DeployWeb] Successfully killed Expo process`);
-          
+
           console.log(`[DeployWeb] Restarting Expo process on port 8000`);
           await startExpoInContainer(sandbox.sandbox_id);
           console.log(`[DeployWeb] Successfully restarted Expo process`);
@@ -631,7 +631,6 @@ export const deployWeb = task({
         }
         // send notification to user
         await sendPushNotifications({
-          supabase,
           userId: sandbox.user_id,
           title: "Deployment completed",
           body: "Your app has been deployed successfully",

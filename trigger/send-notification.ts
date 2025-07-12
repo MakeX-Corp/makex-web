@@ -1,5 +1,4 @@
 import { task } from "@trigger.dev/sdk/v3";
-import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
 
 const LOG_PREFIX = "[Send Notification]";
@@ -29,12 +28,8 @@ export const sendNotification = task({
         body,
       });
 
-      // Get Supabase admin client
-      const supabase = await getSupabaseAdmin();
-
       // Send push notification
       await sendPushNotifications({
-        supabase,
         userId,
         title,
         body,

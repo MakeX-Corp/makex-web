@@ -1,8 +1,7 @@
 import apn, { Notification } from "apn";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "./supabase-admin";
 
 interface SendPushNotificationOptions {
-  supabase: SupabaseClient;
   userId: string;
   title: string;
   body: string;
@@ -10,12 +9,12 @@ interface SendPushNotificationOptions {
 }
 
 export async function sendPushNotifications({
-  supabase,
   userId,
   title,
   body,
   payload = {},
 }: SendPushNotificationOptions): Promise<void> {
+  const supabase = await getSupabaseAdmin();
   const { data: devices, error: deviceError } = await supabase
     .from("user_devices")
     .select("device_token")

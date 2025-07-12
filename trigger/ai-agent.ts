@@ -277,7 +277,6 @@ export const aiAgent = task({
       });
       //send push notification to the user
       await sendPushNotifications({
-        supabase,
         userId: latestSession.user_id,
         title: "MakeX",
         body: "Your App is ready to use.",
