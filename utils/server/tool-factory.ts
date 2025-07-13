@@ -2,7 +2,6 @@ import { DatabaseTool } from "@/utils/server/db-tools";
 import { tool } from "ai";
 import { z } from "zod";
 import { createFileBackendApiClient } from "./file-backend-api-client";
-import Exa from 'exa-js';
 import { getRelevantContext } from "./getRelevantContext";
 import FirecrawlApp, { ScrapeResponse, Action } from '@mendable/firecrawl-js';
 
@@ -142,13 +141,13 @@ export function createTools(config: ToolConfig = {}) {
       description: "Write content to a file",
       parameters: z.object({
         path: z.string().describe("The path where to write the file"),
-        content: z.string().describe("The content to write to the file"),
+        content: z.string().describe("The content to write to the file").default(""),
       }),
       execute: async ({ path, content }) => {
         try {
           const data = await apiClient.post("/file", {
             path,
-            content,
+            content: content || "",
           });
           return { success: true, data };
         } catch (error: any) {
@@ -247,13 +246,24 @@ export function createTools(config: ToolConfig = {}) {
       },
     }),
 
-    getDocumentation: tool({
+    getExpoDocumentation: tool({
       description: "Search the Expo documentation for relevant answers whenever you install expo related packages or need to know more about the expo ecosystem.",
       parameters: z.object({
         query: z.string().describe("The user's question or technical topic"),
       }),
       execute: async ({ query }) => {
-        const context = await getRelevantContext(query);
+        const context = await getRelevantContext(query, 5, 'expo');
+        return context.join("\n\n");
+      },
+    }),
+
+    getOpenAIDocumentation: tool({
+      description: "Search the OpenAI documentation when you need to integrate OpenAI APIs into your project for any AI features",
+      parameters: z.object({
+        query: z.string().describe("The user's question or technical topic"),
+      }),
+      execute: async ({ query }) => {
+        const context = await getRelevantContext(query, 5, 'openai');
         return context.join("\n\n");
       },
     }),
