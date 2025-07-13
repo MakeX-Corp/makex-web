@@ -56,13 +56,19 @@ export default function RootLayout({
         <script src="https://prod-waitlist-widget.s3.us-east-2.amazonaws.com/getwaitlist.min.js"></script>
       </head>
       <body className="overflow-x-hidden antialiased min-h-screen flex flex-col">
-        <PostHogProvider>
-
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <PostHogProvider>
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
             <Analytics />
-        </PostHogProvider>
+          </PostHogProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

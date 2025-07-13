@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { FOOTER_AND_HEADER_PATHS } from "@/const/const";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Header() {
     const pathname = usePathname();
@@ -26,7 +27,8 @@ export function Header() {
                             <span className="text-sm font-medium">MakeX</span>
                         </Link>
                     </div>
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-4">
+                        <ThemeToggle />
                         {/* <Link 
                             href="/login" 
                             className="px-4 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-medium transition-colors"

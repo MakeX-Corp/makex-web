@@ -111,9 +111,9 @@ export const aiAgent = task({
 
       // Initialize Bedrock client for Claude 4
       const bedrock = getBedrockClient();
-      // const model = bedrock(CLAUDE_SONNET_4_MODEL);
+      const model = bedrock(CLAUDE_SONNET_4_MODEL);
 
-      const model = anthropic("claude-4-sonnet-20250514");
+      // const model = anthropic("claude-4-sonnet-20250514");
 
       // Create message with user prompt
       const messages: Message[] = [];
@@ -164,6 +164,8 @@ export const aiAgent = task({
         messageCount: messages.length,
         toolCount: tools.length,
       });
+
+      
 
       // Generate response using Vercel AI SDK
       const result = await generateText({
