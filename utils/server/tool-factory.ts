@@ -2,7 +2,6 @@ import { DatabaseTool } from "@/utils/server/db-tools";
 import { tool } from "ai";
 import { z } from "zod";
 import { createFileBackendApiClient } from "./file-backend-api-client";
-import Exa from 'exa-js';
 import { getRelevantContext } from "./getRelevantContext";
 import FirecrawlApp, { ScrapeResponse, Action } from '@mendable/firecrawl-js';
 
@@ -142,13 +141,13 @@ export function createTools(config: ToolConfig = {}) {
       description: "Write content to a file",
       parameters: z.object({
         path: z.string().describe("The path where to write the file"),
-        content: z.string().describe("The content to write to the file"),
+        content: z.string().describe("The content to write to the file").default(""),
       }),
       execute: async ({ path, content }) => {
         try {
           const data = await apiClient.post("/file", {
             path,
-            content,
+            content: content || "",
           });
           return { success: true, data };
         } catch (error: any) {
