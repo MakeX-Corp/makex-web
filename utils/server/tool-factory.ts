@@ -275,6 +275,8 @@ export function createTools(config: ToolConfig = {}) {
       }),
       execute: async ({ path }) => { 
         try {
+          console.log("Running linter on", path);
+          path = "."
           const command = path ? `npx eslint ${path} --fix --quiet` : "npx eslint . --fix --quiet";
           const data = await apiClient.post("/command", { command });
           return { success: true, data };
@@ -342,6 +344,22 @@ export function createTools(config: ToolConfig = {}) {
             query
           }
         };
+      },
+    }),
+
+    readLogs: tool({
+      description: "Read log files, specifically designed for expo_logs.txt and other log files from the /home/user directory",
+      parameters: z.object({}),
+      execute: async () => {
+        try {
+          const data = await apiClient.get("/read_logs");
+          return { success: true, data };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || "Unknown error occurred",
+          };
+        }
       },
     }),
 
