@@ -9,7 +9,7 @@ import fs from "fs/promises";
 import path from "path";
 
 const LOG_PREFIX = "[AI Agent Local]";
-const LOCAL_API_URL = "https://ba3379c6b27f.ngrok-free.app"; //"http://localhost:8081";
+const LOCAL_API_URL = "http://localhost:8081"; //replace with ngrok url in local testing
 
 export const aiAgentLocal = task({
   id: "ai-agent-local",
