@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { startExpo } from "@/trigger/start-expo";
+import { configureConvex } from "@/trigger/configure-convex";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
@@ -178,6 +179,12 @@ export async function POST(request: Request) {
       sandboxId: sandboxDbId,
       containerId: containerId,
       initial: true,
+    });
+
+    //TODO: feature flag this with decision tree
+    await configureConvex.trigger({
+      appId: insertedApp.id,
+      containerId: containerId,
     });
 
     // Return the app data along with session ID, redirect URL, and timings

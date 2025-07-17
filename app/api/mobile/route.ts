@@ -7,6 +7,7 @@ import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { startExpo } from "@/trigger/start-expo";
 import { checkSubscription } from "@/utils/server/check-subscription";
+import { configureConvex } from "@/trigger/configure-convex";
 
 export async function POST(request: NextRequest) {
   try {
@@ -124,6 +125,12 @@ export async function POST(request: NextRequest) {
         sandboxId,
         containerId: container.containerId,
         initial: true,
+      });
+
+      //TODO: feature flag this with decision tree
+      await configureConvex.trigger({
+        appId: finalAppId,
+        containerId: container.containerId,
       });
 
       await admin
