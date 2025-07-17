@@ -3,38 +3,59 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { startExpoInContainer } from "@/utils/server/daytona";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { redisUrlSetter } from "@/utils/server/redis-client";
-import { startExpoInContainer as startExpoInContainerE2B } from "@/utils/server/e2b";
-
+import {
+  startExpoInContainer as startExpoInContainerE2B,
+  startConvexInContainer,
+  writeConvexConfigInContainer,
+} from "@/utils/server/e2b";
+import { createConvexProject } from "@/utils/server/create-convex-project";
 export const startExpo = task({
   id: "start-expo",
   retry: {
-    maxAttempts: 1
+    maxAttempts: 1,
   },
-  run: async (payload: { appId: string; appName: string; containerId: string; sandboxId: string, initial: boolean }) => {
+  run: async (payload: {
+    appId: string;
+    appName: string;
+    containerId: string;
+    sandboxId: string;
+    initial: boolean;
+  }) => {
     console.log("[startExpo] Starting trigger with payload:", payload);
     const { appId, appName, containerId, sandboxId, initial } = payload;
     const adminSupabase = await getSupabaseAdmin();
 
     console.log("[startExpo] Updating sandbox status to starting");
-    const { data: updatedSandbox, error: initialUpdateError } = await adminSupabase
-      .from("user_sandboxes")
-      .update({
-        app_status: "starting",
-      })
-      .eq("id", sandboxId);
+    const { data: updatedSandbox, error: initialUpdateError } =
+      await adminSupabase
+        .from("user_sandboxes")
+        .update({
+          app_status: "starting",
+        })
+        .eq("id", sandboxId);
 
-    console.log("[startExpo] Updated sandbox with container info:", updatedSandbox);
+    console.log(
+      "[startExpo] Updated sandbox with container info:",
+      updatedSandbox
+    );
     if (initialUpdateError) {
       console.error("[startExpo] Error updating sandbox:", initialUpdateError);
-      throw new Error(`Failed updating sandbox with container info: ${initialUpdateError.message}`);
+      throw new Error(
+        `Failed updating sandbox with container info: ${initialUpdateError.message}`
+      );
     }
 
     console.log("[startExpo] Starting Expo in container:", containerId);
     try {
       const { appUrl, apiUrl } = await startExpoInContainerE2B(containerId);
-      console.log("[startExpo] Expo started successfully. App URL:", appUrl, "API URL:", apiUrl);
+      console.log(
+        "[startExpo] Expo started successfully. App URL:",
+        appUrl,
+        "API URL:",
+        apiUrl
+      );
 
-      await new Promise(resolve => setTimeout(resolve, 6000));
+      await new Promise((resolve) => setTimeout(resolve, 6000));
 
       // do a GET request to appPreview to check if it's ready
       console.log("[startExpo] Checking app preview availability");
@@ -53,11 +74,16 @@ export const startExpo = task({
         .eq("id", sandboxId);
 
       if (updateError) {
-        console.error("[startExpo] Error updating sandbox with URLs:", updateError);
-        throw new Error(`Failed updating sandbox with container info: ${updateError.message}`);
+        console.error(
+          "[startExpo] Error updating sandbox with URLs:",
+          updateError
+        );
+        throw new Error(
+          `Failed updating sandbox with container info: ${updateError.message}`
+        );
       }
 
-      await new Promise(resolve => setTimeout(resolve, 6000));
+      await new Promise((resolve) => setTimeout(resolve, 6000));
 
       console.log("[startExpo] Updating sandbox status to loading");
       const { error: updateError2 } = await adminSupabase
@@ -70,11 +96,16 @@ export const startExpo = task({
         .eq("id", sandboxId);
 
       if (updateError2) {
-        console.error("[startExpo] Error updating sandbox status to loading:", updateError2);
-        throw new Error(`Failed updating sandbox with container info: ${updateError2.message}`);
+        console.error(
+          "[startExpo] Error updating sandbox status to loading:",
+          updateError2
+        );
+        throw new Error(
+          `Failed updating sandbox with container info: ${updateError2.message}`
+        );
       }
 
-      await new Promise(resolve => setTimeout(resolve, 6000));
+      await new Promise((resolve) => setTimeout(resolve, 6000));
 
       console.log("[startExpo] Updating sandbox status to bundling");
       const { error: updateError3 } = await adminSupabase
@@ -87,11 +118,16 @@ export const startExpo = task({
         .eq("id", sandboxId);
 
       if (updateError3) {
-        console.error("[startExpo] Error updating sandbox status to bundling:", updateError3);
-        throw new Error(`Failed updating sandbox with container info: ${updateError3.message}`);
+        console.error(
+          "[startExpo] Error updating sandbox status to bundling:",
+          updateError3
+        );
+        throw new Error(
+          `Failed updating sandbox with container info: ${updateError3.message}`
+        );
       }
 
-      await new Promise(resolve => setTimeout(resolve, 6000));
+      await new Promise((resolve) => setTimeout(resolve, 6000));
 
       console.log("[startExpo] Final sandbox status update");
       const { error: updateError4 } = await adminSupabase
@@ -103,14 +139,21 @@ export const startExpo = task({
         .eq("id", sandboxId);
 
       if (updateError4) {
-        console.error("[startExpo] Error in final sandbox update:", updateError4);
-        throw new Error(`Failed updating sandbox with container info: ${updateError4.message}`);
+        console.error(
+          "[startExpo] Error in final sandbox update:",
+          updateError4
+        );
+        throw new Error(
+          `Failed updating sandbox with container info: ${updateError4.message}`
+        );
       }
 
       if (initial) {
         console.log("[startExpo] Creating initial commit");
         // Initial Git commit
-        const filebackendApiClient = await createFileBackendApiClient(`${apiUrl}`);
+        const filebackendApiClient = await createFileBackendApiClient(
+          `${apiUrl}`
+        );
 
         const res = await filebackendApiClient.post("/checkpoint/save", {
           name: "initial",
@@ -119,7 +162,7 @@ export const startExpo = task({
 
         console.log("[startExpo] Initial commit response:", res);
 
-        // update the app with the current commit 
+        // update the app with the current commit
         const { data: updatedApp, error: updateAppError } = await adminSupabase
           .from("user_apps")
           .update({
@@ -130,18 +173,74 @@ export const startExpo = task({
         console.log("[startExpo] Updated app with initial commit:", updatedApp);
 
         if (updateAppError) {
-          console.error("[startExpo] Error updating app with initial commit:", updateAppError);
-          throw new Error(`Failed updating app with initial commit: ${updateAppError.message}`);
+          console.error(
+            "[startExpo] Error updating app with initial commit:",
+            updateAppError
+          );
+          throw new Error(
+            `Failed updating app with initial commit: ${updateAppError.message}`
+          );
         }
 
         // Update app configuration
         console.log("[startExpo] Updating app configuration");
-        const appConfigResponse = await filebackendApiClient.post("/app-config", {
-          name: appName,
-          slug: appName.toLowerCase().replace(/\s+/g, '-'),
+        const appConfigResponse = await filebackendApiClient.post(
+          "/app-config",
+          {
+            name: appName,
+            slug: appName.toLowerCase().replace(/\s+/g, "-"),
+          }
+        );
+
+        console.log(
+          "[startExpo] App configuration updated successfully:",
+          appConfigResponse
+        );
+
+        //create convex project
+        const convex = await createConvexProject({
+          projectName: `makex-${appId}`,
+          teamSlug: process.env.CONVEX_TEAM_SLUG!, //"alberto-ireneo-gaucin",
+          apiKey: process.env.CONVEX_API_KEY!,
         });
 
-        console.log("[startExpo] App configuration updated successfully:", appConfigResponse);
+        console.log("[startExpo] Convex project created:", convex);
+
+        const deploymentName = convex.deploymentName;
+        const prodUrl = convex.prodUrl;
+        const adminKey = convex.adminKey;
+        //save prod url and admin key in the app
+        const { error: updateError5 } = await adminSupabase
+          .from("user_apps")
+          .update({
+            convex_prod_url: prodUrl,
+            convex_admin_key: adminKey,
+          })
+          .eq("id", appId);
+
+        if (updateError5) {
+          console.error(
+            "[startExpo] Error updating app with convex info:",
+            updateError5
+          );
+        }
+        //now need to update the container
+        const writeConvexConfigResponse = await writeConvexConfigInContainer(
+          containerId,
+          process.env.CONVEX_API_KEY!
+        );
+        console.log(
+          "[startExpo] Convex config written in container:",
+          writeConvexConfigResponse
+        );
+        const startConvexResponse = await startConvexInContainer(containerId, {
+          deploymentName,
+          convexUrl: prodUrl,
+        });
+        console.log(
+          "[startExpo] Convex started in container:",
+          startConvexResponse
+        );
       }
     } catch (error) {
       console.error("[startExpo] Error in trigger execution:", error);
