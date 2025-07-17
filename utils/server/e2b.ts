@@ -125,9 +125,6 @@ export async function writeConvexConfigInContainer(
   const APP_DIR = "/app/expo-app";
   const ENV_FILE = `${APP_DIR}/.env.local`;
 
-  console.log("Writing convex config to container...");
-  console.log("this is deployment name", deploymentName);
-  console.log("this is convex url", convexUrl);
   const writeConfigCommand = [
     `sudo mkdir -p ${CONFIG_DIR}`,
     `echo '{ "accessToken": "${accessToken}" }' | sudo tee ${CONFIG_PATH} > /dev/null`,
