@@ -268,6 +268,17 @@ export function createTools(config: ToolConfig = {}) {
       },
     }),
 
+    getConvexDocumentation: tool({
+      description: "Search the Convex documentation when you need to integrate Convex into your project for any backend functionalities",
+      parameters: z.object({
+        query: z.string().describe("The user's question or technical topic"),
+      }),
+      execute: async ({ query }) => {
+        const context = await getRelevantContext(query, 5, 'convex');
+        return context.join("\n\n");
+      },
+    }),
+
     linterRun: tool({
       description: "Run the linter on specified file or directory",
       parameters: z.object({
