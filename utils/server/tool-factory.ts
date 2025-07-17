@@ -1,4 +1,3 @@
-import { DatabaseTool } from "@/utils/server/db-tools";
 import { tool } from "ai";
 import { z } from "zod";
 import { createFileBackendApiClient } from "./file-backend-api-client";
@@ -11,8 +10,8 @@ type ToolConfig = {
 
 export function createTools(config: ToolConfig = {}) {
   const apiClient = createFileBackendApiClient(config.apiUrl || "");
-  const dbTool = new DatabaseTool();
   const firecrawl = process.env.FIRECRAWL_API_KEY ? new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY }) : null;
+
   const tools: Record<string, any> = {
     readFile: tool({
       description: "Read contents of a file",
@@ -177,30 +176,6 @@ export function createTools(config: ToolConfig = {}) {
       },
     }),
 
-    // replaceInFile: tool({
-    //   description: "Replace text in a file",
-    //   parameters: z.object({
-    //     path: z.string().describe("The path to the file"),
-    //     find: z.string().describe("The text to find"),
-    //     replace_with: z.string().describe("The text to replace with"),
-    //   }),
-    //   execute: async ({ path, find, replace_with }) => {
-    //     try {
-    //       const response = await apiClient.put("/file/replace", {
-    //         path,
-    //         find,
-    //         replace_with,
-    //       });
-    //       return { success: true, data: response.data };
-    //     } catch (error: any) {
-    //       return {
-    //         success: false,
-    //         error: error.message || "Unknown error occurred",
-    //       };
-    //     }
-    //   },
-    // }),
-
     getFileTree: tool({
       description: "Get the directory tree structure",
       parameters: z.object({
@@ -347,7 +322,7 @@ export function createTools(config: ToolConfig = {}) {
       parameters: z.object({
         query: z.string().describe("The search query to find relevant information"),
       }),
-    execute: async ({ query }) => {
+      execute: async ({ query }) => {
         return {
           type: "web_search_20250305",
           name: "web_search",
@@ -359,11 +334,13 @@ export function createTools(config: ToolConfig = {}) {
     }),
 
     readLogs: tool({
-      description: "Read log files, specifically designed for expo_logs.txt and other log files from the /home/user directory",
-      parameters: z.object({}),
-      execute: async () => {
+      description: "Read log files: expo_logs.txt or convex_logs.txt. log_type: 'expo' or 'convex' (required).",
+      parameters: z.object({
+        log_type: z.enum(["expo", "convex"]).describe("Type of log file: 'expo' or 'convex' (required)"),
+      }),
+      execute: async ({ log_type }) => {
         try {
-          const data = await apiClient.get("/read_logs");
+          const data = await apiClient.get("/read_logs", { log_type });
           return { success: true, data };
         } catch (error: any) {
           return {
@@ -376,11 +353,5 @@ export function createTools(config: ToolConfig = {}) {
 
   };
 
-
-
   return tools;
 }
-
-// Example usage:
-// const tools = createTools({ isDbEnabled: true }); // Includes all tools including runSql
-// const tools = createTools({ isDbEnabled: false }); // Excludes runSql tool

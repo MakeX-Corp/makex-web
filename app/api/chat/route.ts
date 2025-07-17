@@ -8,6 +8,7 @@ import { getPrompt } from "@/utils/server/prompt";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { getBedrockClient } from "@/utils/server/bedrock-client";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
+
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
 
@@ -265,6 +266,28 @@ export async function POST(req: Request) {
         toolCallStreaming: true,
         system: getPrompt(fileTree),
         maxSteps: 30,
+        experimental_telemetry: { isEnabled: true },
+        onStepFinish: async (result) => {
+          console.log('Step finished:', {
+            stepType: result.stepType,
+            finishReason: result.finishReason,
+            usage: {
+              promptTokens: result.usage.promptTokens,
+              completionTokens: result.usage.completionTokens,
+              totalTokens: result.usage.totalTokens
+            },
+            text: result.text,
+            reasoning: result.reasoning,
+            sources: result.sources,
+            files: result.files,
+            toolCalls: result.toolCalls.map(toolCall => ({
+              type: toolCall.type,
+              toolCallId: toolCall.toolCallId,
+              toolName: toolCall.toolName,
+              args: JSON.stringify(toolCall.args, null, 2)
+            }))
+          });
+        },
         onFinish: async () => {
           // Set app status back to active
           try {
