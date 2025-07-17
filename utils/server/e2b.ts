@@ -109,27 +109,7 @@ export async function killDefaultExpo(sandboxId: string) {
 
 export async function writeConvexConfigInContainer(
   sandboxId: string,
-  accessToken: string
-) {
-  const sbx = await Sandbox.connect(sandboxId);
-
-  const CONFIG_DIR = "/root/.convex";
-  const CONFIG_PATH = `${CONFIG_DIR}/config.json`;
-
-  const writeConfigCommand = [
-    `mkdir -p ${CONFIG_DIR}`,
-    `echo '{ "accessToken": "${accessToken}" }' > ${CONFIG_PATH}`,
-  ].join(" && ");
-
-  await sbx.commands.run(writeConfigCommand);
-
-  return {
-    configWritten: CONFIG_PATH,
-  };
-}
-
-export async function startConvexInContainer(
-  sandboxId: string,
+  accessToken: string,
   {
     deploymentName,
     convexUrl,
@@ -140,22 +120,42 @@ export async function startConvexInContainer(
 ) {
   const sbx = await Sandbox.connect(sandboxId);
 
+  const CONFIG_DIR = "/root/.convex";
+  const CONFIG_PATH = `${CONFIG_DIR}/config.json`;
+
   const APP_DIR = "/app/expo-app";
   const ENV_FILE = `${APP_DIR}/.env.local`;
-  const LOG_FILE = `${APP_DIR}/convex_logs.txt`;
 
-  const setupCommand = [
+  const writeConfigCommand = [
+    `mkdir -p ${CONFIG_DIR}`,
+    `echo '{ "accessToken": "${accessToken}" }' > ${CONFIG_PATH}`,
     `mkdir -p ${APP_DIR}`,
     `echo -e "CONVEX_DEPLOYMENT=${deploymentName}\\nEXPO_PUBLIC_CONVEX_URL=${convexUrl}" > ${ENV_FILE}`,
+  ].join(" && ");
+
+  await sbx.commands.run(writeConfigCommand);
+
+  return {
+    configWritten: CONFIG_PATH,
+    envWritten: ENV_FILE,
+  };
+}
+
+export async function startConvexInContainer(sandboxId: string) {
+  const sbx = await Sandbox.connect(sandboxId);
+
+  const APP_DIR = "/app/expo-app";
+  const LOG_FILE = `${APP_DIR}/convex_logs.txt`;
+
+  const startCommand = [
     `cd ${APP_DIR}`,
     `npx convex dev > ${LOG_FILE} 2>&1 &`,
   ].join(" && ");
 
-  await sbx.commands.run(setupCommand, { background: true });
+  await sbx.commands.run(startCommand, { background: true });
 
   return {
-    envWritten: ENV_FILE,
-    logFile: LOG_FILE,
     startedIn: APP_DIR,
+    logFile: LOG_FILE,
   };
 }

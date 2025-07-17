@@ -197,19 +197,35 @@ export const startExpo = task({
           appConfigResponse
         );
 
-        //create convex project
-        const convex = await createConvexProject({
-          projectName: `makex-${appId}`,
-          teamSlug: process.env.CONVEX_TEAM_SLUG!, //"alberto-ireneo-gaucin",
-          apiKey: process.env.CONVEX_API_KEY!,
-        });
+        let convex;
+        try {
+          convex = await createConvexProject({
+            projectName: `makex-${appId}`,
+            teamSlug: process.env.CONVEX_TEAM_SLUG!,
+            apiKey: process.env.CONVEX_API_KEY!,
+          });
+          console.log("[startExpo] Convex project created:", convex);
+        } catch (convexError) {
+          console.error(
+            "[startExpo] Failed to create Convex project:",
+            convexError
+          );
 
-        console.log("[startExpo] Convex project created:", convex);
+          await adminSupabase
+            .from("user_apps")
+            .update({
+              convex_prod_url: null,
+              convex_admin_key: null,
+            })
+            .eq("id", appId);
+
+          throw new Error("Aborting: Failed to create Convex project");
+        }
 
         const deploymentName = convex.deploymentName;
         const prodUrl = convex.prodUrl;
         const adminKey = convex.adminKey;
-        //save prod url and admin key in the app
+
         const { error: updateError5 } = await adminSupabase
           .from("user_apps")
           .update({
@@ -223,24 +239,42 @@ export const startExpo = task({
             "[startExpo] Error updating app with convex info:",
             updateError5
           );
+          throw new Error(
+            `Failed updating app with convex info: ${updateError5.message}`
+          );
         }
+
         //now need to update the container
-        const writeConvexConfigResponse = await writeConvexConfigInContainer(
-          containerId,
-          process.env.CONVEX_API_KEY!
-        );
-        console.log(
-          "[startExpo] Convex config written in container:",
-          writeConvexConfigResponse
-        );
-        const startConvexResponse = await startConvexInContainer(containerId, {
-          deploymentName,
-          convexUrl: prodUrl,
-        });
-        console.log(
-          "[startExpo] Convex started in container:",
-          startConvexResponse
-        );
+        try {
+          // Write Convex config
+          const writeConvexConfigResponse = await writeConvexConfigInContainer(
+            containerId,
+            process.env.CONVEX_API_KEY!,
+            {
+              deploymentName,
+              convexUrl: prodUrl,
+            }
+          );
+          console.log(
+            "[startExpo] Convex config + env written in container:",
+            writeConvexConfigResponse
+          );
+
+          // Only start Convex if write succeeded
+          const startConvexResponse = await startConvexInContainer(containerId);
+          console.log(
+            "[startExpo] Convex started in container:",
+            startConvexResponse
+          );
+        } catch (writeError) {
+          console.error(
+            "[startExpo] Error writing convex config or env file:",
+            writeError
+          );
+          throw new Error(
+            "Aborting: Failed to write convex config or env file"
+          );
+        }
       }
     } catch (error) {
       console.error("[startExpo] Error in trigger execution:", error);
