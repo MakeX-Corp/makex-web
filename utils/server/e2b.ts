@@ -119,7 +119,6 @@ export async function writeConvexConfigInContainer(
   }
 ) {
   const sbx = await Sandbox.connect(sandboxId);
-
   const CONFIG_DIR = "/root/.convex";
   const CONFIG_PATH = `${CONFIG_DIR}/config.json`;
 
@@ -127,12 +126,11 @@ export async function writeConvexConfigInContainer(
   const ENV_FILE = `${APP_DIR}/.env.local`;
 
   const writeConfigCommand = [
-    `mkdir -p ${CONFIG_DIR}`,
-    `echo '{ "accessToken": "${accessToken}" }' > ${CONFIG_PATH}`,
-    `mkdir -p ${APP_DIR}`,
-    `echo -e "CONVEX_DEPLOYMENT=${deploymentName}\\nEXPO_PUBLIC_CONVEX_URL=${convexUrl}" > ${ENV_FILE}`,
+    `sudo mkdir -p ${CONFIG_DIR}`,
+    `echo '{ "accessToken": "${accessToken}" }' | sudo tee ${CONFIG_PATH} > /dev/null`,
+    `sudo mkdir -p ${APP_DIR}`,
+    `echo -e "CONVEX_DEPLOYMENT=${deploymentName}\\nEXPO_PUBLIC_CONVEX_URL=${convexUrl}" | sudo tee ${ENV_FILE} > /dev/null`,
   ].join(" && ");
-
   await sbx.commands.run(writeConfigCommand);
 
   return {
@@ -145,14 +143,18 @@ export async function startConvexInContainer(sandboxId: string) {
   const sbx = await Sandbox.connect(sandboxId);
 
   const APP_DIR = "/app/expo-app";
-  const LOG_FILE = `${APP_DIR}/convex_logs.txt`;
+  const LOG_FILE = `~/convex_logs.txt`;
 
-  const startCommand = [
-    `cd ${APP_DIR}`,
-    `npx convex dev > ${LOG_FILE} 2>&1 &`,
-  ].join(" && ");
+  console.log("Starting convex in container...");
 
-  await sbx.commands.run(startCommand, { background: true });
+  // Step 1: cd into the app directory
+  await sbx.commands.run(`cd ${APP_DIR}`);
+
+  // Step 2: run convex dev in background
+  await sbx.commands.run(`sudo npx convex dev > ${LOG_FILE} 2>&1 &`, {
+    background: true,
+    cwd: APP_DIR,
+  });
 
   return {
     startedIn: APP_DIR,
