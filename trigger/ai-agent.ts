@@ -104,7 +104,7 @@ export const aiAgent = task({
       const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
       const fileTree = fileTreeResponse;
 
-      // Initialize tools
+      // Initialize tools with Helicone logging
       const tools = createTools({
         apiUrl: app.api_url,
       });
