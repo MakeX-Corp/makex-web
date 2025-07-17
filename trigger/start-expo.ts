@@ -3,12 +3,8 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { startExpoInContainer } from "@/utils/server/daytona";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { redisUrlSetter } from "@/utils/server/redis-client";
-import {
-  startExpoInContainer as startExpoInContainerE2B,
-  startConvexInContainer,
-  writeConvexConfigInContainer,
-} from "@/utils/server/e2b";
-import { createConvexProject } from "@/utils/server/create-convex-project";
+import { startExpoInContainer as startExpoInContainerE2B } from "@/utils/server/e2b";
+
 export const startExpo = task({
   id: "start-expo",
   retry: {
@@ -196,85 +192,6 @@ export const startExpo = task({
           "[startExpo] App configuration updated successfully:",
           appConfigResponse
         );
-
-        let convex;
-        try {
-          convex = await createConvexProject({
-            projectName: `makex-${appId}`,
-            teamSlug: process.env.CONVEX_TEAM_SLUG!,
-            apiKey: process.env.CONVEX_API_KEY!,
-          });
-          console.log("[startExpo] Convex project created:", convex);
-        } catch (convexError) {
-          console.error(
-            "[startExpo] Failed to create Convex project:",
-            convexError
-          );
-
-          await adminSupabase
-            .from("user_apps")
-            .update({
-              convex_prod_url: null,
-              convex_admin_key: null,
-            })
-            .eq("id", appId);
-
-          throw new Error("Aborting: Failed to create Convex project");
-        }
-
-        const deploymentName = convex.deploymentName;
-        const prodUrl = convex.prodUrl;
-        const adminKey = convex.adminKey;
-
-        const { error: updateError5 } = await adminSupabase
-          .from("user_apps")
-          .update({
-            convex_prod_url: prodUrl,
-            convex_admin_key: adminKey,
-          })
-          .eq("id", appId);
-
-        if (updateError5) {
-          console.error(
-            "[startExpo] Error updating app with convex info:",
-            updateError5
-          );
-          throw new Error(
-            `Failed updating app with convex info: ${updateError5.message}`
-          );
-        }
-
-        //now need to update the container
-        try {
-          // Write Convex config
-          const writeConvexConfigResponse = await writeConvexConfigInContainer(
-            containerId,
-            process.env.CONVEX_API_KEY!,
-            {
-              deploymentName,
-              convexUrl: prodUrl,
-            }
-          );
-          console.log(
-            "[startExpo] Convex config + env written in container:",
-            writeConvexConfigResponse
-          );
-
-          // Only start Convex if write succeeded
-          const startConvexResponse = await startConvexInContainer(containerId);
-          console.log(
-            "[startExpo] Convex started in container:",
-            startConvexResponse
-          );
-        } catch (writeError) {
-          console.error(
-            "[startExpo] Error writing convex config or env file:",
-            writeError
-          );
-          throw new Error(
-            "Aborting: Failed to write convex config or env file"
-          );
-        }
       }
     } catch (error) {
       console.error("[startExpo] Error in trigger execution:", error);
