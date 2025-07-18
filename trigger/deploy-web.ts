@@ -276,6 +276,8 @@ export const deployWeb = task({
 
         // Deploy to Freestyle using Git repository
         console.log(`[DeployWeb] Starting Freestyle deployment`);
+
+        console.log(`[DeployWeb] Convex prod url:`, convexProdUrl);
         
         // Set environment variables for the deployment
         const envVars: Record<string, string> = {
