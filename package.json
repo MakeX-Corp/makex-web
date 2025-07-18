@@ -17,7 +17,7 @@
     "@ai-sdk/react": "^1.2.6",
 
     "@daytonaio/sdk": "^0.16.0",
-    "@e2b/code-interpreter": "1.2.0-beta.5",
+    "@e2b/code-interpreter": "^1.2.0-beta.5",
     "@feedback-fish/react": "^1.2.2",
     "@helicone/helpers": "^1.1.0",
     "@hookform/resolvers": "^3.9.1",
