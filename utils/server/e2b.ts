@@ -2,6 +2,8 @@
 
 import { Sandbox } from "@e2b/code-interpreter";
 
+const APP_DIR = "/app/expo-app";
+
 export async function createE2BContainer(metadata: {
   userId: string;
   appId: string;
@@ -63,7 +65,7 @@ export async function startExpoInContainer(sandboxId: string) {
     `sudo EXPO_NO_SIGN_REQUESTS=1 EXPO_OFFLINE=true EXPO_PACKAGER_PROXY_URL=${appUrl} npx expo start --port 8000 > ~/expo_logs.txt 2>&1 &`,
     {
       background: true,
-      cwd: "/app/expo-app",
+      cwd: APP_DIR,
       envs: {
         EXPO_PACKAGER_PROXY_URL: appUrl,
       },
@@ -121,7 +123,6 @@ export async function writeConvexConfigInContainer(
   const CONFIG_DIR = "/root/.convex";
   const CONFIG_PATH = `${CONFIG_DIR}/config.json`;
 
-  const APP_DIR = "/app/expo-app";
   const ENV_FILE = `${APP_DIR}/.env.local`;
 
   const writeConfigCommand = [
@@ -141,7 +142,6 @@ export async function writeConvexConfigInContainer(
 export async function startConvexInContainer(sandboxId: string) {
   const sbx = await Sandbox.connect(sandboxId);
 
-  const APP_DIR = "/app/expo-app";
   const LOG_FILE = `~/convex_logs.txt`;
 
   console.log("Starting convex in container...");
@@ -158,5 +158,55 @@ export async function startConvexInContainer(sandboxId: string) {
   return {
     startedIn: APP_DIR,
     logFile: LOG_FILE,
+  };
+}
+
+
+export async function setupFreestyleGitInContainer(sandboxId: string, repoId: string) {
+  const sbx = await Sandbox.connect(sandboxId);
+
+  // Clean up any existing git configuration
+  await sbx.commands.run(`sudo rm -rf .git || true`, {
+    cwd: APP_DIR,
+  });
+
+  // Initialize git repository if it doesn't exist
+  const initResult = await sbx.commands.run(`sudo git init`, {
+    cwd: APP_DIR,
+  });
+
+  // Configure git user (required for commits)
+  await sbx.commands.run(`sudo git config user.name "MakeX Bot" && sudo git config user.email "bot@makex.app"`, {
+    cwd: APP_DIR,
+  });
+
+  // Add all files to git
+  const addResult = await sbx.commands.run(`sudo git add .`, {
+    cwd: APP_DIR,
+  });
+
+  // Create initial commit if there are changes
+  const commitResult = await sbx.commands.run(`sudo git commit -m "Initial commit" || true`, {
+    cwd: APP_DIR,
+  });
+
+  // Add freestyle remote
+  const remoteAddResult = await sbx.commands.run(`sudo git remote add freestyle https://${process.env.FREESTYLE_IDENTITY_ID}:${process.env.FREESTYLE_IDENTITY_TOKEN}@git.freestyle.sh/${repoId}`,
+    {
+      cwd: APP_DIR,
+    }
+  );
+
+  // Create main branch and push to master
+  const pushResult = await sbx.commands.run(`sudo git push freestyle master`, {
+    cwd: APP_DIR,
+  });
+
+  return {
+    initResult,
+    addResult,
+    commitResult,
+    remoteAddResult,
+    pushResult,
   };
 }

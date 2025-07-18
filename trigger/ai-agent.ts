@@ -6,7 +6,6 @@ import { createFileBackendApiClient } from "@/utils/server/file-backend-api-clie
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { resumeContainer } from "./resume-container";
 import { getBedrockClient } from "@/utils/server/bedrock-client";
-import { anthropic } from "@ai-sdk/anthropic";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
 
