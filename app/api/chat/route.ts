@@ -290,7 +290,7 @@ export async function POST(req: Request) {
 
       const result = streamText({
         model: model,
-        messages: [...formattedMessages, ...planningInjection],
+        messages: [...planningInjection, ...formattedMessages],
         tools: tools,
         toolCallStreaming: true,
         system: getPrompt(fileTree),
