@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { dub } from "@/utils/server/dub";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
 import { deployWebFromGit } from "@/utils/server/freestyle";
-
+import { deployConvexProject } from "@/utils/server/convex";
 
 
 async function shareIdGenerator(appId: string, supabase: any): Promise<string> {
@@ -153,6 +153,34 @@ async function updateDeploymentStatus(
   }
 }
 
+async function updateConvexProdUrl(
+  supabase: any,
+  appId: string,
+  deploymentName: string
+) {
+  try {
+    const convexProdUrl = `https://${deploymentName}.convex.cloud`;
+    
+    const { error } = await supabase
+      .from("user_apps")
+      .update({
+        convex_prod_url: convexProdUrl,
+      })
+      .eq("id", appId);
+
+    if (error) {
+      console.error("[DeployWeb] Error updating convex_prod_url:", error);
+      throw error;
+    }
+
+    console.log(`[DeployWeb] Successfully updated convex_prod_url to: ${convexProdUrl}`);
+    return convexProdUrl;
+  } catch (error) {
+    console.error("[DeployWeb] Error updating convex_prod_url:", error);
+    throw error;
+  }
+}
+
 export const deployWeb = task({
   id: "deploy-web",
   retry: {
@@ -169,7 +197,7 @@ export const deployWeb = task({
       console.log(`[DeployWeb] Fetching app record for appId: ${appId}`);
       const { data: appRecord } = await supabase
         .from("user_apps")
-        .select("api_url,user_id,app_name,git_repo_id")
+        .select("api_url,user_id,app_name,git_repo_id,convex_project_id")
         .eq("id", appId)
         .single();
 
@@ -177,9 +205,9 @@ export const deployWeb = task({
         throw new Error("App record not found");
       }
 
-      const { user_id, app_name, git_repo_id } = appRecord;
+      const { user_id, app_name, git_repo_id, convex_project_id } = appRecord;
       console.log(
-        `[DeployWeb] Found app record - name: ${app_name}, userId: ${user_id}, gitRepoId: ${git_repo_id}`
+        `[DeployWeb] Found app record - name: ${app_name}, userId: ${user_id}, gitRepoId: ${git_repo_id}, convexProjectId: ${convex_project_id}`
       );
 
       if (!git_repo_id) {
@@ -220,19 +248,53 @@ export const deployWeb = task({
       );
 
       try {
+        // Deploy Convex project first if it exists
+        let convexProdUrl: string | undefined;
+        if (convex_project_id) {
+          console.log(`[DeployWeb] Starting Convex deployment for project: ${convex_project_id}`);
+          try {
+            const convexDeployment = await deployConvexProject({
+              projectId: convex_project_id,
+            });
+            
+            console.log(`[DeployWeb] Convex deployment completed successfully`);
+            console.log(`[DeployWeb] Convex deployment name:`, convexDeployment);
+            
+            // Update the app record with the convex_prod_url
+            convexProdUrl = await updateConvexProdUrl(
+              supabase,
+              appId,
+              convexDeployment.deploymentName
+            );
+          } catch (error) {
+            console.error("[DeployWeb] Error during Convex deployment:", error);
+            // Don't fail the entire deployment if Convex deployment fails
+          }
+        } else {
+          console.log(`[DeployWeb] No Convex project ID found, skipping Convex deployment`);
+        }
+
         // Deploy to Freestyle using Git repository
         console.log(`[DeployWeb] Starting Freestyle deployment`);
+        
+        // Set environment variables for the deployment
+        const envVars: Record<string, string> = {
+          ...(convexProdUrl && { EXPO_PUBLIC_CONVEX_URL: convexProdUrl }),
+        };
+        
+        console.log(`[DeployWeb] Setting environment variables:`, Object.keys(envVars));
         
         const deploymentResult = await deployWebFromGit(
           git_repo_id,
           [`${app_name}.style.dev`],
-          true
+          true,
+          envVars
         );
 
         console.log(`[DeployWeb] Freestyle deployment completed successfully`);
         console.log(`[DeployWeb] Deployment domains:`, deploymentResult.domains);
 
-        const deploymentUrl = deploymentResult.domains?.[0];
+        const deploymentUrl = `https://${deploymentResult.domains?.[0]}`;
         if (!deploymentUrl) {
           throw new Error("No deployment URL returned from Freestyle");
         }
@@ -265,6 +327,7 @@ export const deployWeb = task({
         return {
           deploymentUrl,
           easUrl,
+          convexProdUrl,
           dubLink,
         };
       } catch (error) {
