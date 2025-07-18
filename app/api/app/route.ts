@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { startExpo } from "@/trigger/start-expo";
+import { setupGit } from "@/trigger/setup-git";
 import { configureConvex } from "@/trigger/configure-convex";
 import { deleteConvex } from "@/trigger/delete-convex";
 export const maxDuration = 300;
@@ -180,6 +181,12 @@ export async function POST(request: Request) {
       sandboxId: sandboxDbId,
       containerId: containerId,
       initial: true,
+    });
+
+    //TODO: feature flag this with decision tree
+    await setupGit.trigger({
+      appId: insertedApp.id,
+      containerId: containerId,
     });
 
     //TODO: feature flag this with decision tree
