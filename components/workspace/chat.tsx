@@ -166,7 +166,7 @@ export function Chat({
         supabaseProject,
         subscription,
       },
-      maxSteps: 30,
+      maxSteps: 100,
       onResponse: async (response) => {
         if (response.status === 429) {
           setIsAIResponding(false);

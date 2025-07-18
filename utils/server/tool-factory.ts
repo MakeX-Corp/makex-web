@@ -339,6 +339,7 @@ export function createTools(config: ToolConfig = {}) {
         log_type: z.enum(["expo", "convex"]).describe("Type of log file: 'expo' or 'convex' (required)"),
       }),
       execute: async ({ log_type }) => {
+        console.log('[Tool Execution] Reading logs for', log_type);
         try {
           const data = await apiClient.get("/read_logs", { log_type });
           return { success: true, data };

@@ -265,7 +265,7 @@ export async function POST(req: Request) {
         tools: tools,
         toolCallStreaming: true,
         system: getPrompt(fileTree),
-        maxSteps: 30,
+        maxSteps: 100,
         experimental_telemetry: { isEnabled: true },
         onStepFinish: async (result) => {
           console.log('Step finished:', {

@@ -173,7 +173,7 @@ export const aiAgent = task({
         messages: messages,
         tools: tools,
         system: getPrompt(fileTree),
-        maxSteps: 50,
+        maxSteps: 100,
       });
 
       // Calculate cost based on both input and output tokens
