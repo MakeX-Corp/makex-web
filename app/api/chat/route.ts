@@ -1,14 +1,14 @@
-import { streamText } from "ai";
+import { streamText, generateObject } from "ai";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { checkMessageLimit } from "@/utils/server/check-daily-limit";
 import { createTools } from "@/utils/server/tool-factory";
-import { getPrompt } from "@/utils/server/prompt";
+import { getPrompt, getStepPrompt } from "@/utils/server/prompt";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { getBedrockClient } from "@/utils/server/bedrock-client";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
-
+import { z } from "zod";
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
 
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
   try {
     const userResult = await getSupabaseWithUser(req as NextRequest);
     if (userResult instanceof NextResponse) return userResult;
-    if ('error' in userResult) return userResult.error;
+    if ("error" in userResult) return userResult.error;
     const { supabase, user } = userResult;
 
     // Get session ID from query params
@@ -91,8 +91,9 @@ export async function POST(req: Request) {
     const lastUserMessage = messages[messages.length - 1];
 
     // Get the user API client
-    const userResult = await getSupabaseWithUser(req as NextRequest );
-    if (userResult instanceof NextResponse || 'error' in userResult) return userResult;
+    const userResult = await getSupabaseWithUser(req as NextRequest);
+    if (userResult instanceof NextResponse || "error" in userResult)
+      return userResult;
     const { supabase, user, token } = userResult;
 
     // Check if app is already being changed
@@ -118,30 +119,34 @@ export async function POST(req: Request) {
 
     // Lock the app
     const trimmedAppId = appId.trim();
-    console.log('Debug appId:', {
+    console.log("Debug appId:", {
       original: appId,
       trimmed: trimmedAppId,
       length: trimmedAppId.length,
-      hasWhitespace: appId !== trimmedAppId
+      hasWhitespace: appId !== trimmedAppId,
     });
 
     const supabaseAdmin = await getSupabaseAdmin();
-    const { error: lockError, data: lockData, count } = await supabaseAdmin
+    const {
+      error: lockError,
+      data: lockData,
+      count,
+    } = await supabaseAdmin
       .from("user_sandboxes")
-      .update({ 
+      .update({
         app_status: "changing",
-        sandbox_updated_at: new Date().toISOString()
+        sandbox_updated_at: new Date().toISOString(),
       })
       .eq("app_id", trimmedAppId)
       .select();
 
-    console.log('App lock attempt:', {
+    console.log("App lock attempt:", {
       appId: trimmedAppId,
       success: !lockError,
       error: lockError,
       data: lockData,
       count,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Check if we actually found and updated a record
@@ -181,8 +186,6 @@ export async function POST(req: Request) {
       }
 
       const apiClient = createFileBackendApiClient(app.api_url);
-
- 
 
       // Get the file tree
       const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
@@ -257,35 +260,61 @@ export async function POST(req: Request) {
 
       const model = bedrock(CLAUDE_SONNET_4_MODEL);
 
+      const isFirst = messages.length === 1 && messages[0]?.role === "user";
+      const planningPrompt = getStepPrompt(isFirst, lastUserMessage.content);
+
+      const planningResult = await generateObject({
+        model,
+        prompt: planningPrompt,
+        schema: z.object({
+          steps: z.array(z.string().min(1).max(200)).min(1).max(5),
+        }),
+      });
+
+      const steps = planningResult.object.steps;
+
+      const planningInjection = [
+        {
+          role: "assistant" as const,
+          content: `Here is my plan:\n${steps
+            .map((s, i) => `${i + 1}. ${s}`)
+            .join("\n")}`,
+        },
+        ...steps.map((step, i) => ({
+          role: "user" as const,
+          content: `Step ${i + 1}: ${step}. Please implement this.`,
+        })),
+      ];
+
       // Check if there are any active sandboxes no just hit the get endpoint
 
       const result = streamText({
         model: model,
-        messages: formattedMessages,
+        messages: [...formattedMessages, ...planningInjection],
         tools: tools,
         toolCallStreaming: true,
         system: getPrompt(fileTree),
         maxSteps: 100,
         experimental_telemetry: { isEnabled: true },
         onStepFinish: async (result) => {
-          console.log('Step finished:', {
+          console.log("Step finished:", {
             stepType: result.stepType,
             finishReason: result.finishReason,
             usage: {
               promptTokens: result.usage.promptTokens,
               completionTokens: result.usage.completionTokens,
-              totalTokens: result.usage.totalTokens
+              totalTokens: result.usage.totalTokens,
             },
             text: result.text,
             reasoning: result.reasoning,
             sources: result.sources,
             files: result.files,
-            toolCalls: result.toolCalls.map(toolCall => ({
+            toolCalls: result.toolCalls.map((toolCall) => ({
               type: toolCall.type,
               toolCallId: toolCall.toolCallId,
               toolName: toolCall.toolName,
-              args: JSON.stringify(toolCall.args, null, 2)
-            }))
+              args: JSON.stringify(toolCall.args, null, 2),
+            })),
           });
         },
         onFinish: async () => {
@@ -297,12 +326,15 @@ export async function POST(req: Request) {
               .eq("app_id", trimmedAppId);
 
             if (finalUpdateError) {
-              console.error("Failed to update app status back to active:", finalUpdateError);
+              console.error(
+                "Failed to update app status back to active:",
+                finalUpdateError
+              );
             }
           } catch (recoveryError) {
             console.error("Failed to recover app status:", recoveryError);
           }
-        }
+        },
       });
 
       return result.toDataStreamResponse({
