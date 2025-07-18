@@ -29,7 +29,7 @@ export async function createConvexProject({
     );
   }
 
-  return response.json(); // contains projectSlug, adminKey, prodUrl, etc.
+  return response.json(); // contains projectSlug, prodUrl, projectId, etc.
 }
 
 export async function deleteConvexProject({
