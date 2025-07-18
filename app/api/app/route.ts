@@ -7,6 +7,7 @@ import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { startExpo } from "@/trigger/start-expo";
 import { configureConvex } from "@/trigger/configure-convex";
+import { deleteConvex } from "@/trigger/delete-convex";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
@@ -317,6 +318,10 @@ export async function DELETE(request: Request) {
       userId: user.id,
       appId: app.id,
       appName: app.app_name,
+    });
+
+    await deleteConvex.trigger({
+      projectId: app.convex_project_id,
     });
 
     return NextResponse.json({ message: "App deleted successfully" });
