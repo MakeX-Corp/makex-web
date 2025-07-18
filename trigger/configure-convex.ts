@@ -43,19 +43,18 @@ export const configureConvex = task({
     }
 
     const deploymentName = convex.deploymentName;
-    const prodUrl = convex.prodUrl;
-    const adminKey = convex.adminKey;
+    const devUrl = convex.prodUrl; //very confusing, but this is correct since we are using "dev" deployment
+
     const projectId = convex.projectId;
     console.log(
       "[configureConvex] Updating app with Convex info",
-      prodUrl,
+      devUrl,
       deploymentName
     );
     const { error: updateError } = await adminSupabase
       .from("user_apps")
       .update({
-        convex_prod_url: prodUrl,
-        convex_admin_key: adminKey,
+        convex_dev_url: devUrl,
         convex_project_id: projectId,
       })
       .eq("id", appId);
@@ -77,7 +76,7 @@ export const configureConvex = task({
         containerId,
         {
           deploymentName,
-          convexUrl: prodUrl,
+          convexUrl: devUrl,
         }
       );
       console.log(

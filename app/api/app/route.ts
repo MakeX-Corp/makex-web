@@ -9,6 +9,7 @@ import { startExpo } from "@/trigger/start-expo";
 import { setupGit } from "@/trigger/setup-git";
 import { configureConvex } from "@/trigger/configure-convex";
 import { deleteConvex } from "@/trigger/delete-convex";
+import { generateDisplayName } from "@/utils/server/app-name-generator";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
@@ -26,6 +27,8 @@ export async function POST(request: Request) {
     const { prompt } = body;
 
     const appName = generateAppName();
+    const displayName = await generateDisplayName(prompt, appName);
+
     timings.authAndSetup = performance.now() - startTime;
 
     // Begin transaction to ensure both app and session are created atomically
@@ -35,6 +38,7 @@ export async function POST(request: Request) {
       .insert({
         user_id: user.id,
         app_name: appName,
+        display_name: displayName,
         app_url: `https://${appName}.makex.app`,
       })
       .select()
