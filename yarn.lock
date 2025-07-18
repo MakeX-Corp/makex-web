@@ -918,9 +918,9 @@
     uuid "^11.0.3"
 
 "@dotenvx/dotenvx@^1.25.1":
-  version "1.47.7"
-  resolved "https://registry.yarnpkg.com/@dotenvx/dotenvx/-/dotenvx-1.47.7.tgz#981f1852b35e9edd2406e7365f6102a27de03863"
-  integrity sha512-WFuNE77SRFc+nMW2IR6PzDllNYLcfn1QskK9a+Et8D1XvK25QNSRdGk/uti1ekdMZCJrM6dCKw+oJzo0PB+iXA==
+  version "1.48.0"
+  resolved "https://registry.yarnpkg.com/@dotenvx/dotenvx/-/dotenvx-1.48.0.tgz#dd498fd237691830397c8b340206964c6ef7a615"
+  integrity sha512-UrAKBvUYl8SwCyYa8U8lND4rkdPbd7uOPtCPeiObeg5B44yrdH2ioO0tLfsGAGoenLmf6IpN6be4eT4gXxyzjQ==
   dependencies:
     commander "^11.1.0"
     dotenv "^16.4.5"
