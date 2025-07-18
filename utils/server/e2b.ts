@@ -109,7 +109,6 @@ export async function killDefaultExpo(sandboxId: string) {
 
 export async function writeConvexConfigInContainer(
   sandboxId: string,
-  accessToken: string,
   {
     deploymentName,
     convexUrl,
@@ -127,7 +126,7 @@ export async function writeConvexConfigInContainer(
 
   const writeConfigCommand = [
     `sudo mkdir -p ${CONFIG_DIR}`,
-    `echo '{ "accessToken": "${accessToken}" }' | sudo tee ${CONFIG_PATH} > /dev/null`,
+    `echo '{ "accessToken": "${process.env.CONVEX_AUTH_TOKEN}" }' | sudo tee ${CONFIG_PATH} > /dev/null`,
     `sudo mkdir -p ${APP_DIR}`,
     `echo -e "CONVEX_DEPLOYMENT=${deploymentName}\\nEXPO_PUBLIC_CONVEX_URL=${convexUrl}" | sudo tee ${ENV_FILE} > /dev/null`,
   ].join(" && ");

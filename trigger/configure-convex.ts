@@ -1,6 +1,6 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { createConvexProject } from "@/utils/server/create-convex-project";
+import { createConvexProject } from "@/utils/server/convex";
 import {
   writeConvexConfigInContainer,
   startConvexInContainer,
@@ -22,7 +22,6 @@ export const configureConvex = task({
       convex = await createConvexProject({
         projectName: `makex-${appId}`,
         teamSlug: process.env.CONVEX_TEAM_SLUG!,
-        apiKey: process.env.CONVEX_API_KEY!,
       });
       console.log("[configureConvex] Convex project created:", convex);
     } catch (convexError) {
@@ -36,6 +35,7 @@ export const configureConvex = task({
         .update({
           convex_prod_url: null,
           convex_admin_key: null,
+          convex_project_id: null,
         })
         .eq("id", appId);
 
@@ -45,7 +45,7 @@ export const configureConvex = task({
     const deploymentName = convex.deploymentName;
     const prodUrl = convex.prodUrl;
     const adminKey = convex.adminKey;
-
+    const projectId = convex.projectId;
     console.log(
       "[configureConvex] Updating app with Convex info",
       prodUrl,
@@ -56,6 +56,7 @@ export const configureConvex = task({
       .update({
         convex_prod_url: prodUrl,
         convex_admin_key: adminKey,
+        convex_project_id: projectId,
       })
       .eq("id", appId);
 
@@ -74,7 +75,6 @@ export const configureConvex = task({
       // Write Convex config
       const writeConvexConfigResponse = await writeConvexConfigInContainer(
         containerId,
-        process.env.CONVEX_API_KEY!,
         {
           deploymentName,
           convexUrl: prodUrl,
