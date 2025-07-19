@@ -294,7 +294,6 @@ export async function POST(req: Request) {
         tools: tools,
         toolCallStreaming: true,
         system: getPrompt(fileTree),
-        prompt: getStepPrompt(isFirst, lastUserMessage.content),
         maxSteps: 100,
         experimental_telemetry: { isEnabled: true },
         onStepFinish: async (result) => {
