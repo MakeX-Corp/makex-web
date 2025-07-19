@@ -30,7 +30,7 @@ export const setupGit = task({
 
       // Create a Git repository
       console.log("[setupGit] Creating Git repository...");
-      const repoResponse = await createGitRepository(`${app.app_name}-${appId}`);
+      const repoResponse = await createGitRepository(`${app.app_name}`);
 
       repoId = repoResponse.repoId;
       console.log("[setupGit] Git repository created with ID:", repoId);

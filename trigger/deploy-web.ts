@@ -284,7 +284,7 @@ export const deployWeb = task({
           ...(convexProdUrl && { EXPO_PUBLIC_CONVEX_URL: convexProdUrl }),
         };
         
-        console.log(`[DeployWeb] Setting environment variables:`, Object.keys(envVars));
+        console.log(`[DeployWeb] Setting environment variables:`, envVars);
         
         const deploymentResult = await deployWebFromGit(
           git_repo_id,

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createFileBackendApiClient } from "./file-backend-api-client";
 import { getRelevantContext } from "./getRelevantContext";
 import FirecrawlApp, { ScrapeResponse, Action } from '@mendable/firecrawl-js';
+import { CONVEX_AUTH_DOCS } from "../client/convex-auth-docs";
 
 type ToolConfig = {
   apiUrl?: string;
@@ -254,6 +255,30 @@ export function createTools(config: ToolConfig = {}) {
       },
     }),
 
+    getConvexAuthDocs: tool({
+      description: "Search the Convex documentation for relevant answers whenever you need to know more about the Convex authentication process",
+      parameters: z.object({
+        query: z.string().describe("The user's question or technical topic"),
+      }),
+      execute: async ({ query }) => {
+        return CONVEX_AUTH_DOCS;
+      },
+    }),
+
+    setupConvexAuth: tool({
+      description: "Setup Convex authentication for your project",
+      parameters: z.object({}),
+      execute: async () => { 
+        try {
+          const command = "npx @convex-dev/auth";
+          const data = await apiClient.post("/command", { command });
+          return { success: true, data };
+        } catch (error: any) {
+          return { success: false, error: error.message || "Unknown error occurred" };
+        }
+      },
+    }),
+
     linterRun: tool({
       description: "Run the linter on specified file or directory",
       parameters: z.object({
@@ -349,6 +374,20 @@ export function createTools(config: ToolConfig = {}) {
             error: error.message || "Unknown error occurred",
           };
         }
+      },
+    }),
+
+    getCurrentTime: tool({
+      description: "Get the current server time",
+      parameters: z.object({}), // Empty parameters object
+      execute: async () => {
+        return { 
+          success: true, 
+          data: { 
+            timestamp: new Date().toISOString(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone 
+          } 
+        };
       },
     }),
 

@@ -69,8 +69,11 @@ export async function deployWebFromGit(
 
   // Add environment variables if provided
   if (envVars && Object.keys(envVars).length > 0) {
-    deploymentConfig.env = envVars;
+    deploymentConfig.envVars = envVars;
   }
+
+  console.log(`[DeployWeb] Deployment config:`, deploymentConfig);
+
   
   return await sandboxes.deployWeb(
     {

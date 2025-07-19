@@ -188,7 +188,7 @@ export async function POST(req: Request) {
       const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
       const fileTree = fileTreeResponse;
 
-      const modelName = "claude-3-5-sonnet-latest";
+      const modelName = "claude-4-sonnet-latest";
 
       const tools = createTools({
         apiUrl: app.api_url,
