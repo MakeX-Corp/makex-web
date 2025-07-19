@@ -289,8 +289,7 @@ export const deployWeb = task({
         const deploymentResult = await deployWebFromGit(
           git_repo_id,
           [`${app_name}.style.dev`],
-          true,
-          envVars
+          { envVars }
         );
 
         console.log(`[DeployWeb] Freestyle deployment completed successfully`);
