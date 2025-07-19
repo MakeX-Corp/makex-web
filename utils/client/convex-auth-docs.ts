@@ -12,12 +12,12 @@ Convex Auth is an authentication library for Convex applications that provides v
 
 1. **Install NPM package**
    \`\`\`bash
-   npm install @convex-dev/auth @auth/core@0.37.0
+   npm install @convex-dev/auth@0.0.88-alpha.0 @auth/core@0.37.0
    \`\`\`
 
 2. **Run initialization command**
    \`\`\`bash
-   npx @convex-dev/auth
+   npx @convex-dev/auth --allow-dirty-git-state
    \`\`\`
 
 ### Manual Setup (Alternative)

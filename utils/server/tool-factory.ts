@@ -266,11 +266,11 @@ export function createTools(config: ToolConfig = {}) {
     }),
 
     setupConvexAuth: tool({
-      description: "Setup Convex authentication for your project",
+      description: "Setup Convex authentication for your project but before you do that , make sure to install the dependencies first and then run this",
       parameters: z.object({}),
       execute: async () => { 
         try {
-          const command = "npx @convex-dev/auth";
+          const command = "npx @convex-dev/auth --allow-dirty-git-state";
           const data = await apiClient.post("/command", { command });
           return { success: true, data };
         } catch (error: any) {
@@ -374,20 +374,6 @@ export function createTools(config: ToolConfig = {}) {
             error: error.message || "Unknown error occurred",
           };
         }
-      },
-    }),
-
-    getCurrentTime: tool({
-      description: "Get the current server time",
-      parameters: z.object({}), // Empty parameters object
-      execute: async () => {
-        return { 
-          success: true, 
-          data: { 
-            timestamp: new Date().toISOString(),
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone 
-          } 
-        };
       },
     }),
 
