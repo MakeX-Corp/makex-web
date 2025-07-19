@@ -96,7 +96,7 @@ export default function MobileMockup({
           </div>
         )}
 
-        {containerState === "active" && appState !== "active" && (
+        {containerState === "active" || true && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
             <span style={{ fontSize: `${14 * scaleFactor}px` }}>
               App is {appState}

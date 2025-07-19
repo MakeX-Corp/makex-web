@@ -57,7 +57,7 @@ export async function deleteGitRepository(repoId: string) {
 export async function deployWebFromGit(
   gitRepoId: string,
   domains: string[],
-  build: boolean = true,
+  build: boolean | { envVars?: Record<string, string> } = true,
   envVars?: Record<string, string>
 ) {
   const sandboxes = getFreestyleClient();
@@ -67,10 +67,8 @@ export async function deployWebFromGit(
     build,
   };
 
-  // Add environment variables if provided
-  if (envVars && Object.keys(envVars).length > 0) {
-    deploymentConfig.env = envVars;
-  }
+  console.log(`[DeployWeb] Deployment config:`, deploymentConfig);
+
   
   return await sandboxes.deployWeb(
     {

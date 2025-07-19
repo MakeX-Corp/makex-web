@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createFileBackendApiClient } from "./file-backend-api-client";
 import { getRelevantContext } from "./getRelevantContext";
 import FirecrawlApp, { ScrapeResponse, Action } from '@mendable/firecrawl-js';
+import { CONVEX_AUTH_DOCS } from "../client/convex-auth-docs";
 
 type ToolConfig = {
   apiUrl?: string;
@@ -251,6 +252,30 @@ export function createTools(config: ToolConfig = {}) {
       execute: async ({ query }) => {
         const context = await getRelevantContext(query, 5, 'convex');
         return context.join("\n\n");
+      },
+    }),
+
+    getConvexAuthDocs: tool({
+      description: "Search the Convex documentation for relevant answers whenever you need to know more about the Convex authentication process",
+      parameters: z.object({
+        query: z.string().describe("The user's question or technical topic"),
+      }),
+      execute: async ({ query }) => {
+        return CONVEX_AUTH_DOCS;
+      },
+    }),
+
+    setupConvexAuth: tool({
+      description: "Setup Convex authentication for your project but before you do that , make sure to install the dependencies first and then run this",
+      parameters: z.object({}),
+      execute: async () => { 
+        try {
+          const command = "npx @convex-dev/auth --allow-dirty-git-state";
+          const data = await apiClient.post("/command", { command });
+          return { success: true, data };
+        } catch (error: any) {
+          return { success: false, error: error.message || "Unknown error occurred" };
+        }
       },
     }),
 

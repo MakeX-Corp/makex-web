@@ -11,6 +11,10 @@ export const getPrompt = (fileTree: any) => {
   <backend_integration>
   • Convex is already configured in the environment
   • Use the getConvexDocumentation tool to get the latest documentation for relevant answers whenever you install convex related packages or need to know more about the convex ecosystem. FOLLOW THE DOCUMENTATION TO IMPLEMENT THE FEATURES. DON'T MAKE UP YOUR OWN SOLUTIONS.
+  • Make sure to install the dependencies first before running the setupConvexAuth tool.
+  • Install the dependencies using the installPackages tool.
+  • Install @convex-dev/auth@0.0.88-alpha.0 @auth/core@0.37.0
+  • Use the setupConvexAuth tool to setup convex authentication for your project. Dont start creating auth files on your own.
   </backend_integration>
 
 <system_constraints> You are operating in a secure runtime where you can:
