@@ -225,6 +225,42 @@ export default function WorkspaceContent({
     }
   };
 
+  // Function to reset stuck apps
+  const resetStuckApps = async () => {
+    try {
+      setIsResetting(true);
+      const response = await fetch("/api/reset-stuck-apps", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to reset stuck apps");
+      }
+
+      console.log("Reset stuck apps result:", result);
+      
+      // Refresh the preview after resetting
+      refreshPreview();
+      
+      // Show a success message if any apps were reset
+      if (result.resetCount > 0) {
+        alert(`Successfully reset ${result.resetCount} stuck app${result.resetCount > 1 ? 's' : ''} to active state.`);
+      } else {
+        alert("No stuck apps found to reset.");
+      }
+    } catch (error) {
+      console.error("Error resetting stuck apps:", error);
+      alert("Failed to reset stuck apps. Please try again.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   // Function to refresh the iframe
   const refreshPreview = async () => {
     setIsRefreshing(true);
@@ -384,6 +420,15 @@ export default function WorkspaceContent({
               <DropdownMenuItem
                 className="cursor-pointer"
                 onClick={() => {
+                  resetStuckApps();
+                }}
+              >
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Reset Stuck Apps
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => {
                   exportCode();
                 }}
               >
@@ -482,6 +527,15 @@ export default function WorkspaceContent({
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Reset App
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => {
+                    resetStuckApps();
+                  }}
+                >
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  Reset Stuck Apps
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="cursor-pointer"

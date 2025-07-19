@@ -1,6 +1,7 @@
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PhoneFrame } from "./phone-frame";
+import { Button } from "@/components/ui/button";
 
 interface MobileMockupProps {
   appUrl: string | null;
@@ -18,6 +19,8 @@ export default function MobileMockup({
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200
   );
+  const [stuckStartTime, setStuckStartTime] = useState<number | null>(null);
+  const [showResetButton, setShowResetButton] = useState(false);
 
   useEffect(() => {
     // Track window size
@@ -28,6 +31,56 @@ export default function MobileMockup({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Track when app gets stuck in intermediate states
+  useEffect(() => {
+    const stuckStates = ["starting", "loading", "rendering", "bundling", "changing"];
+    const isStuck = containerState === "active" && stuckStates.includes(appState);
+
+    if (isStuck) {
+      if (!stuckStartTime) {
+        setStuckStartTime(Date.now());
+      }
+    } else {
+      setStuckStartTime(null);
+      setShowResetButton(false);
+    }
+  }, [containerState, appState, stuckStartTime]);
+
+  // Show reset button after 2 minutes of being stuck
+  useEffect(() => {
+    if (stuckStartTime) {
+      const timer = setTimeout(() => {
+        setShowResetButton(true);
+      }, 2 * 60 * 1000); // 2 minutes
+
+      return () => clearTimeout(timer);
+    }
+  }, [stuckStartTime]);
+
+  const resetStuckApp = async () => {
+    try {
+      const response = await fetch("/api/reset-stuck-apps", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await response.json();
+      
+      if (response.ok && result.resetCount > 0) {
+        // Reset the stuck tracking
+        setStuckStartTime(null);
+        setShowResetButton(false);
+        
+        // Reload the page to refresh the app state
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Error resetting stuck app:", error);
+    }
+  };
 
   // Base dimensions for the phone frame
   const basePadding = 10;
@@ -108,6 +161,26 @@ export default function MobileMockup({
                 width: `${16 * scaleFactor}px`,
               }}
             />
+            {showResetButton && (
+              <div className="mt-4 flex flex-col items-center">
+                <span style={{ fontSize: `${12 * scaleFactor}px` }} className="text-gray-600 mb-2">
+                  App seems stuck?
+                </span>
+                <Button
+                  onClick={resetStuckApp}
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center gap-1"
+                  style={{ 
+                    fontSize: `${12 * scaleFactor}px`,
+                    padding: `${4 * scaleFactor}px ${8 * scaleFactor}px`
+                  }}
+                >
+                  <AlertCircle style={{ height: `${12 * scaleFactor}px`, width: `${12 * scaleFactor}px` }} />
+                  Reset
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </PhoneFrame>

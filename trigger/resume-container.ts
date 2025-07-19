@@ -60,7 +60,7 @@ export const resumeContainer = task({
         .from("user_sandboxes")
         .update({ 
           sandbox_status: "active",
-          ...(activeSandbox[0]?.sandbox_provider === "e2b" ? { app_status: "active" } : {})
+          app_status: "active"
         })
         .eq("id", sandboxDbId);
     };

@@ -125,12 +125,13 @@ export const startExpo = task({
 
       await new Promise((resolve) => setTimeout(resolve, 6000));
 
-      console.log("[startExpo] Final sandbox status update");
+      console.log("[startExpo] Final sandbox status update - setting app to active");
       const { error: updateError4 } = await adminSupabase
         .from("user_sandboxes")
         .update({
           api_url: apiUrl,
           app_url: appUrl,
+          app_status: "active",
         })
         .eq("id", sandboxId);
 
