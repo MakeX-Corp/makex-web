@@ -231,13 +231,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const supabase = await createClient();
         const { data } = await supabase.auth.getUser();
         setUser(data.user || null);
-        posthog.identify(data.user?.email || "", {
-          email: data.user?.email || "",
-          supabase_id: data.user?.id,
-        });
-        // Only fetch apps and subscription data on initial load
+        
+        // Only identify with PostHog if it's initialized (production mode)
+        if (process.env.NODE_ENV === 'production' && data.user?.email) {
+          try {
+            posthog.identify(data.user.email, {
+              email: data.user.email,
+              supabase_id: data.user.id,
+            });
+          } catch (posthogError) {
+            console.warn("PostHog identify failed:", posthogError);
+          }
+        }
+        
+        // Only fetch apps and subscription data if user is authenticated
         // DO NOT fetch sessions here - let the workspace component handle that
-        await Promise.all([fetchApps(), fetchSubscription()]);
+        if (data.user) {
+          // Add timeout to prevent hanging indefinitely
+          const dataFetchPromise = Promise.all([fetchApps(), fetchSubscription()]);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Data fetch timeout')), 10000)
+          );
+          
+          await Promise.race([dataFetchPromise, timeoutPromise]);
+        }
       } catch (error) {
         console.error("Error during initial data fetch:", error);
       } finally {
@@ -246,7 +263,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     fetchInitialData();
-    // No dependencies - only run once on mount
+    
+    // Fallback: Ensure loading is set to false after maximum timeout
+    const fallbackTimeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 15000);
+
+    return () => clearTimeout(fallbackTimeout);
   }, []);
 
   // Context value
