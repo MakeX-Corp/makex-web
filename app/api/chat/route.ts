@@ -8,6 +8,7 @@ import { getPrompt } from "@/utils/server/prompt";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { getBedrockClient } from "@/utils/server/bedrock-client";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
+import { gateway } from "@ai-sdk/gateway";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
@@ -260,7 +261,7 @@ export async function POST(req: Request) {
       // Check if there are any active sandboxes no just hit the get endpoint
 
       const result = streamText({
-        model: model,
+        model: gateway(CLAUDE_SONNET_4_MODEL),
         messages: formattedMessages,
         tools: tools,
         toolCallStreaming: true,
