@@ -25,11 +25,12 @@ const summarizeChat = async (content: string) => {
         },
       },
       schema: titleSchema,
-      prompt: `Create a short title (3 words or fewer) for this conversation: ${content.substring(
-        0,
-        2000
-      )}`,
-      system: "Generate a short title (3 words or fewer) that captures the essence of this conversation.",
+      prompt: `Analyze this conversation and create a short title (3 words or fewer) that captures its essence. Return ONLY the title as a JSON object with a "title" field.
+
+Conversation: ${content.substring(0, 2000)}
+
+Return format: {"title": "Your Title Here"}`,
+      system: "You are a title generator. Always respond with valid JSON containing a 'title' field with a short, descriptive title (3 words or fewer).",
     });
 
     return object.title.trim() || "New Chat";

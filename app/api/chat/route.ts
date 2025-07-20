@@ -213,25 +213,6 @@ export async function POST(req: Request) {
         system: getPrompt(fileTree),
         stopWhen:stepCountIs(100),
         experimental_telemetry: { isEnabled: true },
-        onStepFinish: async (result) => {
-          console.log('step finished', result.providerMetadata);
-        },
-        
-        onFinish: async () => {
-          // Set app status back to active
-          try {
-            const { error: finalUpdateError } = await supabaseAdmin
-              .from("user_sandboxes")
-              .update({ app_status: "active" })
-              .eq("app_id", trimmedAppId);
-
-            if (finalUpdateError) {
-              console.error("Failed to update app status back to active:", finalUpdateError);
-            }
-          } catch (recoveryError) {
-            console.error("Failed to recover app status:", recoveryError);
-          }
-        }
       });
     
       // Don't await providerMetadata before returning the stream

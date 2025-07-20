@@ -42,11 +42,6 @@ export async function POST(request: Request) {
       throw error;
     }
 
-    // Calculate cost based on both input and output tokens
-    const inputCost = options.usage.promptTokens * 0.000003; // $3/million tokens
-    const outputCost = options.usage.completionTokens * 0.000015; // $15/million tokens
-    const totalCost = inputCost + outputCost;
-
     // Insert assistant's message into chat history
     await supabase.from("app_chat_history").insert({
       app_id: appId,
@@ -55,9 +50,6 @@ export async function POST(request: Request) {
       role: "assistant",
       model_used: "claude-3-5-sonnet-latest",
       metadata: message,
-      input_tokens_used: options.usage.promptTokens,
-      output_tokens_used: options.usage.completionTokens,
-      cost: totalCost,
       session_id: sessionId,
       commit_hash: commitHash,
       message_id: message.id,

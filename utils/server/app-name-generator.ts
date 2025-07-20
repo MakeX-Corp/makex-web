@@ -27,7 +27,22 @@ export async function generateDisplayName(
   try {
     const result = await generateObject({
       model: gateway(CLAUDE_SONNET_4_MODEL),
-      prompt: `Generate a short, catchy title for an app based on this idea:\n\n"${initialPrompt}"\n\nOnly return the title.`,
+      prompt: `Generate a short, catchy title for an app based on this idea:
+
+"${initialPrompt}"
+
+You must respond with a valid JSON object in this exact format:
+{
+  "title": "Your App Title Here"
+}
+
+The title should be:
+- Short and memorable (max 20 characters)
+- Catchy and relevant to the app idea
+- No special characters or emojis
+- Title case format
+
+Only return the JSON object, nothing else.`,
       schema: z.object({
         title: z.string().max(20),
       }),
@@ -37,6 +52,7 @@ export async function generateDisplayName(
         },
       },
     });
+
 
     return result.object.title || fallback;
   } catch (error) {
