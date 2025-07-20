@@ -6,6 +6,10 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { startExpo } from "@/trigger/start-expo";
+import { setupGit } from "@/trigger/setup-git";
+import { configureConvex } from "@/trigger/configure-convex";
+import { deleteConvex } from "@/trigger/delete-convex";
+import { generateDisplayName } from "@/utils/server/app-name-generator";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
@@ -23,6 +27,10 @@ export async function POST(request: Request) {
     const { prompt } = body;
 
     const appName = generateAppName();
+    const displayName = await generateDisplayName(prompt, appName);
+
+    console.log('Generated displayName:', displayName);
+
     timings.authAndSetup = performance.now() - startTime;
 
     // Begin transaction to ensure both app and session are created atomically
@@ -32,6 +40,7 @@ export async function POST(request: Request) {
       .insert({
         user_id: user.id,
         app_name: appName,
+        display_name: displayName,
         app_url: `https://${appName}.makex.app`,
       })
       .select()
@@ -81,14 +90,9 @@ export async function POST(request: Request) {
       appName: appName,
     });
 
-    console.log("apiHost", apiHost);
-
-    console.log("appHost", appHost);
-
     timings.containerInitiation = performance.now() - containerStartTime;
 
-    console.log("e2b containerId", containerId);
-    console.log("e2b apiUrl", apiHost);
+
 
     // Retry mechanism for API host
     const maxRetries = 10;
@@ -102,11 +106,6 @@ export async function POST(request: Request) {
         if (response.status !== 502) {
           break;
         }
-        console.log(
-          `Attempt ${
-            retryCount + 1
-          } failed with 502, retrying in ${retryDelay}ms...`
-        );
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
         retryCount++;
       } catch (error) {
@@ -120,7 +119,6 @@ export async function POST(request: Request) {
       console.log("Max retries reached, proceeding with container setup...");
     }
 
-    console.log("response", response);
 
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
@@ -180,6 +178,18 @@ export async function POST(request: Request) {
       initial: true,
     });
 
+    //TODO: feature flag this with decision tree
+    await setupGit.trigger({
+      appId: insertedApp.id,
+      containerId: containerId,
+    });
+
+    //TODO: feature flag this with decision tree
+    await configureConvex.trigger({
+      appId: insertedApp.id,
+      containerId: containerId,
+    });
+
     // Return the app data along with session ID, redirect URL, and timings
     return NextResponse.json({
       ...insertedApp,
@@ -207,7 +217,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const appId = searchParams.get("id");
 
-    console.log("appId", appId);
 
     // If an appId is provided, get just that specific app
     if (appId) {
@@ -310,6 +319,10 @@ export async function DELETE(request: Request) {
       userId: user.id,
       appId: app.id,
       appName: app.app_name,
+    });
+
+    await deleteConvex.trigger({
+      projectId: app.convex_project_id,
     });
 
     return NextResponse.json({ message: "App deleted successfully" });

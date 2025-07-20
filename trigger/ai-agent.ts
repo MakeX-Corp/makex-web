@@ -1,14 +1,13 @@
 import { task } from "@trigger.dev/sdk/v3";
-import { generateText, type Message } from "ai";
+import { convertToModelMessages, generateText, stepCountIs, type UIMessage } from "ai";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { resumeContainer } from "./resume-container";
-import { getBedrockClient } from "@/utils/server/bedrock-client";
-import { anthropic } from "@ai-sdk/anthropic";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
+import { gateway } from "@ai-sdk/gateway";
 
 const LOG_PREFIX = "[AI Agent]";
 
@@ -109,14 +108,8 @@ export const aiAgent = task({
         apiUrl: app.api_url,
       });
 
-      // Initialize Bedrock client for Claude 4
-      const bedrock = getBedrockClient();
-      const model = bedrock(CLAUDE_SONNET_4_MODEL);
-
-      // const model = anthropic("claude-4-sonnet-20250514");
-
       // Create message with user prompt
-      const messages: Message[] = [];
+      const messages: UIMessage[] = [];
 
       if (images && images.length > 0) {
         const userMessage = {
@@ -138,7 +131,12 @@ export const aiAgent = task({
         // For text-only content
         messages.push({
           role: "user",
-          content: userPrompt,
+          parts: [
+            {
+              type: "text",
+              text: userPrompt,
+            },
+          ],
           id: crypto.randomUUID(),
         });
       }
@@ -169,16 +167,21 @@ export const aiAgent = task({
 
       // Generate response using Vercel AI SDK
       const result = await generateText({
-        model: model,
-        messages: messages,
+        model: gateway(CLAUDE_SONNET_4_MODEL),
+        providerOptions: {
+          gateway: {
+            order: ["bedrock", "vertex", "anthropic"],
+          },
+        },
+        messages: convertToModelMessages(messages),
         tools: tools,
         system: getPrompt(fileTree),
-        maxSteps: 50,
+        stopWhen:stepCountIs(100),
       });
 
       // Calculate cost based on both input and output tokens
-      const inputCost = result.usage?.promptTokens * 0.000003; // $3/million tokens
-      const outputCost = result.usage?.completionTokens * 0.000015; // $15/million tokens
+      const inputCost = result.usage?.inputTokens || 0 * 0.000003; // $3/million tokens
+      const outputCost = result.usage?.outputTokens || 0 * 0.000015; // $15/million tokens
       const totalCost = inputCost + outputCost;
       let commitHash = null;
       try {
@@ -207,8 +210,8 @@ export const aiAgent = task({
           toolCalls: result.toolCalls,
           toolResults: result.toolResults,
         },
-        input_tokens_used: result.usage?.promptTokens,
-        output_tokens_used: result.usage?.completionTokens,
+        input_tokens_used: result.usage?.inputTokens,
+        output_tokens_used: result.usage?.outputTokens,
         cost: totalCost,
         session_id: sessionId,
         message_id: crypto.randomUUID(),
@@ -219,8 +222,8 @@ export const aiAgent = task({
       console.log(`${LOG_PREFIX} Generation completed:`, {
         finishReason: result.finishReason,
         usage: {
-          promptTokens: result.usage?.promptTokens,
-          completionTokens: result.usage?.completionTokens,
+          inputTokens: result.usage?.inputTokens,
+          outputTokens: result.usage?.outputTokens,
           totalTokens: result.usage?.totalTokens,
         },
         hasReasoning: !!result.reasoning,
@@ -245,8 +248,8 @@ export const aiAgent = task({
 
       // Log cost calculation for both input and output tokens
       console.log(`${LOG_PREFIX} Cost Calculation:`, {
-        inputTokens: result.usage?.promptTokens,
-        outputTokens: result.usage?.completionTokens,
+        inputTokens: result.usage?.inputTokens,
+        outputTokens: result.usage?.outputTokens,
         inputCostPerToken: 0.000003,
         outputCostPerToken: 0.000015,
         inputCost,

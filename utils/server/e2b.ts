@@ -2,6 +2,8 @@
 
 import { Sandbox } from "@e2b/code-interpreter";
 
+const APP_DIR = "/app/expo-app";
+
 export async function createE2BContainer(metadata: {
   userId: string;
   appId: string;
@@ -37,76 +39,174 @@ export async function resumeE2BContainer(sandboxId: string) {
 }
 
 export async function pauseE2BContainer(sandboxId: string) {
-  const sbx = await Sandbox.connect(sandboxId)
+  const sbx = await Sandbox.connect(sandboxId);
   const pausedId = await sbx.pause();
   return pausedId;
 }
-
 
 export async function killE2BContainer(sandboxId: string) {
   const sbx = await Sandbox.kill(sandboxId);
   return sbx;
 }
 
-
-
-
 export async function startExpoInContainer(sandboxId: string) {
   const sbx = await Sandbox.connect(sandboxId);
 
   // Log sandbox ID
-  console.log('Connected to sandbox:', sbx.sandboxId);
+  console.log("Connected to sandbox:", sbx.sandboxId);
 
   const appUrl = `https://${sbx.getHost(8000)}`;
   const apiUrl = `https://${sbx.getHost(8001)}`;
 
-  console.log('App URL:', appUrl);
-  console.log('API URL:', apiUrl);
+  console.log("App URL:", appUrl);
+  console.log("API URL:", apiUrl);
 
   await sbx.commands.run(
-    `sudo EXPO_NO_SIGN_REQUESTS=1 EXPO_OFFLINE=true EXPO_PACKAGER_PROXY_URL=${appUrl} npx expo start --port 8000 > ~/expo_logs.txt 2>&1 &`,
-    { 
+    `sudo EXPO_PACKAGER_PROXY_URL=${appUrl} npx expo start --port 8000 > ~/expo_logs.txt 2>&1 &`,
+    {
       background: true,
-      cwd: '/app/expo-app',
+      cwd: APP_DIR,
       envs: {
-        EXPO_PACKAGER_PROXY_URL: appUrl
-      }
+        EXPO_PACKAGER_PROXY_URL: appUrl,
+      },
     }
   );
-  
+
   return {
     appUrl,
-    apiUrl
+    apiUrl,
   };
 }
-
 
 export async function killDefaultExpo(sandboxId: string) {
   try {
     const sbx = await Sandbox.connect(sandboxId);
     const port = sbx.getHost(8000);
-    console.log('Connected to sandbox:', sbx.sandboxId);
+    console.log("Connected to sandbox:", sbx.sandboxId);
 
     // Kill all node processes
     try {
-      const killResult = await sbx.commands.run('sudo kill -9 $(ps aux | grep node | grep -v grep | awk \'{print $2}\') 2>/dev/null || true');
-      console.log('Kill all node processes result:', killResult);
+      const killResult = await sbx.commands.run(
+        "sudo kill -9 $(ps aux | grep node | grep -v grep | awk '{print $2}') 2>/dev/null || true"
+      );
+      console.log("Kill all node processes result:", killResult);
     } catch (error) {
-      console.log('Error during process kill:', error);
+      console.log("Error during process kill:", error);
     }
 
     // Verify port is free
     try {
-      const checkPort = await sbx.commands.run('sudo lsof -i:8000 || true');
-      console.log('Port check result:', checkPort);
+      const checkPort = await sbx.commands.run("sudo lsof -i:8000 || true");
+      console.log("Port check result:", checkPort);
     } catch (error) {
-      console.log('Port 8000 is free');
+      console.log("Port 8000 is free");
     }
 
     return true;
   } catch (error) {
-    console.error('Error in killDefaultExpo:', error);
+    console.error("Error in killDefaultExpo:", error);
     throw error;
   }
 }
 
+export async function writeConvexConfigInContainer(
+  sandboxId: string,
+  {
+    deploymentName,
+    convexUrl,
+  }: {
+    deploymentName: string;
+    convexUrl: string;
+  }
+) {
+  const sbx = await Sandbox.connect(sandboxId);
+  const CONFIG_DIR = "/root/.convex";
+  const CONFIG_PATH = `${CONFIG_DIR}/config.json`;
+
+  const ENV_FILE = `${APP_DIR}/.env.local`;
+
+  const writeConfigCommand = [
+    `sudo mkdir -p ${CONFIG_DIR}`,
+    `echo '{ "accessToken": "${process.env.CONVEX_AUTH_TOKEN}" }' | sudo tee ${CONFIG_PATH} > /dev/null`,
+    `sudo mkdir -p ${APP_DIR}`,
+    `echo -e "CONVEX_DEPLOYMENT=${deploymentName}\\nEXPO_PUBLIC_CONVEX_URL=${convexUrl}" | sudo tee ${ENV_FILE} > /dev/null`,
+  ].join(" && ");
+  await sbx.commands.run(writeConfigCommand);
+
+  return {
+    configWritten: CONFIG_PATH,
+    envWritten: ENV_FILE,
+  };
+}
+
+export async function startConvexInContainer(sandboxId: string) {
+  const sbx = await Sandbox.connect(sandboxId);
+
+  const LOG_FILE = `~/convex_logs.txt`;
+
+  console.log("Starting convex in container...");
+
+  // Step 1: cd into the app directory
+  await sbx.commands.run(`cd ${APP_DIR}`);
+
+  // Step 2: run convex dev in background
+  await sbx.commands.run(`sudo npx convex dev > ${LOG_FILE} 2>&1 &`, {
+    background: true,
+    cwd: APP_DIR,
+  });
+
+  return {
+    startedIn: APP_DIR,
+    logFile: LOG_FILE,
+  };
+}
+
+
+export async function setupFreestyleGitInContainer(sandboxId: string, repoId: string) {
+  const sbx = await Sandbox.connect(sandboxId);
+
+  // Clean up any existing git configuration
+  await sbx.commands.run(`sudo rm -rf .git || true`, {
+    cwd: APP_DIR,
+  });
+
+  // Initialize git repository if it doesn't exist
+  const initResult = await sbx.commands.run(`sudo git init`, {
+    cwd: APP_DIR,
+  });
+
+  // Configure git user (required for commits)
+  await sbx.commands.run(`sudo git config user.name "MakeX Bot" && sudo git config user.email "bot@makex.app"`, {
+    cwd: APP_DIR,
+  });
+
+  // Add all files to git
+  const addResult = await sbx.commands.run(`sudo git add .`, {
+    cwd: APP_DIR,
+  });
+
+  // Create initial commit if there are changes
+  const commitResult = await sbx.commands.run(`sudo git commit -m "Initial commit" || true`, {
+    cwd: APP_DIR,
+  });
+
+  // Add freestyle remote
+  const remoteAddResult = await sbx.commands.run(`sudo git remote add freestyle https://${process.env.FREESTYLE_IDENTITY_ID}:${process.env.FREESTYLE_IDENTITY_TOKEN}@git.freestyle.sh/${repoId}`,
+    {
+      cwd: APP_DIR,
+    }
+  );
+
+  // Create main branch and push to master
+  const pushResult = await sbx.commands.run(`sudo git push freestyle master`, {
+    cwd: APP_DIR,
+  });
+
+  return {
+    initResult,
+    addResult,
+    commitResult,
+    remoteAddResult,
+    pushResult,
+  };
+}

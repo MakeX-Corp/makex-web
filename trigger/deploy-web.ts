@@ -1,189 +1,10 @@
 import { task } from "@trigger.dev/sdk/v3";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import AdmZip from "adm-zip";
-import { Readable } from "stream";
-import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { proxySetter } from "@/utils/server/redis-client";
 import { dub } from "@/utils/server/dub";
-import { resumeContainer } from "./resume-container";
-import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
-import { generateText } from "ai";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
-import { killDefaultExpo, startExpoInContainer } from "@/utils/server/e2b";
+import { deployWebFromGit } from "@/utils/server/freestyle";
+import { deployConvexProject } from "@/utils/server/convex";
 
-function streamToBuffer(stream: Readable): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Uint8Array[] = [];
-    stream.on("data", (chunk) => chunks.push(chunk));
-    stream.on("error", reject);
-    stream.on("end", () => resolve(Buffer.concat(chunks)));
-  });
-}
-
-const s3Client = new S3Client({
-  region: "us-east-2",
-  endpoint: "https://s3.us-east-2.amazonaws.com",
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-
-const BUCKET_NAME = process.env.DEPLOYMENT_BUCKET_NAME!;
-const PUBLIC_URL_BASE = process.env.DEPLOYMENT_PUBLIC_URL_BASE!;
-
-const mimeTypes: Record<string, string> = {
-  ".html": "text/html",
-  ".css": "text/css",
-  ".js": "application/javascript",
-  ".json": "application/json",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
-  ".txt": "text/plain",
-  ".pdf": "application/pdf",
-  ".woff": "font/woff",
-  ".woff2": "font/woff2",
-  ".ttf": "font/ttf",
-  ".eot": "application/vnd.ms-fontobject",
-  ".otf": "font/otf",
-};
-
-function getMimeType(filename: string): string {
-  const ext = filename.substring(filename.lastIndexOf(".") || 0);
-  return mimeTypes[ext.toLowerCase()] || "application/octet-stream";
-}
-
-async function analyzeAppWithClaude(
-  fileClient: any,
-  appName: string
-): Promise<{ title: string; description: string }> {
-  const bedrock = createAmazonBedrock({
-    region: "us-east-1",
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  });
-
-  const model = bedrock("us.anthropic.claude-3-5-sonnet-20241022-v2:0");
-
-  // First, get the file tree
-  const fileTreeResponse = await fileClient.get("/file-tree");
-  const fileTree = fileTreeResponse.tree;
-
-  // Create a prompt for Claude to analyze the file tree and select relevant files
-  const treeAnalysisPrompt = `Given this file tree structure from a mobile app, identify the most important files that would help understand the app's purpose and functionality. Focus on configuration files, main entry points, and key feature files.
-
-File Tree:
-${JSON.stringify(fileTree, null, 2)}
-
-Respond with a JSON array of file paths that would be most relevant for understanding the app. Maximum 5 files.
-Example response format:
-{
-  "files": ["path/to/file1", "path/to/file2"]
-}
-
-IMPORTANT: Respond ONLY with valid JSON, no additional text or explanation.`;
-
-  // Get Claude's analysis of which files to read
-  const treeAnalysisResult = await generateText({
-    model,
-    prompt: treeAnalysisPrompt,
-    maxTokens: 500,
-    temperature: 0.3,
-  });
-
-  let selectedFiles: string[] = [];
-  try {
-    // Clean the response to ensure it's valid JSON
-    const cleanedResponse = treeAnalysisResult.text.trim();
-    const parsedResponse = JSON.parse(cleanedResponse);
-    if (!Array.isArray(parsedResponse.files)) {
-      throw new Error("Invalid response format: files is not an array");
-    }
-    selectedFiles = parsedResponse.files;
-  } catch (error) {
-    console.error("Error parsing file selection response:", error);
-    // Fallback to some common files if analysis fails
-    selectedFiles = ["package.json", "app.json", "app.config.js"];
-  }
-
-  // Read the selected files
-  const fileContents = await Promise.all(
-    selectedFiles.map(async (filepath) => {
-      try {
-        const content = await fileClient.get("/file", { path: filepath });
-        return {
-          name: filepath,
-          content: content,
-        };
-      } catch (error) {
-        console.log(`Could not read ${filepath}:`, error);
-        return null;
-      }
-    })
-  );
-
-  // Filter out null results and create the prompt
-  const validFiles = fileContents.filter(
-    (file): file is { name: string; content: string } => file !== null
-  );
-
-  const prompt = `Analyze these files from a mobile app and generate:
-1. A catchy title (max 5 words)
-2. A compelling description (max 2 sentences)
-
-Files:
-${validFiles
-  .map((f) => `\n${f.name}:\n${f.content.substring(0, 1000)}`)
-  .join("\n")}
-
-App name: ${appName}
-
-Respond in JSON format:
-{
-  "title": "string",
-  "description": "string"
-}
-
-IMPORTANT: Respond ONLY with valid JSON, no additional text or explanation.`;
-
-  const result = await generateText({
-    model,
-    prompt,
-    maxTokens: 500,
-    temperature: 0.7,
-  });
-
-  try {
-    // Clean the response to ensure it's valid JSON
-    const cleanedResponse = result.text.trim();
-    const parsedResponse = JSON.parse(cleanedResponse);
-
-    if (
-      typeof parsedResponse.title !== "string" ||
-      typeof parsedResponse.description !== "string"
-    ) {
-      throw new Error("Invalid response format: missing title or description");
-    }
-
-    return {
-      title: parsedResponse.title || `Check out my ${appName} app`,
-      description:
-        parsedResponse.description ||
-        `I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!`,
-    };
-  } catch (error) {
-    console.error("Error parsing Claude response:", error);
-    throw new Error(
-      "Failed to parse Claude's response: " +
-        (error instanceof Error ? error.message : String(error))
-    );
-  }
-}
 
 async function shareIdGenerator(appId: string, supabase: any): Promise<string> {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -234,8 +55,7 @@ async function handleUrlMapping(
   appId: string,
   appName: string,
   deploymentUrl: string,
-  easUrl?: string,
-  fileClient?: any
+  easUrl?: string
 ) {
   try {
     const { data: existingMapping } = await supabase
@@ -244,23 +64,8 @@ async function handleUrlMapping(
       .eq("app_id", appId)
       .single();
 
-    let title = `Check out my ${appName} app`;
-    let description = `I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!`;
-
-    if (fileClient) {
-      try {
-        const { title: generatedTitle, description: generatedDescription } =
-          await analyzeAppWithClaude(fileClient, appName);
-        title = generatedTitle;
-        description = generatedDescription;
-      } catch (error) {
-        console.error("[DeployWeb] Failed to analyze app with Claude:", error);
-        throw new Error(
-          "Failed to analyze app with Claude: " +
-            (error instanceof Error ? error.message : String(error))
-        );
-      }
-    }
+    const title = `Check out my ${appName} app`;
+    const description = `I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!`;
 
     console.log(`[DeployWeb] Generated title: ${title}`);
     console.log(`[DeployWeb] Generated description: ${description}`);
@@ -348,42 +153,30 @@ async function updateDeploymentStatus(
   }
 }
 
-async function uploadFilesToS3(
-  zip: AdmZip,
-  deploymentBasePath: string,
-  hasDistDir: boolean
+async function updateConvexProdUrl(
+  supabase: any,
+  appId: string,
+  deploymentName: string
 ) {
   try {
-    const baseDirToRemove = hasDistDir ? "dist/" : "";
-    const uploadPromises = zip
-      .getEntries()
-      .filter((entry: any) => !entry.isDirectory)
-      .filter((entry: any) =>
-        hasDistDir ? entry.entryName.startsWith(baseDirToRemove) : true
-      )
-      .map((entry: any) => {
-        const relativePath = hasDistDir
-          ? entry.entryName.substring(baseDirToRemove.length)
-          : entry.entryName;
+    const convexProdUrl = `https://${deploymentName}.convex.cloud`;
+    
+    const { error } = await supabase
+      .from("user_apps")
+      .update({
+        convex_prod_url: convexProdUrl,
+      })
+      .eq("id", appId);
 
-        return s3Client.send(
-          new PutObjectCommand({
-            Bucket: BUCKET_NAME,
-            Key: `${deploymentBasePath}/${relativePath}`,
-            Body: entry.getData(),
-            ContentType: getMimeType(entry.entryName),
-            CacheControl:
-              getMimeType(entry.entryName).includes("image/") ||
-              entry.entryName.includes("assets/")
-                ? "public, max-age=31536000"
-                : "no-cache",
-          })
-        );
-      });
+    if (error) {
+      console.error("[DeployWeb] Error updating convex_prod_url:", error);
+      throw error;
+    }
 
-    await Promise.all(uploadPromises);
+    console.log(`[DeployWeb] Successfully updated convex_prod_url to: ${convexProdUrl}`);
+    return convexProdUrl;
   } catch (error) {
-    console.error("Error uploading files to S3:", error);
+    console.error("[DeployWeb] Error updating convex_prod_url:", error);
     throw error;
   }
 }
@@ -400,62 +193,11 @@ export const deployWeb = task({
     let deploymentId: string | undefined;
 
     try {
-      // Check sandbox status and resume if needed
-      console.log(`[DeployWeb] Checking sandbox status for appId: ${appId}`);
-      const { data: sandbox, error: sandboxError } = await supabase
-        .from("user_sandboxes")
-        .select("*")
-        .eq("app_id", appId)
-        .order("sandbox_updated_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (sandboxError) {
-        throw new Error(
-          `Failed to fetch sandbox status: ${sandboxError.message}`
-        );
-      }
-
-      if (!sandbox) {
-        throw new Error("No sandbox found for this app");
-      }
-
-      // Check if sandbox is already being changed
-      if (sandbox.app_status === "changing") {
-        throw new Error(
-          "Sandbox is currently being modified. Please try again later."
-        );
-      }
-
-      // Update sandbox updated_at time and lock the sandbox
-      const { error: lockError } = await supabase
-        .from("user_sandboxes")
-        .update({
-          sandbox_updated_at: new Date().toISOString(),
-          app_status: "changing",
-        })
-        .eq("id", sandbox.id);
-
-      if (lockError) {
-        throw new Error(`Failed to lock sandbox: ${lockError.message}`);
-      }
-
-      // If sandbox is paused, resume it and wait for completion
-      if (sandbox.sandbox_status === "paused") {
-        console.log(`[DeployWeb] Sandbox is paused, resuming...`);
-        await resumeContainer.triggerAndWait({
-          userId: sandbox.user_id,
-          appId,
-          appName: sandbox.app_name,
-        });
-        console.log(`[DeployWeb] Sandbox is now active`);
-      }
-
       // Get app record
       console.log(`[DeployWeb] Fetching app record for appId: ${appId}`);
       const { data: appRecord } = await supabase
         .from("user_apps")
-        .select("api_url,user_id,app_name")
+        .select("api_url,user_id,app_name,git_repo_id,convex_project_id")
         .eq("id", appId)
         .single();
 
@@ -463,10 +205,14 @@ export const deployWeb = task({
         throw new Error("App record not found");
       }
 
-      const { api_url, user_id, app_name } = appRecord;
+      const { user_id, app_name, git_repo_id, convex_project_id } = appRecord;
       console.log(
-        `[DeployWeb] Found app record - name: ${app_name}, userId: ${user_id}`
+        `[DeployWeb] Found app record - name: ${app_name}, userId: ${user_id}, gitRepoId: ${git_repo_id}, convexProjectId: ${convex_project_id}`
       );
+
+      if (!git_repo_id) {
+        throw new Error("Git repository ID not found for this app");
+      }
 
       // Create deployment record
       console.log(`[DeployWeb] Creating deployment record`);
@@ -501,60 +247,61 @@ export const deployWeb = task({
         `[DeployWeb] Created deployment record with ID: ${deploymentId}`
       );
 
-      const deploymentBasePath = `${appId}/${deploymentId}`;
-      const fileClient = createFileBackendApiClient(api_url);
-
       try {
-        // Deploy to EAS first
-        let easUrl;
-        try {
-          console.log(`[DeployWeb] Starting EAS deployment`);
-          const easResponse = await fileClient.post("/deploy-eas", {
-            token: process.env.EXPO_ACCESS_TOKEN,
-            message: "Update",
-          });
-          easUrl = `makex://u.expo.dev/${easResponse.project_id}/group/${easResponse.group_id}`;
-          console.log(`[DeployWeb] EAS deployment completed successfully`);
-        } catch (easError) {
-          console.error("[DeployWeb] EAS deployment failed:", easError);
-          // Update status to failed but continue with web deployment
-          await updateDeploymentStatus(supabase, deploymentId, "failed");
-          throw new Error(
-            "EAS deployment failed: " +
-              (easError instanceof Error ? easError.message : String(easError))
-          );
+        // Deploy Convex project first if it exists
+        let convexProdUrl: string | undefined;
+        if (convex_project_id) {
+          console.log(`[DeployWeb] Starting Convex deployment for project: ${convex_project_id}`);
+          try {
+            const convexDeployment = await deployConvexProject({
+              projectId: convex_project_id,
+            });
+            
+            console.log(`[DeployWeb] Convex deployment completed successfully`);
+            console.log(`[DeployWeb] Convex deployment name:`, convexDeployment);
+            
+            // Update the app record with the convex_prod_url
+            convexProdUrl = await updateConvexProdUrl(
+              supabase,
+              appId,
+              convexDeployment.deploymentName
+            );
+          } catch (error) {
+            console.error("[DeployWeb] Error during Convex deployment:", error);
+            // Don't fail the entire deployment if Convex deployment fails
+          }
+        } else {
+          console.log(`[DeployWeb] No Convex project ID found, skipping Convex deployment`);
         }
 
-        // Get and process zip file
-        console.log(`[DeployWeb] Fetching deployment zip file`);
-        const { data } = await fileClient.getBuffer(
-          `/deploy-web?appId=${appId}&deploymentId=${deploymentId}`
+        // Deploy to Freestyle using Git repository
+        console.log(`[DeployWeb] Starting Freestyle deployment`);
+
+        console.log(`[DeployWeb] Convex prod url:`, convexProdUrl);
+        
+        // Set environment variables for the deployment
+        const envVars: Record<string, string> = {
+          ...(convexProdUrl && { EXPO_PUBLIC_CONVEX_URL: convexProdUrl }),
+        };
+        
+        console.log(`[DeployWeb] Setting environment variables:`, envVars);
+        
+        const deploymentResult = await deployWebFromGit(
+          git_repo_id,
+          [`${app_name}.style.dev`],
+          { envVars }
         );
 
-        const zipBuffer =
-          data instanceof Readable ? await streamToBuffer(data) : data;
-        const zip = new AdmZip(zipBuffer);
-        const hasDistDir = zip
-          .getEntries()
-          .some((entry: any) => entry.entryName.startsWith("dist/"));
-        console.log(
-          `[DeployWeb] Processing zip file - has dist directory: ${hasDistDir}`
-        );
+        console.log(`[DeployWeb] Freestyle deployment completed successfully`);
+        console.log(`[DeployWeb] Deployment domains:`, deploymentResult.domains);
 
-        // Upload files to S3
-        console.log(`[DeployWeb] Starting S3 upload`);
-        await uploadFilesToS3(zip, deploymentBasePath, hasDistDir);
-        console.log(`[DeployWeb] S3 upload completed`);
+        const deploymentUrl = `https://${deploymentResult.domains?.[0]}`;
+        if (!deploymentUrl) {
+          throw new Error("No deployment URL returned from Freestyle");
+        }
 
-        const deploymentUrl = `${PUBLIC_URL_BASE}/${deploymentBasePath}/`;
-        const displayUrl = `web-${app_name}.makex.app`;
-        console.log(
-          `[DeployWeb] Setting up proxy for display URL: ${displayUrl}`
-        );
-
-        // Set up proxy
-        await proxySetter(displayUrl, deploymentUrl);
-        console.log(`[DeployWeb] Proxy setup completed`);
+        // Convert deployment URL to EAS URL format
+        const easUrl = deploymentUrl.replace("https://", "makex://");
 
         // Update status to completed
         console.log(`[DeployWeb] Updating deployment status to completed`);
@@ -566,73 +313,34 @@ export const deployWeb = task({
           easUrl
         );
 
-        // Handle URL mapping with both web and EAS URLs
+        // Handle URL mapping
         console.log(`[DeployWeb] Setting up URL mapping`);
         const { dubLink } = await handleUrlMapping(
           supabase,
           appId,
           app_name,
           deploymentUrl,
-          easUrl,
-          fileClient
+          easUrl
         );
         console.log(`[DeployWeb] URL mapping completed`);
-
-        // Kill and restart Expo process on port 8000
-        console.log(`[DeployWeb] Killing existing Expo process on port 8000`);
-        try {
-          await killDefaultExpo(sandbox.sandbox_id);
-          console.log(`[DeployWeb] Successfully killed Expo process`);
-          
-          console.log(`[DeployWeb] Restarting Expo process on port 8000`);
-          await startExpoInContainer(sandbox.sandbox_id);
-          console.log(`[DeployWeb] Successfully restarted Expo process`);
-        } catch (expoError) {
-          console.error("[DeployWeb] Error managing Expo process:", expoError);
-          // Don't throw here as deployment was successful, just log the error
-        }
 
         console.log(`[DeployWeb] Deployment completed successfully`);
         return {
           deploymentUrl,
           easUrl,
+          convexProdUrl,
           dubLink,
         };
       } catch (error) {
         console.error("[DeployWeb] Error during deployment process:", error);
-        // Update status to failed with any available URLs
-        const deploymentUrl = `${PUBLIC_URL_BASE}/${deploymentBasePath}/`;
-        await updateDeploymentStatus(
-          supabase,
-          deploymentId,
-          "failed",
-          deploymentUrl
-        );
+        // Update status to failed
+        await updateDeploymentStatus(supabase, deploymentId, "failed");
         throw error;
       } finally {
-        // Set sandbox status back to active
-        try {
-          const { error: finalUpdateError } = await supabase
-            .from("user_sandboxes")
-            .update({ app_status: "active" })
-            .eq("app_id", appId);
-
-          if (finalUpdateError) {
-            console.error(
-              "[DeployWeb] Failed to update sandbox status back to active:",
-              finalUpdateError
-            );
-          }
-        } catch (recoveryError) {
-          console.error(
-            "[DeployWeb] Failed to recover sandbox status:",
-            recoveryError
-          );
-        }
         // send notification to user
         await sendPushNotifications({
           supabase,
-          userId: sandbox.user_id,
+          userId: user_id,
           title: "Deployment completed",
           body: "Your app has been deployed successfully",
         });
