@@ -2,7 +2,10 @@ import { NextResponse, NextRequest } from "next/server";
 import { aiAgent } from "@/trigger/ai-agent";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { generateAppName } from "@/utils/server/app-name-generator";
+import {
+  generateAppName,
+  generateDisplayName,
+} from "@/utils/server/app-name-generator";
 import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { startExpo } from "@/trigger/start-expo";
@@ -36,16 +39,18 @@ export async function POST(request: NextRequest) {
     let sessionId: string | undefined;
     let apiHost = "";
     let appUrl = "";
-
+    let displayName = "";
     const admin = await getSupabaseAdmin();
     if (isNewApp) {
       appName = generateAppName();
+      displayName = await generateDisplayName(userPrompt, appName);
 
       const { data: insertedApp, error: insertError } = await supabase
         .from("user_apps")
         .insert({
           user_id: user.id,
           app_name: appName,
+          display_name: displayName,
           app_url: `https://${appName}.makex.app`,
         })
         .select()
