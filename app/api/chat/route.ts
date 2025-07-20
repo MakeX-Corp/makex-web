@@ -197,50 +197,6 @@ export async function POST(req: Request) {
         apiUrl: app.api_url,
       });
 
-      // Format messages for the model
-      const formattedMessages = messages.map((message: any, index: number) => {
-        // Check if this is the last user message and we're using multi-modal format
-        if (
-          index === messages.length - 1 &&
-          message.role === "user" &&
-          multiModal &&
-          messageParts
-        ) {
-          return {
-            role: message.role,
-            content: messageParts,
-          };
-        }
-        // For messages with experimental_attachments
-        else if (message.experimental_attachments?.length) {
-          const content = [{ type: "text", text: message.content || "" }];
-
-          // Add each attachment as a separate image part
-          for (const attachment of message.experimental_attachments) {
-            // Check if it's a base64 image
-            if (attachment.url && attachment.url.startsWith("data:image/")) {
-              content.push({
-                type: "image",
-                // @ts-ignore
-                image: attachment.url,
-              });
-            }
-          }
-
-          return {
-            role: message.role,
-            content: content,
-          };
-        }
-        // Regular text message
-        else {
-          return {
-            role: message.role,
-            content: message.content,
-          };
-        }
-      });
-
       await supabase.from("app_chat_history").insert({
         app_id: trimmedAppId,
         user_id: user.id,
@@ -259,8 +215,8 @@ export async function POST(req: Request) {
       const bedrock = getBedrockClient();
 
       const model = bedrock(CLAUDE_SONNET_4_MODEL);
-
       const isFirst = messages.length === 1 && messages[0]?.role === "user";
+
       const planningPrompt = getStepPrompt(isFirst, lastUserMessage.content);
 
       const planningResult = await generateObject({
@@ -272,25 +228,32 @@ export async function POST(req: Request) {
       });
 
       const steps = planningResult.object.steps;
+      const stepText = steps.map((s, i) => `${i + 1}. ${s}`).join("\n");
 
-      const planningInjection = [
-        {
-          role: "assistant" as const,
-          content: `Here is my plan:\n${steps
-            .map((s, i) => `${i + 1}. ${s}`)
-            .join("\n")}`,
-        },
-        ...steps.map((step, i) => ({
-          role: "user" as const,
-          content: `Step ${i + 1}: ${step}. Please implement this.`,
-        })),
-      ];
+      const newUserMessage = {
+        role: "user" as const,
+        content: `Here is my request, broken down into simple steps, please implement the full plan end-to-end using the tools. Ensure the output is consistent and production-ready:\n${stepText}`,
+      };
 
-      // Check if there are any active sandboxes no just hit the get endpoint
+      const formattedMessages = messages.slice(0, -1).map((message: any) => {
+        if (message.experimental_attachments?.length) {
+          const content = [{ type: "text", text: message.content || "" }];
+          for (const attachment of message.experimental_attachments) {
+            if (attachment.url?.startsWith("data:image/")) {
+              content.push({ type: "image", image: attachment.url });
+            }
+          }
+          return { role: message.role, content };
+        } else {
+          return { role: message.role, content: message.content };
+        }
+      });
+
+      formattedMessages.push(newUserMessage);
 
       const result = streamText({
         model: model,
-        messages: [...formattedMessages, ...planningInjection],
+        messages: formattedMessages,
         tools: tools,
         toolCallStreaming: true,
         system: getPrompt(fileTree),
