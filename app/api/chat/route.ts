@@ -199,8 +199,6 @@ export async function POST(req: Request) {
 
       // Check if there are any active sandboxes no just hit the get endpoint
 
-      console.log('messages', messages);
-
       const result = streamText({
         model: gateway(CLAUDE_SONNET_4_MODEL),
         providerOptions: {

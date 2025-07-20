@@ -29,11 +29,11 @@ export const toolStates = {
     result: "Packages installed",
     error: "Unable to install packages",
   },
-  insertText: {
-    "partial-call": "Inserting text into file",
-    call: "Inserting text into file",
-    result: "Text inserted",
-    error: "Unable to insert text",
+  editFile: {
+    "partial-call": "Editing file",
+    call: "Editing file",
+    result: "File edited",
+    error: "Unable to edit file",
   },
   writeFile: {
     "partial-call": "Writing content to file",

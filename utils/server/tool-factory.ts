@@ -111,31 +111,7 @@ export function createTools(config: ToolConfig = {}) {
       },
     }),
 
-    insertText: tool({
-      description: "Insert text at a specific line in a file",
-      inputSchema: z.object({
-        path: z.string().describe("The path to the file"),
-        insert_line: z
-          .number()
-          .describe("The line number where to insert the text"),
-        new_str: z.string().describe("The text to insert"),
-      }),
-      execute: async ({ path, insert_line, new_str }) => {
-        try {
-          const data = await apiClient.put("/file/insert", {
-            path,
-            insert_line,
-            new_str,
-          });
-          return { success: true, data };
-        } catch (error: any) {
-          return {
-            success: false,
-            error: error.message || "Unknown error occurred",
-          };
-        }
-      },
-    }),
+
 
     writeFile: tool({
       description: "Write content to a file",
@@ -167,6 +143,30 @@ export function createTools(config: ToolConfig = {}) {
       execute: async ({ path }) => {
         try {
           const data = await apiClient.delete("/file", { path });
+          return { success: true, data };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || "Unknown error occurred",
+          };
+        }
+      },
+    }),
+
+    editFile: tool({
+      description: "Edit a file by replacing a specific string or create a new file",
+      inputSchema: z.object({
+        path: z.string().describe("The path of the file to edit or create"),
+        old_str: z.string().optional().describe("The exact string to replace (must match exactly once in the file)"),
+        new_str: z.string().describe("The new content to write or replace with"),
+      }),
+      execute: async ({ path, old_str, new_str }) => {
+        try {
+          const data = await apiClient.put("/file/edit", {
+            path,
+            old_str,
+            new_str,
+          });
           return { success: true, data };
         } catch (error: any) {
           return {

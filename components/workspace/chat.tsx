@@ -326,7 +326,6 @@ export function Chat({
 
   // Render message part based on type
   const renderMessagePart = (part: any) => {
-    console.log('message part', part);
     
     // Handle tool types (anything starting with "tool-")
     if (part.type.startsWith("tool-")) {
