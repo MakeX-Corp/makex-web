@@ -7,8 +7,8 @@ import {
 } from "unique-names-generator";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { getBedrockClient } from "@/utils/server/bedrock-client";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
+import { gateway } from "@ai-sdk/gateway";
 
 export function generateAppName() {
   const config: Config = {
@@ -25,13 +25,17 @@ export async function generateDisplayName(
   fallback: string
 ): Promise<string> {
   try {
-    const model = getBedrockClient()(CLAUDE_SONNET_4_MODEL);
     const result = await generateObject({
-      model,
+      model: gateway(CLAUDE_SONNET_4_MODEL),
       prompt: `Generate a short, catchy title for an app based on this idea:\n\n"${initialPrompt}"\n\nOnly return the title.`,
       schema: z.object({
         title: z.string().max(20),
       }),
+      providerOptions: {
+        gateway: {
+          order: ["bedrock","vertex","anthropic"],
+        },
+      },
     });
 
     return result.object.title || fallback;

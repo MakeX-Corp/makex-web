@@ -1,8 +1,15 @@
 // File: app/api/sessions/title/route.js
+import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { anthropic } from "@ai-sdk/anthropic";
-import { streamText } from "ai";
+import { gateway } from "@ai-sdk/gateway";
+import { generateObject } from "ai";
+import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
+
+// Schema for title generation
+const titleSchema = z.object({
+  title: z.string().describe("A short title (3 words or fewer) that captures the essence of the conversation")
+});
 
 const summarizeChat = async (content: string) => {
   try {
@@ -10,30 +17,22 @@ const summarizeChat = async (content: string) => {
       return "New Chat";
     }
 
-    const result = await streamText({
-      model: anthropic("claude-3-haiku-20240307"),
-      messages: [
-        {
-          role: "user",
-          content: `Create a short title (3 words or fewer) for this conversation: ${content.substring(
-            0,
-            2000
-          )}`,
+    const { object } = await generateObject({
+      model: gateway(CLAUDE_SONNET_4_MODEL),
+      providerOptions: {
+        gateway: {
+          order: ["bedrock","vertex","anthropic"],
         },
-      ],
-      system:
-        "Generate a short title (3 words or fewer) that captures the essence of this conversation. Respond with only the title.",
-      maxTokens: 30,
+      },
+      schema: titleSchema,
+      prompt: `Create a short title (3 words or fewer) for this conversation: ${content.substring(
+        0,
+        2000
+      )}`,
+      system: "Generate a short title (3 words or fewer) that captures the essence of this conversation.",
     });
 
-    // Collect the full text from the stream
-    let title = "";
-    const textStream = await result.textStream;
-    for await (const chunk of textStream) {
-      title += chunk;
-    }
-
-    return title.trim() || "New Chat";
+    return object.title.trim() || "New Chat";
   } catch (error) {
     console.error("Error generating title:", error);
     return "New Chat";

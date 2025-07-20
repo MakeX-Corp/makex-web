@@ -1,4 +1,4 @@
-import { streamText } from "ai";
+import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
@@ -110,21 +110,15 @@ export async function POST(req: Request) {
       );
     }
 
-    if (appStatus?.app_status === "changing") {
-      return NextResponse.json(
-        { error: "App is currently being modified. Please try again later." },
-        { status: 409 }
-      );
-    }
+    // if (appStatus?.app_status === "changing") {
+    //   return NextResponse.json(
+    //     { error: "App is currently being modified. Please try again later." },
+    //     { status: 409 }
+    //   );
+    // }
 
     // Lock the app
     const trimmedAppId = appId.trim();
-    console.log('Debug appId:', {
-      original: appId,
-      trimmed: trimmedAppId,
-      length: trimmedAppId.length,
-      hasWhitespace: appId !== trimmedAppId
-    });
 
     const supabaseAdmin = await getSupabaseAdmin();
     const { error: lockError, data: lockData, count } = await supabaseAdmin
@@ -135,15 +129,6 @@ export async function POST(req: Request) {
       })
       .eq("app_id", trimmedAppId)
       .select();
-
-    console.log('App lock attempt:', {
-      appId: trimmedAppId,
-      success: !lockError,
-      error: lockError,
-      data: lockData,
-      count,
-      timestamp: new Date().toISOString()
-    });
 
     // Check if we actually found and updated a record
     if (!lockError && (!lockData || lockData.length === 0)) {
@@ -195,50 +180,6 @@ export async function POST(req: Request) {
         apiUrl: app.api_url,
       });
 
-      // Format messages for the model
-      const formattedMessages = messages.map((message: any, index: number) => {
-        // Check if this is the last user message and we're using multi-modal format
-        if (
-          index === messages.length - 1 &&
-          message.role === "user" &&
-          multiModal &&
-          messageParts
-        ) {
-          return {
-            role: message.role,
-            content: messageParts,
-          };
-        }
-        // For messages with experimental_attachments
-        else if (message.experimental_attachments?.length) {
-          const content = [{ type: "text", text: message.content || "" }];
-
-          // Add each attachment as a separate image part
-          for (const attachment of message.experimental_attachments) {
-            // Check if it's a base64 image
-            if (attachment.url && attachment.url.startsWith("data:image/")) {
-              content.push({
-                type: "image",
-                // @ts-ignore
-                image: attachment.url,
-              });
-            }
-          }
-
-          return {
-            role: message.role,
-            content: content,
-          };
-        }
-        // Regular text message
-        else {
-          return {
-            role: message.role,
-            content: message.content,
-          };
-        }
-      });
-
       await supabase.from("app_chat_history").insert({
         app_id: trimmedAppId,
         user_id: user.id,
@@ -254,41 +195,28 @@ export async function POST(req: Request) {
       });
 
       // Check if there are any active sandboxes no just hit the get endpoint
-      const bedrock = getBedrockClient();
-
-      const model = bedrock(CLAUDE_SONNET_4_MODEL);
+  
 
       // Check if there are any active sandboxes no just hit the get endpoint
 
+      console.log('messages', messages);
+
       const result = streamText({
         model: gateway(CLAUDE_SONNET_4_MODEL),
-        messages: formattedMessages,
+        providerOptions: {
+          gateway: {
+            order: ['bedrock', 'vertex', 'anthropic'], // Try Amazon Bedrock first, then Anthropic
+          },
+        },
+        messages: convertToModelMessages(messages),
         tools: tools,
-        toolCallStreaming: true,
         system: getPrompt(fileTree),
-        maxSteps: 100,
+        stopWhen:stepCountIs(100),
         experimental_telemetry: { isEnabled: true },
         onStepFinish: async (result) => {
-          console.log('Step finished:', {
-            stepType: result.stepType,
-            finishReason: result.finishReason,
-            usage: {
-              promptTokens: result.usage.promptTokens,
-              completionTokens: result.usage.completionTokens,
-              totalTokens: result.usage.totalTokens
-            },
-            text: result.text,
-            reasoning: result.reasoning,
-            sources: result.sources,
-            files: result.files,
-            toolCalls: result.toolCalls.map(toolCall => ({
-              type: toolCall.type,
-              toolCallId: toolCall.toolCallId,
-              toolName: toolCall.toolName,
-              args: JSON.stringify(toolCall.args, null, 2)
-            }))
-          });
+          console.log('step finished', result.providerMetadata);
         },
+        
         onFinish: async () => {
           // Set app status back to active
           try {
@@ -305,10 +233,11 @@ export async function POST(req: Request) {
           }
         }
       });
+    
+      // Don't await providerMetadata before returning the stream
+      // console.log('result Provider Metadata', await result.providerMetadata);
 
-      return result.toDataStreamResponse({
-        sendReasoning: true,
-      });
+      return result.toUIMessageStreamResponse();
     } catch (error) {
       // Comprehensive error handling
       console.error("Detailed chat error:", error);

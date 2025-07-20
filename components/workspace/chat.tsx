@@ -1,23 +1,13 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useEffect, useRef, useState } from "react";
+import { DefaultChatTransport } from "ai";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Image as ImageIcon, X } from "lucide-react";
-import ToolInvocation from "@/components/tool-render";
+import { Send, Loader2 } from "lucide-react";
 import { useSession } from "@/context/session-context";
 import { useApp } from "@/context/AppContext";
-import { useRouter } from "next/navigation";
-import { useImageUpload } from "@/hooks/use-image-upload";
-import {
-  fetchChatMessages,
-  saveAIMessage,
-  checkMessageLimit,
-  restoreCheckpoint,
-} from "@/lib/chat-service";
-import { updateSessionTitle } from "@/utils/client/session-utils";
-import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
+import { useState } from "react";
 
 interface ChatProps {
   sessionId: string;
@@ -32,520 +22,113 @@ export function Chat({
   onSessionError,
   containerState,
 }: ChatProps) {
-  const {
-    appId,
-    apiUrl,
-    appName,
-    supabaseProject,
-    getCurrentSessionTitle, // New function
-    updateSessionTitle: contextUpdateSessionTitle,
-
-    justCreatedSessionId,
-  } = useSession();
+  const { appId, apiUrl, appName, supabaseProject } = useSession();
   const { subscription, isAIResponding, setIsAIResponding } = useApp();
-  const router = useRouter();
+  const [input, setInput] = useState("");
 
-  const [initialMessages, setInitialMessages] = useState<any[]>([]);
-  const [booted, setBooted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [storedPrompt, setStoredPrompt] = useState<string | null>(null);
-  const [promptChecked, setPromptChecked] = useState(false);
-  const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
-    null
-  );
-  const [limitReached, setLimitReached] = useState(false);
-  const [remainingMessages, setRemainingMessages] = useState<number | null>(
-    null
-  );
-
-  const injectedPromptRef = useRef(false);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const formRef = useRef<HTMLFormElement>(null);
-
-  // Use image upload custom hook
-  const {
-    selectedImages,
-    imagePreviews,
-    isDragging,
-    handleImageSelect,
-    handleRemoveImage,
-    resetImages,
-    fileInputRef,
-    handleDragEnter,
-    handleDragLeave,
-    handleDragOver,
-    handleDrop,
-  } = useImageUpload();
-
-  // Function to reset textarea height
-  const resetTextareaHeight = () => {
-    if (inputRef.current) {
-      inputRef.current.style.height = "auto";
-    }
-  };
-
-  // 1. Load storedPrompt from localStorage
-  useEffect(() => {
-    const prompt =
-      typeof window !== "undefined"
-        ? localStorage.getItem("makeX_prompt")
-        : null;
-    if (prompt) {
-      setStoredPrompt(prompt);
-      localStorage.removeItem("makeX_prompt");
-    }
-    setPromptChecked(true);
-  }, []);
-
-  // 2. Boot logic: fetch messages only if there's no prompt
-  useEffect(() => {
-    if (!promptChecked) return;
-
-    const runBoot = async () => {
-      if (storedPrompt) {
-        setInitialMessages([]);
-        setBooted(true);
-        return;
-      }
-
-      if (!sessionId || !appId || justCreatedSessionId) {
-        setInitialMessages([]);
-        setBooted(true);
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        const messages = await fetchChatMessages(sessionId, appId);
-        setInitialMessages(messages);
-      } catch (err) {
-        console.error("[Chat Boot] Fetch error:", err);
-        onSessionError?.("Failed to fetch messages");
-      } finally {
-        setIsLoading(false);
-        setBooted(true);
-      }
-    };
-
-    runBoot();
-  }, [promptChecked, storedPrompt, sessionId, appId, justCreatedSessionId]);
-
-  // 3. Check message limits
-  useEffect(() => {
-    let isMounted = true;
-
-    const checkLimit = async () => {
-      if (!subscription) return;
-
-      const result = await checkMessageLimit(subscription);
-      if (isMounted && result) {
-        setRemainingMessages(result.remainingMessages);
-        setLimitReached(result.reachedLimit);
-      }
-    };
-
-    checkLimit();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [subscription]);
-
-  // 4. Initialize useChat
-  const { messages, input, handleInputChange, handleSubmit, error, append } =
-    useChat({
-      id: sessionId,
-      api: `/api/chat/`,
-      initialMessages: booted && !storedPrompt ? initialMessages : [],
-      body: {
-        apiUrl,
-        appId,
-        appName,
-        sessionId,
-        supabaseProject,
-        subscription,
-      },
-      maxSteps: 100,
-      onResponse: async (response) => {
-        if (response.status === 429) {
-          setIsAIResponding(false);
-          setLimitReached(true);
-        }
-      },
-      onFinish: async (message, options) => {
-        setIsAIResponding(false);
-        onResponseComplete();
-        try {
-          await saveAIMessage(sessionId, appId || "", apiUrl, options, message);
-          if (
-            messages.length === 0 &&
-            message.role === "assistant" &&
-            getCurrentSessionTitle() === "New Chat"
-          ) {
-            const newTitle = await updateSessionTitle(
-              messages[0]?.content || "",
-              message.content || "",
-              sessionId
-            );
-            if (newTitle) {
-              // Update the session title in our context
-              await contextUpdateSessionTitle(sessionId, newTitle);
-            }
-          }
-
-          const result = await checkMessageLimit(subscription);
-          if (result) {
-            const { remainingMessages, reachedLimit } = result;
-            setRemainingMessages(remainingMessages);
-            setLimitReached(reachedLimit);
-          }
-        } catch (error) {
-          console.error("Error saving AI message:", error);
-        }
-      },
-    });
-
-  // 5. Handle cleanup on unmount
-  useEffect(() => {
-    return () => {
+  const { messages, sendMessage, status, error } = useChat({
+    id: sessionId,
+    transport: new DefaultChatTransport({
+      api: "/api/chat/",
+    }),
+    onFinish: (result) => {
+      console.log("Chat onFinish called:", result.message);
       setIsAIResponding(false);
-    };
-  }, [setIsAIResponding]);
+      onResponseComplete();
+    },
+    onError: (error) => {
+      console.error("Chat onError called:", error);
+      setIsAIResponding(false);
+    },
+  });
 
-  // 6. Inject prompt once
-  useEffect(() => {
-    if (storedPrompt && !injectedPromptRef.current && booted) {
-      injectedPromptRef.current = true;
-      setIsAIResponding(true);
-      append({ content: storedPrompt, role: "user" });
-    }
-  }, [storedPrompt, booted, append, setIsAIResponding]);
-
-  // 7. Auto-scroll to bottom when messages change
-  useEffect(() => {
-    const messagesContainer = document.querySelector(".messages-container");
-    if (messagesContainer) {
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-  }, [messages, isAIResponding]);
-
-  // Handle form submission with image support
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (containerState !== "active") {
       alert("Please refresh the page and try again, your app was paused");
       return;
     }
 
-    // Don't proceed if there's nothing to send
-    if (!input.trim() && selectedImages.length === 0) {
+    if (!input.trim()) {
       return;
     }
 
     setIsAIResponding(true);
-
-    try {
-      // If there are images
-      if (selectedImages.length > 0) {
-        // For UI display only
-        const imageAttachments = imagePreviews.map((preview, index) => ({
-          name: selectedImages[index].name || `image-${index}.jpg`,
-          contentType: "image/jpeg",
-          url: preview,
-        }));
-
-        // Create properly formatted content for Claude
-        const messageContent: any[] = [];
-
-        // Add text content first (if any)
-        if (input.trim()) {
-          messageContent.push({ type: "text", text: input });
-        }
-
-        // Add each image as a separate part
-        imagePreviews.forEach((preview) => {
-          messageContent.push({
-            type: "image",
-            image: preview,
-          });
-        });
-
-        // Submit the message with both formats
-        handleSubmit(e, {
-          experimental_attachments: imageAttachments, // For UI display
-          body: {
-            apiUrl,
-            appId,
-            sessionId,
-            supabaseProject,
-            multiModal: true, // Flag to indicate we're using the multimodal format
-            messageParts: messageContent,
-          },
-        });
-
-        // Important: Clear the image state right away
-        resetImages();
-      } else {
-        // Regular text submission
-        handleSubmit(e);
+    sendMessage(
+      { text: input },
+      {
+        body: {
+          apiUrl,
+          appId,
+          appName,
+          sessionId,
+          supabase_project: supabaseProject,
+          subscription,
+        },
       }
-
-      // Reset textarea height after submission
-      resetTextareaHeight();
-    } catch (error) {
-      console.error("Error processing message with images:", error);
-      setIsAIResponding(false);
-    }
-  };
-
-  // Render message part based on type
-  const renderMessagePart = (part: any) => {
-    switch (part.type) {
-      case "text":
-        return <div className="text-sm">{part.text}</div>;
-      case "tool-invocation":
-        return (
-          <div className="overflow-x-auto max-w-full">
-            <ToolInvocation part={part} />
-          </div>
-        );
-      case "image":
-        return (
-          <img
-            src={part.image}
-            alt="Image in message"
-            className="rounded border border-border shadow-sm mt-2 mb-2"
-            style={{
-              cursor: "pointer",
-              maxHeight: "200px",
-              objectFit: "contain",
-            }}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
-  // Handle checkpoint restoration
-  const handleRestore = async (messageId: string) => {
-    try {
-      setRestoringMessageId(messageId);
-      await restoreCheckpoint(messageId, apiUrl, sessionId);
-    } catch (error) {
-      console.error("Error restoring checkpoint:", error);
-    } finally {
-      onResponseComplete();
-      setRestoringMessageId(null);
-    }
+    );
+    setInput("");
   };
 
   return (
-    <div
-      ref={chatContainerRef}
-      className="flex flex-col h-full border rounded-md overflow-hidden relative chat-component"
-      onDragEnter={handleDragEnter}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      {/* Drag overlay indicator */}
-      {isDragging && (
-        <div className="absolute top-0 left-0 right-0 bottom-0 bg-primary/20 backdrop-blur-sm z-20 flex items-center justify-center border-4 border-dashed border-primary rounded pointer-events-none">
-          <div className="text-center p-4 bg-background rounded shadow-lg">
-            <ImageIcon className="h-10 w-10 text-primary mx-auto mb-2" />
-            <p className="font-medium">Drop your images here</p>
-          </div>
-        </div>
-      )}
-
+    <div className="flex flex-col h-full border rounded-md overflow-hidden">
       {/* Messages area */}
       <div className="flex-1 overflow-hidden">
-        <div className="messages-container h-full overflow-y-auto px-4 py-4 space-y-4">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-full">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <div className="h-full overflow-y-auto px-4 py-4 space-y-4">
+          {messages.length === 0 && (
+            <div className="text-center text-muted-foreground">
+              No messages yet. Start a conversation!
             </div>
-          ) : (
-            messages.map((message, index) => (
-              <div
-                key={message.id || `message-${index}`}
-                className={`flex flex-col ${
-                  message.role === "user" ? "items-end" : "items-start"
+          )}
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex flex-col ${
+                message.role === "user" ? "items-end" : "items-start"
+              }`}
+            >
+              <Card
+                className={`max-w-[80%] ${
+                  message.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-card-foreground"
                 }`}
               >
-                <Card
-                  className={`max-w-[80%] ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-card-foreground"
-                  }`}
-                >
-                  <CardContent className="p-4 overflow-hidden">
-                    {/* Display multiple images if they exist */}
-                    {message?.experimental_attachments && (
-                      <div className="mb-3 flex flex-wrap gap-2">
-                        {message.experimental_attachments.map(
-                          (attachment: any, i: number) => (
-                            <img
-                              key={i}
-                              src={attachment.url}
-                              alt={`Uploaded image ${i + 1}`}
-                              className="rounded border border-border shadow-sm"
-                              style={{
-                                cursor: "pointer",
-                                height: "150px",
-                                objectFit: "cover",
-                              }}
-                            />
-                          )
-                        )}
-                      </div>
-                    )}
-
-                    {message.parts?.length ? (
-                      message.parts.map((part: any, i: number) => (
-                        <div key={i}>{renderMessagePart(part)}</div>
-                      ))
-                    ) : (
-                      <div className="text-sm whitespace-pre-wrap break-words">
-                        {message.content}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Restore checkpoint button */}
-                {message.role === "assistant" && (
-                  <button
-                    className="text-[10px] text-muted-foreground hover:text-foreground mt-0.5 flex items-center gap-1"
-                    onClick={() => handleRestore(message.id)}
-                    disabled={restoringMessageId !== null}
-                  >
-                    {restoringMessageId === message.id && (
-                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                    )}
-                    Restore Checkpoint
-                  </button>
-                )}
-              </div>
-            ))
-          )}
+                <CardContent className="p-4">
+                  <div className="text-sm whitespace-pre-wrap break-words">
+                    {message.parts.map((part, index) => {
+                      switch (part.type) {
+                        case "text":
+                          return <div key={`${message.id}-${index}`}>{part.text}</div>;
+                        default:
+                          return null;
+                      }
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ))}
         </div>
       </div>
 
-      {isAIResponding && <ThreeDotsLoader />}
-
-      {/* Input area - fixed at bottom */}
-      <div className="border-t border-border p-4 bg-background relative">
-        {limitReached && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
-            <div className="p-4 rounded-lg text-center">
-              <p className="font-medium text-foreground">
-                Message limit reached
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {subscription?.planName === "Free" ? (
-                  <>
-                    Try again tomorrow or{" "}
-                    <span
-                      className="text-primary cursor-pointer hover:underline"
-                      onClick={() => router.push("/dashboard/pricing")}
-                    >
-                      upgrade your plan
-                    </span>
-                  </>
-                ) : (
-                  "Please upgrade your plan for more messages"
-                )}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Image previews area */}
-        {imagePreviews.length > 0 && (
-          <div className="mb-3 flex flex-wrap gap-2">
-            {imagePreviews.map((preview, index) => (
-              <div key={index} className="relative inline-block">
-                <img
-                  src={preview}
-                  alt={`Preview ${index + 1}`}
-                  className="h-20 rounded-md object-cover border border-border"
-                />
-                <button
-                  onClick={() => handleRemoveImage(index)}
-                  className="absolute -top-2 -right-2 bg-foreground text-background rounded-full p-1 hover:bg-muted-foreground"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <form ref={formRef} onSubmit={handleFormSubmit} className="flex gap-2">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => {
-              handleInputChange(e);
-
-              // Auto-resize logic
-              e.target.style.height = "auto";
-              const newHeight = Math.min(e.target.scrollHeight, 200); // Max height of 200px
-              e.target.style.height = `${newHeight}px`;
-            }}
-            onKeyDown={(e) => {
-              // Submit on Enter (without Shift key)
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                formRef.current?.dispatchEvent(
-                  new Event("submit", { bubbles: true, cancelable: true })
-                );
-              }
-            }}
-            placeholder="Type your message or drop images anywhere..."
-            className="flex-1 min-h-[38px] max-h-[200px] resize-none py-2 px-3 rounded-md border focus-visible:outline-none bg-background "
-            rows={1}
-            disabled={isAIResponding || isLoading}
-          />
-
-          {/* File input for images (hidden) */}
+      {/* Input area */}
+      <div className="border-t border-border p-4 bg-background">
+        <form onSubmit={handleFormSubmit} className="flex gap-2">
           <input
-            type="file"
-            ref={fileInputRef}
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={handleImageSelect}
-            disabled={isAIResponding || isLoading}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your message..."
+            className="flex-1 py-2 px-3 rounded-md border focus-visible:outline-none bg-background"
+            disabled={status !== "ready"}
           />
-
-          {/* Image upload button */}
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isAIResponding || isLoading}
-            title="Upload images"
-          >
-            <ImageIcon className="h-4 w-4" />
-          </Button>
-
-          {/* Send button */}
           <Button
             type="submit"
             size="icon"
-            disabled={
-              isAIResponding ||
-              (!input.trim() && selectedImages.length === 0) ||
-              isLoading
-            }
+            disabled={!input.trim() || status !== "ready"}
           >
-            {isAIResponding ? (
+            {status === "streaming" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Send className="h-4 w-4" />
@@ -553,14 +136,10 @@ export function Chat({
           </Button>
         </form>
 
-        {/* Remaining messages counter */}
-        {remainingMessages !== null && !limitReached && (
-          <div className="text-xs text-muted-foreground flex justify-end mt-2">
-            <span>
-              {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
-              remaining{" "}
-              {subscription?.planName === "Free" ? "today" : "in this cycle"}
-            </span>
+        {error && (
+          <div className="text-red-500 text-sm mt-2">
+            An error occurred. Please try again.
+            <div className="text-xs mt-1">Error: {error.message}</div>
           </div>
         )}
       </div>
