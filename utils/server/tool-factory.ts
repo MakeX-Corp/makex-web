@@ -16,7 +16,7 @@ export function createTools(config: ToolConfig = {}) {
   const tools: Record<string, any> = {
     readFile: tool({
       description: "Read contents of a file",
-      parameters: z.object({
+      inputSchema: z.object({
         path: z.string().describe("The path to the file to read"),
       }),
       execute: async ({ path }) => {
@@ -34,7 +34,7 @@ export function createTools(config: ToolConfig = {}) {
 
     listDirectory: tool({
       description: "List contents of a directory",
-      parameters: z.object({
+      inputSchema: z.object({
         path: z
           .string()
           .describe("The path to list contents from")
@@ -55,7 +55,7 @@ export function createTools(config: ToolConfig = {}) {
 
     createDirectory: tool({
       description: "Create a new directory",
-      parameters: z.object({
+      inputSchema: z.object({
         path: z.string().describe("The path where to create the directory"),
       }),
       execute: async ({ path }) => {
@@ -73,7 +73,7 @@ export function createTools(config: ToolConfig = {}) {
 
     deleteDirectory: tool({
       description: "Delete a directory and its contents",
-      parameters: z.object({
+      inputSchema: z.object({
         path: z.string().describe("The path of the directory to delete"),
       }),
       execute: async ({ path }) => {
@@ -91,7 +91,7 @@ export function createTools(config: ToolConfig = {}) {
 
     installPackages: tool({
       description: "Install yarn packages",
-      parameters: z.object({
+      inputSchema: z.object({
         packages: z
           .array(z.string())
           .describe("List of packages to install in an array"),
@@ -111,35 +111,11 @@ export function createTools(config: ToolConfig = {}) {
       },
     }),
 
-    insertText: tool({
-      description: "Insert text at a specific line in a file",
-      parameters: z.object({
-        path: z.string().describe("The path to the file"),
-        insert_line: z
-          .number()
-          .describe("The line number where to insert the text"),
-        new_str: z.string().describe("The text to insert"),
-      }),
-      execute: async ({ path, insert_line, new_str }) => {
-        try {
-          const data = await apiClient.put("/file/insert", {
-            path,
-            insert_line,
-            new_str,
-          });
-          return { success: true, data };
-        } catch (error: any) {
-          return {
-            success: false,
-            error: error.message || "Unknown error occurred",
-          };
-        }
-      },
-    }),
+
 
     writeFile: tool({
       description: "Write content to a file",
-      parameters: z.object({
+      inputSchema: z.object({
         path: z.string().describe("The path where to write the file"),
         content: z.string().describe("The content to write to the file").default(""),
       }),
@@ -161,7 +137,7 @@ export function createTools(config: ToolConfig = {}) {
 
     deleteFile: tool({
       description: "Delete a file",
-      parameters: z.object({
+      inputSchema: z.object({
         path: z.string().describe("The path of the file to delete"),
       }),
       execute: async ({ path }) => {
@@ -177,9 +153,33 @@ export function createTools(config: ToolConfig = {}) {
       },
     }),
 
+    editFile: tool({
+      description: "Edit a file by replacing a specific string or create a new file",
+      inputSchema: z.object({
+        path: z.string().describe("The path of the file to edit or create"),
+        old_str: z.string().optional().describe("The exact string to replace (must match exactly once in the file)"),
+        new_str: z.string().describe("The new content to write or replace with"),
+      }),
+      execute: async ({ path, old_str, new_str }) => {
+        try {
+          const data = await apiClient.put("/file/edit", {
+            path,
+            old_str,
+            new_str,
+          });
+          return { success: true, data };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || "Unknown error occurred",
+          };
+        }
+      },
+    }),
+
     getFileTree: tool({
       description: "Get the directory tree structure",
-      parameters: z.object({
+      inputSchema: z.object({
         path: z
           .string()
           .describe("The path to get the directory tree from")
@@ -200,7 +200,7 @@ export function createTools(config: ToolConfig = {}) {
 
     grepSearch: tool({
       description: "Search for text patterns in files using regex",
-      parameters: z.object({
+      inputSchema: z.object({
         pattern: z.string().describe("The regex pattern to search for"),
         include_pattern: z.string().describe("File pattern to include in search (e.g. '*.ts')").default("*"),
         case_sensitive: z.boolean().describe("Whether the search should be case sensitive").default(false),
@@ -224,7 +224,7 @@ export function createTools(config: ToolConfig = {}) {
 
     getExpoDocumentation: tool({
       description: "Search the Expo documentation for relevant answers whenever you install expo related packages or need to know more about the expo ecosystem.",
-      parameters: z.object({
+      inputSchema: z.object({
         query: z.string().describe("The user's question or technical topic"),
       }),
       execute: async ({ query }) => {
@@ -235,7 +235,7 @@ export function createTools(config: ToolConfig = {}) {
 
     getOpenAIDocumentation: tool({
       description: "Search the OpenAI documentation when you need to integrate OpenAI APIs into your project for any AI features",
-      parameters: z.object({
+      inputSchema: z.object({
         query: z.string().describe("The user's question or technical topic"),
       }),
       execute: async ({ query }) => {
@@ -246,7 +246,7 @@ export function createTools(config: ToolConfig = {}) {
 
     getConvexDocumentation: tool({
       description: "Search the Convex documentation when you need to integrate Convex into your project for any backend functionalities",
-      parameters: z.object({
+      inputSchema: z.object({
         query: z.string().describe("The user's question or technical topic"),
       }),
       execute: async ({ query }) => {
@@ -257,7 +257,7 @@ export function createTools(config: ToolConfig = {}) {
 
     getConvexAuthDocs: tool({
       description: "Search the Convex documentation for relevant answers whenever you need to know more about the Convex authentication process",
-      parameters: z.object({
+      inputSchema: z.object({
         query: z.string().describe("The user's question or technical topic"),
       }),
       execute: async ({ query }) => {
@@ -267,7 +267,7 @@ export function createTools(config: ToolConfig = {}) {
 
     setupConvexAuth: tool({
       description: "Setup Convex authentication for your project but before you do that , make sure to install the dependencies first and then run this",
-      parameters: z.object({}),
+      inputSchema: z.object({}),
       execute: async () => { 
         try {
           const command = "npx @convex-dev/auth --allow-dirty-git-state";
@@ -281,7 +281,7 @@ export function createTools(config: ToolConfig = {}) {
 
     linterRun: tool({
       description: "Run the linter on specified file or directory",
-      parameters: z.object({
+      inputSchema: z.object({
         path: z.string().describe("The file or directory path to lint").optional(),
       }),
       execute: async ({ path }) => { 
@@ -299,7 +299,7 @@ export function createTools(config: ToolConfig = {}) {
 
     scrapeWebContent: tool({
       description: "Scrape web content from a URL using Firecrawl and return it in a format suitable for AI processing whenever a url is provided",
-      parameters: z.object({
+      inputSchema: z.object({
         url: z.string().describe("The URL to scrape"),
         formats: z.array(z.enum(["markdown", "html", "rawHtml", "content", "links", "screenshot", "screenshot@fullPage", "extract", "json", "changeTracking"])).describe("The formats to return").default(["markdown"]),
         actions: z.array(z.object({
@@ -344,7 +344,7 @@ export function createTools(config: ToolConfig = {}) {
 
     webSearch: tool({
       description: "Search the web for real-time information and get up-to-date answers with citations",
-      parameters: z.object({
+      inputSchema: z.object({
         query: z.string().describe("The search query to find relevant information"),
       }),
       execute: async ({ query }) => {
@@ -360,7 +360,7 @@ export function createTools(config: ToolConfig = {}) {
 
     readLogs: tool({
       description: "Read log files: expo_logs.txt or convex_logs.txt. log_type: 'expo' or 'convex' (required).",
-      parameters: z.object({
+      inputSchema: z.object({
         log_type: z.enum(["expo", "convex"]).describe("Type of log file: 'expo' or 'convex' (required)"),
       }),
       execute: async ({ log_type }) => {

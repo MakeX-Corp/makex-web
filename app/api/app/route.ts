@@ -29,6 +29,8 @@ export async function POST(request: Request) {
     const appName = generateAppName();
     const displayName = await generateDisplayName(prompt, appName);
 
+    console.log('Generated displayName:', displayName);
+
     timings.authAndSetup = performance.now() - startTime;
 
     // Begin transaction to ensure both app and session are created atomically
@@ -88,14 +90,9 @@ export async function POST(request: Request) {
       appName: appName,
     });
 
-    console.log("apiHost", apiHost);
-
-    console.log("appHost", appHost);
-
     timings.containerInitiation = performance.now() - containerStartTime;
 
-    console.log("e2b containerId", containerId);
-    console.log("e2b apiUrl", apiHost);
+
 
     // Retry mechanism for API host
     const maxRetries = 10;
@@ -109,11 +106,6 @@ export async function POST(request: Request) {
         if (response.status !== 502) {
           break;
         }
-        console.log(
-          `Attempt ${
-            retryCount + 1
-          } failed with 502, retrying in ${retryDelay}ms...`
-        );
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
         retryCount++;
       } catch (error) {
@@ -127,7 +119,6 @@ export async function POST(request: Request) {
       console.log("Max retries reached, proceeding with container setup...");
     }
 
-    console.log("response", response);
 
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
@@ -226,7 +217,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const appId = searchParams.get("id");
 
-    console.log("appId", appId);
 
     // If an appId is provided, get just that specific app
     if (appId) {

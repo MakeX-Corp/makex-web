@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,9 +38,8 @@ export function Chat({
     apiUrl,
     appName,
     supabaseProject,
-    getCurrentSessionTitle, // New function
+    getCurrentSessionTitle,
     updateSessionTitle: contextUpdateSessionTitle,
-
     justCreatedSessionId,
   } = useSession();
   const { subscription, isAIResponding, setIsAIResponding } = useApp();
@@ -50,13 +50,10 @@ export function Chat({
   const [isLoading, setIsLoading] = useState(false);
   const [storedPrompt, setStoredPrompt] = useState<string | null>(null);
   const [promptChecked, setPromptChecked] = useState(false);
-  const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
-    null
-  );
+  const [restoringMessageId, setRestoringMessageId] = useState<string | null>(null);
   const [limitReached, setLimitReached] = useState(false);
-  const [remainingMessages, setRemainingMessages] = useState<number | null>(
-    null
-  );
+  const [remainingMessages, setRemainingMessages] = useState<number | null>(null);
+  const [input, setInput] = useState("");
 
   const injectedPromptRef = useRef(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -153,58 +150,55 @@ export function Chat({
   }, [subscription]);
 
   // 4. Initialize useChat
-  const { messages, input, handleInputChange, handleSubmit, error, append } =
-    useChat({
-      id: sessionId,
-      api: `/api/chat/`,
-      initialMessages: booted && !storedPrompt ? initialMessages : [],
-      body: {
-        apiUrl,
-        appId,
-        appName,
-        sessionId,
-        supabaseProject,
-        subscription,
-      },
-      maxSteps: 100,
-      onResponse: async (response) => {
-        if (response.status === 429) {
-          setIsAIResponding(false);
-          setLimitReached(true);
-        }
-      },
-      onFinish: async (message, options) => {
-        setIsAIResponding(false);
-        onResponseComplete();
-        try {
-          await saveAIMessage(sessionId, appId || "", apiUrl, options, message);
-          if (
+  const { messages, sendMessage, status, error } = useChat({
+    id: sessionId,
+    transport: new DefaultChatTransport({
+      api: "/api/chat/",
+    }),
+    onFinish: (result) => {
+      console.log("Chat onFinish called:", result.message);
+      setIsAIResponding(false);
+      onResponseComplete();
+      // Save AI message and update session title
+      saveAIMessage(sessionId, appId || "", apiUrl, {}, result.message).catch((error) => {
+        console.error("Error saving AI message:", error);
+      });
+      
+      // Update session title if needed
+                if (
             messages.length === 0 &&
-            message.role === "assistant" &&
+            result.message.role === "assistant" &&
             getCurrentSessionTitle() === "New Chat"
           ) {
-            const newTitle = await updateSessionTitle(
-              messages[0]?.content || "",
-              message.content || "",
+            // Extract text content from message parts
+            const userMessageText = messages[0]?.parts?.find(part => part.type === "text")?.text || "";
+            const assistantMessageText = result.message.parts?.find(part => part.type === "text")?.text || "";
+            
+            updateSessionTitle(
+              userMessageText,
+              assistantMessageText,
               sessionId
-            );
-            if (newTitle) {
-              // Update the session title in our context
-              await contextUpdateSessionTitle(sessionId, newTitle);
-            }
+            ).then((newTitle) => {
+              if (newTitle) {
+                contextUpdateSessionTitle(sessionId, newTitle);
+              }
+            });
           }
 
-          const result = await checkMessageLimit(subscription);
-          if (result) {
-            const { remainingMessages, reachedLimit } = result;
-            setRemainingMessages(remainingMessages);
-            setLimitReached(reachedLimit);
-          }
-        } catch (error) {
-          console.error("Error saving AI message:", error);
+      // Check message limits
+      checkMessageLimit(subscription).then((result) => {
+        if (result) {
+          const { remainingMessages, reachedLimit } = result;
+          setRemainingMessages(remainingMessages);
+          setLimitReached(reachedLimit);
         }
-      },
-    });
+      });
+    },
+    onError: (error) => {
+      console.error("Chat onError called:", error);
+      setIsAIResponding(false);
+    },
+  });
 
   // 5. Handle cleanup on unmount
   useEffect(() => {
@@ -218,9 +212,21 @@ export function Chat({
     if (storedPrompt && !injectedPromptRef.current && booted) {
       injectedPromptRef.current = true;
       setIsAIResponding(true);
-      append({ content: storedPrompt, role: "user" });
+      sendMessage(
+        { text: storedPrompt },
+        {
+          body: {
+            apiUrl,
+            appId,
+            appName,
+            sessionId,
+            supabase_project: supabaseProject,
+            subscription,
+          },
+        }
+      );
     }
-  }, [storedPrompt, booted, append, setIsAIResponding]);
+  }, [storedPrompt, booted, sendMessage, setIsAIResponding, apiUrl, appId, appName, sessionId, supabaseProject, subscription]);
 
   // 7. Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -233,6 +239,7 @@ export function Chat({
   // Handle form submission with image support
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (containerState !== "active") {
       alert("Please refresh the page and try again, your app was paused");
       return;
@@ -272,26 +279,44 @@ export function Chat({
         });
 
         // Submit the message with both formats
-        handleSubmit(e, {
-          experimental_attachments: imageAttachments, // For UI display
-          body: {
-            apiUrl,
-            appId,
-            sessionId,
-            supabaseProject,
-            multiModal: true, // Flag to indicate we're using the multimodal format
-            messageParts: messageContent,
-          },
-        });
+        sendMessage(
+          { text: input },
+          {
+            body: {
+              apiUrl,
+              appId,
+              appName,
+              sessionId,
+              supabase_project: supabaseProject,
+              subscription,
+              experimental_attachments: imageAttachments, // For UI display
+              multiModal: true, // Flag to indicate we're using the multimodal format
+              messageParts: messageContent,
+            },
+          }
+        );
 
         // Important: Clear the image state right away
         resetImages();
       } else {
         // Regular text submission
-        handleSubmit(e);
+        sendMessage(
+          { text: input },
+          {
+            body: {
+              apiUrl,
+              appId,
+              appName,
+              sessionId,
+              supabase_project: supabaseProject,
+              subscription,
+            },
+          }
+        );
       }
 
-      // Reset textarea height after submission
+      // Clear input and reset textarea height after submission
+      setInput("");
       resetTextareaHeight();
     } catch (error) {
       console.error("Error processing message with images:", error);
@@ -301,15 +326,19 @@ export function Chat({
 
   // Render message part based on type
   const renderMessagePart = (part: any) => {
+    
+    // Handle tool types (anything starting with "tool-")
+    if (part.type.startsWith("tool-")) {
+      return (
+        <div className="overflow-x-auto max-w-full">
+          <ToolInvocation part={part} />
+        </div>
+      );
+    }
+    
     switch (part.type) {
       case "text":
         return <div className="text-sm">{part.text}</div>;
-      case "tool-invocation":
-        return (
-          <div className="overflow-x-auto max-w-full">
-            <ToolInvocation part={part} />
-          </div>
-        );
       case "image":
         return (
           <img
@@ -367,6 +396,10 @@ export function Chat({
             <div className="flex justify-center items-center h-full">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
+          ) : messages.length === 0 && !storedPrompt ? (
+            <div className="text-center text-muted-foreground">
+              No messages yet. Start a conversation!
+            </div>
           ) : (
             messages.map((message, index) => (
               <div
@@ -383,34 +416,13 @@ export function Chat({
                   }`}
                 >
                   <CardContent className="p-4 overflow-hidden">
-                    {/* Display multiple images if they exist */}
-                    {message?.experimental_attachments && (
-                      <div className="mb-3 flex flex-wrap gap-2">
-                        {message.experimental_attachments.map(
-                          (attachment: any, i: number) => (
-                            <img
-                              key={i}
-                              src={attachment.url}
-                              alt={`Uploaded image ${i + 1}`}
-                              className="rounded border border-border shadow-sm"
-                              style={{
-                                cursor: "pointer",
-                                height: "150px",
-                                objectFit: "cover",
-                              }}
-                            />
-                          )
-                        )}
-                      </div>
-                    )}
-
                     {message.parts?.length ? (
                       message.parts.map((part: any, i: number) => (
                         <div key={i}>{renderMessagePart(part)}</div>
                       ))
                     ) : (
                       <div className="text-sm whitespace-pre-wrap break-words">
-                        {message.content}
+                        {message.parts?.find(part => part.type === "text")?.text || ""}
                       </div>
                     )}
                   </CardContent>
@@ -490,7 +502,7 @@ export function Chat({
             ref={inputRef}
             value={input}
             onChange={(e) => {
-              handleInputChange(e);
+              setInput(e.target.value);
 
               // Auto-resize logic
               e.target.style.height = "auto";
@@ -507,7 +519,7 @@ export function Chat({
               }
             }}
             placeholder="Type your message or drop images anywhere..."
-            className="flex-1 min-h-[38px] max-h-[200px] resize-none py-2 px-3 rounded-md border focus-visible:outline-none bg-background "
+            className="flex-1 min-h-[38px] max-h-[200px] resize-none py-2 px-3 rounded-md border focus-visible:outline-none bg-background"
             rows={1}
             disabled={isAIResponding || isLoading}
           />
@@ -561,6 +573,13 @@ export function Chat({
               remaining{" "}
               {subscription?.planName === "Free" ? "today" : "in this cycle"}
             </span>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-red-500 text-sm mt-2">
+            An error occurred. Please try again.
+            <div className="text-xs mt-1">Error: {error.message}</div>
           </div>
         )}
       </div>
