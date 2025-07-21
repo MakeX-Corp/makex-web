@@ -1,5 +1,10 @@
 import { task } from "@trigger.dev/sdk/v3";
-import { convertToModelMessages, generateText, stepCountIs, type UIMessage } from "ai";
+import {
+  convertToModelMessages,
+  generateText,
+  stepCountIs,
+  type UIMessage,
+} from "ai";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
@@ -163,20 +168,18 @@ export const aiAgent = task({
         toolCount: tools.length,
       });
 
-      
-
       // Generate response using Vercel AI SDK
       const result = await generateText({
         model: gateway(CLAUDE_SONNET_4_MODEL),
         providerOptions: {
           gateway: {
-            order: ["bedrock", "vertex", "anthropic"],
+            order: ["anthropic", "bedrock", "vertex"],
           },
         },
         messages: convertToModelMessages(messages),
         tools: tools,
         system: getPrompt(fileTree),
-        stopWhen:stepCountIs(100),
+        stopWhen: stepCountIs(100),
       });
 
       // Calculate cost based on both input and output tokens
