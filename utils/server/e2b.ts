@@ -109,6 +109,8 @@ export async function killDefaultExpo(sandboxId: string) {
   }
 }
 
+
+
 export async function writeConvexConfigInContainer(
   sandboxId: string,
   {
@@ -138,6 +140,73 @@ export async function writeConvexConfigInContainer(
     envWritten: ENV_FILE,
   };
 }
+
+export async function deployConvexProdInContainer(
+  sandboxId: string,
+  convexUrl: string,
+  gitRepoId: string,
+) {
+  const sbx = await Sandbox.connect(sandboxId);
+  const gitRepoDir = `/app/deploy-app`;
+
+  const gitRepoUrl = `https://${process.env.FREESTYLE_IDENTITY_ID}:${process.env.FREESTYLE_IDENTITY_TOKEN}@git.freestyle.sh/${gitRepoId}`;
+
+  console.log("[ConvexDeploy] Starting deployment in container:", sandboxId);
+
+  const CONFIG_DIR = "/root/.convex";
+  const CONFIG_PATH = `${CONFIG_DIR}/config.json`;
+
+  console.log("[ConvexDeploy] Writing Convex config...");
+  const writeConfigCommand = [
+    `sudo mkdir -p ${CONFIG_DIR}`,
+    `echo '{ "accessToken": "${process.env.CONVEX_AUTH_TOKEN}" }' | sudo tee ${CONFIG_PATH} > /dev/null`,
+  ].join(" && ");
+  await sbx.commands.run(writeConfigCommand);
+  console.log("[ConvexDeploy] Convex config written");
+
+  console.log("[ConvexDeploy] Cloning git repo...");
+  await sbx.commands.run(`sudo git clone ${gitRepoUrl} ${gitRepoDir}`);
+  console.log("[ConvexDeploy] Git repo cloned");
+
+  const convexDeployment = `dev:${new URL(convexUrl).hostname.split(".")[0]}`;
+
+  // set the env vars
+  const envFile = `${gitRepoDir}/.env.local`;
+  const envCommand = `sudo echo -e "CONVEX_DEPLOYMENT=${convexDeployment}\\nEXPO_PUBLIC_CONVEX_URL=${convexUrl}" | sudo tee ${envFile} > /dev/null`;
+  await sbx.commands.run(envCommand);
+  console.log("[ConvexDeploy] Env variables set");
+
+  // cat the env file
+  const envLogs = await sbx.commands.run(`cat ${envFile}`);
+  console.log("[ConvexDeploy] Env file:", envLogs);
+
+  // install convex 
+  const installConvexCommand = `sudo npm install -g convex`;
+  await sbx.commands.run(installConvexCommand);
+  console.log("[ConvexDeploy] Convex installed");
+
+  // run yarn install
+  const installPackagesCommand = `sudo yarn install`;
+  await sbx.commands.run(installPackagesCommand, {
+    cwd: gitRepoDir,
+  });
+  console.log("[ConvexDeploy] Yarn installed");
+
+  // deploy convex prod
+  const deployConvexCommand = `sudo npx convex deploy --yes > ~/convex_prod_logs.txt 2>&1`;
+  await sbx.commands.run(deployConvexCommand , {
+    cwd: gitRepoDir,
+  });
+
+  // cat the logs
+  const logs = await sbx.commands.run(`cat ~/convex_prod_logs.txt`);
+  console.log("[ConvexDeploy] Convex prod logs:", logs);
+
+  console.log("[ConvexDeploy] Convex deployed");
+  
+}
+
+
 
 export async function startConvexInContainer(sandboxId: string) {
   const sbx = await Sandbox.connect(sandboxId);

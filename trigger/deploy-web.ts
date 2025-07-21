@@ -4,6 +4,7 @@ import { dub } from "@/utils/server/dub";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
 import { deployWebFromGit } from "@/utils/server/freestyle";
 import { deployConvexProject } from "@/utils/server/convex";
+import { createE2BContainer, deployConvexProdInContainer, killE2BContainer } from "@/utils/server/e2b";
 
 
 async function shareIdGenerator(appId: string, supabase: any): Promise<string> {
@@ -125,12 +126,14 @@ async function updateDeploymentStatus(
   deploymentId: string,
   status: "uploading" | "completed" | "failed",
   deploymentUrl?: string,
-  easUrl?: string
+  easUrl?: string,
+  freestyleDeploymentId?: string
 ) {
   try {
     const updateData: any = { status };
     if (deploymentUrl) updateData.web_url = deploymentUrl;
     if (easUrl) updateData.app_url = easUrl;
+    if (freestyleDeploymentId) updateData.deployment_id = freestyleDeploymentId;
 
     const { data, error } = await supabase
       .from("user_deployments")
@@ -160,7 +163,7 @@ async function updateConvexProdUrl(
 ) {
   try {
     const convexProdUrl = `https://${deploymentName}.convex.cloud`;
-    
+
     const { error } = await supabase
       .from("user_apps")
       .update({
@@ -181,6 +184,65 @@ async function updateConvexProdUrl(
   }
 }
 
+async function deployConvexInContainer(
+  convexDevUrl: string,
+  gitRepoId: string
+) {
+  let containerId: string | undefined;
+
+  try {
+    console.log("[DeployWeb] Creating E2B container for Convex deployment...");
+
+    const containerResult = await createE2BContainer(
+      {
+        userId: 'convex-container',
+        appId: 'convex-container',
+        appName: 'convex-container',
+      }
+    );
+    containerId = containerResult.containerId;
+
+    console.log("[DeployWeb] E2B container created:", containerId);
+
+    // Deploy Convex prod in the container
+    console.log("[DeployWeb] Deploying Convex prod in container...");
+    await deployConvexProdInContainer(
+      containerId,
+      convexDevUrl,
+      gitRepoId
+    );
+
+    console.log("[DeployWeb] Convex prod deployment initiated successfully");
+
+    // Kill the container
+    console.log("[DeployWeb] Killing the container...");
+    await killE2BContainer(containerId);
+
+    return {
+      status: "success",
+      containerId: containerId,
+    };
+  } catch (error: any) {
+    console.error("[DeployWeb] Failed to deploy Convex in container:", error.message);
+
+    // Kill the container if it was created
+    if (containerId) {
+      console.log("[DeployWeb] Killing the container due to failure...");
+      try {
+        await killE2BContainer(containerId);
+      } catch (killError: any) {
+        console.error("[DeployWeb] Failed to kill container:", killError.message);
+      }
+    }
+
+    return {
+      status: "error",
+      error: error.message || "Unknown error",
+      containerId: containerId,
+    };
+  }
+}
+
 export const deployWeb = task({
   id: "deploy-web",
   retry: {
@@ -197,7 +259,7 @@ export const deployWeb = task({
       console.log(`[DeployWeb] Fetching app record for appId: ${appId}`);
       const { data: appRecord } = await supabase
         .from("user_apps")
-        .select("api_url,user_id,app_name,git_repo_id,convex_project_id")
+        .select("api_url,user_id,app_name,git_repo_id,convex_project_id,convex_dev_url")
         .eq("id", appId)
         .single();
 
@@ -205,7 +267,7 @@ export const deployWeb = task({
         throw new Error("App record not found");
       }
 
-      const { user_id, app_name, git_repo_id, convex_project_id } = appRecord;
+      const { user_id, app_name, git_repo_id, convex_project_id, convex_dev_url } = appRecord;
       console.log(
         `[DeployWeb] Found app record - name: ${app_name}, userId: ${user_id}, gitRepoId: ${git_repo_id}, convexProjectId: ${convex_project_id}`
       );
@@ -222,7 +284,7 @@ export const deployWeb = task({
           app_id: appId,
           user_id: user_id,
           status: "uploading",
-          type: "web",
+          type: "freestyle",
         })
         .select()
         .single();
@@ -250,16 +312,23 @@ export const deployWeb = task({
       try {
         // Deploy Convex project first if it exists
         let convexProdUrl: string | undefined;
-        if (convex_project_id) {
-          console.log(`[DeployWeb] Starting Convex deployment for project: ${convex_project_id}`);
+        console.log(`[DeployWeb] Starting Convex deployment for project: ${convex_project_id}`);
+        try {
+          const convexDeployment = await deployConvexProject({
+            projectId: convex_project_id,
+          });
+
+          console.log(`[DeployWeb] Convex deployment completed successfully`);
+          console.log(`[DeployWeb] Convex deployment name:`, convexDeployment);
+
           try {
-            const convexDeployment = await deployConvexProject({
-              projectId: convex_project_id,
-            });
-            
-            console.log(`[DeployWeb] Convex deployment completed successfully`);
-            console.log(`[DeployWeb] Convex deployment name:`, convexDeployment);
-            
+            const containerResult = await deployConvexInContainer(
+              convex_dev_url,
+              git_repo_id
+            );
+
+       
+
             // Update the app record with the convex_prod_url
             convexProdUrl = await updateConvexProdUrl(
               supabase,
@@ -270,22 +339,20 @@ export const deployWeb = task({
             console.error("[DeployWeb] Error during Convex deployment:", error);
             // Don't fail the entire deployment if Convex deployment fails
           }
-        } else {
-          console.log(`[DeployWeb] No Convex project ID found, skipping Convex deployment`);
+        } catch (error) {
+          console.error("[DeployWeb] Error during Convex project deployment:", error);
+          // Don't fail the entire deployment if Convex deployment fails
         }
 
         // Deploy to Freestyle using Git repository
-        console.log(`[DeployWeb] Starting Freestyle deployment`);
 
-        console.log(`[DeployWeb] Convex prod url:`, convexProdUrl);
-        
         // Set environment variables for the deployment
         const envVars: Record<string, string> = {
           ...(convexProdUrl && { EXPO_PUBLIC_CONVEX_URL: convexProdUrl }),
         };
-        
+
         console.log(`[DeployWeb] Setting environment variables:`, envVars);
-        
+
         const deploymentResult = await deployWebFromGit(
           git_repo_id,
           [`${app_name}.style.dev`],
@@ -310,7 +377,8 @@ export const deployWeb = task({
           deploymentId,
           "completed",
           deploymentUrl,
-          easUrl
+          easUrl,
+          deploymentResult.deploymentId
         );
 
         // Handle URL mapping
@@ -331,7 +399,12 @@ export const deployWeb = task({
           convexProdUrl,
           dubLink,
         };
-      } catch (error) {
+      }
+      catch (error) {
+        if (deploymentId) {
+          console.log(`[DeployWeb] Updating deployment status to failed`);
+          await updateDeploymentStatus(supabase, deploymentId, "failed");
+        }
         console.error("[DeployWeb] Error during deployment process:", error);
         // Update status to failed
         await updateDeploymentStatus(supabase, deploymentId, "failed");

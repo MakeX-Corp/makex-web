@@ -4,7 +4,7 @@ import { embedMany } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { supabase } from "@/utils/supabase/basic"; // update path as needed
 
-const embeddingModel = openai.embedding("text-embedding-3-small");
+const embeddingModel = openai.textEmbeddingModel("text-embedding-3-small");
 
 function chunkText(text: string, size = 800, overlap = 100): string[] {
   const chunks: string[] = [];
