@@ -44,7 +44,7 @@ export const configureConvex = task({
 
     const deploymentName = convex.deploymentName;
     const devUrl = convex.prodUrl; //very confusing, but this is correct since we are using "dev" deployment
-
+    const devAdminKey = convex.adminKey;
     const projectId = convex.projectId;
     console.log(
       "[configureConvex] Updating app with Convex info",
@@ -56,6 +56,7 @@ export const configureConvex = task({
       .update({
         convex_dev_url: devUrl,
         convex_project_id: projectId,
+        convex_dev_admin_key: devAdminKey,
       })
       .eq("id", appId);
 

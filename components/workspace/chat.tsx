@@ -263,96 +263,6 @@ export function Chat({
     }
   }, [messages, isAIResponding]);
 
-  /*
-  // Handle form submission with image support
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (containerState !== "active") {
-      alert("Please refresh the page and try again, your app was paused");
-      return;
-    }
-
-    // Don't proceed if there's nothing to send
-    if (!input.trim() && selectedImages.length === 0) {
-      return;
-    }
-
-    setIsAIResponding(true);
-
-    try {
-      // If there are images
-      if (selectedImages.length > 0) {
-        // For UI display only
-        const imageAttachments = imagePreviews.map((preview, index) => ({
-          name: selectedImages[index].name || `image-${index}.jpg`,
-          contentType: "image/jpeg",
-          url: preview,
-        }));
-
-        // Create properly formatted content for Claude
-        const messageContent: any[] = [];
-
-        // Add text content first (if any)
-        if (input.trim()) {
-          messageContent.push({ type: "text", text: input });
-        }
-
-        // Add each image as a separate part
-        imagePreviews.forEach((preview) => {
-          messageContent.push({
-            type: "image",
-            image: preview,
-          });
-        });
-
-        // Submit the message with both formats
-        sendMessage(
-          { text: input },
-          {
-            body: {
-              apiUrl,
-              appId,
-              appName,
-              sessionId,
-              supabase_project: supabaseProject,
-              subscription,
-              experimental_attachments: imageAttachments, // For UI display
-              multiModal: true, // Flag to indicate we're using the multimodal format
-              messageParts: messageContent,
-            },
-          }
-        );
-
-        // Important: Clear the image state right away
-        resetImages();
-      } else {
-        // Regular text submission
-        sendMessage(
-          { text: input },
-          {
-            body: {
-              apiUrl,
-              appId,
-              appName,
-              sessionId,
-              supabase_project: supabaseProject,
-              subscription,
-            },
-          }
-        );
-      }
-
-      // Clear input and reset textarea height after submission
-      setInput("");
-      resetTextareaHeight();
-    } catch (error) {
-      console.error("Error processing message with images:", error);
-      setIsAIResponding(false);
-    }
-  };
-  */
-  // ───────── REPLACE THE WHOLE FUNCTION ─────────
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -407,40 +317,6 @@ export function Chat({
     }
   };
 
-  /*
-  // Render message part based on type
-  const renderMessagePart = (part: any) => {
-    // Handle tool types (anything starting with "tool-")
-    if (part.type.startsWith("tool-")) {
-      return (
-        <div className="overflow-x-auto max-w-full">
-          <ToolInvocation part={part} />
-        </div>
-      );
-    }
-
-    switch (part.type) {
-      case "text":
-        return <div className="text-sm">{part.text}</div>;
-      case "image":
-        return (
-          <img
-            src={part.image}
-            alt="Image in message"
-            className="rounded border border-border shadow-sm mt-2 mb-2"
-            style={{
-              cursor: "pointer",
-              maxHeight: "200px",
-              objectFit: "contain",
-            }}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-*/
-  // ───────── REPLACE ENTIRE renderMessagePart FUNCTION ─────────
   const renderMessagePart = (part: any) => {
     if (part.type.startsWith("tool-")) {
       return (

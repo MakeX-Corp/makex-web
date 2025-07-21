@@ -1,15 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-
+import { useSession } from "@/context/session-context";
 export function ConvexDashboardEmbed() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  // Hardcoded values for now
-  const deploymentName = "accurate-rhinoceros-131";
-  const deploymentUrl = `https://${deploymentName}.convex.cloud`;
-  const adminKey =
-    "accurate-rhinoceros-131|01c252cf473a15e8ff594eea6035435c8748df90def6f7544419a9c8daaa0c7edc0e02f243691f";
+  const { convexDevUrl, convexProjectId, convexDevAdminKey } = useSession();
+  if (!convexDevUrl || !convexProjectId || !convexDevAdminKey) return;
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -17,9 +13,9 @@ export function ConvexDashboardEmbed() {
       iframeRef.current?.contentWindow?.postMessage(
         {
           type: "dashboard-credentials",
-          adminKey,
-          deploymentUrl,
-          deploymentName,
+          adminKey: convexDevAdminKey,
+          deploymentUrl: convexDevUrl,
+          deploymentName: convexProjectId,
         },
         "*"
       );
@@ -27,7 +23,7 @@ export function ConvexDashboardEmbed() {
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [deploymentName, deploymentUrl, adminKey]);
+  }, [convexDevUrl, convexProjectId, convexDevAdminKey]);
 
   return (
     <iframe

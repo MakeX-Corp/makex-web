@@ -41,6 +41,11 @@ interface SessionContextType {
   currentSessionError: string | null;
   justCreatedSessionId: string | null;
 
+  // Convex
+  convexDevUrl: string | null;
+  convexProjectId: string | null;
+  convexDevAdminKey: string | null;
+
   // Actions
   loadSessions: (appId: string) => Promise<void>;
   switchSession: (sessionId: string) => Promise<void>;
@@ -70,6 +75,11 @@ export function SessionProvider({
   const [appName, setAppName] = useState<string>("");
   const [apiUrl, setApiUrl] = useState<string>("");
   const [appUrl, setAppUrl] = useState<string>("");
+  const [convexDevUrl, setConvexDevUrl] = useState<string | null>(null);
+  const [convexProjectId, setConvexProjectId] = useState<string | null>(null);
+  const [convexDevAdminKey, setConvexDevAdminKey] = useState<string | null>(
+    null
+  );
   const [supabaseProject, setSupabaseProject] = useState<any>(null);
   const [isAppReady, setIsAppReady] = useState<boolean>(false);
 
@@ -142,6 +152,14 @@ export function SessionProvider({
       // Set the configuration values from database
       setApiUrl(data.api_url || "");
       setAppUrl(data.app_url || "");
+
+      console.log("data =========", data);
+      console.log("data.convex_dev_url", data.convex_dev_url);
+      console.log("data.convex_project_id", data.convex_project_id);
+      console.log("data.convex_dev_admin_key", data.convex_dev_admin_key);
+      setConvexDevUrl(data.convex_dev_url || null);
+      setConvexProjectId(data.convex_project_id || null);
+      setConvexDevAdminKey(data.convex_dev_admin_key || null);
 
       // Only set appName if it's not already set from AppContext
       if (!currentApp) {
@@ -372,6 +390,9 @@ export function SessionProvider({
     appName,
     appUrl,
     apiUrl,
+    convexDevUrl,
+    convexProjectId,
+    convexDevAdminKey,
     supabaseProject,
     setSupabaseProject,
     isAppReady,

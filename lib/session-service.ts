@@ -33,12 +33,8 @@ export async function getSessionsForApp(
   appId: string
 ): Promise<{ sessions: SessionListItem[] }> {
   try {
-
-
-
     const response = await fetch(
-      `/api/sessions?appId=${encodeURIComponent(appId)}`,
-
+      `/api/sessions?appId=${encodeURIComponent(appId)}`
     );
 
     const data = await response.json();
@@ -72,11 +68,8 @@ export async function getSession(
   sessionId: string
 ): Promise<SessionData | null> {
   try {
+    console.log("TK getting session", sessionId);
 
-
-    console.log('TK getting session', sessionId)
-
-  
     // First check if this is a new session request
     if (sessionId.startsWith("new-session-")) {
       // Create a new session
@@ -121,7 +114,6 @@ export async function createNewSession(
   title?: string
 ): Promise<SessionData | null> {
   try {
-
     const response = await fetch("/api/sessions", {
       method: "POST",
       body: JSON.stringify({
@@ -159,8 +151,6 @@ export async function createNewSession(
 // Delete a session (soft delete)
 export async function deleteSession(sessionId: string): Promise<boolean> {
   try {
-
-
     const response = await fetch(
       `/api/sessions?sessionId=${encodeURIComponent(sessionId)}`,
       {
@@ -191,7 +181,6 @@ export async function updateSessionTitle(
   title: string
 ): Promise<boolean> {
   try {
-
     const response = await fetch(`/api/sessions/title`, {
       method: "PUT",
       body: JSON.stringify({
@@ -222,11 +211,11 @@ export async function getAppInfo(appId: string): Promise<{
   error: string | null;
 }> {
   try {
-
     const response = await fetch(`/api/app?id=${encodeURIComponent(appId)}`);
 
     const data = await response.json();
 
+    console.log("data  ihtbehb thing", data);
     if (!response.ok) {
       return {
         data: null,
@@ -243,6 +232,9 @@ export async function getAppInfo(appId: string): Promise<{
         display_name: data.display_name,
         api_url: data.api_url,
         app_url: data.app_url,
+        convex_dev_url: data.convex_dev_url,
+        convex_project_id: data.convex_project_id,
+        convex_dev_admin_key: data.convex_dev_admin_key,
         supabase_project: data.supabase_project,
       },
       error: null,

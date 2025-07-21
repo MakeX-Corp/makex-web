@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const { prompt } = body;
 
     const appName = generateAppName();
-    const displayName = "testing12"; //await generateDisplayName(prompt, appName);
+    const displayName = await generateDisplayName(prompt, appName);
 
     console.log("Generated displayName:", displayName);
 
