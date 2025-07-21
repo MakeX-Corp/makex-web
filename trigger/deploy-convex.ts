@@ -63,7 +63,7 @@ export const deployConvex = task({
 
       // Kill the container
       console.log("[deployConvex] Killing the container...");
-    //   await killE2BContainer(containerId);
+     await killE2BContainer(containerId);
 
       console.log("[deployConvex] Convex deployment completed successfully");
       return {
@@ -80,7 +80,7 @@ export const deployConvex = task({
       if (containerId) {
         console.log("[deployConvex] Killing the container due to failure...");
         try {
-        //   await killE2BContainer(containerId);
+        await killE2BContainer(containerId);
         } catch (killError: any) {
           console.error("[deployConvex] Failed to kill container:", killError.message);
         }
