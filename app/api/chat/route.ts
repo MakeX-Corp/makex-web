@@ -101,6 +101,7 @@ export async function POST(req: Request) {
     const userResult = await getSupabaseWithUser(req as NextRequest);
     if (userResult instanceof NextResponse || "error" in userResult)
       return userResult;
+
     const { supabase, user, token } = userResult;
 
     // Check if app is already being changed
@@ -224,7 +225,7 @@ export async function POST(req: Request) {
         model: gateway(CLAUDE_SONNET_4_MODEL),
         providerOptions: {
           gateway: {
-            order: ["bedrock", "vertex", "anthropic"], // Try Amazon Bedrock first, then Anthropic
+            order: ["anthropic", "bedrock", "vertex"], // Try Amazon Bedrock first, then Anthropic
           },
         },
         messages: convertToModelMessages(messages),
