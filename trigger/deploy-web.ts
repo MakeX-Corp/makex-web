@@ -312,36 +312,49 @@ export const deployWeb = task({
       try {
         // Deploy Convex project first if it exists
         let convexProdUrl: string | undefined;
-        console.log(`[DeployWeb] Starting Convex deployment for project: ${convex_project_id}`);
-        try {
-          const convexDeployment = await deployConvexProject({
-            projectId: convex_project_id,
-          });
-
-          console.log(`[DeployWeb] Convex deployment completed successfully`);
-          console.log(`[DeployWeb] Convex deployment name:`, convexDeployment);
-
+        
+        if (convex_project_id) {
+          console.log(`[DeployWeb] Starting Convex deployment for project: ${convex_project_id}`);
           try {
-            const containerResult = await deployConvexInContainer(
-              convex_dev_url,
-              git_repo_id
-            );
+            const convexDeployment = await deployConvexProject({
+              projectId: convex_project_id,
+            });
 
-       
+            console.log(`[DeployWeb] Convex deployment completed successfully`);
+            console.log(`[DeployWeb] Convex deployment name:`, convexDeployment);
 
-            // Update the app record with the convex_prod_url
-            convexProdUrl = await updateConvexProdUrl(
-              supabase,
-              appId,
-              convexDeployment.deploymentName
-            );
+            if (convex_dev_url) {
+              try {
+                const containerResult = await deployConvexInContainer(
+                  convex_dev_url,
+                  git_repo_id
+                );
+
+                // Update the app record with the convex_prod_url
+                convexProdUrl = await updateConvexProdUrl(
+                  supabase,
+                  appId,
+                  convexDeployment.deploymentName
+                );
+              } catch (error) {
+                console.error("[DeployWeb] Error during Convex deployment:", error);
+                // Don't fail the entire deployment if Convex deployment fails
+              }
+            } else {
+              console.log(`[DeployWeb] Skipping container deployment - convex_dev_url not found`);
+              // Still update the app record with the convex_prod_url even without container deployment
+              convexProdUrl = await updateConvexProdUrl(
+                supabase,
+                appId,
+                convexDeployment.deploymentName
+              );
+            }
           } catch (error) {
-            console.error("[DeployWeb] Error during Convex deployment:", error);
+            console.error("[DeployWeb] Error during Convex project deployment:", error);
             // Don't fail the entire deployment if Convex deployment fails
           }
-        } catch (error) {
-          console.error("[DeployWeb] Error during Convex project deployment:", error);
-          // Don't fail the entire deployment if Convex deployment fails
+        } else {
+          console.log(`[DeployWeb] Skipping Convex deployment - no convex_project_id found`);
         }
 
         // Deploy to Freestyle using Git repository
@@ -401,13 +414,11 @@ export const deployWeb = task({
         };
       }
       catch (error) {
+        console.error("[DeployWeb] Error during deployment process:", error);
         if (deploymentId) {
           console.log(`[DeployWeb] Updating deployment status to failed`);
           await updateDeploymentStatus(supabase, deploymentId, "failed");
         }
-        console.error("[DeployWeb] Error during deployment process:", error);
-        // Update status to failed
-        await updateDeploymentStatus(supabase, deploymentId, "failed");
         throw error;
       } finally {
         // send notification to user
