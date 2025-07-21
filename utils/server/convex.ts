@@ -84,7 +84,7 @@ export async function deployConvexProject({
       `[deployConvexProject] Failed: ${response.status} ${errorBody}`
     );
   }
-
+  
   const result = await response.json();
   return result; // contains deploymentName like "crazy-horse-123"
 }
