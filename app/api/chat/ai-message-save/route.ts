@@ -1,16 +1,20 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
+import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
 
 export async function POST(request: Request) {
   try {
     // Get authenticated user
     const userResult = await getSupabaseWithUser(request as NextRequest);
-    if (userResult instanceof NextResponse || 'error' in userResult) return userResult;
+    if (userResult instanceof NextResponse || "error" in userResult)
+      return userResult;
     const { supabase, user } = userResult;
 
     const body = await request.json();
     const { appId, sessionId, options, message } = body;
+
+    console.log("[AI Message Save] Message first part:", message);
 
     const { data: app, error: appError } = await supabase
       .from("user_apps")
@@ -19,7 +23,10 @@ export async function POST(request: Request) {
       .single();
 
     if (appError) {
-      return NextResponse.json({ error: "Failed to fetch app details" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to fetch app details" },
+        { status: 500 }
+      );
     }
 
     const apiUrl = app.api_url;
@@ -42,18 +49,24 @@ export async function POST(request: Request) {
       throw error;
     }
 
+    console.log("[AI Message Save] Message:", message);
+    const content = message.parts?.map((p: any) => p.text).join(" ") ?? "";
+    console.log("[AI Message Save] Content:", content);
     // Insert assistant's message into chat history
-    await supabase.from("app_chat_history").insert({
+    const { data, error } = await supabase.from("app_chat_history").insert({
       app_id: appId,
       user_id: user.id, // Use authenticated user's ID
-      content: message.content,
+      content: content,
       role: "assistant",
-      model_used: "claude-3-5-sonnet-latest",
+      model_used: CLAUDE_SONNET_4_MODEL,
       metadata: message,
       session_id: sessionId,
       commit_hash: commitHash,
       message_id: message.id,
     });
+
+    console.log("[AI Message Save] Data:", data);
+    console.log("[AI Message Save] Error:", error);
 
     return NextResponse.json({ success: true });
   } catch (error) {

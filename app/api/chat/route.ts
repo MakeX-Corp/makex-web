@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   try {
     const userResult = await getSupabaseWithUser(req as NextRequest);
     if (userResult instanceof NextResponse) return userResult;
-    if ('error' in userResult) return userResult.error;
+    if ("error" in userResult) return userResult.error;
     const { supabase, user } = userResult;
 
     // Get session ID from query params
@@ -88,12 +88,19 @@ export async function POST(req: Request) {
       subscription,
     } = await req.json();
 
+    console.log("messages", messages);
+
+    console.log("messageParts", messageParts);
+    console.log("multiModal", multiModal);
+    console.log("apiUrl", apiUrl);
     // Get the last user message
     const lastUserMessage = messages[messages.length - 1];
 
+    console.log("lastUserMessage", lastUserMessage);
     // Get the user API client
-    const userResult = await getSupabaseWithUser(req as NextRequest );
-    if (userResult instanceof NextResponse || 'error' in userResult) return userResult;
+    const userResult = await getSupabaseWithUser(req as NextRequest);
+    if (userResult instanceof NextResponse || "error" in userResult)
+      return userResult;
     const { supabase, user, token } = userResult;
 
     // Check if app is already being changed
@@ -121,11 +128,15 @@ export async function POST(req: Request) {
     const trimmedAppId = appId.trim();
 
     const supabaseAdmin = await getSupabaseAdmin();
-    const { error: lockError, data: lockData, count } = await supabaseAdmin
+    const {
+      error: lockError,
+      data: lockData,
+      count,
+    } = await supabaseAdmin
       .from("user_sandboxes")
-      .update({ 
+      .update({
         app_status: "changing",
-        sandbox_updated_at: new Date().toISOString()
+        sandbox_updated_at: new Date().toISOString(),
       })
       .eq("app_id", trimmedAppId)
       .select();
@@ -168,8 +179,6 @@ export async function POST(req: Request) {
 
       const apiClient = createFileBackendApiClient(app.api_url);
 
- 
-
       // Get the file tree
       const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
       const fileTree = fileTreeResponse;
@@ -180,22 +189,34 @@ export async function POST(req: Request) {
         apiUrl: app.api_url,
       });
 
-      await supabase.from("app_chat_history").insert({
-        app_id: trimmedAppId,
-        user_id: user.id,
-        content: lastUserMessage.content,
-        role: "user",
-        model_used: modelName,
-        metadata: {
-          streamed: false,
-          parts: messageParts || undefined,
-        },
-        session_id: sessionId,
-        message_id: lastUserMessage.id,
-      });
+      //this is before inserting into the database
+      console.log(
+        "lastUserMessage.content before inserting into the database",
+        lastUserMessage
+      );
+
+      const content =
+        lastUserMessage.parts?.map((p: any) => p.text).join(" ") ?? "";
+
+      const { data: chatHistoryData, error: chatHistoryError } = await supabase
+        .from("app_chat_history")
+        .insert({
+          app_id: trimmedAppId,
+          user_id: user.id,
+          content: content,
+          role: "user",
+          model_used: modelName,
+          metadata: {
+            streamed: false,
+            parts: lastUserMessage.parts || undefined,
+          },
+          session_id: sessionId,
+          message_id: lastUserMessage.id,
+        });
+      console.log("chatHistoryData", chatHistoryData);
+      console.log("chatHistoryError", chatHistoryError);
 
       // Check if there are any active sandboxes no just hit the get endpoint
-  
 
       // Check if there are any active sandboxes no just hit the get endpoint
 
@@ -203,16 +224,16 @@ export async function POST(req: Request) {
         model: gateway(CLAUDE_SONNET_4_MODEL),
         providerOptions: {
           gateway: {
-            order: ['bedrock', 'vertex', 'anthropic'], // Try Amazon Bedrock first, then Anthropic
+            order: ["bedrock", "vertex", "anthropic"], // Try Amazon Bedrock first, then Anthropic
           },
         },
         messages: convertToModelMessages(messages),
         tools: tools,
         system: getPrompt(fileTree),
-        stopWhen:stepCountIs(100),
+        stopWhen: stepCountIs(100),
         experimental_telemetry: { isEnabled: true },
       });
-    
+
       // Don't await providerMetadata before returning the stream
       // console.log('result Provider Metadata', await result.providerMetadata);
 

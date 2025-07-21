@@ -1,11 +1,13 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+
+import { useState } from "react";
 import {
   RefreshCw,
   ExternalLink,
   Smartphone,
   QrCode,
   Code,
+  LayoutDashboard,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +16,7 @@ import { useSession } from "@/context/session-context";
 import { QRCodeDisplay } from "@/components/qr-code";
 import MobileMockup from "@/components/mobile-mockup";
 import CodeView from "./code-view";
-
+import { ConvexDashboardEmbed } from "./convex-dashboard";
 
 interface PreviewProps {
   iframeKey: string;
@@ -31,8 +33,10 @@ export function Preview({
   containerState,
   appState,
 }: PreviewProps) {
-  const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code">("mobile");
-  const { appId, appUrl, appName } = useSession();
+  const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code" | "convex">(
+    "mobile"
+  );
+  const { appUrl } = useSession();
 
   return (
     <Card className="h-full border rounded-md">
@@ -72,6 +76,18 @@ export function Preview({
               }`}
             >
               <Code className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode("convex")}
+              className={`h-6 px-2 flex items-center gap-1 ${
+                viewMode === "convex"
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutDashboard className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
@@ -124,19 +140,21 @@ export function Preview({
               />
             </div>
           )}
-
           {viewMode === "qr" && (
             <div className="h-full w-full rounded-lg p-4 overflow-auto flex items-center justify-center">
               <QRCodeDisplay url={appUrl || ""} />
             </div>
           )}
-
           {viewMode === "code" && (
             <div className="h-full w-full">
               <CodeView />
             </div>
           )}
-
+          {viewMode === "convex" && (
+            <div className="h-full w-full rounded-lg overflow-hidden">
+              <ConvexDashboardEmbed />
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -35,11 +35,11 @@ interface ProcessedMessage {
  */
 export const fetchChatMessages = async (
   sessionId: string,
-  appId: string,
+  appId: string
 ): Promise<ProcessedMessage[]> => {
   try {
     const response = await fetch(
-      `/api/chat?sessionId=${sessionId}&appId=${appId}`,
+      `/api/chat?sessionId=${sessionId}&appId=${appId}`
     );
 
     if (!response.ok) {
@@ -50,7 +50,9 @@ export const fetchChatMessages = async (
       throw new Error("Failed to fetch messages");
     }
 
+    console.log("response in chat thing", response);
     const messages: ChatMessage[] = await response.json();
+    console.log("messages in chat thing", messages);
     return messages.map((msg) => ({
       id: msg.message_id,
       role: msg.role,
@@ -86,7 +88,7 @@ export const saveAIMessage = async (
   appId: string,
   apiUrl: string,
   options: any,
-  message: any,
+  message: any
 ): Promise<any> => {
   try {
     const response = await fetch("/api/chat/ai-message-save", {
@@ -117,7 +119,7 @@ export const saveAIMessage = async (
 export const restoreCheckpoint = async (
   messageId: string,
   apiUrl: string,
-  sessionId: string,
+  sessionId: string
 ): Promise<any> => {
   try {
     const response = await fetch("/api/code", {
@@ -140,9 +142,7 @@ export const restoreCheckpoint = async (
   }
 };
 
-export const checkMessageLimit = async (
-  subscription: any
-) => {
+export const checkMessageLimit = async (subscription: any) => {
   try {
     const response = await fetch("/api/chat/limits", {
       method: "POST",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, UIMessage } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,9 +50,13 @@ export function Chat({
   const [isLoading, setIsLoading] = useState(false);
   const [storedPrompt, setStoredPrompt] = useState<string | null>(null);
   const [promptChecked, setPromptChecked] = useState(false);
-  const [restoringMessageId, setRestoringMessageId] = useState<string | null>(null);
+  const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
+    null
+  );
   const [limitReached, setLimitReached] = useState(false);
-  const [remainingMessages, setRemainingMessages] = useState<number | null>(null);
+  const [remainingMessages, setRemainingMessages] = useState<number | null>(
+    null
+  );
   const [input, setInput] = useState("");
 
   const injectedPromptRef = useRef(false);
@@ -150,8 +154,9 @@ export function Chat({
   }, [subscription]);
 
   // 4. Initialize useChat
-  const { messages, sendMessage, status, error } = useChat({
+  const { messages, sendMessage, setMessages, status, error } = useChat({
     id: sessionId,
+
     transport: new DefaultChatTransport({
       api: "/api/chat/",
     }),
@@ -160,30 +165,35 @@ export function Chat({
       setIsAIResponding(false);
       onResponseComplete();
       // Save AI message and update session title
-      saveAIMessage(sessionId, appId || "", apiUrl, {}, result.message).catch((error) => {
-        console.error("Error saving AI message:", error);
-      });
-      
+      saveAIMessage(sessionId, appId || "", apiUrl, {}, result.message).catch(
+        (error) => {
+          console.error("Error saving AI message:", error);
+        }
+      );
+
       // Update session title if needed
-                if (
-            messages.length === 0 &&
-            result.message.role === "assistant" &&
-            getCurrentSessionTitle() === "New Chat"
-          ) {
-            // Extract text content from message parts
-            const userMessageText = messages[0]?.parts?.find(part => part.type === "text")?.text || "";
-            const assistantMessageText = result.message.parts?.find(part => part.type === "text")?.text || "";
-            
-            updateSessionTitle(
-              userMessageText,
-              assistantMessageText,
-              sessionId
-            ).then((newTitle) => {
-              if (newTitle) {
-                contextUpdateSessionTitle(sessionId, newTitle);
-              }
-            });
+      if (
+        messages.length === 0 &&
+        result.message.role === "assistant" &&
+        getCurrentSessionTitle() === "New Chat"
+      ) {
+        // Extract text content from message parts
+        const userMessageText =
+          messages[0]?.parts?.find((part) => part.type === "text")?.text || "";
+        const assistantMessageText =
+          result.message.parts?.find((part) => part.type === "text")?.text ||
+          "";
+
+        updateSessionTitle(
+          userMessageText,
+          assistantMessageText,
+          sessionId
+        ).then((newTitle) => {
+          if (newTitle) {
+            contextUpdateSessionTitle(sessionId, newTitle);
           }
+        });
+      }
 
       // Check message limits
       checkMessageLimit(subscription).then((result) => {
@@ -199,6 +209,12 @@ export function Chat({
       setIsAIResponding(false);
     },
   });
+
+  useEffect(() => {
+    console.log("[Chat] Messages:", messages);
+    console.log("[Chat] Initial Messages:", initialMessages);
+    setMessages(initialMessages);
+  }, [initialMessages, setMessages]);
 
   // 5. Handle cleanup on unmount
   useEffect(() => {
@@ -226,7 +242,18 @@ export function Chat({
         }
       );
     }
-  }, [storedPrompt, booted, sendMessage, setIsAIResponding, apiUrl, appId, appName, sessionId, supabaseProject, subscription]);
+  }, [
+    storedPrompt,
+    booted,
+    sendMessage,
+    setIsAIResponding,
+    apiUrl,
+    appId,
+    appName,
+    sessionId,
+    supabaseProject,
+    subscription,
+  ]);
 
   // 7. Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -236,10 +263,11 @@ export function Chat({
     }
   }, [messages, isAIResponding]);
 
+  /*
   // Handle form submission with image support
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (containerState !== "active") {
       alert("Please refresh the page and try again, your app was paused");
       return;
@@ -323,10 +351,65 @@ export function Chat({
       setIsAIResponding(false);
     }
   };
+  */
+  // ───────── REPLACE THE WHOLE FUNCTION ─────────
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
+    if (containerState !== "active") {
+      alert("Please refresh the page and try again, your app was paused");
+      return;
+    }
+
+    if (!input.trim() && selectedImages.length === 0) return;
+
+    setIsAIResponding(true);
+
+    try {
+      /* ------- build parts array (text + images) ------- */
+      const parts: any[] = [];
+
+      if (input.trim()) {
+        parts.push({ type: "text", text: input.trim() });
+      }
+
+      selectedImages.forEach((file, idx) => {
+        parts.push({
+          type: "file", // v5 uses generic file parts
+          mediaType: file.type || "image/jpeg",
+          filename: file.name || `image-${idx + 1}.jpg`,
+          url: imagePreviews[idx], // data‑URL or remote URL
+        });
+      });
+
+      /* ------- send one multimodal message ------- */
+      sendMessage(
+        { role: "user", parts },
+        {
+          body: {
+            apiUrl,
+            appId,
+            appName,
+            sessionId,
+            supabase_project: supabaseProject,
+            subscription,
+          },
+        }
+      );
+
+      /* ------- clean up ------- */
+      resetImages();
+      setInput("");
+      resetTextareaHeight();
+    } catch (err) {
+      console.error("Error sending message:", err);
+      setIsAIResponding(false);
+    }
+  };
+
+  /*
   // Render message part based on type
   const renderMessagePart = (part: any) => {
-    
     // Handle tool types (anything starting with "tool-")
     if (part.type.startsWith("tool-")) {
       return (
@@ -335,7 +418,7 @@ export function Chat({
         </div>
       );
     }
-    
+
     switch (part.type) {
       case "text":
         return <div className="text-sm">{part.text}</div>;
@@ -352,6 +435,52 @@ export function Chat({
             }}
           />
         );
+      default:
+        return null;
+    }
+  };
+*/
+  // ───────── REPLACE ENTIRE renderMessagePart FUNCTION ─────────
+  const renderMessagePart = (part: any) => {
+    if (part.type.startsWith("tool-")) {
+      return (
+        <div className="overflow-x-auto max-w-full">
+          <ToolInvocation part={part} />
+        </div>
+      );
+    }
+
+    switch (part.type) {
+      case "text":
+        return <div className="text-sm">{part.text}</div>;
+
+      case "file":
+        /* show images inline; fallback text for other mime types */
+        if (part.mediaType?.startsWith("image/")) {
+          return (
+            <img
+              src={part.url}
+              alt={part.filename || "image"}
+              className="rounded border border-border shadow-sm mt-2 mb-2"
+              style={{
+                cursor: "pointer",
+                maxHeight: "200px",
+                objectFit: "contain",
+              }}
+            />
+          );
+        }
+        return (
+          <a
+            href={part.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs underline"
+          >
+            {part.filename || "file"}
+          </a>
+        );
+
       default:
         return null;
     }
@@ -422,7 +551,8 @@ export function Chat({
                       ))
                     ) : (
                       <div className="text-sm whitespace-pre-wrap break-words">
-                        {message.parts?.find(part => part.type === "text")?.text || ""}
+                        {message.parts?.find((part) => part.type === "text")
+                          ?.text || ""}
                       </div>
                     )}
                   </CardContent>
