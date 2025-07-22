@@ -127,7 +127,6 @@ export function DeployButton({
         },
         (payload) => {
 
-          console.log("[DeployButton] Realtime update received:", payload);
           // Update local state with deployment info
           setLastDeployment({
             url: payload.new.url || "",

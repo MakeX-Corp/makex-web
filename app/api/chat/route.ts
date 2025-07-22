@@ -130,8 +130,6 @@ export async function POST(req: Request) {
       .eq("app_id", trimmedAppId)
       .select();
 
-      console.log("lockData", lockData);
-
     // Check if we actually found and updated a record
     if (!lockError && (!lockData || lockData.length === 0)) {
       console.warn(`No record found to update for app_id: ${trimmedAppId}`);
@@ -220,7 +218,6 @@ export async function POST(req: Request) {
               .update({ app_status: "active" })
               .eq("app_id", appId)
               .select();
-            console.log('data', data);
             if (error) {
               console.error('Error updating app_status to active:', error);
             }
