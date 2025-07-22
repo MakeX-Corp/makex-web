@@ -126,6 +126,7 @@ export function DeployButton({
           filter: `app_id=eq.${appId}`,
         },
         (payload) => {
+
           // Update local state with deployment info
           setLastDeployment({
             url: payload.new.url || "",

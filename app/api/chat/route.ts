@@ -111,12 +111,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // if (appStatus?.app_status === "changing") {
-    //   return NextResponse.json(
-    //     { error: "App is currently being modified. Please try again later." },
-    //     { status: 409 }
-    //   );
-    // }
+    if (appStatus?.app_status === "changing") {
+      return NextResponse.json(
+        { error: "App is currently being modified. Please try again later." },
+        { status: 409 }
+      );
+    }
 
     // Lock the app
     const trimmedAppId = appId.trim();
@@ -212,9 +212,25 @@ export async function POST(req: Request) {
         system: getPrompt(fileTree),
         stopWhen: stepCountIs(100),
         experimental_telemetry: { isEnabled: true },
+        onFinish: async (message) => {
+          try {
+            const { data, error } = await supabaseAdmin
+              .from("user_sandboxes")
+              .update({ app_status: "active" })
+              .eq("app_id", appId)
+              .select();
+            if (error) {
+              console.error("Error updating app_status to active:", error);
+            }
+          } catch (err) {
+            console.error(
+              "Exception while updating app_status to active:",
+              err
+            );
+          }
+        },
       });
 
-      // Don't await providerMetadata before returning the stream
       return result.toUIMessageStreamResponse();
     } catch (error) {
       // Comprehensive error handling

@@ -22,16 +22,14 @@ interface PreviewProps {
   iframeKey: string;
   isRefreshing: boolean;
   onRefresh: () => void;
-  containerState: "starting" | "active" | "paused" | "resuming" | "pausing";
-  appState?: any;
+  state: any;
 }
 
 export function Preview({
   iframeKey,
   isRefreshing,
   onRefresh,
-  containerState,
-  appState,
+  state,
 }: PreviewProps) {
   const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code" | "convex">(
     "mobile"
@@ -109,22 +107,22 @@ export function Preview({
           {/* status + refresh */}
           <div className="flex items-center gap-2">
             <Badge
-              className={`ml-2 px-3 py-1 text-xs capitalize font-semibold border rounded-full select-none pointer-events-none shadow-none ${
-                containerState === "starting"
+              className={`ml-2 px-3 py-1 text-xs capitalize font-semibold border rounded-full flex items-center justify-center select-none pointer-events-none shadow-none ${
+                state?.sandbox_status === "starting"
                   ? "bg-blue-200 text-blue-800 border-blue-300"
-                  : containerState === "active"
+                  : state?.sandbox_status === "active"
                   ? "bg-green-200 text-green-800 border-green-300"
-                  : containerState === "paused"
+                  : state?.sandbox_status === "paused"
                   ? "bg-red-200 text-red-800 border-red-300"
-                  : containerState === "resuming"
+                  : state?.sandbox_status === "resuming"
                   ? "bg-green-100 text-green-600 border-green-200"
-                  : containerState === "pausing"
+                  : state?.sandbox_status === "pausing"
                   ? "bg-red-100 text-red-700 border-red-200"
                   : "bg-gray-100 text-gray-700 border-gray-200"
               }`}
               style={{ minWidth: 70, textAlign: "center" }}
             >
-              {containerState}
+              {state?.sandbox_status}
             </Badge>
 
             <Button
@@ -140,13 +138,12 @@ export function Preview({
 
         {/* content */}
         <div className="flex-1 overflow-auto">
-          {viewMode === "mobile" && (
+          {viewMode === "mobile" && state && (
             <div className="h-full w-full flex items-center justify-center">
               <MobileMockup
                 appUrl={appUrl || ""}
                 iframeKey={iframeKey}
-                containerState={containerState}
-                appState={appState}
+                state={state}
               />
             </div>
           )}

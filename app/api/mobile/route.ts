@@ -129,7 +129,6 @@ export async function POST(request: NextRequest) {
         appName,
         sandboxId,
         containerId: container.containerId,
-        initial: true,
       });
 
       //TODO: feature flag this with decision tree

@@ -71,10 +71,7 @@ export default function WorkspaceContent({
   const [windowWidth, setWindowWidth] = useState(0);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
 
-  const [containerState, setContainerState] = useState<
-    "starting" | "active" | "paused" | "resuming" | "pausing"
-  >("starting");
-  const [appState, setAppState] = useState<any>(null);
+  const [state, setState] = useState<any>(null);
   const supabase = createClient();
   useEffect(() => {
     if (appId) {
@@ -88,8 +85,7 @@ export default function WorkspaceContent({
         if (data.error) {
           console.error("Initial fetch error:", data.error);
         } else {
-          setContainerState(data?.sandbox_status);
-          setAppState(data?.app_status);
+            setState(data);
           console.log(data);
           if (data?.sandbox_status === "paused") {
             await resumeSandbox();
@@ -112,8 +108,12 @@ export default function WorkspaceContent({
           },
           (payload) => {
             console.log("🔁 Realtime update:", payload);
-            setContainerState(payload.new.sandbox_status);
-            setAppState(payload.new.app_status);
+            const newState = {
+              sandbox_status: payload.new.sandbox_status,
+              expo_status: payload.new.expo_status,
+              app_status: payload.new.app_status,
+            }
+            setState(newState);
           }
         )
         .subscribe();
@@ -229,10 +229,6 @@ export default function WorkspaceContent({
   const refreshPreview = async () => {
     setIsRefreshing(true);
     setIframeKey(Math.random().toString(36).substring(2, 15));
-    if (containerState == "paused" || containerState == "pausing") {
-      setContainerState("resuming");
-      await resumeSandbox();
-    }
     setTimeout(() => {
       setIsRefreshing(false);
     }, 1000);
@@ -611,7 +607,7 @@ export default function WorkspaceContent({
                     sessionId={currentSessionId || initialSessionId || ""}
                     onResponseComplete={handleResponseComplete}
                     onSessionError={() => {}}
-                    containerState={containerState}
+                    containerState={state?.sandbox_status}
                   />
 
                   {/* Right panel - Preview */}
@@ -620,8 +616,7 @@ export default function WorkspaceContent({
                     iframeKey={iframeKey}
                     isRefreshing={isRefreshing}
                     onRefresh={refreshPreview}
-                    containerState={containerState}
-                    appState={appState}
+                    state={state}
                   />
                 </div>
               ) : (
@@ -663,7 +658,7 @@ export default function WorkspaceContent({
                           sessionId={currentSessionId || initialSessionId || ""}
                           onResponseComplete={handleResponseComplete}
                           onSessionError={() => {}}
-                          containerState={containerState}
+                          containerState={state?.sandbox_status}
                         />
                       </div>
 
@@ -676,8 +671,7 @@ export default function WorkspaceContent({
                           iframeKey={iframeKey}
                           isRefreshing={isRefreshing}
                           onRefresh={refreshPreview}
-                          containerState={containerState}
-                          appState={appState}
+                          state={state}
                         />
                       </div>
                     </div>

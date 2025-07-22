@@ -1,6 +1,8 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
+import { useApp } from "@/context/AppContext";
+import Intercom from "@intercom/messenger-js-sdk";
 
 // This layout will be shared by all pages under /dashboard/[appId]
 export default function DashboardLayout({
@@ -10,6 +12,18 @@ export default function DashboardLayout({
   children: ReactNode;
   params: any;
 }) {
+  const { user } = useApp();
+  console.log("User in dashboard layout", user)
+
+  useEffect(() => {
+    if (user) {
+      Intercom({
+        app_id: "rpyk16br",
+        user_id: user.id,
+        email: user.email,
+      });
+    }
+  }, []);
   return (
     <div className="flex flex-col h-screen dark:bg-gray-950">
       {/* We'll move the header into the page component */}

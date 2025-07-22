@@ -38,6 +38,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+
 // Expanded app suggestion chips for multiple rows
 const APP_SUGGESTIONS = [
   { icon: <Layout size={14} />, label: "Landing page" },
@@ -105,7 +106,7 @@ const GlobalStyles = () => (
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { createApp, subscription } = useApp();
+  const { createApp, subscription, user } = useApp();
   const [isCreating, setIsCreating] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [initialPromptLoaded, setInitialPromptLoaded] = useState(false);
