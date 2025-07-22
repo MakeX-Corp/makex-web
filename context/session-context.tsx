@@ -21,7 +21,7 @@ import {
 
 interface SessionContextType {
   // App data
-  appId: string | null;
+  appId: string;
   appName: string;
   appUrl: string;
   apiUrl: string;
@@ -66,16 +66,16 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export function SessionProvider({
   children,
-  initialAppId = null,
+  initialAppId,
 }: {
   children: ReactNode;
-  initialAppId?: string | null;
+  initialAppId: string;
 }) {
   // Get app data from AppContext
   const { apps } = useApp();
 
   // App data
-  const [appId, setAppId] = useState<string | null>(initialAppId);
+  const [appId, setAppId] = useState<string>(initialAppId);
   const [appName, setAppName] = useState<string>("");
   const [apiUrl, setApiUrl] = useState<string>("");
   const [appUrl, setAppUrl] = useState<string>("");

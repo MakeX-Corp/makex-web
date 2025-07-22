@@ -62,7 +62,7 @@ export const fetchChatMessages = async (
  */
 export const saveAIMessage = async (
   sessionId: string,
-  appId: string | null,
+  appId: string,
   apiUrl: string,
   message: any
 ): Promise<any> => {
