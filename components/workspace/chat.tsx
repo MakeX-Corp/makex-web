@@ -19,6 +19,9 @@ import {
 } from "@/lib/chat-service";
 import { updateSessionTitle } from "@/utils/client/session-utils";
 import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
+import type { UIMessagePart } from "ai";
+
+type MessagePart = UIMessagePart<any, any>;
 
 interface ChatProps {
   sessionId: string;
@@ -164,11 +167,9 @@ export function Chat({
       setIsAIResponding(false);
       onResponseComplete();
       // Save AI message and update session title
-      saveAIMessage(sessionId, appId || "", apiUrl, {}, result.message).catch(
-        (error) => {
-          console.error("Error saving AI message:", error);
-        }
-      );
+      saveAIMessage(sessionId, appId, apiUrl, result.message).catch((error) => {
+        console.error("Error saving AI message:", error);
+      });
 
       // Update session title if needed
       if (
@@ -274,11 +275,9 @@ export function Chat({
 
     try {
       /* ------- build parts array (text + images) ------- */
-      const parts: any[] = [];
+      const parts: MessagePart[] = [];
 
-      if (input.trim()) {
-        parts.push({ type: "text", text: input.trim() });
-      }
+      parts.push({ type: "text", text: input.trim() });
 
       selectedImages.forEach((file, idx) => {
         parts.push({
