@@ -7,7 +7,7 @@ import {
   Smartphone,
   QrCode,
   Code,
-  LayoutDashboard,
+  Database,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +95,7 @@ export function Preview({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <LayoutDashboard className="h-4 w-4" />
+              <Database className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
