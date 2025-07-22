@@ -21,7 +21,7 @@ import {
 
 interface SessionContextType {
   // App data
-  appId: string | null;
+  appId: string;
   appName: string;
   appUrl: string;
   apiUrl: string;
@@ -41,6 +41,15 @@ interface SessionContextType {
   currentSessionError: string | null;
   justCreatedSessionId: string | null;
 
+  // Convex
+  convexConfig: {
+    devUrl: string | null;
+    projectId: string | null;
+    devAdminKey: string | null;
+    prodUrl: string | null;
+    prodAdminKey: string | null;
+  };
+
   // Actions
   loadSessions: (appId: string) => Promise<void>;
   switchSession: (sessionId: string) => Promise<void>;
@@ -57,16 +66,16 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export function SessionProvider({
   children,
-  initialAppId = null,
+  initialAppId,
 }: {
   children: ReactNode;
-  initialAppId?: string | null;
+  initialAppId: string;
 }) {
   // Get app data from AppContext
   const { apps } = useApp();
 
   // App data
-  const [appId, setAppId] = useState<string | null>(initialAppId);
+  const [appId, setAppId] = useState<string>(initialAppId);
   const [appName, setAppName] = useState<string>("");
   const [apiUrl, setApiUrl] = useState<string>("");
   const [appUrl, setAppUrl] = useState<string>("");
@@ -91,6 +100,21 @@ export function SessionProvider({
   const [justCreatedSessionId, setJustCreatedSessionId] = useState<
     string | null
   >(null);
+
+  // Convex config state
+  const [convexConfig, setConvexConfig] = useState<{
+    devUrl: string | null;
+    projectId: string | null;
+    devAdminKey: string | null;
+    prodUrl: string | null;
+    prodAdminKey: string | null;
+  }>({
+    devUrl: null,
+    projectId: null,
+    devAdminKey: null,
+    prodUrl: null,
+    prodAdminKey: null,
+  });
 
   // Helper function to get current session title - single source of truth
   const getCurrentSessionTitle = () => {
@@ -142,6 +166,14 @@ export function SessionProvider({
       // Set the configuration values from database
       setApiUrl(data.api_url || "");
       setAppUrl(data.app_url || "");
+
+      setConvexConfig({
+        devUrl: data.convex_dev_url || null,
+        projectId: data.convex_project_id || null,
+        devAdminKey: data.convex_dev_admin_key || null,
+        prodUrl: data.convex_prod_url || null,
+        prodAdminKey: data.convex_prod_admin_key || null,
+      });
 
       // Only set appName if it's not already set from AppContext
       if (!currentApp) {
@@ -372,6 +404,7 @@ export function SessionProvider({
     appName,
     appUrl,
     apiUrl,
+    convexConfig,
     supabaseProject,
     setSupabaseProject,
     isAppReady,

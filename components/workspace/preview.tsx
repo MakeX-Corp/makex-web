@@ -1,11 +1,13 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+
+import { useState } from "react";
 import {
   RefreshCw,
   ExternalLink,
   Smartphone,
   QrCode,
   Code,
+  Database,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +16,7 @@ import { useSession } from "@/context/session-context";
 import { QRCodeDisplay } from "@/components/qr-code";
 import MobileMockup from "@/components/mobile-mockup";
 import CodeView from "./code-view";
-
+import { ConvexDashboardEmbed } from "./convex-dashboard";
 
 interface PreviewProps {
   iframeKey: string;
@@ -29,17 +31,26 @@ export function Preview({
   onRefresh,
   state,
 }: PreviewProps) {
-  const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code">("mobile");
-  const { appId, appUrl, appName } = useSession();
-  console.log("State in preview", state)
+  const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code" | "convex">(
+    "mobile"
+  );
+  const [convexLoaded, setConvexLoaded] = useState(false);
+  const { appUrl } = useSession();
+
+  const switchView = (mode: typeof viewMode) => {
+    setViewMode(mode);
+    if (mode === "convex" && !convexLoaded) setConvexLoaded(true);
+  };
 
   return (
     <Card className="h-full border rounded-md">
       <CardContent className="relative h-full flex flex-col p-4">
+        {/* toolbar */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 border rounded-lg p-1 bg-background">
+            {/* buttons */}
             <button
-              onClick={() => setViewMode("mobile")}
+              onClick={() => switchView("mobile")}
               className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
                 viewMode === "mobile"
                   ? "bg-muted text-foreground"
@@ -50,7 +61,7 @@ export function Preview({
               <Smartphone className="sm:hidden h-4 w-4" />
             </button>
             <button
-              onClick={() => setViewMode("qr")}
+              onClick={() => switchView("qr")}
               className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
                 viewMode === "qr"
                   ? "bg-muted text-foreground"
@@ -63,7 +74,7 @@ export function Preview({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setViewMode("code")}
+              onClick={() => switchView("code")}
               className={`h-6 px-2 flex items-center gap-1 ${
                 viewMode === "code"
                   ? "bg-muted text-foreground"
@@ -75,12 +86,25 @@ export function Preview({
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => switchView("convex")}
+              className={`h-6 px-2 flex items-center gap-1 ${
+                viewMode === "convex"
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Database className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => appUrl && window.open(appUrl, "_blank")}
               className="h-6 px-2 flex items-center gap-1"
             >
               <ExternalLink className="h-4 w-4" />
             </Button>
           </div>
+          {/* status + refresh */}
           <div className="flex items-center gap-2">
             <Badge
               className={`ml-2 px-3 py-1 text-xs capitalize font-semibold border rounded-full flex items-center justify-center select-none pointer-events-none shadow-none ${
@@ -112,6 +136,7 @@ export function Preview({
           </div>
         </div>
 
+        {/* content */}
         <div className="flex-1 overflow-auto">
           {viewMode === "mobile" && state && (
             <div className="h-full w-full flex items-center justify-center">
@@ -124,7 +149,7 @@ export function Preview({
           )}
 
           {viewMode === "qr" && (
-            <div className="h-full w-full rounded-lg p-4 overflow-auto flex items-center justify-center">
+            <div className="h-full w-full rounded-lg p-4 flex items-center justify-center">
               <QRCodeDisplay url={appUrl || ""} />
             </div>
           )}
@@ -135,6 +160,15 @@ export function Preview({
             </div>
           )}
 
+          {/* keep iframe mounted; just hide/show */}
+          {convexLoaded && (
+            <div
+              className="h-full w-full rounded-lg overflow-hidden"
+              style={{ display: viewMode === "convex" ? "block" : "none" }}
+            >
+              <ConvexDashboardEmbed />
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

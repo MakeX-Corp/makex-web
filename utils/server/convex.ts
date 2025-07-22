@@ -84,7 +84,33 @@ export async function deployConvexProject({
       `[deployConvexProject] Failed: ${response.status} ${errorBody}`
     );
   }
-  
+
   const result = await response.json();
   return result; // contains deploymentName like "crazy-horse-123"
+}
+
+export async function getConvexProdAdminKey({
+  deploymentName,
+}: {
+  deploymentName: string;
+}) {
+  const response = await fetch(
+    `https://api.convex.dev/api/dashboard/instances/${deploymentName}/auth`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.CONVEX_AUTH_TOKEN}`,
+        "Content-Type": "application/json",
+        "Convex-Client": "makex-server-1.0.0",
+      },
+    }
+  );
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(
+      `[getConvexProdAdminKey] Failed: ${response.status} ${errorBody}`
+    );
+  }
+
+  return response.json();
 }

@@ -1,12 +1,14 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
+import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
 
 export async function POST(request: Request) {
   try {
     // Get authenticated user
     const userResult = await getSupabaseWithUser(request as NextRequest);
-    if (userResult instanceof NextResponse || 'error' in userResult) return userResult;
+    if (userResult instanceof NextResponse || "error" in userResult)
+      return userResult;
     const { supabase, user } = userResult;
 
     const body = await request.json();
@@ -19,7 +21,10 @@ export async function POST(request: Request) {
       .single();
 
     if (appError) {
-      return NextResponse.json({ error: "Failed to fetch app details" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to fetch app details" },
+        { status: 500 }
+      );
     }
 
     const apiUrl = app.api_url;
@@ -42,14 +47,17 @@ export async function POST(request: Request) {
       throw error;
     }
 
+    const plainText = message.parts?.map((p: any) => p.text).join(" ") ?? "";
+
     // Insert assistant's message into chat history
-    await supabase.from("app_chat_history").insert({
+    const { data, error } = await supabase.from("app_chat_history").insert({
       app_id: appId,
       user_id: user.id, // Use authenticated user's ID
-      content: message.content,
+      content: plainText, //will be removed later, cannot be removed now because it has non null constraint
+      plain_text: plainText,
       role: "assistant",
-      model_used: "claude-3-5-sonnet-latest",
-      metadata: message,
+      model_used: CLAUDE_SONNET_4_MODEL,
+      parts: message.parts,
       session_id: sessionId,
       commit_hash: commitHash,
       message_id: message.id,

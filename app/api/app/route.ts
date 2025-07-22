@@ -29,8 +29,6 @@ export async function POST(request: Request) {
     const appName = generateAppName();
     const displayName = await generateDisplayName(prompt, appName);
 
-    console.log('Generated displayName:', displayName);
-
     timings.authAndSetup = performance.now() - startTime;
 
     // Begin transaction to ensure both app and session are created atomically
@@ -92,8 +90,6 @@ export async function POST(request: Request) {
 
     timings.containerInitiation = performance.now() - containerStartTime;
 
-
-
     // Retry mechanism for API host
     const maxRetries = 10;
     const retryDelay = 2000; // 2 seconds
@@ -117,7 +113,6 @@ export async function POST(request: Request) {
     if (retryCount === maxRetries) {
       console.log("Max retries reached, proceeding with container setup...");
     }
-
 
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
@@ -173,7 +168,7 @@ export async function POST(request: Request) {
       appId: insertedApp.id,
       appName: appName,
       sandboxId: sandboxDbId,
-      containerId: containerId
+      containerId: containerId,
     });
 
     await setupGit.trigger({
@@ -212,7 +207,6 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const appId = searchParams.get("id");
-
 
     // If an appId is provided, get just that specific app
     if (appId) {

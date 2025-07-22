@@ -90,11 +90,11 @@ export async function POST(req: Request) {
 
     // Get the last user message
     const lastUserMessage = messages[messages.length - 1];
-
     // Get the user API client
     const userResult = await getSupabaseWithUser(req as NextRequest);
     if (userResult instanceof NextResponse || "error" in userResult)
       return userResult;
+
     const { supabase, user, token } = userResult;
 
     // Check if app is already being changed
@@ -183,23 +183,22 @@ export async function POST(req: Request) {
         apiUrl: app.api_url,
       });
 
-      await supabase.from("app_chat_history").insert({
-        app_id: trimmedAppId,
-        user_id: user.id,
-        content: lastUserMessage.content,
-        role: "user",
-        model_used: modelName,
-        metadata: {
-          streamed: false,
-          parts: messageParts || undefined,
-        },
-        session_id: sessionId,
-        message_id: lastUserMessage.id,
-      });
+      const plainText =
+        lastUserMessage.parts?.map((p: any) => p.text).join(" ") ?? "";
 
-      // Check if there are any active sandboxes no just hit the get endpoint
-
-      // Check if there are any active sandboxes no just hit the get endpoint
+      const { data: chatHistoryData, error: chatHistoryError } = await supabase
+        .from("app_chat_history")
+        .insert({
+          app_id: trimmedAppId,
+          user_id: user.id,
+          content: plainText, //will be removed later, cannot be removed now because it has non null constraint
+          plain_text: plainText,
+          parts: lastUserMessage.parts,
+          role: "user",
+          model_used: modelName,
+          session_id: sessionId,
+          message_id: lastUserMessage.id,
+        });
 
       const result = streamText({
         model: gateway(CLAUDE_SONNET_4_MODEL),
@@ -221,14 +220,17 @@ export async function POST(req: Request) {
               .eq("app_id", appId)
               .select();
             if (error) {
-              console.error('Error updating app_status to active:', error);
+              console.error("Error updating app_status to active:", error);
             }
           } catch (err) {
-            console.error('Exception while updating app_status to active:', err);
+            console.error(
+              "Exception while updating app_status to active:",
+              err
+            );
           }
         },
       });
-    
+
       return result.toUIMessageStreamResponse();
     } catch (error) {
       // Comprehensive error handling
