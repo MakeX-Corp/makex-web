@@ -36,15 +36,23 @@ export function Preview({
   const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code" | "convex">(
     "mobile"
   );
+  const [convexLoaded, setConvexLoaded] = useState(false); // NEW
   const { appUrl } = useSession();
+
+  const switchView = (mode: typeof viewMode) => {
+    setViewMode(mode);
+    if (mode === "convex" && !convexLoaded) setConvexLoaded(true); // mount once
+  };
 
   return (
     <Card className="h-full border rounded-md">
       <CardContent className="relative h-full flex flex-col p-4">
+        {/* toolbar */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 border rounded-lg p-1 bg-background">
+            {/* buttons */}
             <button
-              onClick={() => setViewMode("mobile")}
+              onClick={() => switchView("mobile")}
               className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
                 viewMode === "mobile"
                   ? "bg-muted text-foreground"
@@ -55,7 +63,7 @@ export function Preview({
               <Smartphone className="sm:hidden h-4 w-4" />
             </button>
             <button
-              onClick={() => setViewMode("qr")}
+              onClick={() => switchView("qr")}
               className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
                 viewMode === "qr"
                   ? "bg-muted text-foreground"
@@ -68,7 +76,7 @@ export function Preview({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setViewMode("code")}
+              onClick={() => switchView("code")}
               className={`h-6 px-2 flex items-center gap-1 ${
                 viewMode === "code"
                   ? "bg-muted text-foreground"
@@ -80,7 +88,7 @@ export function Preview({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setViewMode("convex")}
+              onClick={() => switchView("convex")}
               className={`h-6 px-2 flex items-center gap-1 ${
                 viewMode === "convex"
                   ? "bg-muted text-foreground"
@@ -98,9 +106,10 @@ export function Preview({
               <ExternalLink className="h-4 w-4" />
             </Button>
           </div>
+          {/* status + refresh */}
           <div className="flex items-center gap-2">
             <Badge
-              className={`ml-2 px-3 py-1 text-xs capitalize font-semibold border rounded-full flex items-center justify-center select-none pointer-events-none shadow-none ${
+              className={`ml-2 px-3 py-1 text-xs capitalize font-semibold border rounded-full select-none pointer-events-none shadow-none ${
                 containerState === "starting"
                   ? "bg-blue-200 text-blue-800 border-blue-300"
                   : containerState === "active"
@@ -129,6 +138,7 @@ export function Preview({
           </div>
         </div>
 
+        {/* content */}
         <div className="flex-1 overflow-auto">
           {viewMode === "mobile" && (
             <div className="h-full w-full flex items-center justify-center">
@@ -140,18 +150,25 @@ export function Preview({
               />
             </div>
           )}
+
           {viewMode === "qr" && (
-            <div className="h-full w-full rounded-lg p-4 overflow-auto flex items-center justify-center">
+            <div className="h-full w-full rounded-lg p-4 flex items-center justify-center">
               <QRCodeDisplay url={appUrl || ""} />
             </div>
           )}
+
           {viewMode === "code" && (
             <div className="h-full w-full">
               <CodeView />
             </div>
           )}
-          {viewMode === "convex" && (
-            <div className="h-full w-full rounded-lg overflow-hidden">
+
+          {/* keep iframe mounted; just hide/show */}
+          {convexLoaded && (
+            <div
+              className="h-full w-full rounded-lg overflow-hidden"
+              style={{ display: viewMode === "convex" ? "block" : "none" }}
+            >
               <ConvexDashboardEmbed />
             </div>
           )}

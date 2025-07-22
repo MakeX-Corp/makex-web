@@ -2,14 +2,18 @@
 
 import { useEffect, useRef } from "react";
 import { useSession } from "@/context/session-context";
-export function ConvexDashboardEmbed() {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { convexDevUrl, convexProjectId, convexDevAdminKey } = useSession();
-  if (!convexDevUrl || !convexProjectId || !convexDevAdminKey) return;
 
+export function ConvexDashboardEmbed() {
+  const { convexDevUrl, convexProjectId, convexDevAdminKey } = useSession();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Always call the hook, then guard inside it
   useEffect(() => {
+    if (!convexDevUrl || !convexProjectId || !convexDevAdminKey) return;
+
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type !== "dashboard-credentials-request") return;
+
       iframeRef.current?.contentWindow?.postMessage(
         {
           type: "dashboard-credentials",
@@ -24,6 +28,9 @@ export function ConvexDashboardEmbed() {
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, [convexDevUrl, convexProjectId, convexDevAdminKey]);
+
+  // Render nothing until creds are available
+  if (!convexDevUrl || !convexProjectId || !convexDevAdminKey) return null;
 
   return (
     <iframe
