@@ -5,17 +5,11 @@ interface MessagePart {
   image?: string;
 }
 
-interface MessageMetadata {
-  parts?: MessagePart[];
-  imageUrls?: string[];
-  imageUrl?: string;
-}
-
 interface ChatMessage {
   message_id: string;
   role: string;
   content: string;
-  metadata: MessageMetadata;
+  parts: MessagePart[];
 }
 
 interface ProcessedMessage {
@@ -50,29 +44,12 @@ export const fetchChatMessages = async (
       throw new Error("Failed to fetch messages");
     }
 
-    console.log("response in chat thing", response);
     const messages: ChatMessage[] = await response.json();
-    console.log("messages in chat thing", messages);
     return messages.map((msg) => ({
       id: msg.message_id,
       role: msg.role,
       content: msg.content,
-      parts: msg.metadata.parts,
-      experimental_attachments: msg.metadata.imageUrls
-        ? msg.metadata.imageUrls.map((url) => ({
-            url: url,
-            contentType: "image/jpeg",
-            name: "image",
-          }))
-        : msg.metadata.imageUrl
-        ? [
-            {
-              url: msg.metadata.imageUrl,
-              contentType: "image/jpeg",
-              name: "image",
-            },
-          ]
-        : undefined,
+      parts: msg.parts,
     }));
   } catch (error) {
     console.error("Error fetching messages:", error);

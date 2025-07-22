@@ -90,8 +90,6 @@ export async function POST(req: Request) {
 
     // Get the last user message
     const lastUserMessage = messages[messages.length - 1];
-
-    console.log("lastUserMessage", lastUserMessage);
     // Get the user API client
     const userResult = await getSupabaseWithUser(req as NextRequest);
     if (userResult instanceof NextResponse || "error" in userResult)
@@ -185,7 +183,7 @@ export async function POST(req: Request) {
         apiUrl: app.api_url,
       });
 
-      const content =
+      const plainText =
         lastUserMessage.parts?.map((p: any) => p.text).join(" ") ?? "";
 
       const { data: chatHistoryData, error: chatHistoryError } = await supabase
@@ -193,13 +191,11 @@ export async function POST(req: Request) {
         .insert({
           app_id: trimmedAppId,
           user_id: user.id,
-          content: content,
+          content: plainText, //will be removed later, cannot be removed now because it has non null constraint
+          plain_text: plainText,
+          parts: lastUserMessage.parts,
           role: "user",
           model_used: modelName,
-          metadata: {
-            streamed: false,
-            parts: lastUserMessage.parts || undefined,
-          },
           session_id: sessionId,
           message_id: lastUserMessage.id,
         });

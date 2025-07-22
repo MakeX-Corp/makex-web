@@ -49,24 +49,21 @@ export async function POST(request: Request) {
       throw error;
     }
 
-    console.log("[AI Message Save] Message:", message);
-    const content = message.parts?.map((p: any) => p.text).join(" ") ?? "";
-    console.log("[AI Message Save] Content:", content);
+    const plainText = message.parts?.map((p: any) => p.text).join(" ") ?? "";
+
     // Insert assistant's message into chat history
     const { data, error } = await supabase.from("app_chat_history").insert({
       app_id: appId,
       user_id: user.id, // Use authenticated user's ID
-      content: content,
+      content: plainText, //will be removed later, cannot be removed now because it has non null constraint
+      plain_text: plainText,
       role: "assistant",
       model_used: CLAUDE_SONNET_4_MODEL,
-      metadata: message,
+      parts: message.parts,
       session_id: sessionId,
       commit_hash: commitHash,
       message_id: message.id,
     });
-
-    console.log("[AI Message Save] Data:", data);
-    console.log("[AI Message Save] Error:", error);
 
     return NextResponse.json({ success: true });
   } catch (error) {
