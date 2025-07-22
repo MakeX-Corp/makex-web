@@ -13,7 +13,15 @@
     "@smithy/util-utf8" "^4.0.0"
     aws4fetch "^1.0.20"
 
-"@ai-sdk/anthropic@1.2.12", "@ai-sdk/anthropic@^1.2.9":
+"@ai-sdk/anthropic@2.0.0-canary.19":
+  version "2.0.0-canary.19"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/anthropic/-/anthropic-2.0.0-canary.19.tgz#df5717d85d3c4cde4ad42e6fbc5d3bd354ee6859"
+  integrity sha512-uU8UeRmzKfxmaw7x/qL4hGjysPKzzttORx82dv+24wzoxkitYn9sjn2Mu3l1Q3jzbNC/wkyMRQDs831FggukKw==
+  dependencies:
+    "@ai-sdk/provider" "2.0.0-canary.14"
+    "@ai-sdk/provider-utils" "3.0.0-canary.19"
+
+"@ai-sdk/anthropic@^1.2.9":
   version "1.2.12"
   resolved "https://registry.yarnpkg.com/@ai-sdk/anthropic/-/anthropic-1.2.12.tgz#80a4b2527c6bb120778fbc83da4af775aae953a5"
   integrity sha512-YSzjlko7JvuiyQFmI9RN1tNZdEiZxc+6xld/0tq/VkJaHpEzGAb1yiNxxvmYVcjvfu/PcvCxAAYXmTYQQ63IHQ==
@@ -21,40 +29,40 @@
     "@ai-sdk/provider" "1.1.3"
     "@ai-sdk/provider-utils" "2.2.8"
 
-"@ai-sdk/gateway@1.0.0-beta.10", "@ai-sdk/gateway@^1.0.0-beta.10":
-  version "1.0.0-beta.10"
-  resolved "https://registry.yarnpkg.com/@ai-sdk/gateway/-/gateway-1.0.0-beta.10.tgz#14869dcf2f44221b938ecbb322d520da2d6376b5"
-  integrity sha512-v+LXXm8INLYAdxHnNMVAJ/B7k+Nejn5dCQMg/F8SRetB5dEQ4sbfimE+b6rawILJznnsy2fugUO1oFFXlUS5Yg==
+"@ai-sdk/gateway@1.0.0-beta.11", "@ai-sdk/gateway@^1.0.0-beta.10":
+  version "1.0.0-beta.11"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/gateway/-/gateway-1.0.0-beta.11.tgz#40934ef3f324e3fab396ecafed43e33b7999dea6"
+  integrity sha512-dnRUPzSLvp3xvIx6M4FIz4ht8dfL8JkPKwH+akj10im4zbxUii3c3TQ3BJLRdx2Gq/SeljE9H0dX7PDtVyIrbQ==
   dependencies:
     "@ai-sdk/provider" "2.0.0-beta.1"
     "@ai-sdk/provider-utils" "3.0.0-beta.5"
 
-"@ai-sdk/google-vertex@^2.2.27":
-  version "2.2.27"
-  resolved "https://registry.yarnpkg.com/@ai-sdk/google-vertex/-/google-vertex-2.2.27.tgz#54885771abbecd7d004c3e075092fe02b4ff3854"
-  integrity sha512-iDGX/2yrU4OOL1p/ENpfl3MWxuqp9/bE22Z8Ip4DtLCUx6ismUNtrKO357igM1/3jrM6t9C6egCPniHqBsHOJA==
+"@ai-sdk/google-vertex@^3.0.0-beta.15":
+  version "3.0.0-canary.20"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/google-vertex/-/google-vertex-3.0.0-canary.20.tgz#4d54c7c1859b13c17e562c2dced577c33a15a6de"
+  integrity sha512-OaHrkB6Ivo/fbNgny/r95ZcveBAfRp/BsSdEDco1k4XAeBEigxOu0F2SsLrk4fiLsWYAYPRohKaWqFPmXZihwA==
   dependencies:
-    "@ai-sdk/anthropic" "1.2.12"
-    "@ai-sdk/google" "1.2.22"
-    "@ai-sdk/provider" "1.1.3"
-    "@ai-sdk/provider-utils" "2.2.8"
+    "@ai-sdk/anthropic" "2.0.0-canary.19"
+    "@ai-sdk/google" "2.0.0-canary.20"
+    "@ai-sdk/provider" "2.0.0-canary.14"
+    "@ai-sdk/provider-utils" "3.0.0-canary.19"
     google-auth-library "^9.15.0"
 
-"@ai-sdk/google@1.2.22", "@ai-sdk/google@^1.2.22":
-  version "1.2.22"
-  resolved "https://registry.yarnpkg.com/@ai-sdk/google/-/google-1.2.22.tgz#9993e4781c9a773cd17d47490b9efdc90895abd2"
-  integrity sha512-Ppxu3DIieF1G9pyQ5O1Z646GYR0gkC57YdBqXJ82qvCdhEhZHu0TWhmnOoeIWe2olSbuDeoOY+MfJrW8dzS3Hw==
+"@ai-sdk/google@2.0.0-canary.20", "@ai-sdk/google@^2.0.0-beta.13":
+  version "2.0.0-canary.20"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/google/-/google-2.0.0-canary.20.tgz#22830856bf3b3366da47092127eb99db10c73a1f"
+  integrity sha512-2LqcuiADGzr8mqzHfHU+E7Prjl5Vb4aqFKUibp1GF2pLy9i4dx+4lwRRn5noYBoKQcjJTKtO+PkPW2eErvunKg==
   dependencies:
-    "@ai-sdk/provider" "1.1.3"
-    "@ai-sdk/provider-utils" "2.2.8"
+    "@ai-sdk/provider" "2.0.0-canary.14"
+    "@ai-sdk/provider-utils" "3.0.0-canary.19"
 
 "@ai-sdk/openai@^2.0.0-beta.11":
-  version "2.0.0-beta.11"
-  resolved "https://registry.yarnpkg.com/@ai-sdk/openai/-/openai-2.0.0-beta.11.tgz#28799eb309e48152d5d52da55d443d3c63627311"
-  integrity sha512-HQXUMb1V6Xr8EBYvEDwNb8ISyRqyxg2zUst7lzPb6s1nGDKJRBTfSyytNWRL9dZ9vxjM2wK34cltCfZbjaHpAA==
+  version "2.0.0-canary.20"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/openai/-/openai-2.0.0-canary.20.tgz#e8285f5df990830a98f04520ebedfa7ce6f6462d"
+  integrity sha512-AipaQeOz/nIPTtZLJaqG9sxf8zWqZ1UGLG1QOLhNpWwSBDXPVw5k0cWhLtReuZrL/ncKvL6BrGN9aEZLqcmWAg==
   dependencies:
-    "@ai-sdk/provider" "2.0.0-beta.1"
-    "@ai-sdk/provider-utils" "3.0.0-beta.5"
+    "@ai-sdk/provider" "2.0.0-canary.14"
+    "@ai-sdk/provider-utils" "3.0.0-canary.19"
 
 "@ai-sdk/provider-utils@2.2.8":
   version "2.2.8"
@@ -75,6 +83,15 @@
     eventsource-parser "^3.0.3"
     zod-to-json-schema "^3.24.1"
 
+"@ai-sdk/provider-utils@3.0.0-canary.19":
+  version "3.0.0-canary.19"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/provider-utils/-/provider-utils-3.0.0-canary.19.tgz#53b10f0bf068cc2059a3e1881c35822cfeb28682"
+  integrity sha512-4IJw6/wkWYLYfFYPvCs5go0L/sBRZsIRW1l/R6LniF4WjAH2+R4dMbESgBmzx+Z2+W+W6gFeK8dnQByn7vaA/w==
+  dependencies:
+    "@ai-sdk/provider" "2.0.0-canary.14"
+    "@standard-schema/spec" "^1.0.0"
+    zod-to-json-schema "^3.24.1"
+
 "@ai-sdk/provider@1.1.3":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@ai-sdk/provider/-/provider-1.1.3.tgz#ebdda8077b8d2b3f290dcba32c45ad19b2704681"
@@ -89,13 +106,20 @@
   dependencies:
     json-schema "^0.4.0"
 
-"@ai-sdk/react@^2.0.0-beta.24":
-  version "2.0.0-beta.24"
-  resolved "https://registry.yarnpkg.com/@ai-sdk/react/-/react-2.0.0-beta.24.tgz#a3f00fabc7689f32ce29e57b68428317fb999f93"
-  integrity sha512-Hfgb+z7MteHMaSdQ3G8hhTDridmUk2fkuRa17OaFlsfySYaFQd/exC0EBJlT+05ljcJPInyurdrxbgZLtsoPpg==
+"@ai-sdk/provider@2.0.0-canary.14":
+  version "2.0.0-canary.14"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/provider/-/provider-2.0.0-canary.14.tgz#7e8c57282ae0eaa7358670ad71f619d69002c8e1"
+  integrity sha512-aN83hjdjDCyhkOdulwMsxmGb91owS+bCSe6FWg1TEwusNM35vv020nY//Gid/0NdIpVkZJGzAajgCWrnno2zzA==
+  dependencies:
+    json-schema "^0.4.0"
+
+"@ai-sdk/react@^2.0.0-beta.25":
+  version "2.0.0-beta.25"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/react/-/react-2.0.0-beta.25.tgz#68e8a8f9ac37967aa649892fcc437d3add8cd212"
+  integrity sha512-3f3f/z3idsH+sctQJ7t0enFywzIbHXDM6a3tvdPMX1dI53mAsVfyhaHzz8WT9swW3Mmphj0i5fZCH4t78m0L4A==
   dependencies:
     "@ai-sdk/provider-utils" "3.0.0-beta.5"
-    ai "5.0.0-beta.24"
+    ai "5.0.0-beta.25"
     swr "^2.2.5"
     throttleit "2.1.0"
 
@@ -315,9 +339,9 @@
     uuid "^11.0.3"
 
 "@dotenvx/dotenvx@^1.25.1":
-  version "1.48.1"
-  resolved "https://registry.yarnpkg.com/@dotenvx/dotenvx/-/dotenvx-1.48.1.tgz#0b3b7af166abe2c072d9fdbef18f515619b1f49c"
-  integrity sha512-9G+AusJ/0iZgkFEmXLTt35HeG0tpWwx8trEhEzDQdnW+hT+ZvlcCa7xfH3qoO7srvPP5JF9lL6MCl8N38Osupw==
+  version "1.48.3"
+  resolved "https://registry.yarnpkg.com/@dotenvx/dotenvx/-/dotenvx-1.48.3.tgz#acb1d4c5eac2147d5153eeee5f8982b56e6f00b2"
+  integrity sha512-7Tk0Rzgz0SEkaJRGijbKtVDHHztHz9fyXwcDT86VtD1fGVRirk4aBKUud1PEQdhwcg+jDblKGoXeA+I7J60CxQ==
   dependencies:
     commander "^11.1.0"
     dotenv "^16.4.5"
@@ -682,6 +706,11 @@
   version "0.33.5"
   resolved "https://registry.yarnpkg.com/@img/sharp-win32-x64/-/sharp-win32-x64-0.33.5.tgz#56f00962ff0c4e0eb93d34a047d29fa995e3e342"
   integrity sha512-MpY/o8/8kj+EcnxwvrP4aTJSWw/aZ7JIGR4aBeZkZw5B7/Jn+tY9/VNwtcoGmdT7GfggGIU4kygOMSbYnOrAbg==
+
+"@intercom/messenger-js-sdk@^0.0.14":
+  version "0.0.14"
+  resolved "https://registry.yarnpkg.com/@intercom/messenger-js-sdk/-/messenger-js-sdk-0.0.14.tgz#a27999370cc0a82a2a57a779426df25a57891863"
+  integrity sha512-2dH4BDAh9EI90K7hUkAdZ76W79LM45Sd1OBX7t6Vzy8twpNiQ5X+7sH9G5hlJlkSGnf+vFWlFcy9TOYAyEs1hA==
 
 "@isaacs/balanced-match@^4.0.1":
   version "4.0.1"
@@ -3002,12 +3031,12 @@ agentkeepalive@^4.2.1:
   dependencies:
     humanize-ms "^1.2.1"
 
-ai@5.0.0-beta.24, ai@^5.0.0-beta.24:
-  version "5.0.0-beta.24"
-  resolved "https://registry.yarnpkg.com/ai/-/ai-5.0.0-beta.24.tgz#9cfe54607cea47822407c6997b06a4ec04e4f7e1"
-  integrity sha512-glQIA+PGEP+UEPB+thdqNZi9Ot4Yjiqsl071S1KPaRTGHmBIg/c8OYb2mXCRM+3cNCFGVnCTudZoYUVNwBpFxg==
+ai@5.0.0-beta.25, ai@^5.0.0-beta.25:
+  version "5.0.0-beta.25"
+  resolved "https://registry.yarnpkg.com/ai/-/ai-5.0.0-beta.25.tgz#02e6345dec84f843357e40d4aae17aee85023c3c"
+  integrity sha512-pbfFqtQvz7hiDw6TwUH75CK9FgrZFBsxqbW4yW0aqluHw3nRbhf0w1u2AMiYgvWMy8Xf8TkBbMtY4vyMc4neeA==
   dependencies:
-    "@ai-sdk/gateway" "1.0.0-beta.10"
+    "@ai-sdk/gateway" "1.0.0-beta.11"
     "@ai-sdk/provider" "2.0.0-beta.1"
     "@ai-sdk/provider-utils" "3.0.0-beta.5"
     "@opentelemetry/api" "1.9.0"
@@ -3863,9 +3892,9 @@ eciesjs@^0.4.10:
     "@noble/hashes" "^1.8.0"
 
 electron-to-chromium@^1.5.173:
-  version "1.5.187"
-  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.5.187.tgz#8c58854e065962351dc87e95614dd78d50425966"
-  integrity sha512-cl5Jc9I0KGUoOoSbxvTywTa40uspGJt/BDBoDLoxJRSBpWh4FFXBsjNRHfQrONsV/OoEjDfHUmZQa2d6Ze4YgA==
+  version "1.5.189"
+  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.5.189.tgz#a5c41d2e5c64e2e6cd11bdf4eeeebc1ec8601e08"
+  integrity sha512-y9D1ntS1ruO/pZ/V2FtLE+JXLQe28XoRpZ7QCCo0T8LdQladzdcOVQZH/IWLVJvCw12OGMb6hYOeOAjntCmJRQ==
 
 embla-carousel-react@8.5.1:
   version "8.5.1"
@@ -4062,9 +4091,9 @@ evt@^2.4.13:
     tsafe "^1.8.5"
 
 exa-js@^1.6.13:
-  version "1.8.22"
-  resolved "https://registry.yarnpkg.com/exa-js/-/exa-js-1.8.22.tgz#d1b997ddf6b268f743b3a47d12e21c143695aa8b"
-  integrity sha512-XF2fkEFHWI75kZ0AH9cF3TpwzeZhEOJ4sO2kK3QnhfqTcFErPzUbMjNR0oe+pzEg1+qmIJ08xMrMvJNBTqnUuA==
+  version "1.8.23"
+  resolved "https://registry.yarnpkg.com/exa-js/-/exa-js-1.8.23.tgz#6eacac2394a46ea602bb83c5545054a96f6e7754"
+  integrity sha512-46l66SJM5HuaRTc9Nf9Rz4FCaq3xBjrecgDEjq6P05B7qZXpEBjSuW24ra5ppBaauzgzGiS0FdeVMFCEvulpPQ==
   dependencies:
     cross-fetch "~4.1.0"
     dotenv "~16.4.7"
@@ -5766,9 +5795,9 @@ postgres@^3.4.5:
   integrity sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw==
 
 posthog-js@^1.235.6:
-  version "1.257.0"
-  resolved "https://registry.yarnpkg.com/posthog-js/-/posthog-js-1.257.0.tgz#7adfffa024756b910ee87a978e0fc6c12a9fa730"
-  integrity sha512-Ujg9RGtWVCu+4tmlRpALSy2ZOZI6JtieSYXIDDdgMWm167KYKvTtbMPHdoBaPWcNu0Km+1hAIBnQFygyn30KhA==
+  version "1.257.1"
+  resolved "https://registry.yarnpkg.com/posthog-js/-/posthog-js-1.257.1.tgz#7f9cb847779d515cdadbf9540378722d33efe4cd"
+  integrity sha512-29kk3IO/LkPQ8E1cds6a2sWr5iN4BovgL+EMzRK9hQXbI6D3FJnQ7zLU6EUpktt6pHnqGpfO3BTEcflcDYkHBg==
   dependencies:
     core-js "^3.38.1"
     fflate "^0.4.8"

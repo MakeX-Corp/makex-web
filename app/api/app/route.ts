@@ -109,7 +109,6 @@ export async function POST(request: Request) {
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
         retryCount++;
       } catch (error) {
-        console.log(`Attempt ${retryCount + 1} failed with error:`, error);
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
         retryCount++;
       }
@@ -174,17 +173,14 @@ export async function POST(request: Request) {
       appId: insertedApp.id,
       appName: appName,
       sandboxId: sandboxDbId,
-      containerId: containerId,
-      initial: true,
+      containerId: containerId
     });
 
-    //TODO: feature flag this with decision tree
     await setupGit.trigger({
       appId: insertedApp.id,
       containerId: containerId,
     });
 
-    //TODO: feature flag this with decision tree
     await configureConvex.trigger({
       appId: insertedApp.id,
       containerId: containerId,

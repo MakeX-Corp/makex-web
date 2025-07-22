@@ -28,12 +28,12 @@ export async function GET(req: Request) {
 
     const { data, error } = await supabase
       .from('user_sandboxes')
-      .select('sandbox_id, sandbox_status, sandbox_updated_at, app_status')
+      .select('sandbox_status, app_status, expo_status')
       .eq('app_id', appId)
       .order('sandbox_updated_at', { ascending: false })
       .limit(1);
 
-    console.log("Data:", data);
+    console.log("Sandbox data:", data);
 
     if (error) {
       return NextResponse.json(

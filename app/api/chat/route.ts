@@ -110,12 +110,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // if (appStatus?.app_status === "changing") {
-    //   return NextResponse.json(
-    //     { error: "App is currently being modified. Please try again later." },
-    //     { status: 409 }
-    //   );
-    // }
+    if (appStatus?.app_status === "changing") {
+      return NextResponse.json(
+        { error: "App is currently being modified. Please try again later." },
+        { status: 409 }
+      );
+    }
 
     // Lock the app
     const trimmedAppId = appId.trim();
@@ -129,6 +129,8 @@ export async function POST(req: Request) {
       })
       .eq("app_id", trimmedAppId)
       .select();
+
+      console.log("lockData", lockData);
 
     // Check if we actually found and updated a record
     if (!lockError && (!lockData || lockData.length === 0)) {
@@ -211,11 +213,23 @@ export async function POST(req: Request) {
         system: getPrompt(fileTree),
         stopWhen:stepCountIs(100),
         experimental_telemetry: { isEnabled: true },
+        onFinish: async (message) => {
+          try {
+            const { data, error } = await supabaseAdmin
+              .from("user_sandboxes")
+              .update({ app_status: "active" })
+              .eq("app_id", appId)
+              .select();
+            console.log('data', data);
+            if (error) {
+              console.error('Error updating app_status to active:', error);
+            }
+          } catch (err) {
+            console.error('Exception while updating app_status to active:', err);
+          }
+        },
       });
     
-      // Don't await providerMetadata before returning the stream
-      // console.log('result Provider Metadata', await result.providerMetadata);
-
       return result.toUIMessageStreamResponse();
     } catch (error) {
       // Comprehensive error handling
