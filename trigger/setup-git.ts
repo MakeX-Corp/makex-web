@@ -60,12 +60,15 @@ export const setupGit = task({
       const gitSetupResult = await setupFreestyleGitInContainer(containerId, repoId!);
       console.log("[setupGit] Git setup in container result:", gitSetupResult);
 
+      console.log("[setupGit] Git setup in container result:", gitSetupResult);
+
       // Save the repository ID to the database
       console.log("[setupGit] Saving repository ID to database...");
       const { error: updateError } = await adminSupabase
         .from("user_apps")
         .update({
           git_repo_id: repoId,
+          initial_commit: gitSetupResult.commitIdResult.stdout.trim(),
         })
         .eq("id", appId);
 
