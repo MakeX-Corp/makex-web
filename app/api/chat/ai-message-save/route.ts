@@ -14,8 +14,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { appId, sessionId, options, message } = body;
 
-    console.log("[AI Message Save] Message first part:", message);
-
     const { data: app, error: appError } = await supabase
       .from("user_apps")
       .select("*")

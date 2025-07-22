@@ -29,8 +29,6 @@ export async function POST(request: Request) {
     const appName = generateAppName();
     const displayName = await generateDisplayName(prompt, appName);
 
-    console.log("Generated displayName:", displayName);
-
     timings.authAndSetup = performance.now() - startTime;
 
     // Begin transaction to ensure both app and session are created atomically
@@ -170,7 +168,7 @@ export async function POST(request: Request) {
       appId: insertedApp.id,
       appName: appName,
       sandboxId: sandboxDbId,
-      containerId: containerId
+      containerId: containerId,
     });
 
     await setupGit.trigger({

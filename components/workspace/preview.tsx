@@ -34,12 +34,12 @@ export function Preview({
   const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code" | "convex">(
     "mobile"
   );
-  const [convexLoaded, setConvexLoaded] = useState(false); // NEW
+  const [convexLoaded, setConvexLoaded] = useState(false);
   const { appUrl } = useSession();
 
   const switchView = (mode: typeof viewMode) => {
     setViewMode(mode);
-    if (mode === "convex" && !convexLoaded) setConvexLoaded(true); // mount once
+    if (mode === "convex" && !convexLoaded) setConvexLoaded(true);
   };
 
   return (

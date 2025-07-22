@@ -13,8 +13,6 @@ export default function DashboardLayout({
   params: any;
 }) {
   const { user } = useApp();
-  console.log("User in dashboard layout", user)
-
   useEffect(() => {
     if (user) {
       Intercom({
