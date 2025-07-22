@@ -38,7 +38,7 @@ export const deleteContainer = task({
     // update status to deleted 
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
-      .update({ sandbox_status: "deleted" })
+      .update({ sandbox_status: "deleted",app_status: "deleted" })
       .eq("id", sandbox.id);
 
     await redisUrlSetter(appName, "https://makex.app/app-not-found", "https://makex.app/app-not-found");

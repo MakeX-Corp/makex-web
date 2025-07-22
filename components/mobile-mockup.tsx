@@ -1,19 +1,17 @@
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { PhoneFrame } from "./phone-frame";
 
 interface MobileMockupProps {
   appUrl: string | null;
   iframeKey: any;
-  containerState: "starting" | "active" | "paused" | "resuming" | "pausing";
-  appState: any;
+  state: any;
 }
 
 export default function MobileMockup({
   appUrl,
   iframeKey,
-  containerState,
-  appState,
+  state
 }: MobileMockupProps) {
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200
@@ -55,6 +53,8 @@ export default function MobileMockup({
   const contentWidth = phoneWidth - padding * 2;
   const contentHeight = phoneHeight - padding * 2;
 
+
+
   return (
     <div className="w-full h-full flex items-center justify-center">
       <PhoneFrame
@@ -63,43 +63,23 @@ export default function MobileMockup({
         contentHeight={contentHeight}
         padding={padding}
       >
-        <iframe
-          key={[iframeKey, containerState, appState].toString()}
-          src={appUrl || undefined}
-          style={{
-            width: `${contentWidth}px`,
-            height: `${contentHeight}px`,
-            marginTop: `${padding}px`,
-            marginLeft: `${padding}px`,
-            border: "none",
-          }}
-        />
-
-        {containerState !== "active" && (
+        {/* Show the app if container is active and expo_status is bundled */}
+        {state?.sandbox_status === "active" && state?.expo_status === "bundled" && appUrl ? (
+          <iframe
+            key={[iframeKey, state?.sandbox_status, state?.app_status].toString()}
+            src={appUrl}
+            style={{
+              width: `${contentWidth}px`,
+              height: `${contentHeight}px`,
+              marginTop: `${padding}px`,
+              marginLeft: `${padding}px`,
+              border: "none",
+            }}
+          />
+        ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
             <span style={{ fontSize: `${14 * scaleFactor}px` }}>
-              The Server is {containerState}
-            </span>
-            {containerState === "paused" || containerState === "pausing" ? (
-              <span style={{ fontSize: `${14 * scaleFactor}px` }}>
-                Due to inactivity
-              </span>
-            ) : (
-              <Loader2
-                className="animate-spin mt-2"
-                style={{
-                  height: `${16 * scaleFactor}px`,
-                  width: `${16 * scaleFactor}px`,
-                }}
-              />
-            )}
-          </div>
-        )}
-
-        {containerState === "active" || true && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
-            <span style={{ fontSize: `${14 * scaleFactor}px` }}>
-              App is {appState}
+              App is loading...
             </span>
             <Loader2
               className="animate-spin mt-2"
