@@ -8,7 +8,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Schema for title generation
 const titleSchema = z.object({
-  title: z.string().describe("A short title (3 words or fewer) that captures the essence of the conversation")
+  title: z
+    .string()
+    .describe(
+      "A short title (3 words or fewer) that captures the essence of the conversation"
+    ),
 });
 
 const summarizeChat = async (content: string) => {
@@ -21,7 +25,7 @@ const summarizeChat = async (content: string) => {
       model: gateway(CLAUDE_SONNET_4_MODEL),
       providerOptions: {
         gateway: {
-          order: ["bedrock","vertex","anthropic"],
+          order: ["anthropic", "bedrock", "vertex"],
         },
       },
       schema: titleSchema,
@@ -30,7 +34,8 @@ const summarizeChat = async (content: string) => {
 Conversation: ${content.substring(0, 2000)}
 
 Return format: {"title": "Your Title Here"}`,
-      system: "You are a title generator. Always respond with valid JSON containing a 'title' field with a short, descriptive title (3 words or fewer).",
+      system:
+        "You are a title generator. Always respond with valid JSON containing a 'title' field with a short, descriptive title (3 words or fewer).",
     });
 
     return object.title.trim() || "New Chat";
@@ -42,7 +47,7 @@ Return format: {"title": "Your Title Here"}`,
 export async function PUT(request: Request) {
   try {
     const result = await getSupabaseWithUser(request as NextRequest);
-    if (result instanceof NextResponse || 'error' in result ) return result;
+    if (result instanceof NextResponse || "error" in result) return result;
 
     const { supabase, user } = result;
 

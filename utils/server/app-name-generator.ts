@@ -48,11 +48,10 @@ Only return the JSON object, nothing else.`,
       }),
       providerOptions: {
         gateway: {
-          order: ["bedrock","vertex","anthropic"],
+          order: ["anthropic", "bedrock", "vertex"],
         },
       },
     });
-
 
     return result.object.title || fallback;
   } catch (error) {
