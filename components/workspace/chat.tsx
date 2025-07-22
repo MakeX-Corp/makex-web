@@ -161,7 +161,6 @@ export function Chat({
       api: "/api/chat/",
     }),
     onFinish: (result) => {
-      console.log("Chat onFinish called:", result.message);
       setIsAIResponding(false);
       onResponseComplete();
       // Save AI message and update session title
@@ -211,8 +210,6 @@ export function Chat({
   });
 
   useEffect(() => {
-    console.log("[Chat] Messages:", messages);
-    console.log("[Chat] Initial Messages:", initialMessages);
     setMessages(initialMessages);
   }, [initialMessages, setMessages]);
 

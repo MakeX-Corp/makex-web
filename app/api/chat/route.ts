@@ -88,11 +88,6 @@ export async function POST(req: Request) {
       subscription,
     } = await req.json();
 
-    console.log("messages", messages);
-
-    console.log("messageParts", messageParts);
-    console.log("multiModal", multiModal);
-    console.log("apiUrl", apiUrl);
     // Get the last user message
     const lastUserMessage = messages[messages.length - 1];
 
@@ -190,12 +185,6 @@ export async function POST(req: Request) {
         apiUrl: app.api_url,
       });
 
-      //this is before inserting into the database
-      console.log(
-        "lastUserMessage.content before inserting into the database",
-        lastUserMessage
-      );
-
       const content =
         lastUserMessage.parts?.map((p: any) => p.text).join(" ") ?? "";
 
@@ -214,12 +203,6 @@ export async function POST(req: Request) {
           session_id: sessionId,
           message_id: lastUserMessage.id,
         });
-      console.log("chatHistoryData", chatHistoryData);
-      console.log("chatHistoryError", chatHistoryError);
-
-      // Check if there are any active sandboxes no just hit the get endpoint
-
-      // Check if there are any active sandboxes no just hit the get endpoint
 
       const result = streamText({
         model: gateway(CLAUDE_SONNET_4_MODEL),
@@ -236,8 +219,6 @@ export async function POST(req: Request) {
       });
 
       // Don't await providerMetadata before returning the stream
-      // console.log('result Provider Metadata', await result.providerMetadata);
-
       return result.toUIMessageStreamResponse();
     } catch (error) {
       // Comprehensive error handling

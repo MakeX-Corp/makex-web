@@ -51,20 +51,18 @@ function DashboardFrame({
 }
 
 export function ConvexDashboardEmbed() {
-  const {
-    convexDevUrl,
-    convexProjectId,
-    convexDevAdminKey,
-    convexProdUrl,
-    convexProdAdminKey,
-  } = useSession();
+  const { convexConfig } = useSession();
 
   const [env, setEnv] = useState<"dev" | "prod">("dev");
 
   const devAvailable =
-    convexDevUrl && convexProjectId && convexDevAdminKey ? true : false;
+    convexConfig.devUrl && convexConfig.projectId && convexConfig.devAdminKey
+      ? true
+      : false;
   const prodAvailable =
-    convexProdUrl && convexProjectId && convexProdAdminKey ? true : false;
+    convexConfig.prodUrl && convexConfig.projectId && convexConfig.prodAdminKey
+      ? true
+      : false;
 
   if (!devAvailable) {
     return null;
@@ -108,9 +106,9 @@ export function ConvexDashboardEmbed() {
         {env === "dev" && (
           <DashboardFrame
             key="dev"
-            adminKey={convexDevAdminKey!}
-            deploymentUrl={convexDevUrl!}
-            deploymentName={convexProjectId!}
+            adminKey={convexConfig.devAdminKey!}
+            deploymentUrl={convexConfig.devUrl!}
+            deploymentName={convexConfig.projectId!}
           />
         )}
 
@@ -118,9 +116,9 @@ export function ConvexDashboardEmbed() {
           (prodAvailable ? (
             <DashboardFrame
               key="prod"
-              adminKey={convexProdAdminKey!}
-              deploymentUrl={convexProdUrl!}
-              deploymentName={convexProjectId!}
+              adminKey={convexConfig.prodAdminKey!}
+              deploymentUrl={convexConfig.prodUrl!}
+              deploymentName={convexConfig.projectId!}
             />
           ) : (
             <div className="h-full flex items-center justify-center">
