@@ -59,11 +59,6 @@ export function ConvexDashboardEmbed() {
     convexProdAdminKey,
   } = useSession();
 
-  console.log("convexDevUrl", convexDevUrl);
-  console.log("convexProjectId", convexProjectId);
-  console.log("convexDevAdminKey", convexDevAdminKey);
-  console.log("convexProdUrl", convexProdUrl);
-  console.log("convexProdAdminKey", convexProdAdminKey);
   const [env, setEnv] = useState<"dev" | "prod">("dev");
 
   const devAvailable =
@@ -97,7 +92,6 @@ export function ConvexDashboardEmbed() {
           <Button
             variant="ghost"
             size="sm"
-            disabled={!prodAvailable}
             className={`h-6 px-3 text-xs ${
               env === "prod"
                 ? "bg-muted text-foreground"
@@ -136,7 +130,7 @@ export function ConvexDashboardEmbed() {
                   Production Not Deployed
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Your app hasn’t been deployed to production yet. Deploy it to
+                  Your app hasn't been deployed to production yet. Deploy it to
                   see the production Convex dashboard here.
                 </p>
               </div>
