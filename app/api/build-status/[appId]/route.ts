@@ -24,7 +24,9 @@ export async function GET(
     // Query the user_sandboxes table for the current status
     const { data: sandbox, error } = await supabase
       .from("user_sandboxes")
-      .select("sandbox_status, app_status, api_url, sandbox_updated_at")
+      .select(
+        "sandbox_status, app_status, api_url, sandbox_updated_at, expo_status"
+      )
       .eq("app_id", appId)
       .eq("user_id", user.id)
       .single();
@@ -47,8 +49,9 @@ export async function GET(
     // 🔍 Check both conditions explicitly
     const sandboxIsActive = sandbox.sandbox_status === "active";
     const appIsActive = sandbox.app_status === "active";
+    const expoIsActive = sandbox.expo_status === "bundled";
 
-    if (sandboxIsActive && appIsActive) {
+    if (sandboxIsActive && appIsActive && expoIsActive) {
       status = "complete";
       message = "Your app is ready!";
     } else if (
