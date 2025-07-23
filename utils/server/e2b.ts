@@ -62,7 +62,11 @@ export async function startExpoInContainer(sandboxId: string) {
   console.log("API URL:", apiUrl);
 
   await sbx.commands.run(
-    `sudo pm2 start "npx expo start --port 8000" --name expo-server --merge-logs --log ~/expo_logs.txt`,
+    `sudo pm2 start "npx expo start --port 8000" \
+      --name expo-server \
+      --merge-logs \
+      --output /home/user/expo_logs.txt \
+      --error /home/user/expo_logs.txt`,
     {
       cwd: APP_DIR,
       envs: {

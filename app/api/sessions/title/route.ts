@@ -1,7 +1,7 @@
 // File: app/api/sessions/title/route.js
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { gateway } from "@ai-sdk/gateway";
+import { gateway } from "@/utils/server/gateway";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";

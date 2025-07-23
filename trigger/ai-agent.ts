@@ -12,7 +12,7 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { resumeContainer } from "./resume-container";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
-import { gateway } from "@ai-sdk/gateway";
+import { gateway } from "@/utils/server/gateway";
 
 const LOG_PREFIX = "[AI Agent]";
 

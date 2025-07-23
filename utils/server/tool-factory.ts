@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createFileBackendApiClient } from "./file-backend-api-client";
 import { getRelevantContext } from "./getRelevantContext";
 import FirecrawlApp, { ScrapeResponse, Action } from '@mendable/firecrawl-js';
-import { CONVEX_AUTH_DOCS } from "../client/convex-auth-docs";
+import { CONVEX_AUTH_DOCS } from "../docs/convex-auth-docs";
 
 type ToolConfig = {
   apiUrl?: string;

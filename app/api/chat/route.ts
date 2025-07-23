@@ -8,7 +8,7 @@ import { getPrompt } from "@/utils/server/prompt";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { getBedrockClient } from "@/utils/server/bedrock-client";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
-import { gateway } from "@ai-sdk/gateway";
+import { gateway } from "@/utils/server/gateway";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
