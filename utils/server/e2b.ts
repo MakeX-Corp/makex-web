@@ -62,16 +62,16 @@ export async function startExpoInContainer(sandboxId: string) {
   console.log("API URL:", apiUrl);
 
   await sbx.commands.run(
-    `sudo EXPO_PACKAGER_PROXY_URL=${appUrl} npx expo start --port 8000 > ~/expo_logs.txt 2>&1 &`,
+    `sudo pm2 start "npx expo start --port 8000" --name expo-server --merge-logs --log ~/expo_logs.txt`,
     {
-      background: true,
       cwd: APP_DIR,
       envs: {
         EXPO_PACKAGER_PROXY_URL: appUrl,
       },
+      background: true,
     }
   );
-
+  
   return {
     appUrl,
     apiUrl,
@@ -219,11 +219,13 @@ export async function startConvexInContainer(sandboxId: string) {
   await sbx.commands.run(`cd ${APP_DIR}`);
 
   // Step 2: run convex dev in background
-  await sbx.commands.run(`sudo npx convex dev > ${LOG_FILE} 2>&1 &`, {
-    background: true,
-    cwd: APP_DIR,
-  });
-
+  await sbx.commands.run(
+    `sudo pm2 start "npx convex dev" --name convex-server --merge-logs --log ${LOG_FILE}`,
+    {
+      cwd: APP_DIR,
+    }
+  );
+  
   return {
     startedIn: APP_DIR,
     logFile: LOG_FILE,
@@ -232,6 +234,7 @@ export async function startConvexInContainer(sandboxId: string) {
 
 
 export async function setupFreestyleGitInContainer(sandboxId: string, repoId: string) {
+  console.log("[setupGit] Tanmay was here");
   const sbx = await Sandbox.connect(sandboxId);
 
   // Clean up any existing git configuration
@@ -259,6 +262,10 @@ export async function setupFreestyleGitInContainer(sandboxId: string, repoId: st
     cwd: APP_DIR,
   });
 
+  const commitIdResult = await sbx.commands.run(`sudo git rev-parse HEAD`, { cwd: APP_DIR });
+
+  console.log("[setupGit] Commit ID result:", commitIdResult);
+
   // Add freestyle remote
   const remoteAddResult = await sbx.commands.run(`sudo git remote add freestyle https://${process.env.FREESTYLE_IDENTITY_ID}:${process.env.FREESTYLE_IDENTITY_TOKEN}@git.freestyle.sh/${repoId}`,
     {
@@ -275,6 +282,7 @@ export async function setupFreestyleGitInContainer(sandboxId: string, repoId: st
     initResult,
     addResult,
     commitResult,
+    commitIdResult,
     remoteAddResult,
     pushResult,
   };
