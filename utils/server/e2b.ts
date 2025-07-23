@@ -61,12 +61,11 @@ export async function startExpoInContainer(sandboxId: string) {
   console.log("App URL:", appUrl);
   console.log("API URL:", apiUrl);
 
+  // Escape the appUrl to handle special characters
+  const escapedAppUrl = appUrl.replace(/"/g, '\\"');
+  
   await sbx.commands.run(
-    `sudo pm2 start "npx expo start --port 8000" \
-      --name expo-server \
-      --merge-logs \
-      --output /home/user/expo_logs.txt \
-      --error /home/user/expo_logs.txt`,
+    `sudo pm2 start "EXPO_PACKAGER_PROXY_URL=${escapedAppUrl} npx expo start --port 8000" --name expo-server --merge-logs --output /home/user/expo_logs.txt --error /home/user/expo_logs.txt`,
     {
       cwd: APP_DIR,
       envs: {
