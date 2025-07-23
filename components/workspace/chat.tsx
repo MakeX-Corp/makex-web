@@ -39,8 +39,6 @@ export function Chat({
   const {
     appId,
     apiUrl,
-    appName,
-    supabaseProject,
     getCurrentSessionTitle,
     updateSessionTitle: contextUpdateSessionTitle,
     justCreatedSessionId,
@@ -232,9 +230,7 @@ export function Chat({
           body: {
             apiUrl,
             appId,
-            appName,
             sessionId,
-            supabase_project: supabaseProject,
             subscription,
           },
         }
@@ -247,9 +243,7 @@ export function Chat({
     setIsAIResponding,
     apiUrl,
     appId,
-    appName,
     sessionId,
-    supabaseProject,
     subscription,
   ]);
 
@@ -295,9 +289,7 @@ export function Chat({
           body: {
             apiUrl,
             appId,
-            appName,
             sessionId,
-            supabase_project: supabaseProject,
             subscription,
           },
         }

@@ -76,17 +76,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const {
-      messages,
-      appId,
-      appName,
-      sessionId,
-      supabase_project,
-      messageParts,
-      multiModal,
-      apiUrl,
-      subscription,
-    } = await req.json();
+    const { messages, appId, sessionId, subscription } = await req.json();
 
     // Get the last user message
     const lastUserMessage = messages[messages.length - 1];
