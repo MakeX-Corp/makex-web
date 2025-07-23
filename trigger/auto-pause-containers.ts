@@ -7,15 +7,19 @@ export const firstScheduledTask = schedules.task({
   cron: "* * * * *",
   run: async (payload) => {
     try {
-        // Get all active sandbox containers
+        // Get all active sandbox containers with app names
         const supabase = await getSupabaseAdmin();
         const { data: activeSandbox, error: activeSandboxError } =
             await supabase
                 .from("user_sandboxes")
-                .select("*")
+                .select(`
+                    *,
+                    user_apps!inner(app_name)
+                `)
                 .in("sandbox_status", ["active"])
                 .eq("app_status", "active");
 
+        console.log("Active sandboxes:", activeSandbox);
         if (activeSandboxError) {
             console.error("Error fetching active apps:", activeSandboxError);
             console.error("Failed to fetch active apps");
@@ -66,9 +70,8 @@ export const firstScheduledTask = schedules.task({
                     console.log("Pausing sandbox:", sandbox.id);
                     await pauseContainer.trigger(
                         {
-                            userId: sandbox.user_id,
                             appId: sandbox.app_id,
-                            appName: sandbox.app_name,
+                            appName: sandbox.user_apps.app_name,
                         },
                         {
                             queue: { name: "auto-pause-containers" },

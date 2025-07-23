@@ -53,7 +53,54 @@ export default function MobileMockup({
   const contentWidth = phoneWidth - padding * 2;
   const contentHeight = phoneHeight - padding * 2;
 
+  // Determine what to display based on state
+  const getDisplayContent = () => {
+    const sandboxStatus = state?.sandbox_status;
+    const expoStatus = state?.expo_status;
+    const appStatus = state?.app_status;
 
+    // Highest precedence: Container state
+    if (sandboxStatus === "paused") {
+      return {
+        message: "Refresh page to restart container",
+        showSpinner: false
+      };
+    }
+
+    if (sandboxStatus === "pausing") {
+      return {
+        message: "Container is pausing...",
+        showSpinner: false
+      };
+    }
+
+    // Container is active
+    if (sandboxStatus === "active") {
+      // If expo_status is not bundled, show expo_status
+      if (expoStatus !== "bundled") {
+        return {
+          message: `Expo: ${expoStatus || "loading"}...`,
+          showSpinner: true
+        };
+      }
+
+      // If expo_status is bundled, show app_status
+      if (expoStatus === "bundled") {
+        return {
+          message: `App: ${appStatus || "loading"}...`,
+          showSpinner: true
+        };
+      }
+    }
+
+    // Default fallback
+    return {
+      message: "App is loading...",
+      showSpinner: true
+    };
+  };
+
+  const displayContent = getDisplayContent();
 
   return (
     <div className="w-full h-full flex items-center justify-center">
@@ -63,8 +110,11 @@ export default function MobileMockup({
         contentHeight={contentHeight}
         padding={padding}
       >
-        {/* Show the app if container is active and expo_status is bundled */}
-        {state?.sandbox_status === "active" && state?.expo_status === "bundled" && appUrl ? (
+        {/* Show the app if container is active, expo_status is bundled, and app_status is active */}
+        {state?.sandbox_status === "active" && 
+         state?.expo_status === "bundled" && 
+         state?.app_status === "active" && 
+         appUrl ? (
           <iframe
             key={[iframeKey, state?.sandbox_status, state?.app_status].toString()}
             src={appUrl}
@@ -79,15 +129,17 @@ export default function MobileMockup({
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
             <span style={{ fontSize: `${14 * scaleFactor}px` }}>
-              App is loading...
+              {displayContent.message}
             </span>
-            <Loader2
-              className="animate-spin mt-2"
-              style={{
-                height: `${16 * scaleFactor}px`,
-                width: `${16 * scaleFactor}px`,
-              }}
-            />
+            {displayContent.showSpinner && (
+              <Loader2
+                className="animate-spin mt-2"
+                style={{
+                  height: `${16 * scaleFactor}px`,
+                  width: `${16 * scaleFactor}px`,
+                }}
+              />
+            )}
           </div>
         )}
       </PhoneFrame>
