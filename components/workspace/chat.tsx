@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, UIMessage } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,9 @@ import {
 } from "@/lib/chat-service";
 import { updateSessionTitle } from "@/utils/client/session-utils";
 import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
+import type { UIMessagePart } from "ai";
+
+type MessagePart = UIMessagePart<any, any>;
 
 interface ChatProps {
   sessionId: string;
@@ -36,8 +39,6 @@ export function Chat({
   const {
     appId,
     apiUrl,
-    appName,
-    supabaseProject,
     getCurrentSessionTitle,
     updateSessionTitle: contextUpdateSessionTitle,
     justCreatedSessionId,
@@ -50,9 +51,13 @@ export function Chat({
   const [isLoading, setIsLoading] = useState(false);
   const [storedPrompt, setStoredPrompt] = useState<string | null>(null);
   const [promptChecked, setPromptChecked] = useState(false);
-  const [restoringMessageId, setRestoringMessageId] = useState<string | null>(null);
+  const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
+    null
+  );
   const [limitReached, setLimitReached] = useState(false);
-  const [remainingMessages, setRemainingMessages] = useState<number | null>(null);
+  const [remainingMessages, setRemainingMessages] = useState<number | null>(
+    null
+  );
   const [input, setInput] = useState("");
 
   const injectedPromptRef = useRef(false);
@@ -150,40 +155,43 @@ export function Chat({
   }, [subscription]);
 
   // 4. Initialize useChat
-  const { messages, sendMessage, status, error } = useChat({
+  const { messages, sendMessage, setMessages, status, error } = useChat({
     id: sessionId,
+
     transport: new DefaultChatTransport({
       api: "/api/chat/",
     }),
     onFinish: (result) => {
-      console.log("Chat onFinish called:", result.message);
       setIsAIResponding(false);
       onResponseComplete();
       // Save AI message and update session title
-      saveAIMessage(sessionId, appId || "", apiUrl, {}, result.message).catch((error) => {
+      saveAIMessage(sessionId, appId, apiUrl, result.message).catch((error) => {
         console.error("Error saving AI message:", error);
       });
-      
+
       // Update session title if needed
-                if (
-            messages.length === 0 &&
-            result.message.role === "assistant" &&
-            getCurrentSessionTitle() === "New Chat"
-          ) {
-            // Extract text content from message parts
-            const userMessageText = messages[0]?.parts?.find(part => part.type === "text")?.text || "";
-            const assistantMessageText = result.message.parts?.find(part => part.type === "text")?.text || "";
-            
-            updateSessionTitle(
-              userMessageText,
-              assistantMessageText,
-              sessionId
-            ).then((newTitle) => {
-              if (newTitle) {
-                contextUpdateSessionTitle(sessionId, newTitle);
-              }
-            });
+      if (
+        messages.length === 0 &&
+        result.message.role === "assistant" &&
+        getCurrentSessionTitle() === "New Chat"
+      ) {
+        // Extract text content from message parts
+        const userMessageText =
+          messages[0]?.parts?.find((part) => part.type === "text")?.text || "";
+        const assistantMessageText =
+          result.message.parts?.find((part) => part.type === "text")?.text ||
+          "";
+
+        updateSessionTitle(
+          userMessageText,
+          assistantMessageText,
+          sessionId
+        ).then((newTitle) => {
+          if (newTitle) {
+            contextUpdateSessionTitle(sessionId, newTitle);
           }
+        });
+      }
 
       // Check message limits
       checkMessageLimit(subscription).then((result) => {
@@ -199,6 +207,10 @@ export function Chat({
       setIsAIResponding(false);
     },
   });
+
+  useEffect(() => {
+    setMessages(initialMessages);
+  }, [initialMessages, setMessages]);
 
   // 5. Handle cleanup on unmount
   useEffect(() => {
@@ -218,15 +230,22 @@ export function Chat({
           body: {
             apiUrl,
             appId,
-            appName,
             sessionId,
-            supabase_project: supabaseProject,
             subscription,
           },
         }
       );
     }
-  }, [storedPrompt, booted, sendMessage, setIsAIResponding, apiUrl, appId, appName, sessionId, supabaseProject, subscription]);
+  }, [
+    storedPrompt,
+    booted,
+    sendMessage,
+    setIsAIResponding,
+    apiUrl,
+    appId,
+    sessionId,
+    subscription,
+  ]);
 
   // 7. Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -236,98 +255,57 @@ export function Chat({
     }
   }, [messages, isAIResponding]);
 
-  // Handle form submission with image support
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (containerState !== "active") {
       alert("Please refresh the page and try again, your app was paused");
       return;
     }
 
-    // Don't proceed if there's nothing to send
-    if (!input.trim() && selectedImages.length === 0) {
-      return;
-    }
+    if (!input.trim() && selectedImages.length === 0) return;
 
     setIsAIResponding(true);
 
     try {
-      // If there are images
-      if (selectedImages.length > 0) {
-        // For UI display only
-        const imageAttachments = imagePreviews.map((preview, index) => ({
-          name: selectedImages[index].name || `image-${index}.jpg`,
-          contentType: "image/jpeg",
-          url: preview,
-        }));
+      /* ------- build parts array (text + images) ------- */
+      const parts: MessagePart[] = [];
 
-        // Create properly formatted content for Claude
-        const messageContent: any[] = [];
+      parts.push({ type: "text", text: input.trim() });
 
-        // Add text content first (if any)
-        if (input.trim()) {
-          messageContent.push({ type: "text", text: input });
-        }
-
-        // Add each image as a separate part
-        imagePreviews.forEach((preview) => {
-          messageContent.push({
-            type: "image",
-            image: preview,
-          });
+      selectedImages.forEach((file, idx) => {
+        parts.push({
+          type: "file", // v5 uses generic file parts
+          mediaType: file.type || "image/jpeg",
+          filename: file.name || `image-${idx + 1}.jpg`,
+          url: imagePreviews[idx], // data‑URL or remote URL
         });
+      });
 
-        // Submit the message with both formats
-        sendMessage(
-          { text: input },
-          {
-            body: {
-              apiUrl,
-              appId,
-              appName,
-              sessionId,
-              supabase_project: supabaseProject,
-              subscription,
-              experimental_attachments: imageAttachments, // For UI display
-              multiModal: true, // Flag to indicate we're using the multimodal format
-              messageParts: messageContent,
-            },
-          }
-        );
+      /* ------- send one multimodal message ------- */
+      sendMessage(
+        { role: "user", parts },
+        {
+          body: {
+            apiUrl,
+            appId,
+            sessionId,
+            subscription,
+          },
+        }
+      );
 
-        // Important: Clear the image state right away
-        resetImages();
-      } else {
-        // Regular text submission
-        sendMessage(
-          { text: input },
-          {
-            body: {
-              apiUrl,
-              appId,
-              appName,
-              sessionId,
-              supabase_project: supabaseProject,
-              subscription,
-            },
-          }
-        );
-      }
-
-      // Clear input and reset textarea height after submission
+      /* ------- clean up ------- */
+      resetImages();
       setInput("");
       resetTextareaHeight();
-    } catch (error) {
-      console.error("Error processing message with images:", error);
+    } catch (err) {
+      console.error("Error sending message:", err);
       setIsAIResponding(false);
     }
   };
 
-  // Render message part based on type
   const renderMessagePart = (part: any) => {
-    
-    // Handle tool types (anything starting with "tool-")
     if (part.type.startsWith("tool-")) {
       return (
         <div className="overflow-x-auto max-w-full">
@@ -335,23 +313,38 @@ export function Chat({
         </div>
       );
     }
-    
+
     switch (part.type) {
       case "text":
         return <div className="text-sm">{part.text}</div>;
-      case "image":
+
+      case "file":
+        /* show images inline; fallback text for other mime types */
+        if (part.mediaType?.startsWith("image/")) {
+          return (
+            <img
+              src={part.url}
+              alt={part.filename || "image"}
+              className="rounded border border-border shadow-sm mt-2 mb-2"
+              style={{
+                cursor: "pointer",
+                maxHeight: "200px",
+                objectFit: "contain",
+              }}
+            />
+          );
+        }
         return (
-          <img
-            src={part.image}
-            alt="Image in message"
-            className="rounded border border-border shadow-sm mt-2 mb-2"
-            style={{
-              cursor: "pointer",
-              maxHeight: "200px",
-              objectFit: "contain",
-            }}
-          />
+          <a
+            href={part.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs underline"
+          >
+            {part.filename || "file"}
+          </a>
         );
+
       default:
         return null;
     }
@@ -422,7 +415,8 @@ export function Chat({
                       ))
                     ) : (
                       <div className="text-sm whitespace-pre-wrap break-words">
-                        {message.parts?.find(part => part.type === "text")?.text || ""}
+                        {message.parts?.find((part) => part.type === "text")
+                          ?.text || ""}
                       </div>
                     )}
                   </CardContent>

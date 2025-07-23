@@ -5,17 +5,11 @@ interface MessagePart {
   image?: string;
 }
 
-interface MessageMetadata {
-  parts?: MessagePart[];
-  imageUrls?: string[];
-  imageUrl?: string;
-}
-
 interface ChatMessage {
   message_id: string;
   role: string;
   content: string;
-  metadata: MessageMetadata;
+  parts: MessagePart[];
 }
 
 interface ProcessedMessage {
@@ -35,11 +29,11 @@ interface ProcessedMessage {
  */
 export const fetchChatMessages = async (
   sessionId: string,
-  appId: string,
+  appId: string
 ): Promise<ProcessedMessage[]> => {
   try {
     const response = await fetch(
-      `/api/chat?sessionId=${sessionId}&appId=${appId}`,
+      `/api/chat?sessionId=${sessionId}&appId=${appId}`
     );
 
     if (!response.ok) {
@@ -55,22 +49,7 @@ export const fetchChatMessages = async (
       id: msg.message_id,
       role: msg.role,
       content: msg.content,
-      parts: msg.metadata.parts,
-      experimental_attachments: msg.metadata.imageUrls
-        ? msg.metadata.imageUrls.map((url) => ({
-            url: url,
-            contentType: "image/jpeg",
-            name: "image",
-          }))
-        : msg.metadata.imageUrl
-        ? [
-            {
-              url: msg.metadata.imageUrl,
-              contentType: "image/jpeg",
-              name: "image",
-            },
-          ]
-        : undefined,
+      parts: msg.parts,
     }));
   } catch (error) {
     console.error("Error fetching messages:", error);
@@ -85,8 +64,7 @@ export const saveAIMessage = async (
   sessionId: string,
   appId: string,
   apiUrl: string,
-  options: any,
-  message: any,
+  message: any
 ): Promise<any> => {
   try {
     const response = await fetch("/api/chat/ai-message-save", {
@@ -95,7 +73,6 @@ export const saveAIMessage = async (
         sessionId,
         appId,
         apiUrl,
-        options,
         message,
       }),
     });
@@ -117,7 +94,7 @@ export const saveAIMessage = async (
 export const restoreCheckpoint = async (
   messageId: string,
   apiUrl: string,
-  sessionId: string,
+  sessionId: string
 ): Promise<any> => {
   try {
     const response = await fetch("/api/code", {
@@ -140,9 +117,7 @@ export const restoreCheckpoint = async (
   }
 };
 
-export const checkMessageLimit = async (
-  subscription: any
-) => {
+export const checkMessageLimit = async (subscription: any) => {
   try {
     const response = await fetch("/api/chat/limits", {
       method: "POST",

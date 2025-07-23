@@ -8,7 +8,7 @@ import { getPrompt } from "@/utils/server/prompt";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { getBedrockClient } from "@/utils/server/bedrock-client";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
-import { gateway } from "@ai-sdk/gateway";
+import { gateway } from "@/utils/server/gateway";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
@@ -76,25 +76,15 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const {
-      messages,
-      appId,
-      appName,
-      sessionId,
-      supabase_project,
-      messageParts,
-      multiModal,
-      apiUrl,
-      subscription,
-    } = await req.json();
+    const { messages, appId, sessionId, subscription } = await req.json();
 
     // Get the last user message
     const lastUserMessage = messages[messages.length - 1];
-
     // Get the user API client
     const userResult = await getSupabaseWithUser(req as NextRequest);
     if (userResult instanceof NextResponse || "error" in userResult)
       return userResult;
+
     const { supabase, user, token } = userResult;
 
     // Check if app is already being changed
@@ -111,12 +101,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // if (appStatus?.app_status === "changing") {
-    //   return NextResponse.json(
-    //     { error: "App is currently being modified. Please try again later." },
-    //     { status: 409 }
-    //   );
-    // }
+    if (appStatus?.app_status === "changing") {
+      return NextResponse.json(
+        { error: "App is currently being modified. Please try again later." },
+        { status: 409 }
+      );
+    }
 
     // Lock the app
     const trimmedAppId = appId.trim();
@@ -183,23 +173,22 @@ export async function POST(req: Request) {
         apiUrl: app.api_url,
       });
 
-      await supabase.from("app_chat_history").insert({
-        app_id: trimmedAppId,
-        user_id: user.id,
-        content: lastUserMessage.content,
-        role: "user",
-        model_used: modelName,
-        metadata: {
-          streamed: false,
-          parts: messageParts || undefined,
-        },
-        session_id: sessionId,
-        message_id: lastUserMessage.id,
-      });
+      const plainText =
+        lastUserMessage.parts?.map((p: any) => p.text).join(" ") ?? "";
 
-      // Check if there are any active sandboxes no just hit the get endpoint
-
-      // Check if there are any active sandboxes no just hit the get endpoint
+      const { data: chatHistoryData, error: chatHistoryError } = await supabase
+        .from("app_chat_history")
+        .insert({
+          app_id: trimmedAppId,
+          user_id: user.id,
+          content: plainText, //will be removed later, cannot be removed now because it has non null constraint
+          plain_text: plainText,
+          parts: lastUserMessage.parts,
+          role: "user",
+          model_used: modelName,
+          session_id: sessionId,
+          message_id: lastUserMessage.id,
+        });
 
       const result = streamText({
         model: gateway(CLAUDE_SONNET_4_MODEL),
@@ -213,10 +202,24 @@ export async function POST(req: Request) {
         system: getPrompt(fileTree),
         stopWhen: stepCountIs(100),
         experimental_telemetry: { isEnabled: true },
+        onFinish: async (message) => {
+          try {
+            const { data, error } = await supabaseAdmin
+              .from("user_sandboxes")
+              .update({ app_status: "active" })
+              .eq("app_id", appId)
+              .select();
+            if (error) {
+              console.error("Error updating app_status to active:", error);
+            }
+          } catch (err) {
+            console.error(
+              "Exception while updating app_status to active:",
+              err
+            );
+          }
+        },
       });
-
-      // Don't await providerMetadata before returning the stream
-      // console.log('result Provider Metadata', await result.providerMetadata);
 
       return result.toUIMessageStreamResponse();
     } catch (error) {

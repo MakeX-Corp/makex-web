@@ -1,9 +1,9 @@
 import { task } from "@trigger.dev/sdk/v3";
 import {
   convertToModelMessages,
-  generateText,
   stepCountIs,
   type UIMessage,
+  generateText,
 } from "ai";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
@@ -12,7 +12,7 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { resumeContainer } from "./resume-container";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
-import { gateway } from "@ai-sdk/gateway";
+import { gateway } from "@/utils/server/gateway";
 
 const LOG_PREFIX = "[AI Agent]";
 
@@ -52,6 +52,51 @@ export const aiAgent = task({
       }
 
       const sessionId = latestSession.id;
+
+      // Get chat history for this session
+      const { data: chatHistory, error: historyError } = await supabase
+        .from("app_chat_history")
+        .select("*")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: true });
+
+      if (historyError) {
+        console.error(
+          `${LOG_PREFIX} Failed to fetch chat history:`,
+          historyError
+        );
+        // Continue without history if there's an error
+      }
+
+      // Convert chat history to UIMessage format
+      const historyMessages: UIMessage[] = [];
+      if (chatHistory && chatHistory.length > 0) {
+        for (const message of chatHistory) {
+          if (message.role === "user") {
+            historyMessages.push({
+              role: "user",
+              parts: [
+                {
+                  type: "text",
+                  text: message.plain_text || message.content,
+                },
+              ],
+              id: message.message_id || crypto.randomUUID(),
+            });
+          } else if (message.role === "assistant") {
+            historyMessages.push({
+              role: "assistant",
+              parts: [
+                {
+                  type: "text",
+                  text: message.plain_text || message.content,
+                },
+              ],
+              id: message.message_id || crypto.randomUUID(),
+            });
+          }
+        }
+      }
 
       // Check sandbox status and resume if needed
       console.log(`${LOG_PREFIX} Checking sandbox status for appId: ${appId}`);
@@ -116,6 +161,15 @@ export const aiAgent = task({
       // Create message with user prompt
       const messages: UIMessage[] = [];
 
+      // Add history messages to the beginning of the messages array
+      messages.push(...historyMessages);
+
+      console.log(`${LOG_PREFIX} Chat history loaded:`, {
+        sessionId,
+        historyMessageCount: historyMessages.length,
+        totalMessageCount: messages.length,
+      });
+
       if (images && images.length > 0) {
         const userMessage = {
           role: "user" as const,
@@ -146,24 +200,26 @@ export const aiAgent = task({
         });
       }
 
-      // Insert user message into chat history
+      // Insert user message into chat history AFTER building messages array
+      const currentUserMessageId = messages[messages.length - 1].id;
       await supabase.from("app_chat_history").insert({
         app_id: appId,
         user_id: latestSession.user_id,
         content: userPrompt,
-        role: "user",
-        model_used: "claude-sonnet-4",
         metadata: {
-          streamed: false,
-          //images: images, //save in metadata to render, could be done later
+          fromApp: true,
         },
+        role: "user",
+        model_used: CLAUDE_SONNET_4_MODEL,
+        plain_text: userPrompt,
         session_id: sessionId,
-        message_id: messages[0].id,
+        message_id: currentUserMessageId,
+        parts: messages[messages.length - 1].parts,
       });
 
       console.log(`${LOG_PREFIX} Starting generation:`, {
         appId,
-        model: "claude-sonnet-4",
+        model: CLAUDE_SONNET_4_MODEL,
         messageCount: messages.length,
         toolCount: tools.length,
       });
@@ -192,7 +248,7 @@ export const aiAgent = task({
           name: "ai-assistant-checkpoint",
           message: "Checkpoint after AI assistant changes",
         });
-        console.log("checkpointResponse", checkpointResponse);
+
         // Store the commit hash from the response
         commitHash =
           checkpointResponse.commit || checkpointResponse.current_commit;
@@ -206,19 +262,15 @@ export const aiAgent = task({
         user_id: latestSession.user_id,
         content: result.text,
         role: "assistant",
-        model_used: "claude-sonnet-4",
-        metadata: {
-          streamed: false,
-          reasoning: result.reasoning,
-          toolCalls: result.toolCalls,
-          toolResults: result.toolResults,
-        },
+        model_used: CLAUDE_SONNET_4_MODEL,
+        plain_text: result.text,
         input_tokens_used: result.usage?.inputTokens,
         output_tokens_used: result.usage?.outputTokens,
         cost: totalCost,
         session_id: sessionId,
         message_id: crypto.randomUUID(),
         commit_hash: commitHash,
+        parts: result.content,
       });
 
       // Enhanced logging of the generation result
