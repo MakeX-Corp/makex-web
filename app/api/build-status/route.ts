@@ -22,7 +22,9 @@ export async function POST(request: NextRequest) {
     // Fetch all matching sandboxes in one query
     const { data: sandboxes, error } = await supabase
       .from("user_sandboxes")
-      .select("app_id, sandbox_status, app_status, api_url, sandbox_updated_at")
+      .select(
+        "app_id, sandbox_status, app_status, api_url, sandbox_updated_at, expo_status"
+      )
       .in("app_id", appIds)
       .eq("user_id", user.id);
 
@@ -56,7 +58,8 @@ export async function POST(request: NextRequest) {
       const appIsActive =
         sandbox.app_status === "active" || sandbox.app_status === "paused";
 
-      if (sandboxIsActive && appIsActive) {
+      const expoIsActive = sandbox.expo_status === "bundled";
+      if (sandboxIsActive && appIsActive && expoIsActive) {
         status = "complete";
         message = "Your app is ready!";
       } else if (

@@ -1,9 +1,9 @@
 import { task } from "@trigger.dev/sdk/v3";
 import {
   convertToModelMessages,
-  generateText,
   stepCountIs,
   type UIMessage,
+  generateText,
 } from "ai";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
@@ -151,19 +151,20 @@ export const aiAgent = task({
         app_id: appId,
         user_id: latestSession.user_id,
         content: userPrompt,
-        role: "user",
-        model_used: "claude-sonnet-4",
         metadata: {
-          streamed: false,
-          //images: images, //save in metadata to render, could be done later
+          fromApp: true,
         },
+        role: "user",
+        model_used: CLAUDE_SONNET_4_MODEL,
+        plain_text: userPrompt,
         session_id: sessionId,
         message_id: messages[0].id,
+        parts: messages[0].parts,
       });
 
       console.log(`${LOG_PREFIX} Starting generation:`, {
         appId,
-        model: "claude-sonnet-4",
+        model: CLAUDE_SONNET_4_MODEL,
         messageCount: messages.length,
         toolCount: tools.length,
       });
@@ -192,7 +193,7 @@ export const aiAgent = task({
           name: "ai-assistant-checkpoint",
           message: "Checkpoint after AI assistant changes",
         });
-        console.log("checkpointResponse", checkpointResponse);
+
         // Store the commit hash from the response
         commitHash =
           checkpointResponse.commit || checkpointResponse.current_commit;
@@ -206,19 +207,15 @@ export const aiAgent = task({
         user_id: latestSession.user_id,
         content: result.text,
         role: "assistant",
-        model_used: "claude-sonnet-4",
-        metadata: {
-          streamed: false,
-          reasoning: result.reasoning,
-          toolCalls: result.toolCalls,
-          toolResults: result.toolResults,
-        },
+        model_used: CLAUDE_SONNET_4_MODEL,
+        plain_text: result.text,
         input_tokens_used: result.usage?.inputTokens,
         output_tokens_used: result.usage?.outputTokens,
         cost: totalCost,
         session_id: sessionId,
         message_id: crypto.randomUUID(),
         commit_hash: commitHash,
+        parts: result.content,
       });
 
       // Enhanced logging of the generation result
