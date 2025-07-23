@@ -34,12 +34,10 @@ export function Preview({
   const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code" | "convex">(
     "mobile"
   );
-  const [convexLoaded, setConvexLoaded] = useState(false);
   const { appUrl } = useSession();
 
   const switchView = (mode: typeof viewMode) => {
     setViewMode(mode);
-    if (mode === "convex" && !convexLoaded) setConvexLoaded(true);
   };
 
   return (
@@ -160,15 +158,12 @@ export function Preview({
             </div>
           )}
 
-          {/* keep iframe mounted; just hide/show */}
-          {convexLoaded && (
-            <div
-              className="h-full w-full rounded-lg overflow-hidden"
-              style={{ display: viewMode === "convex" ? "block" : "none" }}
-            >
-              <ConvexDashboardEmbed />
-            </div>
-          )}
+          <div
+            className="h-full w-full rounded-lg overflow-hidden"
+            style={{ display: viewMode === "convex" ? "block" : "none" }}
+          >
+            <ConvexDashboardEmbed />
+          </div>
         </div>
       </CardContent>
     </Card>

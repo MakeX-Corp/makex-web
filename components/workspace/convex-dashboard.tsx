@@ -64,6 +64,7 @@ export function ConvexDashboardEmbed() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [env, setEnv] = useState<"dev" | "prod">("dev");
+  const [credentialsReady, setCredentialsReady] = useState(false);
 
   // Helper to check if a config is complete
   const isConfigComplete = (cfg: any) =>
@@ -76,7 +77,7 @@ export function ConvexDashboardEmbed() {
       setConvexConfig(contextConvexConfig);
       setLoading(false);
       setError(null);
-
+      setCredentialsReady(true);
       return;
     }
     // Otherwise, fetch from API
@@ -88,13 +89,18 @@ export function ConvexDashboardEmbed() {
         return res.json();
       })
       .then((data) => {
-        setConvexConfig({
+        const config = {
           devUrl: data.convex_dev_url || null,
           projectId: data.convex_project_id || null,
           devAdminKey: data.convex_dev_admin_key || null,
           prodUrl: data.convex_prod_url || null,
           prodAdminKey: data.convex_prod_admin_key || null,
-        });
+        };
+        setConvexConfig(config);
+
+        if (isConfigComplete(config)) {
+          setCredentialsReady(true);
+        }
       })
       .catch((err) => {
         setError(err.message || "Unknown error");
@@ -102,7 +108,11 @@ export function ConvexDashboardEmbed() {
       .finally(() => setLoading(false));
   }, [appId, contextConvexConfig]);
 
-  if (!appId) return null;
+  // Don't render anything if no appId or if credentials aren't ready
+  if (!appId || !credentialsReady) {
+    return null;
+  }
+
   if (loading || !convexConfig) {
     return (
       <div className="flex items-center justify-center h-full w-full">
