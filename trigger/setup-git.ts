@@ -58,17 +58,26 @@ export const setupGit = task({
       // Set up Git in the E2B container
       console.log("[setupGit] Setting up Git in E2B container...");
       const gitSetupResult = await setupFreestyleGitInContainer(containerId, repoId!);
-      console.log("[setupGit] Git setup in container result:", gitSetupResult);
-
-      console.log("[setupGit] Git setup in container result:", gitSetupResult);
 
       // Save the repository ID to the database
       console.log("[setupGit] Saving repository ID to database...");
+      
+      // Safely extract the initial commit hash, handling cases where git rev-parse HEAD might fail
+      let initialCommit = null;
+      if (gitSetupResult.commitIdResult && 
+          gitSetupResult.commitIdResult.stdout && 
+          gitSetupResult.commitIdResult.stdout.trim()) {
+        initialCommit = gitSetupResult.commitIdResult.stdout.trim();
+        console.log("[setupGit] Initial commit hash:", initialCommit);
+      } else {
+        console.log("[setupGit] No initial commit hash available - git repository may be empty");
+      }
+      
       const { error: updateError } = await adminSupabase
         .from("user_apps")
         .update({
           git_repo_id: repoId,
-          initial_commit: gitSetupResult.commitIdResult.stdout.trim(),
+          initial_commit: initialCommit,
         })
         .eq("id", appId);
 
