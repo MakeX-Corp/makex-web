@@ -5,11 +5,9 @@ import { deleteContainer } from "@/trigger/delete-container";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
-import { startExpo } from "@/trigger/start-expo";
-import { setupGit } from "@/trigger/setup-git";
-import { configureConvex } from "@/trigger/configure-convex";
 import { deleteConvex } from "@/trigger/delete-convex";
 import { generateDisplayName } from "@/utils/server/app-name-generator";
+import { setupContainer } from "@/trigger/setup-container";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
@@ -164,21 +162,11 @@ export async function POST(request: Request) {
 
     console.log("Timings:", timings);
 
-    await startExpo.trigger({
+    await setupContainer.trigger({
       appId: insertedApp.id,
       appName: appName,
+      containerId: containerId,
       sandboxId: sandboxDbId,
-      containerId: containerId,
-    });
-
-    await setupGit.trigger({
-      appId: insertedApp.id,
-      containerId: containerId,
-    });
-
-    await configureConvex.trigger({
-      appId: insertedApp.id,
-      containerId: containerId,
     });
 
     // Return the app data along with session ID, redirect URL, and timings

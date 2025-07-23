@@ -60,7 +60,6 @@ export async function startExpoInContainer(sandboxId: string) {
 
   console.log("App URL:", appUrl);
   console.log("API URL:", apiUrl);
-
   // Escape the appUrl to handle special characters
   const escapedAppUrl = appUrl.replace(/"/g, '\\"');
   
