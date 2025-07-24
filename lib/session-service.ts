@@ -238,6 +238,7 @@ export async function getAppInfo(appId: string): Promise<{
         convex_prod_url: data.convex_prod_url,
         convex_prod_admin_key: data.convex_prod_admin_key,
         supabase_project: data.supabase_project,
+        github_sync_repo: data.github_sync_repo,
       },
       error: null,
     };

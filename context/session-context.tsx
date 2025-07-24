@@ -28,6 +28,7 @@ interface SessionContextType {
   supabaseProject: any;
   setSupabaseProject: (project: any) => void;
   isAppReady: boolean;
+  github_sync_repo: string | null;
 
   // Session lists
   sessions: SessionListItem[];
@@ -57,6 +58,7 @@ interface SessionContextType {
   deleteSession: (sessionId: string) => Promise<boolean>;
   updateSessionTitle: (sessionId: string, title: string) => Promise<boolean>;
   initializeApp: (newAppId: string) => Promise<void>;
+  refreshApp: () => Promise<void>;
 
   // Get current session title helper
   getCurrentSessionTitle: () => string;
@@ -81,6 +83,7 @@ export function SessionProvider({
   const [appUrl, setAppUrl] = useState<string>("");
   const [supabaseProject, setSupabaseProject] = useState<any>(null);
   const [isAppReady, setIsAppReady] = useState<boolean>(false);
+  const [github_sync_repo, setGithubSyncRepo] = useState<string | null>(null);
 
   // Session list state
   const [sessions, setSessions] = useState<SessionListItem[]>([]);
@@ -166,6 +169,7 @@ export function SessionProvider({
       // Set the configuration values from database
       setApiUrl(data.api_url || "");
       setAppUrl(data.app_url || "");
+      setGithubSyncRepo(data.github_sync_repo || null);
 
       setConvexConfig({
         devUrl: data.convex_dev_url || null,
@@ -398,6 +402,38 @@ export function SessionProvider({
     }
   };
 
+  // Refresh app data
+  const refreshApp = async () => {
+    if (!appId) return;
+    
+    try {
+      // Re-fetch app info to get updated data
+      const { data, error } = await getAppInfo(appId);
+      
+      if (error || !data) {
+        console.error("Failed to refresh app data:", error);
+        return;
+      }
+
+      // Update app data
+      setApiUrl(data.api_url || "");
+      setAppUrl(data.app_url || "");
+      setGithubSyncRepo(data.github_sync_repo || null);
+      
+      setConvexConfig({
+        devUrl: data.convex_dev_url || null,
+        projectId: data.convex_project_id || null,
+        devAdminKey: data.convex_dev_admin_key || null,
+        prodUrl: data.convex_prod_url || null,
+        prodAdminKey: data.convex_prod_admin_key || null,
+      });
+
+      setSupabaseProject(data.supabase_project);
+    } catch (error) {
+      console.error("Failed to refresh app:", error);
+    }
+  };
+
   // The context value
   const value = {
     appId,
@@ -423,6 +459,8 @@ export function SessionProvider({
     updateSessionTitle,
     initializeApp,
     getCurrentSessionTitle,
+    github_sync_repo,
+    refreshApp,
   };
 
   return (
