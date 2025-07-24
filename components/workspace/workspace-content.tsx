@@ -713,9 +713,7 @@ export default function WorkspaceContent({
                     <div className="flex-1 relative">
                       {/* Both components are always rendered, but we control visibility with CSS */}
                       <div
-                        className={`absolute inset-0 ${
-                          activeView === "chat" ? "block" : "hidden"
-                        }`}
+                        className={`absolute inset-0 ${activeView === "chat" ? "block" : "hidden"}`}
                       >
                         <Chat
                           sessionId={currentSessionId || initialSessionId || ""}
@@ -726,9 +724,7 @@ export default function WorkspaceContent({
                       </div>
 
                       <div
-                        className={`absolute inset-0 ${
-                          activeView === "preview" ? "block" : "hidden"
-                        }`}
+                        className={`absolute inset-0 ${activeView === "preview" ? "block" : "hidden"}`}
                       >
                         <Preview
                           iframeKey={iframeKey}
