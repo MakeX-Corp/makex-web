@@ -32,7 +32,7 @@ function DashboardFrame({
           deploymentUrl,
           deploymentName,
         },
-        "*"
+        "*",
       );
     };
 
@@ -129,7 +129,7 @@ export function ConvexDashboardEmbed() {
           if (isConfigComplete(config)) {
             setCredentialsReady(true);
           }
-        }
+        },
       )
       .subscribe();
 
@@ -166,7 +166,7 @@ export function ConvexDashboardEmbed() {
     convexConfig &&
       convexConfig.prodUrl &&
       convexConfig.projectId &&
-      convexConfig.prodAdminKey
+      convexConfig.prodAdminKey,
   );
 
   if (!isConfigComplete(convexConfig)) {
