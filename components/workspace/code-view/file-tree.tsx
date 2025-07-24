@@ -28,11 +28,7 @@ export default function FileTree({
     mutate,
   } = useSWR<Node[]>(`/api/files?path=/&api_url=${apiUrl}`, fetchJSON);
 
-  const handleCreateFile = async (
-    parentPath: string,
-    fileName: string,
-    isFolder: boolean = false
-  ) => {
+  const handleCreateFile = async (parentPath: string, fileName: string) => {
     if (!fileName.trim()) return;
 
     const fullPath =
@@ -46,8 +42,6 @@ export default function FileTree({
           apiUrl,
           path: fullPath,
           content: "",
-          operation: "create",
-          isFolder,
         }),
       });
 
@@ -56,23 +50,23 @@ export default function FileTree({
         mutate();
         onFileTreeChange?.();
         toast({
-          title: `${isFolder ? "Folder" : "File"} Created`,
+          title: "File Created",
           description: `Successfully created ${fileName}`,
         });
       } else {
-        console.error(`Failed to create ${isFolder ? "folder" : "file"}`);
+        console.error("Failed to create file");
         toast({
           variant: "destructive",
           title: "Error",
-          description: `Failed to create ${isFolder ? "folder" : "file"}`,
+          description: "Failed to create file",
         });
       }
     } catch (error) {
-      console.error(`Error creating ${isFolder ? "folder" : "file"}:`, error);
+      console.error("Error creating file:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: `Failed to create ${isFolder ? "folder" : "file"}`,
+        description: "Failed to create file",
       });
     }
   };

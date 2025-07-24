@@ -26,11 +26,7 @@ export default function FolderItem({
   node: Extract<Node, { type: "folder" }>;
   activePath?: string | null;
   onSelect: (f: { path: string; language: string }) => void;
-  onCreateFile: (
-    parentPath: string,
-    fileName: string,
-    isFolder: boolean
-  ) => void;
+  onCreateFile: (parentPath: string, fileName: string) => void;
   onDelete: (path: string) => void;
   apiUrl: string;
 }) {
