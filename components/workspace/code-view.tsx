@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import FileTree from "@/components/workspace/file-tree";
-import CodeEditor from "@/components/workspace/code-editor";
+import FileTree from "@/components/workspace/code-editor/file-tree";
+import CodeEditor from "@/components/workspace/code-editor/code-editor";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -17,6 +17,7 @@ export default function CodeView() {
   } | null>(null);
 
   const [isMobile, setIsMobile] = useState(false);
+  const [fileTreeKey, setFileTreeKey] = useState(0); // Force re-render of file tree
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -27,6 +28,18 @@ export default function CodeView() {
     window.addEventListener("resize", checkIfMobile);
     return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
+
+  // Handle file selection
+  const handleFileSelect = (file: { path: string; language: string }) => {
+    setSelectedFile(file);
+  };
+
+  // Handle file tree refresh
+  const handleFileTreeRefresh = () => {
+    setFileTreeKey((prev) => prev + 1);
+    // Clear selected file if it was deleted
+    setSelectedFile(null);
+  };
 
   // Different styling for mobile vs desktop
   const containerStyle = isMobile
@@ -90,8 +103,10 @@ export default function CodeView() {
             }}
           >
             <FileTree
-              onSelect={setSelectedFile}
+              key={fileTreeKey}
+              onSelect={handleFileSelect}
               selectedPath={selectedFile?.path ?? null}
+              onFileTreeChange={handleFileTreeRefresh}
             />
           </ResizablePanel>
 

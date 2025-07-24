@@ -11,6 +11,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   ChevronDown,
   ChevronRight,
   FileText,
@@ -24,8 +29,14 @@ import {
   FileSpreadsheet,
   FileTerminal,
   AlertCircle,
+  MoreHorizontal,
 } from "lucide-react";
 import { useSession } from "@/context/session-context";
+import { Button } from "@/components/ui/button";
+import CreateFileDialog from "./code-editor/create-file-dialog";
+import DeleteConfirmationDialog from "./code-editor/delete-file-dialog";
+import { useToast } from "@/hooks/use-toast";
+
 type Node =
   | { type: "file"; name: string; path: string; language: string; size: number }
   | { type: "folder"; name: string; path: string };
@@ -35,16 +46,109 @@ const fetchJSON = (u: string) => fetch(u).then((r) => r.json());
 export default function FileTree({
   onSelect,
   selectedPath,
+  onFileTreeChange,
 }: {
   onSelect: (f: { path: string; language: string }) => void;
   selectedPath?: string | null;
+  onFileTreeChange?: () => void;
 }) {
   const { apiUrl } = useSession();
+  const { toast } = useToast();
   const {
     data: root,
     error,
     isLoading,
+    mutate,
   } = useSWR<Node[]>(`/api/files?path=/&api_url=${apiUrl}`, fetchJSON);
+
+  const handleCreateFile = async (
+    parentPath: string,
+    fileName: string,
+    isFolder: boolean = false
+  ) => {
+    if (!fileName.trim()) return;
+
+    const fullPath =
+      parentPath === "/" ? `/${fileName}` : `${parentPath}/${fileName}`;
+
+    try {
+      const response = await fetch("/api/file-operations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          apiUrl,
+          path: fullPath,
+          content: "",
+          operation: "create",
+          isFolder,
+        }),
+      });
+
+      if (response.ok) {
+        // Refresh the file tree
+        mutate();
+        onFileTreeChange?.();
+        toast({
+          title: `${isFolder ? "Folder" : "File"} Created`,
+          description: `Successfully created ${fileName}`,
+        });
+      } else {
+        console.error(`Failed to create ${isFolder ? "folder" : "file"}`);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: `Failed to create ${isFolder ? "folder" : "file"}`,
+        });
+      }
+    } catch (error) {
+      console.error(`Error creating ${isFolder ? "folder" : "file"}:`, error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: `Failed to create ${isFolder ? "folder" : "file"}`,
+      });
+    }
+  };
+
+  const handleDeleteFile = async (filePath: string) => {
+    const fileName = filePath.split("/").pop() || "file";
+
+    try {
+      const response = await fetch("/api/file-operations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          apiUrl,
+          path: filePath,
+          operation: "delete",
+        }),
+      });
+
+      if (response.ok) {
+        // Refresh the file tree
+        mutate();
+        onFileTreeChange?.();
+        toast({
+          title: "File Deleted",
+          description: `Successfully deleted ${fileName}`,
+        });
+      } else {
+        console.error("Failed to delete file");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to delete file",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete file",
+      });
+    }
+  };
 
   if (isLoading || !root)
     return (
@@ -67,9 +171,10 @@ export default function FileTree({
   return (
     <div className="h-full overflow-y-auto overscroll-contain">
       <div className="py-2">
-        <h3 className="px-4 text-sm font-medium text-foreground mb-2">
-          Project Files
-        </h3>
+        <div className="px-4 flex items-center justify-between mb-2">
+          <h3 className="text-sm font-medium text-foreground">Project Files</h3>
+          <CreateFileDialog parentPath="/" onCreateFile={handleCreateFile} />
+        </div>
         <ul className="pl-2 text-muted-foreground text-sm font-mono">
           {root!.map((n) =>
             n.type === "file" ? (
@@ -78,6 +183,7 @@ export default function FileTree({
                 node={n}
                 active={selectedPath === n.path}
                 onSelect={onSelect}
+                onDelete={handleDeleteFile}
               />
             ) : (
               <FolderItem
@@ -85,6 +191,8 @@ export default function FileTree({
                 node={n}
                 activePath={selectedPath}
                 onSelect={onSelect}
+                onCreateFile={handleCreateFile}
+                onDelete={handleDeleteFile}
                 apiUrl={apiUrl}
               />
             )
@@ -145,29 +253,50 @@ function FileItem({
   node,
   active,
   onSelect,
+  onDelete,
 }: {
   node: Extract<Node, { type: "file" }>;
   active?: boolean;
   onSelect: (f: { path: string; language: string }) => void;
+  onDelete: (path: string) => void;
 }) {
   return (
     <li>
       <TooltipProvider delayDuration={300}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
-              onClick={() =>
-                onSelect({ path: node.path, language: node.language })
-              }
-              className={cn(
-                "flex w-full items-center gap-2 px-2 py-1 rounded-md transition-colors",
-                "hover:bg-accent hover:text-accent-foreground",
-                active && "bg-accent text-accent-foreground font-medium"
-              )}
-            >
-              {getFileIcon(node.name)}
-              <span className="truncate">{node.name}</span>
-            </button>
+            <div className="flex items-center group">
+              <button
+                onClick={() =>
+                  onSelect({ path: node.path, language: node.language })
+                }
+                className={cn(
+                  "flex flex-1 items-center gap-2 px-2 py-1 rounded-md transition-colors",
+                  "hover:bg-accent hover:text-accent-foreground",
+                  active && "bg-accent text-accent-foreground font-medium"
+                )}
+              >
+                {getFileIcon(node.name)}
+                <span className="truncate">{node.name}</span>
+              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <MoreHorizontal className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DeleteConfirmationDialog
+                    fileName={node.name}
+                    onConfirm={() => onDelete(node.path)}
+                  />
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>{node.path}</p>
@@ -185,41 +314,76 @@ function FolderItem({
   node,
   activePath,
   onSelect,
+  onCreateFile,
+  onDelete,
   apiUrl,
 }: {
   node: Extract<Node, { type: "folder" }>;
   activePath?: string | null;
   onSelect: (f: { path: string; language: string }) => void;
+  onCreateFile: (
+    parentPath: string,
+    fileName: string,
+    isFolder: boolean
+  ) => void;
+  onDelete: (path: string) => void;
   apiUrl: string;
 }) {
   const [open, setOpen] = useState(false);
-  const { data: children = [], isLoading } = useSWR<Node[]>(
-    open ? `/api/files?path=${encodeURIComponent(node.path)}&api_url=${apiUrl}` : null,
+  const {
+    data: children = [],
+    isLoading,
+    mutate,
+  } = useSWR<Node[]>(
+    open
+      ? `/api/files?path=${encodeURIComponent(node.path)}&api_url=${apiUrl}`
+      : null,
     fetchJSON,
     { refreshInterval: 5000 }
   );
 
   return (
     <li className="py-0.5">
-      <div
-        className={cn(
-          "flex items-center gap-2 cursor-pointer px-2 py-1 rounded-md",
-          "hover:bg-accent hover:text-accent-foreground",
-          "transition-colors"
-        )}
-        onClick={() => setOpen((o) => !o)}
-      >
-        {open ? (
-          <ChevronDown className="h-4 w-4 flex-none" />
-        ) : (
-          <ChevronRight className="h-4 w-4 flex-none" />
-        )}
-        {open ? (
-          <FolderOpen className="h-4 w-4 flex-none text-black dark:text-white" />
-        ) : (
-          <Folder className="h-4 w-4 flex-none text-black dark:text-white" />
-        )}
-        <span>{node.name}</span>
+      <div className="flex items-center group">
+        <div
+          className={cn(
+            "flex flex-1 items-center gap-2 cursor-pointer px-2 py-1 rounded-md",
+            "hover:bg-accent hover:text-accent-foreground",
+            "transition-colors"
+          )}
+          onClick={() => setOpen((o) => !o)}
+        >
+          {open ? (
+            <ChevronDown className="h-4 w-4 flex-none" />
+          ) : (
+            <ChevronRight className="h-4 w-4 flex-none" />
+          )}
+          {open ? (
+            <FolderOpen className="h-4 w-4 flex-none text-black dark:text-white" />
+          ) : (
+            <Folder className="h-4 w-4 flex-none text-black dark:text-white" />
+          )}
+          <span>{node.name}</span>
+        </div>
+        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <CreateFileDialog
+            parentPath={node.path}
+            onCreateFile={onCreateFile}
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6">
+                <MoreHorizontal className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DeleteConfirmationDialog
+                fileName={node.name}
+                onConfirm={() => onDelete(node.path)}
+              />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {open && (
@@ -237,6 +401,7 @@ function FolderItem({
                   node={n}
                   active={activePath === n.path}
                   onSelect={onSelect}
+                  onDelete={onDelete}
                 />
               ) : (
                 <FolderItem
@@ -244,6 +409,8 @@ function FolderItem({
                   node={n}
                   activePath={activePath}
                   onSelect={onSelect}
+                  onCreateFile={onCreateFile}
+                  onDelete={onDelete}
                   apiUrl={apiUrl}
                 />
               )
