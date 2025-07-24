@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
+
 interface PlanProps {
   name: string;
   description: string;
@@ -23,88 +24,70 @@ interface PlanProps {
 
 const plans: PlanProps[] = [
   {
-    name: "Free",
-    description: "For people just starting out",
-    price: "0",
+    name: process.env.NEXT_PUBLIC_FREE_PLAN_NAME || "Free",
+    description:
+      process.env.NEXT_PUBLIC_FREE_PLAN_DESCRIPTION ||
+      "For people just starting out",
+    price: process.env.NEXT_PUBLIC_FREE_PLAN_PRICE || "0",
     interval: "month",
-    features: ["5 messages a day", "Slower app start times", "Discord support"],
+    features: (
+      process.env.NEXT_PUBLIC_FREE_PLAN_FEATURES ||
+      "20 messages a month, Slower app start times, Discord support"
+    )
+      .split(",")
+      .map((feature) => feature.trim()),
     priceId: "",
   },
   {
-    name: "Starter",
-    description: "Perfect for individuals starting with AI app creation",
-    price: "19",
+    name: process.env.NEXT_PUBLIC_STARTER_PLAN_NAME || "Starter",
+    description:
+      process.env.NEXT_PUBLIC_STARTER_PLAN_DESCRIPTION ||
+      "Perfect for individuals starting with AI app creation",
+    price: process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || "9.99",
     interval: "month",
-    features: [
-      "250 messages a month",
-      "Basic AI editing",
-      "Faster app start times",
-      "Priority support",
-      "Publish to App Store and Google Play (coming soon)",
-    ],
+    features: (
+      process.env.NEXT_PUBLIC_STARTER_PLAN_FEATURES ||
+      "250 messages a month,Basic AI editing,Faster app start times,Priority support,Publish to App Store and Google Play (coming soon)"
+    )
+      .split(",")
+      .map((feature) => feature.trim()),
     priceId: process.env.NEXT_PUBLIC_PADDLE_STARTER_ID || "",
     popular: true,
-  },
-  {
-    name: "Pro",
-    description: "For professionals who need more power",
-    price: "49",
-    interval: "month",
-    features: [
-      "Unlimited apps",
-      "500 messages a month",
-      "Advanced AI editing",
-      "Faster app start times",
-      "1-1 support",
-      "White glove service",
-    ],
-    priceId: process.env.NEXT_PUBLIC_PADDLE_PRO_ID || "",
-    popular: false,
   },
 ];
 
 const comparisonFeatures = [
   {
     name: "Messages",
-    free: "5/day",
+    free: "20/month",
     starter: "250/month",
-    pro: "500/month",
   },
   {
     name: "App Start Times",
     free: "Slower",
     starter: "Faster",
-    pro: "Faster",
   },
   {
     name: "Support",
     free: "Discord",
     starter: "Priority",
-    pro: "1-1",
   },
   {
     name: "AI Editing",
     free: false,
     starter: "Basic",
-    pro: "Advanced",
   },
   {
     name: "App Store Publishing",
     free: false,
     starter: "Coming Soon",
-    pro: true,
-  },
-  {
-    name: "White Glove Service",
-    free: false,
-    starter: false,
-    pro: true,
   },
 ];
 
 export default function PricingPage() {
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const router = useRouter();
+
   const handleCheckout = async (priceId: string) => {
     router.push(`/dashboard/pricing`);
   };
@@ -120,7 +103,7 @@ export default function PricingPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto mb-16">
         {plans.map((plan) => (
           <Card
             key={plan.name}
@@ -152,16 +135,66 @@ export default function PricingPage() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button
-                className="w-full"
-                onClick={() => handleCheckout(plan.priceId)}
-                disabled={isLoading === plan.priceId}
-              >
-                {isLoading === plan.priceId ? "Processing..." : "Get Started"}
-              </Button>
+              {plan?.name !== "Free" && (
+                <Button
+                  className="w-full"
+                  onClick={() => handleCheckout(plan.priceId)}
+                  disabled={isLoading === plan.priceId}
+                >
+                  {isLoading === plan.priceId ? "Processing..." : "Get Started"}
+                </Button>
+              )}
             </CardFooter>
           </Card>
         ))}
+
+        {/* Contact Us Card */}
+        <Card className="flex flex-col border-dashed">
+          <CardHeader>
+            <CardTitle className="text-2xl">
+              {process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_NAME || "Enterprise"}
+            </CardTitle>
+            <p className="text-muted-foreground">
+              {process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_DESCRIPTION ||
+                "Need higher limits? Contact us for custom solutions"}
+            </p>
+          </CardHeader>
+          <CardContent className="flex-grow">
+            <div className="mb-6">
+              <span className="text-4xl font-bold text-muted-foreground">
+                Custom
+              </span>
+            </div>
+            <ul className="space-y-2">
+              {(
+                process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_FEATURES ||
+                "Advanced AI editing,Priority support,Custom integrations,Dedicated account manager"
+              )
+                .split(",")
+                .map((feature) => feature.trim())
+                .map((feature) => (
+                  <li key={feature} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+            </ul>
+          </CardContent>
+          <CardFooter>
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={() =>
+                window.open(
+                  "mailto:contact@makex.app?subject=Enterprise%20Inquiry",
+                  "_blank"
+                )
+              }
+            >
+              Contact Us
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
 
       <div className="mt-16">
@@ -173,7 +206,6 @@ export default function PricingPage() {
                 <th className="text-left py-4 px-6">Feature</th>
                 <th className="text-center py-4 px-6">Free</th>
                 <th className="text-center py-4 px-6">Starter</th>
-                <th className="text-center py-4 px-6">Pro</th>
               </tr>
             </thead>
             <tbody>
@@ -200,17 +232,6 @@ export default function PricingPage() {
                       )
                     ) : (
                       feature.starter
-                    )}
-                  </td>
-                  <td className="py-4 px-6 text-center">
-                    {typeof feature.pro === "boolean" ? (
-                      feature.pro ? (
-                        <Check className="h-5 w-5 text-primary mx-auto" />
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )
-                    ) : (
-                      feature.pro
                     )}
                   </td>
                 </tr>
