@@ -58,7 +58,8 @@ export async function POST(request: NextRequest) {
       const appIsActive =
         sandbox.app_status === "active" || sandbox.app_status === "paused";
 
-      const expoIsActive = sandbox.expo_status === "bundled";
+      const expoIsActive =
+        sandbox.expo_status === "bundled" || sandbox.expo_status === null;
       if (sandboxIsActive && appIsActive && expoIsActive) {
         status = "complete";
         message = "Your app is ready!";

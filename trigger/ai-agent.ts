@@ -324,29 +324,113 @@ export const aiAgent = task({
           finalUpdateError
         );
       }
-      console.log("Sending push notification to the user");
-      console.log("this is payload", {
-        userId: latestSession.user_id,
-        title: "MakeX",
-        body: "Your App is ready to use.",
-        payload: {
-          appId,
-          appName: app.app_name,
-          appUrl: app.app_url,
-        },
-      });
-      //send push notification to the user
-      await sendPushNotifications({
-        supabase,
-        userId: latestSession.user_id,
-        title: "MakeX",
-        body: "Your App is ready to use.",
-        payload: {
-          appId,
-          appName: app.app_name,
-          appUrl: app.app_url,
-        },
-      });
+
+      // Poll app status until ready, then send push notification
+      console.log(
+        `${LOG_PREFIX} Starting status polling for push notification...`
+      );
+
+      const maxPollingAttempts = 20; // 20 attempts
+      const pollingIntervalMs = 10000; // 10 seconds
+      let pollingAttempt = 0;
+      let isAppReady = false;
+      let currentSandbox = null;
+
+      while (pollingAttempt < maxPollingAttempts && !isAppReady) {
+        pollingAttempt++;
+        console.log(
+          `${LOG_PREFIX} Status poll attempt ${pollingAttempt}/${maxPollingAttempts}`
+        );
+
+        try {
+          const { data: sandboxData, error: statusCheckError } = await supabase
+            .from("user_sandboxes")
+            .select("app_status, sandbox_status, expo_status")
+            .eq("app_id", appId)
+            .order("sandbox_updated_at", { ascending: false })
+            .limit(1)
+            .single();
+
+          if (statusCheckError) {
+            console.error(
+              `${LOG_PREFIX} Failed to check app status on attempt ${pollingAttempt}:`,
+              statusCheckError
+            );
+            // Continue polling even if there's an error
+            await new Promise((resolve) =>
+              setTimeout(resolve, pollingIntervalMs)
+            );
+            continue;
+          }
+
+          currentSandbox = sandboxData;
+          isAppReady =
+            currentSandbox.app_status === "active" &&
+            currentSandbox.sandbox_status === "active" &&
+            currentSandbox.expo_status === "bundled";
+
+          console.log(`${LOG_PREFIX} Status check ${pollingAttempt}:`, {
+            app_status: currentSandbox.app_status,
+            sandbox_status: currentSandbox.sandbox_status,
+            expo_status: currentSandbox.expo_status,
+            isReady: isAppReady,
+          });
+
+          if (isAppReady) {
+            console.log(
+              `${LOG_PREFIX} App is ready! Sending push notification...`
+            );
+            break;
+          }
+
+          // Wait before next poll
+          await new Promise((resolve) =>
+            setTimeout(resolve, pollingIntervalMs)
+          );
+        } catch (error) {
+          console.error(
+            `${LOG_PREFIX} Error during status polling attempt ${pollingAttempt}:`,
+            error
+          );
+          await new Promise((resolve) =>
+            setTimeout(resolve, pollingIntervalMs)
+          );
+        }
+      }
+
+      if (!isAppReady) {
+        console.log(
+          `${LOG_PREFIX} App did not become ready within timeout period`
+        );
+      }
+
+      // Only send notification if app is ready
+      if (isAppReady) {
+        console.log("Sending push notification to the user");
+        console.log("this is payload", {
+          userId: latestSession.user_id,
+          title: "MakeX",
+          body: "Your App is ready to use.",
+          payload: {
+            appId,
+            appName: app.app_name,
+            appUrl: app.app_url,
+          },
+        });
+        //send push notification to the user
+        await sendPushNotifications({
+          supabase,
+          userId: latestSession.user_id,
+          title: "MakeX",
+          body: "Your App is ready to use.",
+          payload: {
+            appId,
+            appName: app.app_name,
+            appUrl: app.app_url,
+          },
+        });
+      }
+
       return {
         success: true,
         response: result,
