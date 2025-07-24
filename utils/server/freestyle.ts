@@ -103,3 +103,32 @@ export async function deployWebFromGit(
     deploymentConfig
   );
 }
+
+// Configure GitHub sync for a Freestyle repository
+export async function configureGitHubSync({
+  repoId,
+  githubRepoName,
+}: {
+  repoId: string;
+  githubRepoName: string;
+}) {
+  const sandboxes = getFreestyleClient();
+  
+  await (sandboxes as any).configureGitRepoGitHubSync({
+    repoId,
+    githubRepoName,
+  });
+}
+
+// Remove GitHub sync for a Freestyle repository
+export async function removeGitHubSync({
+  repoId,
+}: {
+  repoId: string;
+}) {
+  const sandboxes = getFreestyleClient();
+  
+  await (sandboxes as any).removeGitRepoGitHubSync({
+    repoId,
+  });
+}

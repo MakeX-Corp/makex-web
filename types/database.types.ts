@@ -281,6 +281,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           git_repo_id: string | null
+          github_sync_repo: string | null
           id: string
           initial_commit: string | null
           sandbox_id: string | null
@@ -299,6 +300,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           git_repo_id?: string | null
+          github_sync_repo?: string | null
           id?: string
           initial_commit?: string | null
           sandbox_id?: string | null
@@ -317,6 +319,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           git_repo_id?: string | null
+          github_sync_repo?: string | null
           id?: string
           initial_commit?: string | null
           sandbox_id?: string | null
