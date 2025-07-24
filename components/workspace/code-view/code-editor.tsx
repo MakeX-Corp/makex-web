@@ -161,7 +161,7 @@ export default function CodeEditor({
     if (!file) return;
     setSaveStatus("saving");
     try {
-      const res = await fetch("/api/file-operations", {
+      const res = await fetch("/api/code/edit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

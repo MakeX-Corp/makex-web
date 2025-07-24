@@ -35,7 +35,7 @@ export default function FileTree({
       parentPath === "/" ? `/${fileName}` : `${parentPath}/${fileName}`;
 
     try {
-      const response = await fetch("/api/file-operations", {
+      const response = await fetch("/api/code/edit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -75,7 +75,7 @@ export default function FileTree({
     const fileName = filePath.split("/").pop() || "file";
 
     try {
-      const response = await fetch("/api/file-operations", {
+      const response = await fetch("/api/code/edit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
