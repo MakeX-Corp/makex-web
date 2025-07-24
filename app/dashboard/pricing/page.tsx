@@ -112,7 +112,7 @@ export default function PricingPage() {
       if (subscription?.hasActiveSubscription) {
         console.log(
           "hasActiveSubscription",
-          subscription?.hasActiveSubscription
+          subscription?.hasActiveSubscription,
         );
         // Handle upgrade/downgrade for existing subscription
         const updateResponse = await fetch("/api/subscription/update", {
@@ -173,7 +173,7 @@ export default function PricingPage() {
   const isButtonDisabled = (priceId: string) => {
     // Find the current plan based on planName
     const currentPlan = plans.find(
-      (plan) => plan.name === subscription?.planName
+      (plan) => plan.name === subscription?.planName,
     );
 
     // Disable the button for the current plan
@@ -235,9 +235,9 @@ export default function PricingPage() {
                     {isLoading === plan.priceId
                       ? "Processing..."
                       : subscription?.hasActiveSubscription &&
-                        subscription?.planName === plan.name
-                      ? "Current Plan"
-                      : "Subscribe"}
+                          subscription?.planName === plan.name
+                        ? "Current Plan"
+                        : "Subscribe"}
                   </Button>
                 )}
               </CardFooter>
@@ -283,7 +283,7 @@ export default function PricingPage() {
                 onClick={() =>
                   window.open(
                     "mailto:contact@makex.app?subject=Enterprise%20Inquiry",
-                    "_blank"
+                    "_blank",
                   )
                 }
               >

@@ -18,7 +18,7 @@ export async function DELETE(request: Request) {
           apikey: SERVICE_ROLE_KEY,
           Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
         },
-      }
+      },
     );
 
     if (!res.ok) {
@@ -31,7 +31,7 @@ export async function DELETE(request: Request) {
     console.error("Error deleting user:", err);
     return NextResponse.json(
       { error: "Failed to delete account" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

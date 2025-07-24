@@ -24,7 +24,7 @@ export function PhoneFrame({
   const phoneHeight = basePhoneHeight * scaleFactor;
 
   return (
-    <div 
+    <div
       className="relative"
       style={{
         width: `${phoneWidth}px`,
@@ -105,4 +105,4 @@ export function PhoneFrame({
       />
     </div>
   );
-} 
+}

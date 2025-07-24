@@ -10,11 +10,11 @@ export function getFreestyleClient() {
 // Create a Git repository
 export async function createGitRepository(name?: string) {
   const sandboxes = getFreestyleClient();
-  
+
   const repoResponse = await (sandboxes as any).createGitRepository({
     name: name,
   });
-  
+
   return repoResponse;
 }
 
@@ -29,7 +29,7 @@ export async function grantGitPermission({
   permission: "read" | "write";
 }) {
   const sandboxes = getFreestyleClient();
-  
+
   await (sandboxes as any).grantGitPermission({
     identityId,
     repoId,
@@ -40,14 +40,14 @@ export async function grantGitPermission({
 // List Git repositories
 export async function listGitRepositories() {
   const sandboxes = getFreestyleClient();
-  
+
   return await (sandboxes as any).listGitRepositories();
 }
 
 // Delete a Git repository
 export async function deleteGitRepository(repoId: string) {
   const sandboxes = getFreestyleClient();
-  
+
   await (sandboxes as any).deleteGitRepository({
     repoId,
   });
@@ -67,12 +67,14 @@ export async function downloadGitRepositoryZip(repoId: string, ref?: string) {
 
   const response = await fetch(url.toString(), {
     headers: {
-      "Authorization": `Bearer ${freestyleApiKey}`,
+      Authorization: `Bearer ${freestyleApiKey}`,
     },
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to download repository zip: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Failed to download repository zip: ${response.status} ${response.statusText}`,
+    );
   }
 
   return response.arrayBuffer();
@@ -82,25 +84,23 @@ export async function downloadGitRepositoryZip(repoId: string, ref?: string) {
 export async function deployWebFromGit(
   gitRepoId: string,
   domains: string[],
-  build: boolean | { envVars?: Record<string, string> } = true
+  build: boolean | { envVars?: Record<string, string> } = true,
 ) {
   const sandboxes = getFreestyleClient();
-  
+
   const deploymentConfig: any = {
     domains,
     build,
   };
-  
 
   console.log(`[DeployWeb] Deployment config:`, deploymentConfig);
 
-  
   return await sandboxes.deployWeb(
     {
       kind: "git",
       url: `https://git.freestyle.sh/${gitRepoId}`,
     },
-    deploymentConfig
+    deploymentConfig,
   );
 }
 
@@ -113,7 +113,7 @@ export async function configureGitHubSync({
   githubRepoName: string;
 }) {
   const sandboxes = getFreestyleClient();
-  
+
   await (sandboxes as any).configureGitRepoGitHubSync({
     repoId,
     githubRepoName,
@@ -121,13 +121,9 @@ export async function configureGitHubSync({
 }
 
 // Remove GitHub sync for a Freestyle repository
-export async function removeGitHubSync({
-  repoId,
-}: {
-  repoId: string;
-}) {
+export async function removeGitHubSync({ repoId }: { repoId: string }) {
   const sandboxes = getFreestyleClient();
-  
+
   await (sandboxes as any).removeGitRepoGitHubSync({
     repoId,
   });

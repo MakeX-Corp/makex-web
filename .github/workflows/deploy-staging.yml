@@ -10,7 +10,7 @@ jobs:
   deploy-staging:
     runs-on: ubuntu-latest
     environment: staging
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,8 +18,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'yarn'
+          node-version: "22"
+          cache: "yarn"
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -42,4 +42,4 @@ jobs:
         if: failure()
         run: |
           echo "❌ Failed to deploy to Trigger.dev staging environment"
-          echo "Please check the logs above for more details" 
+          echo "Please check the logs above for more details"

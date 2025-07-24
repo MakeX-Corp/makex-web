@@ -71,7 +71,7 @@ export function DeployButton({
         }
       }
     } catch (error) {
-      console.error('Error fetching share URL:', error);
+      console.error("Error fetching share URL:", error);
     }
   };
 
@@ -126,14 +126,13 @@ export function DeployButton({
           filter: `app_id=eq.${appId}`,
         },
         (payload) => {
-
           // Update local state with deployment info
           setLastDeployment({
             url: payload.new.url || "",
             status: payload.new.status,
             created_at: payload.new.created_at,
           });
-          
+
           // If deployment is completed, fetch share info
           if (payload.new.status === "completed") {
             // Add a small delay to ensure backend is ready
@@ -141,7 +140,7 @@ export function DeployButton({
               fetchShareUrl(appId);
             }, 1000); // 1 second delay
           }
-        }
+        },
       )
       .subscribe((status) => {});
 
@@ -157,7 +156,7 @@ export function DeployButton({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy text: ', err);
+      console.error("Failed to copy text: ", err);
     }
   };
 
@@ -181,7 +180,7 @@ export function DeployButton({
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(
-            errorData.error || `Deployment failed (${response.status})`
+            errorData.error || `Deployment failed (${response.status})`,
           );
         }
 
@@ -207,7 +206,7 @@ export function DeployButton({
         setIsDeploying(false);
       }
     },
-    [apiUrl, appId]
+    [apiUrl, appId],
   );
 
   // Format timestamp

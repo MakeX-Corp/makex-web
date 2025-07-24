@@ -49,7 +49,7 @@ export default function FileItem({
                 className={cn(
                   "flex flex-1 items-center gap-2 px-2 py-1 rounded-md transition-colors",
                   "hover:bg-accent hover:text-accent-foreground",
-                  active && "bg-accent text-accent-foreground font-medium"
+                  active && "bg-accent text-accent-foreground font-medium",
                 )}
               >
                 {getFileIcon(node.name)}

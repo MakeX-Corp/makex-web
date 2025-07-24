@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function checkActiveContainer(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
 ) {
   // Get the user's most recent active subscription
   const { data: subscription, error: subscriptionError } = await supabase
@@ -18,7 +18,7 @@ export async function checkActiveContainer(
   if (subscriptionError && subscriptionError.code !== "PGRST116") {
     return NextResponse.json(
       { error: "Failed to check subscription status" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -28,14 +28,14 @@ export async function checkActiveContainer(
     // Free plan
     maxContainers = parseInt(
       process.env.NEXT_PUBLIC_FREE_CONTAINERS || "1",
-      10
+      10,
     );
   } else {
     switch (subscription.price_id) {
       case process.env.NEXT_PUBLIC_PADDLE_STARTER_ID:
         maxContainers = parseInt(
           process.env.NEXT_PUBLIC_STARTER_CONTAINERS || "3",
-          10
+          10,
         );
         break;
       case process.env.NEXT_PUBLIC_PADDLE_PRO_ID:
@@ -45,7 +45,7 @@ export async function checkActiveContainer(
         // Default to free plan limit
         maxContainers = parseInt(
           process.env.NEXT_PUBLIC_FREE_CONTAINERS || "1",
-          10
+          10,
         );
     }
   }
@@ -60,7 +60,7 @@ export async function checkActiveContainer(
   if (error) {
     return NextResponse.json(
       { error: "Failed to check active containers" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -71,7 +71,7 @@ export async function checkActiveContainer(
         currentCount: activeContainers.length,
         maxAllowed: maxContainers,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

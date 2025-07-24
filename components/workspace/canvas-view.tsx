@@ -10,7 +10,7 @@ export default function CanvasView() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [canvasScale, setCanvasScale] = useState(0.5);
   const [windowWidth, setWindowWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1200
+    typeof window !== "undefined" ? window.innerWidth : 1200,
   );
   const { appUrl } = useSession();
 
@@ -93,14 +93,14 @@ export default function CanvasView() {
       name: "index",
       title: "Water Tracker",
       icon: "local-drink",
-      path: `${appUrl}/`
+      path: `${appUrl}/`,
     },
     {
       name: "stats",
       title: "Statistics",
       icon: "bar-chart",
-      path: `${appUrl}/stats`
-    }
+      path: `${appUrl}/stats`,
+    },
   ];
 
   return (
@@ -148,4 +148,4 @@ export default function CanvasView() {
       </div>
     </div>
   );
-} 
+}

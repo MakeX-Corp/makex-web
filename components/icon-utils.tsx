@@ -27,7 +27,11 @@ export const DiscordIcon = () => {
 };
 
 // Apple Icon
-export const AppleIcon = ({ className = "w-6 h-6" }: { className?: string }) => {
+export const AppleIcon = ({
+  className = "w-6 h-6",
+}: {
+  className?: string;
+}) => {
   return (
     <svg
       className={className}

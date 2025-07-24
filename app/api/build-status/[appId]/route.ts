@@ -4,7 +4,7 @@ import { getSupabaseWithUser } from "@/utils/server/auth";
 // Add this enhanced logging to your build status API route
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ appId: string }> }
+  { params }: { params: Promise<{ appId: string }> },
 ) {
   try {
     const result = await getSupabaseWithUser(request);
@@ -17,7 +17,7 @@ export async function GET(
     if (!appId) {
       return NextResponse.json(
         { error: "App ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -25,7 +25,7 @@ export async function GET(
     const { data: sandbox, error } = await supabase
       .from("user_sandboxes")
       .select(
-        "sandbox_status, app_status, api_url, sandbox_updated_at, expo_status"
+        "sandbox_status, app_status, api_url, sandbox_updated_at, expo_status",
       )
       .eq("app_id", appId)
       .eq("user_id", user.id)
@@ -38,7 +38,7 @@ export async function GET(
       }
       return NextResponse.json(
         { error: "Failed to fetch app status" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -84,7 +84,7 @@ export async function GET(
     console.error("Build status API error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -24,7 +24,7 @@ export async function GET(request: Request) {
       if (error || !data) {
         return NextResponse.json(
           { error: "Session not found or unauthorized" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
       if (error || !app) {
         return NextResponse.json(
           { error: "App not found or unauthorized" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -66,7 +66,7 @@ export async function GET(request: Request) {
       if (error) {
         return NextResponse.json(
           { error: "Failed to fetch chat sessions" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -75,12 +75,12 @@ export async function GET(request: Request) {
 
     return NextResponse.json(
       { error: "Must provide either sessionId, appId, or appName" },
-      { status: 400 }
+      { status: 400 },
     );
   } catch (error) {
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     if (!appId) {
       return NextResponse.json(
         { error: "App ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
     if (appError || !app) {
       return NextResponse.json(
         { error: "App not found or unauthorized" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -134,7 +134,7 @@ export async function POST(request: Request) {
     if (createError) {
       return NextResponse.json(
         { error: "Failed to create chat session" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -142,7 +142,7 @@ export async function POST(request: Request) {
   } catch (error) {
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -162,7 +162,7 @@ export async function DELETE(request: Request) {
     if (!sessionId) {
       return NextResponse.json(
         { error: "Session ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -177,7 +177,7 @@ export async function DELETE(request: Request) {
     if (sessionError || !session) {
       return NextResponse.json(
         { error: "Session not found or unauthorized" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -190,7 +190,7 @@ export async function DELETE(request: Request) {
     if (updateError) {
       return NextResponse.json(
         { error: "Failed to delete chat session" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -198,7 +198,7 @@ export async function DELETE(request: Request) {
   } catch (error) {
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

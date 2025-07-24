@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 export default function AppNotFound() {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+
   const handleRefresh = () => {
     setIsRefreshing(true);
     window.top?.location.reload();
@@ -18,14 +18,17 @@ export default function AppNotFound() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
           <RefreshCw className="h-8 w-8 text-primary" />
         </div>
-        
-        <h1 className="text-2xl font-bold text-foreground">App Server Closed</h1>
-        
+
+        <h1 className="text-2xl font-bold text-foreground">
+          App Server Closed
+        </h1>
+
         <p className="text-muted-foreground">
-          The app server has been closed due to inactivity. Please refresh the page to reconnect.
+          The app server has been closed due to inactivity. Please refresh the
+          page to reconnect.
         </p>
-        
-        <Button 
+
+        <Button
           onClick={handleRefresh}
           className="w-full"
           disabled={isRefreshing}
@@ -44,5 +47,5 @@ export default function AppNotFound() {
         </Button>
       </div>
     </div>
-  )
+  );
 }

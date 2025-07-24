@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     if (!supabase) {
       return NextResponse.json(
         { error: "Database connection not available" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
     console.error("Webhook processing error:", error);
     return NextResponse.json(
       { error: "Webhook processing failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

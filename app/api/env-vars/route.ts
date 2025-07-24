@@ -13,12 +13,12 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const appUrl = searchParams.get('appUrl');
+    const appUrl = searchParams.get("appUrl");
 
     if (!appUrl) {
       return NextResponse.json(
         { error: "appUrl is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     console.error("Get env vars error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (!appUrl || !key || value === undefined) {
       return NextResponse.json(
         { error: "appUrl, key, and value are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     console.error("Set env var error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -79,13 +79,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const appUrl = searchParams.get('appUrl');
-    const key = searchParams.get('key');
+    const appUrl = searchParams.get("appUrl");
+    const key = searchParams.get("key");
 
     if (!appUrl || !key) {
       return NextResponse.json(
         { error: "appUrl and key are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -97,7 +97,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Delete env var error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

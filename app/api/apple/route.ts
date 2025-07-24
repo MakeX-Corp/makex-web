@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     if (!identityToken) {
       return NextResponse.json(
         { error: "Missing identityToken" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     if (!payload) {
       return NextResponse.json(
         { error: "Invalid token format" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     console.error("Apple sign-in error:", err);
     return NextResponse.json(
       { error: "Apple sign-in failed", message: err.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

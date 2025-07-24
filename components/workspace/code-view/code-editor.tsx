@@ -126,7 +126,7 @@ export default function CodeEditor({
     file
       ? `/api/code/file?path=${encodeURIComponent(file.path)}&api_url=${apiUrl}`
       : null,
-    fetchJSON
+    fetchJSON,
   );
 
   // Get file name from path if available
@@ -136,8 +136,8 @@ export default function CodeEditor({
   const editorTheme = !mounted
     ? "vs-dark"
     : theme === "dark"
-    ? "vs-dark"
-    : "vs-light";
+      ? "vs-dark"
+      : "vs-light";
 
   // Ensure we have access to the theme after hydration
   useEffect(() => {
@@ -271,8 +271,8 @@ export default function CodeEditor({
           {saveStatus === "saving"
             ? "Saving..."
             : saveStatus === "success"
-            ? "Saved!"
-            : "Save"}
+              ? "Saved!"
+              : "Save"}
         </Button>
       </div>
 

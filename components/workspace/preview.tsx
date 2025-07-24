@@ -32,7 +32,7 @@ export function Preview({
   state,
 }: PreviewProps) {
   const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code" | "convex">(
-    "mobile"
+    "mobile",
   );
   const { appUrl } = useSession();
 
@@ -109,14 +109,14 @@ export function Preview({
                 state?.sandbox_status === "starting"
                   ? "bg-blue-200 text-blue-800 border-blue-300"
                   : state?.sandbox_status === "active"
-                  ? "bg-green-200 text-green-800 border-green-300"
-                  : state?.sandbox_status === "paused"
-                  ? "bg-red-200 text-red-800 border-red-300"
-                  : state?.sandbox_status === "resuming"
-                  ? "bg-green-100 text-green-600 border-green-200"
-                  : state?.sandbox_status === "pausing"
-                  ? "bg-red-100 text-red-700 border-red-200"
-                  : "bg-gray-100 text-gray-700 border-gray-200"
+                    ? "bg-green-200 text-green-800 border-green-300"
+                    : state?.sandbox_status === "paused"
+                      ? "bg-red-200 text-red-800 border-red-300"
+                      : state?.sandbox_status === "resuming"
+                        ? "bg-green-100 text-green-600 border-green-200"
+                        : state?.sandbox_status === "pausing"
+                          ? "bg-red-100 text-red-700 border-red-200"
+                          : "bg-gray-100 text-gray-700 border-gray-200"
               }`}
               style={{ minWidth: 70, textAlign: "center" }}
             >

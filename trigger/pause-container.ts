@@ -8,7 +8,7 @@ import { UserSandbox } from "@/types/sandbox";
 export const pauseContainer = task({
   id: "pause-container",
   retry: {
-    maxAttempts: 1
+    maxAttempts: 1,
   },
   run: async (payload: { appId: string; appName: string }) => {
     const { appId, appName } = payload;
@@ -19,7 +19,6 @@ export const pauseContainer = task({
       .select("*")
       .eq("app_id", appId)
       .single();
-
 
     const { data: updatedSandbox, error: updatedSandboxError } =
       await adminSupabase
@@ -56,13 +55,17 @@ export const pauseContainer = task({
       }
     }
 
-    // update status to paused 
+    // update status to paused
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
       .update({ sandbox_status: "paused", app_status: "paused" })
       .eq("id", sandbox.id);
 
-    await redisUrlSetter(appName, "https://makex.app/app-not-found", "https://makex.app/app-not-found");
+    await redisUrlSetter(
+      appName,
+      "https://makex.app/app-not-found",
+      "https://makex.app/app-not-found",
+    );
 
     if (updateError) {
       throw new Error(`Failed updating sandbox status: ${updateError.message}`);

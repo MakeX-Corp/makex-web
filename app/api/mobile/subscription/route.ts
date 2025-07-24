@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     console.error("Failed to fetch subscription:", err);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
