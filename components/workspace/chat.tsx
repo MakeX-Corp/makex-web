@@ -30,7 +30,12 @@ interface ChatProps {
   containerState: string;
 }
 
-export function Chat({ sessionId, onResponseComplete, onSessionError, containerState }: ChatProps) {
+export function Chat({
+  sessionId,
+  onResponseComplete,
+  onSessionError,
+  containerState,
+}: ChatProps) {
   const {
     appId,
     apiUrl,
@@ -46,9 +51,13 @@ export function Chat({ sessionId, onResponseComplete, onSessionError, containerS
   const [isLoading, setIsLoading] = useState(false);
   const [storedPrompt, setStoredPrompt] = useState<string | null>(null);
   const [promptChecked, setPromptChecked] = useState(false);
-  const [restoringMessageId, setRestoringMessageId] = useState<string | null>(null);
+  const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
+    null,
+  );
   const [limitReached, setLimitReached] = useState(false);
-  const [remainingMessages, setRemainingMessages] = useState<number | null>(null);
+  const [remainingMessages, setRemainingMessages] = useState<number | null>(
+    null,
+  );
   const [input, setInput] = useState("");
 
   const injectedPromptRef = useRef(false);
@@ -80,7 +89,10 @@ export function Chat({ sessionId, onResponseComplete, onSessionError, containerS
 
   // 1. Load storedPrompt from localStorage
   useEffect(() => {
-    const prompt = typeof window !== "undefined" ? localStorage.getItem("makeX_prompt") : null;
+    const prompt =
+      typeof window !== "undefined"
+        ? localStorage.getItem("makeX_prompt")
+        : null;
     if (prompt) {
       setStoredPrompt(prompt);
       localStorage.removeItem("makeX_prompt");
@@ -167,9 +179,14 @@ export function Chat({ sessionId, onResponseComplete, onSessionError, containerS
         const userMessageText =
           messages[0]?.parts?.find((part) => part.type === "text")?.text || "";
         const assistantMessageText =
-          result.message.parts?.find((part) => part.type === "text")?.text || "";
+          result.message.parts?.find((part) => part.type === "text")?.text ||
+          "";
 
-        updateSessionTitle(userMessageText, assistantMessageText, sessionId).then((newTitle) => {
+        updateSessionTitle(
+          userMessageText,
+          assistantMessageText,
+          sessionId,
+        ).then((newTitle) => {
           if (newTitle) {
             contextUpdateSessionTitle(sessionId, newTitle);
           }
@@ -216,7 +233,7 @@ export function Chat({ sessionId, onResponseComplete, onSessionError, containerS
             sessionId,
             subscription,
           },
-        }
+        },
       );
     }
   }, [
@@ -275,7 +292,7 @@ export function Chat({ sessionId, onResponseComplete, onSessionError, containerS
             sessionId,
             subscription,
           },
-        }
+        },
       );
 
       /* ------- clean up ------- */
@@ -299,7 +316,11 @@ export function Chat({ sessionId, onResponseComplete, onSessionError, containerS
 
     switch (part.type) {
       case "text":
-        return <div className="text-sm whitespace-pre-wrap break-words break-all">{part.text}</div>;
+        return (
+          <div className="text-sm whitespace-pre-wrap break-words break-all">
+            {part.text}
+          </div>
+        );
 
       case "file":
         /* show images inline; fallback text for other mime types */
@@ -318,7 +339,12 @@ export function Chat({ sessionId, onResponseComplete, onSessionError, containerS
           );
         }
         return (
-          <a href={part.url} target="_blank" rel="noreferrer" className="text-xs underline">
+          <a
+            href={part.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs underline"
+          >
             {part.filename || "file"}
           </a>
         );
@@ -375,7 +401,9 @@ export function Chat({ sessionId, onResponseComplete, onSessionError, containerS
             messages.map((message, index) => (
               <div
                 key={message.id || `message-${index}`}
-                className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"}`}
+                className={`flex flex-col ${
+                  message.role === "user" ? "items-end" : "items-start"
+                }`}
               >
                 <Card
                   className={`max-w-[80%] ${
@@ -391,7 +419,8 @@ export function Chat({ sessionId, onResponseComplete, onSessionError, containerS
                       ))
                     ) : (
                       <div className="text-sm whitespace-pre-wrap break-words">
-                        {message.parts?.find((part) => part.type === "text")?.text || ""}
+                        {message.parts?.find((part) => part.type === "text")
+                          ?.text || ""}
                       </div>
                     )}
                   </CardContent>
@@ -423,7 +452,9 @@ export function Chat({ sessionId, onResponseComplete, onSessionError, containerS
         {limitReached && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
             <div className="p-4 rounded-lg text-center">
-              <p className="font-medium text-foreground">Message limit reached</p>
+              <p className="font-medium text-foreground">
+                Message limit reached
+              </p>
               <p className="text-xs text-muted-foreground mt-1">
                 {subscription?.planName === "Free" ? (
                   <>
@@ -481,7 +512,7 @@ export function Chat({ sessionId, onResponseComplete, onSessionError, containerS
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 formRef.current?.dispatchEvent(
-                  new Event("submit", { bubbles: true, cancelable: true })
+                  new Event("submit", { bubbles: true, cancelable: true }),
                 );
               }
             }}
@@ -518,7 +549,11 @@ export function Chat({ sessionId, onResponseComplete, onSessionError, containerS
           <Button
             type="submit"
             size="icon"
-            disabled={isAIResponding || (!input.trim() && selectedImages.length === 0) || isLoading}
+            disabled={
+              isAIResponding ||
+              (!input.trim() && selectedImages.length === 0) ||
+              isLoading
+            }
           >
             {isAIResponding ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -532,8 +567,8 @@ export function Chat({ sessionId, onResponseComplete, onSessionError, containerS
         {remainingMessages !== null && !limitReached && (
           <div className="text-xs text-muted-foreground flex justify-end mt-2">
             <span>
-              {remainingMessages} message{remainingMessages === 1 ? "" : "s"} remaining{" "}
-              {"this month"}
+              {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
+              remaining {"this month"}
             </span>
           </div>
         )}

@@ -10,7 +10,8 @@ export async function POST(req: Request) {
   try {
     // Get the user API client
     const userResult = await getSupabaseWithUser(req as NextRequest);
-    if (userResult instanceof NextResponse || "error" in userResult) return userResult;
+    if (userResult instanceof NextResponse || "error" in userResult)
+      return userResult;
     const { supabase, user } = userResult;
 
     // Get subscription data from request body
@@ -38,12 +39,21 @@ export async function POST(req: Request) {
       limit = DEFAULT_LIMITS.free;
 
       const now = new Date();
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      startDate = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0,
+        0,
+        0,
+        0,
+      );
       endDate = new Date(Date.now() + 30);
       periodType = "monthly";
     } else {
       // Paid plans with valid subscription: billing period limit
-      limit = planName === "starter" ? DEFAULT_LIMITS.starter : DEFAULT_LIMITS.pro;
+      limit =
+        planName === "starter" ? DEFAULT_LIMITS.starter : DEFAULT_LIMITS.pro;
       startDate = new Date(subscriptionData.subscription.current_period_start);
       endDate = new Date(subscriptionData.subscription.current_period_end);
       periodType = "monthly";
@@ -52,7 +62,10 @@ export async function POST(req: Request) {
     // Get message count for the determined period
     const result = await getMessageCount(supabase, user.id, startDate, endDate);
     if (result.error) {
-      return NextResponse.json({ error: "Failed to fetch message count" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to fetch message count" },
+        { status: 500 },
+      );
     }
 
     const used = result.count || 0;
@@ -67,6 +80,9 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("Error in message count API:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

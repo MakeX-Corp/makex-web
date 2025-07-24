@@ -6,7 +6,7 @@ export async function getMessageCount(
   supabase: SupabaseClient,
   userId: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): Promise<{ count: number | null; error: any }> {
   const { count, error } = await supabase
     .from("app_chat_history")
@@ -30,7 +30,7 @@ function formatDate(date: Date): string {
 export async function checkMessageLimit(
   supabase: SupabaseClient,
   user: User,
-  subscriptionData: any
+  subscriptionData: any,
 ): Promise<{ error?: string; status?: number }> {
   try {
     // Extract plan info with fallbacks
@@ -46,11 +46,12 @@ export async function checkMessageLimit(
         user,
         parseInt(DEFAULT_LIMITS.free),
         startOfMonth,
-        endOfMonth
+        endOfMonth,
       );
     } else if (["starter", "pro"].includes(planName)) {
       // Get correct limit based on plan
-      const limit = planName === "starter" ? DEFAULT_LIMITS.starter : DEFAULT_LIMITS.pro;
+      const limit =
+        planName === "starter" ? DEFAULT_LIMITS.starter : DEFAULT_LIMITS.pro;
 
       // Check if we have valid subscription period data
       if (
@@ -63,7 +64,7 @@ export async function checkMessageLimit(
           user,
           parseInt(limit),
           new Date(subscriptionData.subscription.current_period_start),
-          new Date(subscriptionData.subscription.current_period_end)
+          new Date(subscriptionData.subscription.current_period_end),
         );
       }
     }
@@ -87,10 +88,15 @@ async function checkBillingPeriodLimit(
   user: User,
   limit: number,
   periodStart: Date,
-  periodEnd: Date
+  periodEnd: Date,
 ): Promise<{ error?: string; status?: number }> {
   // Get message count for the current billing period
-  const result = await getMessageCount(supabase, user.id, periodStart, periodEnd);
+  const result = await getMessageCount(
+    supabase,
+    user.id,
+    periodStart,
+    periodEnd,
+  );
 
   if (result.error) {
     return {
