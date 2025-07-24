@@ -247,7 +247,7 @@ export function GitHubSyncModal({ open, onClose, appId, github_sync_repo, onRefr
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open("https://github.com/apps/makex-sync", "_blank")}
+                      onClick={() => window.open("https://github.com/apps/makex-sync/installations/select_target", "_blank")}
                       className="w-full"
                     >
                       Install MakeX Sync App
