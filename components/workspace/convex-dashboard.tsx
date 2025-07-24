@@ -17,15 +17,20 @@ function DashboardFrame({
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Send credentials when iframe asks for them
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (
-        event.data?.type !== "dashboard-credentials-request" ||
-        event.source !== iframeRef.current?.contentWindow
-      )
-        return;
+      console.log(
+        "[Convex Dashboard] Message received:",
+        event.origin,
+        event.data,
+      );
 
-      (event.source as Window).postMessage(
+      if (event.data?.type !== "dashboard-credentials-request") return;
+
+      console.log("[Convex Dashboard] Sending credentials to iframe");
+
+      iframeRef.current?.contentWindow?.postMessage(
         {
           type: "dashboard-credentials",
           adminKey,
@@ -38,6 +43,24 @@ function DashboardFrame({
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
+  }, [adminKey, deploymentUrl, deploymentName]);
+
+  // Proactively send credentials once iframe is ready
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      iframeRef.current?.contentWindow?.postMessage(
+        {
+          type: "dashboard-credentials",
+          adminKey,
+          deploymentUrl,
+          deploymentName,
+        },
+        "*",
+      );
+      console.log("[Convex Dashboard] Proactively sent credentials");
+    }, 1000); // wait for iframe to load
+
+    return () => clearTimeout(timer);
   }, [adminKey, deploymentUrl, deploymentName]);
 
   return (
