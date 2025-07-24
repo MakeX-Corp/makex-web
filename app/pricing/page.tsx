@@ -187,7 +187,7 @@ export default function PricingPage() {
               onClick={() =>
                 window.open(
                   "mailto:contact@makex.app?subject=Enterprise%20Inquiry",
-                  "_blank"
+                  "_blank",
                 )
               }
             >

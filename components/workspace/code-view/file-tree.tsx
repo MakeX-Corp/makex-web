@@ -318,7 +318,7 @@ export default function FileTree({
                 apiUrl={apiUrl}
                 loading={loading}
               />
-            )
+            ),
           )}
         </ul>
       </div>

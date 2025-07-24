@@ -1,4 +1,4 @@
-import { createFileBackendApiClient } from './file-backend-api-client';
+import { createFileBackendApiClient } from "./file-backend-api-client";
 
 interface FilePayload {
   path: string;
@@ -6,7 +6,7 @@ interface FilePayload {
 }
 
 export class EnvVarManager {
-  private static readonly ENV_PATH = '.env';
+  private static readonly ENV_PATH = ".env";
   private apiClient: ReturnType<typeof createFileBackendApiClient>;
   private envVars: Map<string, string>;
 
@@ -24,39 +24,41 @@ export class EnvVarManager {
 
   private async loadEnvVars(): Promise<void> {
     try {
-      const content = await this.apiClient.get('/file', { path: EnvVarManager.ENV_PATH });
-      
+      const content = await this.apiClient.get("/file", {
+        path: EnvVarManager.ENV_PATH,
+      });
+
       if (!content) {
-        console.log('No .env file found, creating new one');
+        console.log("No .env file found, creating new one");
         // Create empty .env file
-        await this.apiClient.post('/file', {
+        await this.apiClient.post("/file", {
           path: EnvVarManager.ENV_PATH,
-          content: ''
+          content: "",
         });
         this.envVars = new Map();
         return;
       }
 
-      const lines = content.split('\n');
+      const lines = content.split("\n");
       for (const line of lines) {
         const trimmedLine = line.trim();
-        if (trimmedLine && !trimmedLine.startsWith('#')) {
-          const [key, ...valueParts] = trimmedLine.split('=');
-          const value = valueParts.join('=').trim();
+        if (trimmedLine && !trimmedLine.startsWith("#")) {
+          const [key, ...valueParts] = trimmedLine.split("=");
+          const value = valueParts.join("=").trim();
           this.envVars.set(key.trim(), value);
         }
       }
     } catch (error) {
-      console.warn('Error loading environment variables:');
+      console.warn("Error loading environment variables:");
       // Try to create the .env file if it doesn't exist
       try {
-        await this.apiClient.post('/file', {
+        await this.apiClient.post("/file", {
           path: EnvVarManager.ENV_PATH,
-          content: ''
+          content: "",
         });
-        console.log('Created new .env file');
+        console.log("Created new .env file");
       } catch (createError) {
-        console.error('Failed to create .env file:', createError);
+        console.error("Failed to create .env file:", createError);
       }
       this.envVars = new Map();
     }
@@ -66,17 +68,17 @@ export class EnvVarManager {
     try {
       const content = Array.from(this.envVars.entries())
         .map(([key, value]) => `${key}=${value}`)
-        .join('\n');
-      
+        .join("\n");
+
       const payload: FilePayload = {
         path: EnvVarManager.ENV_PATH,
-        content: content
+        content: content,
       };
-      
-      await this.apiClient.post('/file', payload);
+
+      await this.apiClient.post("/file", payload);
     } catch (error) {
-      console.error('Error saving environment variables:', error);
-      throw new Error('Failed to save environment variables');
+      console.error("Error saving environment variables:", error);
+      throw new Error("Failed to save environment variables");
     }
   }
 

@@ -17,7 +17,6 @@ export async function POST(req: Request) {
       success: true,
       message: "Mobile deployment started in background",
     });
-
   } else {
     tasks.trigger("deploy-web", {
       appId,
@@ -38,7 +37,7 @@ export async function GET(req: NextRequest) {
   if (!appId) {
     return NextResponse.json(
       { error: "Missing appId parameter" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

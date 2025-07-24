@@ -25,8 +25,8 @@ export default function Login() {
     setError(null);
 
     const formData = new FormData();
-    formData.append('email', email);
-    formData.append('password', password);
+    formData.append("email", email);
+    formData.append("password", password);
 
     const result = await login(formData);
 
@@ -46,7 +46,7 @@ export default function Login() {
         setError(result.error);
       }
     } catch (error) {
-      setError('Failed to initiate Google login');
+      setError("Failed to initiate Google login");
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export default function Login() {
     setError(null);
 
     const formData = new FormData();
-    formData.append('email', email);
+    formData.append("email", email);
 
     const result = await resetPassword(formData);
 
@@ -135,11 +135,7 @@ export default function Login() {
                 </Alert>
               )}
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full"
-              >
+              <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Logging in..." : "Login"}
               </Button>
             </form>

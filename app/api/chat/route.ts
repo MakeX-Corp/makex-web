@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     if (!sessionId || !appId) {
       return NextResponse.json(
         { error: "Session ID and App ID are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -45,7 +45,7 @@ export async function GET(req: Request) {
     if (sessionError || !session) {
       return NextResponse.json(
         { error: "Session not found or unauthorized" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -61,7 +61,7 @@ export async function GET(req: Request) {
     if (messagesError) {
       return NextResponse.json(
         { error: "Failed to fetch messages" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -69,7 +69,7 @@ export async function GET(req: Request) {
   } catch (error) {
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -97,14 +97,14 @@ export async function POST(req: Request) {
     if (statusError) {
       return NextResponse.json(
         { error: "Failed to check app status" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     if (appStatus?.app_status === "changing") {
       return NextResponse.json(
         { error: "App is currently being modified. Please try again later." },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -133,7 +133,7 @@ export async function POST(req: Request) {
     if (lockError) {
       return NextResponse.json(
         { error: "Failed to lock app" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -143,7 +143,7 @@ export async function POST(req: Request) {
       if (limitCheck.error) {
         return NextResponse.json(
           { error: limitCheck.error },
-          { status: limitCheck.status }
+          { status: limitCheck.status },
         );
       }
 
@@ -157,7 +157,7 @@ export async function POST(req: Request) {
       if (appError) {
         return NextResponse.json(
           { error: "Failed to fetch app details" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -215,7 +215,7 @@ export async function POST(req: Request) {
           } catch (err) {
             console.error(
               "Exception while updating app_status to active:",
-              err
+              err,
             );
           }
         },
@@ -231,7 +231,7 @@ export async function POST(req: Request) {
             "Internal Server Error: " +
             (error instanceof Error ? error.message : String(error)),
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
   } catch (error) {
@@ -243,7 +243,7 @@ export async function POST(req: Request) {
           "Internal Server Error: " +
           (error instanceof Error ? error.message : String(error)),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

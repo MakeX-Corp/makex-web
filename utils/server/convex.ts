@@ -19,13 +19,13 @@ export async function createConvexProject({
         team: teamSlug,
         deploymentType: "dev",
       }),
-    }
+    },
   );
 
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(
-      `[createConvexProject] Failed: ${response.status} ${errorBody}`
+      `[createConvexProject] Failed: ${response.status} ${errorBody}`,
     );
   }
 
@@ -46,13 +46,13 @@ export async function deleteConvexProject({
         "Content-Type": "application/json",
         "Convex-Client": "makex-server-1.0.0",
       },
-    }
+    },
   );
 
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(
-      `[deleteConvexProject] Failed: ${response.status} ${errorBody}`
+      `[deleteConvexProject] Failed: ${response.status} ${errorBody}`,
     );
   }
   return { success: true };
@@ -75,13 +75,13 @@ export async function deployConvexProject({
       body: JSON.stringify({
         deploymentType: "prod",
       }),
-    }
+    },
   );
 
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(
-      `[deployConvexProject] Failed: ${response.status} ${errorBody}`
+      `[deployConvexProject] Failed: ${response.status} ${errorBody}`,
     );
   }
 
@@ -103,12 +103,12 @@ export async function getConvexProdAdminKey({
         "Content-Type": "application/json",
         "Convex-Client": "makex-server-1.0.0",
       },
-    }
+    },
   );
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(
-      `[getConvexProdAdminKey] Failed: ${response.status} ${errorBody}`
+      `[getConvexProdAdminKey] Failed: ${response.status} ${errorBody}`,
     );
   }
 

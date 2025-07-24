@@ -93,7 +93,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const getAppIdFromPath = (pathname: string): string | null => {
   const pathSegments = pathname.split("/");
   const workspaceIndex = pathSegments.findIndex(
-    (segment) => segment === "workspace"
+    (segment) => segment === "workspace",
   );
 
   if (workspaceIndex !== -1 && workspaceIndex + 1 < pathSegments.length) {
@@ -125,7 +125,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Initialize subscription state
   const [subscription, setSubscription] = useState<SubscriptionData | null>(
-    null
+    null,
   );
 
   const [isAIResponding, setIsAIResponding] = useState(false);

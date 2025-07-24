@@ -40,7 +40,7 @@ export const createEmbeddings = task({
 
       // 4. Save to Supabase
       const { error } = await supabase.from("embeddings").insert(rows);
-      
+
       if (error) {
         throw error;
       }
@@ -57,4 +57,4 @@ export const createEmbeddings = task({
       };
     }
   },
-}); 
+});

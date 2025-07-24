@@ -31,16 +31,15 @@ export default function Signup() {
     }
 
     const formData = new FormData();
-    formData.append('email', email);
-    formData.append('password', password);
+    formData.append("email", email);
+    formData.append("password", password);
 
     const result = await signup(formData);
 
     if (result?.error) {
       setError(result.error);
       setLoading(false);
-    }
-    else {  
+    } else {
       // redirect to /dashboard
       router.push("/dashboard");
     }
@@ -56,7 +55,7 @@ export default function Signup() {
         setError(result.error);
       }
     } catch (error) {
-      setError('Failed to initiate Google signup');
+      setError("Failed to initiate Google signup");
     } finally {
       setLoading(false);
     }
@@ -117,11 +116,7 @@ export default function Signup() {
                 />
               </div>
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full"
-              >
+              <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Creating account..." : "Sign Up"}
               </Button>
             </form>

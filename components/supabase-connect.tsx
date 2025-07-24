@@ -94,11 +94,11 @@ export function SupabaseConnect({
       const authUrl = new URL("https://api.supabase.com/v1/oauth/authorize");
       authUrl.searchParams.append(
         "client_id",
-        process.env.NEXT_PUBLIC_SUPABASE_OAUTH_CLIENT_ID!
+        process.env.NEXT_PUBLIC_SUPABASE_OAUTH_CLIENT_ID!,
       );
       authUrl.searchParams.append(
         "redirect_uri",
-        `${window.location.origin}/api/integrations/supabase/callback?app_id=${appId}`
+        `${window.location.origin}/api/integrations/supabase/callback?app_id=${appId}`,
       );
       authUrl.searchParams.append("response_type", "code");
       authUrl.searchParams.append("state", state);
@@ -121,7 +121,7 @@ export function SupabaseConnect({
             onClick={() =>
               window.open(
                 `https://supabase.com/dashboard/project/${supabaseProject?.id}`,
-                "_blank"
+                "_blank",
               )
             }
             className="w-full flex items-center gap-2"
@@ -168,10 +168,10 @@ export function SupabaseConnect({
             {isFetching
               ? "Loading..."
               : loading
-              ? "Connecting..."
-              : isConnected
-              ? "Supabase Connected"
-              : "Connect with Supabase"}
+                ? "Connecting..."
+                : isConnected
+                  ? "Supabase Connected"
+                  : "Connect with Supabase"}
           </Button>
         )}
       </div>

@@ -52,11 +52,11 @@ export function Chat({
   const [storedPrompt, setStoredPrompt] = useState<string | null>(null);
   const [promptChecked, setPromptChecked] = useState(false);
   const [restoringMessageId, setRestoringMessageId] = useState<string | null>(
-    null
+    null,
   );
   const [limitReached, setLimitReached] = useState(false);
   const [remainingMessages, setRemainingMessages] = useState<number | null>(
-    null
+    null,
   );
   const [input, setInput] = useState("");
 
@@ -185,7 +185,7 @@ export function Chat({
         updateSessionTitle(
           userMessageText,
           assistantMessageText,
-          sessionId
+          sessionId,
         ).then((newTitle) => {
           if (newTitle) {
             contextUpdateSessionTitle(sessionId, newTitle);
@@ -233,7 +233,7 @@ export function Chat({
             sessionId,
             subscription,
           },
-        }
+        },
       );
     }
   }, [
@@ -292,7 +292,7 @@ export function Chat({
             sessionId,
             subscription,
           },
-        }
+        },
       );
 
       /* ------- clean up ------- */
@@ -512,7 +512,7 @@ export function Chat({
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 formRef.current?.dispatchEvent(
-                  new Event("submit", { bubbles: true, cancelable: true })
+                  new Event("submit", { bubbles: true, cancelable: true }),
                 );
               }
             }}

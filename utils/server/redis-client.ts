@@ -1,5 +1,4 @@
-import { createClient as createRedisClient } from 'redis';
-
+import { createClient as createRedisClient } from "redis";
 
 export const redis = createRedisClient({
   url: process.env.REDIS_URL,
@@ -11,15 +10,21 @@ export const connectRedis = async () => {
   }
 };
 
-export const redisUrlSetter = async (appName: string, appUrl: string, apiUrl: string) => {
+export const redisUrlSetter = async (
+  appName: string,
+  appUrl: string,
+  apiUrl: string,
+) => {
   // connect to redis
   await connectRedis();
 
-  console.log("App Deets", appName, appUrl, apiUrl)
+  console.log("App Deets", appName, appUrl, apiUrl);
 
   const appUrlSet = await redis.set(`proxy:${appName}.makex.app`, `${appUrl}`);
-  const apiUrlSet = await redis.set(`proxy:api-${appName}.makex.app`, `${apiUrl}`);
-
+  const apiUrlSet = await redis.set(
+    `proxy:api-${appName}.makex.app`,
+    `${apiUrl}`,
+  );
 
   console.log("Redis URLs set successfully", appUrlSet, apiUrlSet);
 
@@ -28,7 +33,6 @@ export const redisUrlSetter = async (appName: string, appUrl: string, apiUrl: st
     await redis.disconnect();
   }
 };
-
 
 export const proxySetter = async (currentUrl: string, newUrl: string) => {
   // connect to redis

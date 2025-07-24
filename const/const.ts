@@ -3,7 +3,6 @@ export const DEFAULT_LIMITS = {
   starter: 250, // 250 messages per month
   pro: 500, // 500 messages per month
 };
-    
 
 export const FOOTER_AND_HEADER_PATHS = [
   "/",

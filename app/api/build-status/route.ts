@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     if (!Array.isArray(appIds) || appIds.length === 0) {
       return NextResponse.json(
         { error: "appIds must be a non-empty array" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const { data: sandboxes, error } = await supabase
       .from("user_sandboxes")
       .select(
-        "app_id, sandbox_status, app_status, api_url, sandbox_updated_at, expo_status"
+        "app_id, sandbox_status, app_status, api_url, sandbox_updated_at, expo_status",
       )
       .in("app_id", appIds)
       .eq("user_id", user.id);
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       console.error("Supabase batch query error:", error);
       return NextResponse.json(
         { error: "Failed to fetch app statuses" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     console.error("Batch build status API error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

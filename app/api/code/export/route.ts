@@ -23,14 +23,14 @@ export async function POST(req: Request) {
     if (appError || !app) {
       return NextResponse.json(
         { error: "App not found or access denied" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (!app.git_repo_id) {
       return NextResponse.json(
         { error: "No Git repository found for this app" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     responseHeaders.set("Content-Type", "application/zip");
     responseHeaders.set(
       "Content-Disposition",
-      `attachment; filename="${app.app_name || 'export'}.zip"`
+      `attachment; filename="${app.app_name || "export"}.zip"`,
     );
 
     return new Response(zipBuffer, {
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     console.error("Export route error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

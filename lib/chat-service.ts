@@ -29,11 +29,11 @@ interface ProcessedMessage {
  */
 export const fetchChatMessages = async (
   sessionId: string,
-  appId: string
+  appId: string,
 ): Promise<ProcessedMessage[]> => {
   try {
     const response = await fetch(
-      `/api/chat?sessionId=${sessionId}&appId=${appId}`
+      `/api/chat?sessionId=${sessionId}&appId=${appId}`,
     );
 
     if (!response.ok) {
@@ -64,7 +64,7 @@ export const saveAIMessage = async (
   sessionId: string,
   appId: string,
   apiUrl: string,
-  message: any
+  message: any,
 ): Promise<any> => {
   try {
     const response = await fetch("/api/chat/ai-message-save", {
@@ -94,7 +94,7 @@ export const saveAIMessage = async (
 export const restoreCheckpoint = async (
   messageId: string,
   apiUrl: string,
-  sessionId: string
+  sessionId: string,
 ): Promise<any> => {
   try {
     const response = await fetch("/api/code", {

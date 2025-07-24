@@ -5,7 +5,7 @@ export async function GET(request: Request) {
   // Get authenticated user and Supabase client
   const result = await getSupabaseWithUser(request as NextRequest);
 
-  if (result instanceof NextResponse || 'error' in result) {
+  if (result instanceof NextResponse || "error" in result) {
     return result; // This handles auth errors automatically
   }
 
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
         error: "Failed to fetch subscription",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

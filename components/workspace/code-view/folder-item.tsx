@@ -54,11 +54,11 @@ export default function FolderItem({
   } = useSWR<Node[]>(
     open
       ? `/api/code/directory?path=${encodeURIComponent(
-          node.path
+          node.path,
         )}&api_url=${apiUrl}`
       : null,
     fetchJSON,
-    { refreshInterval: 5000 }
+    { refreshInterval: 5000 },
   );
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -82,7 +82,7 @@ export default function FolderItem({
           className={cn(
             "flex flex-1 items-center gap-2 cursor-pointer px-2 py-1 rounded-md",
             "hover:bg-accent hover:text-accent-foreground",
-            "transition-colors"
+            "transition-colors",
           )}
           onClick={() => setOpen((o) => !o)}
         >
@@ -241,7 +241,7 @@ export default function FolderItem({
                   onDelete={onDelete}
                   apiUrl={apiUrl}
                 />
-              )
+              ),
             )
           ) : (
             <div className="px-2 py-1 text-xs text-muted-foreground italic">

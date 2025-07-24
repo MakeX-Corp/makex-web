@@ -15,7 +15,7 @@ function chunkText(text: string, size = 800, overlap = 100): string[] {
 }
 
 // Add delay function with exponential backoff
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Add retry function with exponential backoff
 async function fetchWithRetry(url: string, maxRetries = 3) {
@@ -26,7 +26,7 @@ async function fetchWithRetry(url: string, maxRetries = 3) {
     } catch (error: any) {
       if (error.response?.status === 429 && retries < maxRetries) {
         const backoffTime = Math.pow(2, retries) * 2000; // 2s, 4s, 8s
-        console.log(`Rate limited, retrying in ${backoffTime/1000}s...`);
+        console.log(`Rate limited, retrying in ${backoffTime / 1000}s...`);
         await delay(backoffTime);
         retries++;
         continue;
@@ -70,7 +70,7 @@ export const fetchExpoDocs = schedules.task({
       for (const file of files) {
         // Add 2 second base delay between each file to avoid rate limits
         await delay(2000);
-        
+
         const rawUrl = `https://raw.githubusercontent.com/expo/expo/main/docs/pages/versions/v53.0.0/sdk/${file}`;
         try {
           const response = await fetchWithRetry(rawUrl);

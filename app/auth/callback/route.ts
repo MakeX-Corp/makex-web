@@ -9,8 +9,10 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.exchangeCodeForSession(code);
-    
+    const {
+      data: { session },
+    } = await supabase.auth.exchangeCodeForSession(code);
+
     if (source === "signup" && session?.user?.email) {
       await addToLoops.trigger({ email: session.user.email });
     }

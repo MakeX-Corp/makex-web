@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   if (!deviceToken) {
     return NextResponse.json(
       { error: "Missing device token" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -22,14 +22,14 @@ export async function POST(req: Request) {
       device_token: deviceToken,
       last_used_at: new Date().toISOString(),
     },
-    { onConflict: "device_token" }
+    { onConflict: "device_token" },
   );
 
   if (error) {
     console.error("Error saving token:", error);
     return NextResponse.json(
       { error: "Failed to save token" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 

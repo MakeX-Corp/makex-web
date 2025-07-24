@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
 // Create a separate component that uses searchParams
@@ -45,7 +45,7 @@ function PasswordResetForm() {
         }
       } else {
         setError(
-          "Missing verification parameters. Please request a new reset link."
+          "Missing verification parameters. Please request a new reset link.",
         );
       }
     };

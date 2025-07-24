@@ -2,7 +2,7 @@ export async function updateSessionTitle(
   userMessage: string,
   aiResponse: string,
   sessionId: string,
-  callback?: () => void
+  callback?: () => void,
 ) {
   try {
     // 2. Update the session title in the database

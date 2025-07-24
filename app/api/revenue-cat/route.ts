@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     const { data: existing, error: fetchError } = await admin
       .from("mobile_subscriptions")
       .select(
-        "last_transaction_id, subscription_end, subscription_status, messages_used_this_period"
+        "last_transaction_id, subscription_end, subscription_status, messages_used_this_period",
       )
       .eq("user_id", userId)
       .single();
@@ -127,7 +127,7 @@ export async function POST(request: Request) {
           last_transaction_id: transaction_id,
           messages_used_this_period: newMessageCount,
         },
-        { onConflict: "user_id" }
+        { onConflict: "user_id" },
       );
 
     if (upsertError) {

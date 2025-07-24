@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   if (!code) {
     return NextResponse.json(
       { error: "No authorization code received" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   try {
     // Edit the request to add the auth token as header in bearer format because in incoming requets its in params
     const result = await getSupabaseWithUser(request as NextRequest);
-    if (result instanceof NextResponse || 'error' in result) return result;
+    if (result instanceof NextResponse || "error" in result) return result;
 
     const { supabase, user } = result;
     if (!user) {
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
           "Content-Type": "application/x-www-form-urlencoded",
           Accept: "application/json",
           Authorization: `Basic ${Buffer.from(
-            `${process.env.NEXT_PUBLIC_SUPABASE_OAUTH_CLIENT_ID}:${process.env.SUPABASE_OAUTH_CLIENT_SECRET}`
+            `${process.env.NEXT_PUBLIC_SUPABASE_OAUTH_CLIENT_ID}:${process.env.SUPABASE_OAUTH_CLIENT_SECRET}`,
           ).toString("base64")}`,
         },
         body: new URLSearchParams({
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
           code,
           redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/integrations/supabase/callback?app_id=${appId}`,
         }),
-      }
+      },
     );
 
     if (!tokenResponse.ok) {
@@ -52,19 +52,22 @@ export async function GET(request: Request) {
       console.error("Token exchange error:", error);
       return NextResponse.json(
         { error: "Failed to exchange code for token" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const tokens = await tokenResponse.json();
     const { access_token, refresh_token } = tokens;
 
-    // get organisation 
-    const orgResponse = await fetch("https://api.supabase.com/v1/organizations", {
-      headers: {
-        Authorization: `Bearer ${access_token}`,
+    // get organisation
+    const orgResponse = await fetch(
+      "https://api.supabase.com/v1/organizations",
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
       },
-    });
+    );
 
     console.log("orgResponse", orgResponse);
 
@@ -73,7 +76,7 @@ export async function GET(request: Request) {
       console.error("Organisation fetch error:", error);
       return NextResponse.json(
         { error: "Failed to fetch organisation" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -103,7 +106,7 @@ export async function GET(request: Request) {
       if (error) {
         console.error("Error updating user_integrations table:", error);
         return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}/ai-editor/${appId}?integration_type=supabase&status=error`
+          `${process.env.NEXT_PUBLIC_APP_URL}/ai-editor/${appId}?integration_type=supabase&status=error`,
         );
       }
     } else {
@@ -119,18 +122,18 @@ export async function GET(request: Request) {
       if (error) {
         console.error("Error inserting into user_integrations table:", error);
         return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}/ai-editor/${appId}?integration_type=supabase&status=error`
+          `${process.env.NEXT_PUBLIC_APP_URL}/ai-editor/${appId}?integration_type=supabase&status=error`,
         );
       }
     }
 
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/ai-editor/${appId}?integration_type=supabase&status=success`
+      `${process.env.NEXT_PUBLIC_APP_URL}/ai-editor/${appId}?integration_type=supabase&status=success`,
     );
   } catch (error) {
     console.error("Callback error:", error);
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/ai-editor/${appId}?integration_type=supabase&status=error`
+      `${process.env.NEXT_PUBLIC_APP_URL}/ai-editor/${appId}?integration_type=supabase&status=error`,
     );
   }
 }

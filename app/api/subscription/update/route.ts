@@ -5,11 +5,11 @@ import { NextResponse, NextRequest } from "next/server";
 export async function POST(request: Request) {
   const { subscriptionId, priceId } = await request.json();
   const result = await getSupabaseWithUser(request as NextRequest);
-  if (result instanceof NextResponse || 'error' in result) return result;
+  if (result instanceof NextResponse || "error" in result) return result;
   if (!subscriptionId || !priceId) {
-    return NextResponse.json( 
+    return NextResponse.json(
       { error: "Missing required parameters" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(
-        errorData.error?.message || "Failed to update subscription"
+        errorData.error?.message || "Failed to update subscription",
       );
     }
 
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     console.error("Error updating subscription:", error);
     return NextResponse.json(
       { error: error.message || "Failed to update subscription" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
