@@ -12,6 +12,7 @@ import DeleteConfirmationDialog from "./delete-file-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { getFileIcon, formatFileSize, Node } from "./utils";
+import { useState } from "react";
 
 export default function FileItem({
   node,
@@ -24,12 +25,22 @@ export default function FileItem({
   onSelect: (f: { path: string; language: string }) => void;
   onDelete: (path: string) => void;
 }) {
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenuOpen(true);
+  };
+
   return (
     <li>
       <TooltipProvider delayDuration={300}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center group">
+            <div
+              className="flex items-center group"
+              onContextMenu={handleContextMenu}
+            >
               <button
                 onClick={() =>
                   onSelect({ path: node.path, language: node.language })
@@ -43,15 +54,16 @@ export default function FileItem({
                 {getFileIcon(node.name)}
                 <span className="truncate">{node.name}</span>
               </button>
-              <DropdownMenu>
+              <DropdownMenu
+                open={contextMenuOpen}
+                onOpenChange={setContextMenuOpen}
+              >
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <MoreHorizontal className="h-3 w-3" />
-                  </Button>
+                  <div className="w-0 h-0 overflow-hidden">
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                      <MoreHorizontal className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DeleteConfirmationDialog

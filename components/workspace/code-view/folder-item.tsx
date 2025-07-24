@@ -31,6 +31,7 @@ export default function FolderItem({
   apiUrl: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
   const {
     data: children = [],
     isLoading,
@@ -43,9 +44,17 @@ export default function FolderItem({
     { refreshInterval: 5000 }
   );
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenuOpen(true);
+  };
+
   return (
     <li className="py-0.5">
-      <div className="flex items-center group">
+      <div
+        className="flex items-center group"
+        onContextMenu={handleContextMenu}
+      >
         <div
           className={cn(
             "flex flex-1 items-center gap-2 cursor-pointer px-2 py-1 rounded-md",
@@ -71,11 +80,16 @@ export default function FolderItem({
             parentPath={node.path}
             onCreateFile={onCreateFile}
           />
-          <DropdownMenu>
+          <DropdownMenu
+            open={contextMenuOpen}
+            onOpenChange={setContextMenuOpen}
+          >
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6">
-                <MoreHorizontal className="h-3 w-3" />
-              </Button>
+              <div className="w-0 h-0 overflow-hidden">
+                <Button variant="ghost" size="icon" className="h-6 w-6">
+                  <MoreHorizontal className="h-3 w-3" />
+                </Button>
+              </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DeleteConfirmationDialog
