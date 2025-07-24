@@ -170,7 +170,6 @@ export default function WorkspaceContent({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          apiUrl: apiUrl,
           appId,
         }),
       });
@@ -188,7 +187,7 @@ export default function WorkspaceContent({
       // Create a download link
       const a = document.createElement("a");
       a.href = url;
-      a.download = "app_export.zip";
+      a.download = `${appName || 'app_export'}.zip`;
       document.body.appendChild(a);
       a.click();
 
