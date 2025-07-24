@@ -53,9 +53,7 @@ export default function FolderItem({
     mutate,
   } = useSWR<Node[]>(
     open
-      ? `/api/code/directory?path=${encodeURIComponent(
-          node.path,
-        )}&api_url=${apiUrl}`
+      ? `/api/code/directory?path=${encodeURIComponent(node.path)}&api_url=${apiUrl}`
       : null,
     fetchJSON,
     { refreshInterval: 5000 },

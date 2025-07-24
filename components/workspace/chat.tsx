@@ -401,9 +401,7 @@ export function Chat({
             messages.map((message, index) => (
               <div
                 key={message.id || `message-${index}`}
-                className={`flex flex-col ${
-                  message.role === "user" ? "items-end" : "items-start"
-                }`}
+                className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"}`}
               >
                 <Card
                   className={`max-w-[80%] ${
