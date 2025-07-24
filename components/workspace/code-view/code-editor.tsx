@@ -124,7 +124,7 @@ export default function CodeEditor({
 
   const { data, error, isLoading } = useSWR<BinaryImageData>(
     file
-      ? `/api/file?path=${encodeURIComponent(file.path)}&api_url=${apiUrl}`
+      ? `/api/code/file?path=${encodeURIComponent(file.path)}&api_url=${apiUrl}`
       : null,
     fetchJSON
   );
@@ -162,7 +162,7 @@ export default function CodeEditor({
     if (!file) return;
     setSaveStatus("saving");
     try {
-      const res = await fetch("/api/code/edit", {
+      const res = await fetch("/api/code/file", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

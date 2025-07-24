@@ -36,7 +36,7 @@ export default function FileTree({
     error,
     isLoading,
     mutate,
-  } = useSWR<Node[]>(`/api/files?path=/&api_url=${apiUrl}`, fetchJSON);
+  } = useSWR<Node[]>(`/api/code/directory?path=/&api_url=${apiUrl}`, fetchJSON);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createType, setCreateType] = useState<"file" | "folder">("file");
@@ -51,7 +51,7 @@ export default function FileTree({
       parentPath === "/" ? `/${fileName}` : `${parentPath}/${fileName}`;
 
     try {
-      const response = await fetch("/api/code/edit", {
+      const response = await fetch("/api/code/file", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -95,13 +95,12 @@ export default function FileTree({
     const fullPath =
       parentPath === "/" ? `/${folderName}` : `${parentPath}/${folderName}`;
     try {
-      const response = await fetch("/api/code/edit", {
+      const response = await fetch("/api/code/directory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           apiUrl,
           path: fullPath,
-          isFolder: true,
         }),
       });
       if (response.ok) {
@@ -133,16 +132,27 @@ export default function FileTree({
     const fileName = filePath.split("/").pop() || "file";
     setLoading(true);
     try {
-      const response = await fetch("/api/code/edit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          apiUrl,
-          path: filePath,
-          operation: "delete",
-          isFolder,
-        }),
-      });
+      let response;
+      if (isFolder) {
+        response = await fetch("/api/code/directory", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            apiUrl,
+            path: filePath,
+          }),
+        });
+      } else {
+        response = await fetch("/api/code/file", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            apiUrl,
+            path: filePath,
+          }),
+        });
+      }
+
       if (response.ok) {
         await mutate();
         onFileTreeChange?.();
