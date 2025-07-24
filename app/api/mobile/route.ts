@@ -8,9 +8,8 @@ import {
 } from "@/utils/server/app-name-generator";
 import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
-import { startExpo } from "@/trigger/start-expo";
 import { checkSubscription } from "@/utils/server/check-subscription";
-import { configureConvex } from "@/trigger/configure-convex";
+import { setupContainer } from "@/trigger/setup-container";
 
 export async function POST(request: NextRequest) {
   try {
@@ -124,16 +123,10 @@ export async function POST(request: NextRequest) {
       sessionId = session.id;
       apiHost = container.apiHost;
 
-      await startExpo.trigger({
+      await setupContainer.trigger({
         appId: finalAppId,
         appName,
         sandboxId,
-        containerId: container.containerId,
-      });
-
-      //TODO: feature flag this with decision tree
-      await configureConvex.trigger({
-        appId: finalAppId,
         containerId: container.containerId,
       });
 
