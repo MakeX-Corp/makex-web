@@ -19,7 +19,6 @@ export const firstScheduledTask = schedules.task({
                 .in("sandbox_status", ["active"])
                 .eq("app_status", "active");
 
-        console.log("Active sandboxes:", activeSandbox);
         if (activeSandboxError) {
             console.error("Error fetching active apps:", activeSandboxError);
             console.error("Failed to fetch active apps");
