@@ -142,7 +142,6 @@ export async function PATCH(req: Request) {
 
     if (targetState == 'pause') {
       await pauseContainer.trigger({
-        userId: user.id,
         appId,
         appName: app.app_name,
       });

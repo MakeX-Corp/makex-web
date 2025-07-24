@@ -10,14 +10,13 @@ export const pauseContainer = task({
   retry: {
     maxAttempts: 1
   },
-  run: async (payload: { userId: string; appId: string; appName: string }) => {
-    const { userId, appId, appName } = payload;
+  run: async (payload: { appId: string; appName: string }) => {
+    const { appId, appName } = payload;
     const adminSupabase = await getSupabaseAdmin();
 
     const { data: sandbox, error: sandboxError } = await adminSupabase
       .from("user_sandboxes")
       .select("*")
-      .eq("user_id", userId)
       .eq("app_id", appId)
       .single();
 

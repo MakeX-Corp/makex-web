@@ -108,17 +108,18 @@ export function ConvexDashboardEmbed() {
       .finally(() => setLoading(false));
   }, [appId, contextConvexConfig]);
 
-  // Don't render anything if no appId or if credentials aren't ready
-  if (!appId || !credentialsReady) {
+  if (!appId) {
     return null;
   }
-
   if (loading || !convexConfig) {
     return (
       <div className="flex items-center justify-center h-full w-full">
         <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
       </div>
     );
+  }
+  if (!credentialsReady) {
+    return null;
   }
   if (error) {
     return (
