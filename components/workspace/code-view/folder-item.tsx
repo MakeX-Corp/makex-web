@@ -61,7 +61,8 @@ export default function FolderItem({
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    setContextMenuOpen(true);
+    // Add a small delay to prevent immediate opening when context menu appears at cursor
+    setTimeout(() => setContextMenuOpen(true), 50);
   };
 
   const handleCreate = () => {
