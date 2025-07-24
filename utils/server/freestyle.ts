@@ -53,6 +53,31 @@ export async function deleteGitRepository(repoId: string) {
   });
 }
 
+// Download a zip of a Git repository
+export async function downloadGitRepositoryZip(repoId: string, ref?: string) {
+  const freestyleApiKey = process.env.FREESTYLE_API_KEY;
+  if (!freestyleApiKey) {
+    throw new Error("Freestyle API key not configured");
+  }
+
+  const url = new URL(`https://api.freestyle.sh/git/v1/repo/${repoId}/zip`);
+  if (ref) {
+    url.searchParams.set("ref", ref);
+  }
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      "Authorization": `Bearer ${freestyleApiKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to download repository zip: ${response.status} ${response.statusText}`);
+  }
+
+  return response.arrayBuffer();
+}
+
 // Deploy web application from Git repository
 export async function deployWebFromGit(
   gitRepoId: string,

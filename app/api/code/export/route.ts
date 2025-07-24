@@ -1,45 +1,54 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
+import { downloadGitRepositoryZip } from "@/utils/server/freestyle";
 
 export async function POST(req: Request) {
   try {
-    const { apiUrl, appId } = await req.json();
+    const { appId } = await req.json();
 
     // Get user info and validate authentication
     const userResult = await getSupabaseWithUser(req as NextRequest);
     if (userResult instanceof NextResponse || "error" in userResult)
       return userResult;
-    const { user } = userResult;
+    const { user, supabase } = userResult;
 
-    try {
-      const client = createFileBackendApiClient(apiUrl);
-      const { data, headers } = await client.getBuffer("/export-code");
+    // Get the app details to find the git repository ID
+    const { data: app, error: appError } = await supabase
+      .from("user_apps")
+      .select("git_repo_id, app_name")
+      .eq("id", appId)
+      .eq("user_id", user.id)
+      .single();
 
-      // Convert Axios headers to a format compatible with Response
-      const responseHeaders = new Headers();
-      Object.entries(headers).forEach(([key, value]) => {
-        if (value) {
-          responseHeaders.set(key, String(value));
-        }
-      });
-      responseHeaders.set("Content-Type", "application/zip");
-      responseHeaders.set(
-        "Content-Disposition",
-        'attachment; filename="export.zip"'
-      );
-
-      return new Response(data, {
-        status: 200,
-        headers: responseHeaders,
-      });
-    } catch (error: any) {
-      console.error("Export error:", error);
+    if (appError || !app) {
       return NextResponse.json(
-        { error: error.message || "Export failed" },
-        { status: 500 }
+        { error: "App not found or access denied" },
+        { status: 404 }
       );
     }
+
+    if (!app.git_repo_id) {
+      return NextResponse.json(
+        { error: "No Git repository found for this app" },
+        { status: 400 }
+      );
+    }
+
+    // Download the zip from Freestyle Git API
+    const zipBuffer = await downloadGitRepositoryZip(app.git_repo_id);
+
+    // Set response headers for file download
+    const responseHeaders = new Headers();
+    responseHeaders.set("Content-Type", "application/zip");
+    responseHeaders.set(
+      "Content-Disposition",
+      `attachment; filename="${app.app_name || 'export'}.zip"`
+    );
+
+    return new Response(zipBuffer, {
+      status: 200,
+      headers: responseHeaders,
+    });
   } catch (error) {
     console.error("Export route error:", error);
     return NextResponse.json(
