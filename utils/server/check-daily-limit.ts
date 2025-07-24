@@ -50,8 +50,7 @@ export async function checkMessageLimit(
       );
     } else if (["starter", "pro"].includes(planName)) {
       // Get correct limit based on plan
-      const limit =
-        planName === "starter" ? DEFAULT_LIMITS.starter : DEFAULT_LIMITS.pro;
+      const limit = planName === "starter" ? DEFAULT_LIMITS.starter : DEFAULT_LIMITS.pro;
 
       // Check if we have valid subscription period data
       if (
@@ -91,12 +90,7 @@ async function checkBillingPeriodLimit(
   periodEnd: Date
 ): Promise<{ error?: string; status?: number }> {
   // Get message count for the current billing period
-  const result = await getMessageCount(
-    supabase,
-    user.id,
-    periodStart,
-    periodEnd
-  );
+  const result = await getMessageCount(supabase, user.id, periodStart, periodEnd);
 
   if (result.error) {
     return {
