@@ -1,7 +1,7 @@
 export const DEFAULT_LIMITS = {
-  free: process.env.NODE_ENV === "development" ? 5000 : 5, // 5 messages per day
-  starter: 250, // 250 messages per month
-  pro: 500, // 500 messages per month
+  free: process.env.FREE_LIMIT || "20", // 20 messages per month
+  starter: process.env.STARTER_LIMIT || "250", // 250 messages per month
+  pro: process.env.PRO_LIMIT || "500", // 500 messages per month
 };
 
 export const FOOTER_AND_HEADER_PATHS = [

@@ -6,7 +6,7 @@ export async function getMessageCount(
   supabase: SupabaseClient,
   userId: string,
   startDate: Date,
-  endDate: Date,
+  endDate: Date
 ): Promise<{ count: number | null; error: any }> {
   const { count, error } = await supabase
     .from("app_chat_history")
@@ -30,15 +30,24 @@ function formatDate(date: Date): string {
 export async function checkMessageLimit(
   supabase: SupabaseClient,
   user: User,
-  subscriptionData: any,
+  subscriptionData: any
 ): Promise<{ error?: string; status?: number }> {
   try {
     // Extract plan info with fallbacks
     const planName = (subscriptionData?.planName || "free").toLowerCase();
 
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     // Handle different plan types
     if (planName === "free") {
-      return await checkDailyLimit(supabase, user, DEFAULT_LIMITS.free);
+      return await checkBillingPeriodLimit(
+        supabase,
+        user,
+        parseInt(DEFAULT_LIMITS.free),
+        startOfMonth,
+        endOfMonth
+      );
     } else if (["starter", "pro"].includes(planName)) {
       // Get correct limit based on plan
       const limit =
@@ -53,24 +62,16 @@ export async function checkMessageLimit(
         return await checkBillingPeriodLimit(
           supabase,
           user,
-          limit,
+          parseInt(limit),
           new Date(subscriptionData.subscription.current_period_start),
-          new Date(subscriptionData.subscription.current_period_end),
+          new Date(subscriptionData.subscription.current_period_end)
         );
-      } else {
-        // Fall back to daily limit if no valid subscription period data
-        console.warn(
-          `Missing or invalid subscription period data for ${planName} plan, falling back to daily check`,
-        );
-        return await checkDailyLimit(supabase, user, DEFAULT_LIMITS.free);
       }
-    } else {
-      // Unknown plan type, fall back to free
-      console.warn(
-        `Unknown plan type: ${planName}, falling back to free plan limits`,
-      );
-      return await checkDailyLimit(supabase, user, DEFAULT_LIMITS.free);
     }
+    return {
+      error: "Invalid plan name",
+      status: 400,
+    };
   } catch (error) {
     console.error("Error checking message limit:", error);
     return {
@@ -82,65 +83,19 @@ export async function checkMessageLimit(
   }
 }
 
-async function checkDailyLimit(
-  supabase: SupabaseClient,
-  user: User,
-  limit: number,
-): Promise<{ error?: string; status?: number }> {
-  // Calculate today's midnight and tomorrow's midnight
-  const now = new Date();
-  const todayMidnight = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    0,
-    0,
-    0,
-    0,
-  );
-  const tomorrowMidnight = new Date(
-    todayMidnight.getTime() + 24 * 60 * 60 * 1000,
-  );
-
-  // Get message count for today
-  const result = await getMessageCount(
-    supabase,
-    user.id,
-    todayMidnight,
-    tomorrowMidnight,
-  );
-
-  if (result.error) {
-    return {
-      error: "Failed to check daily message limit",
-      status: 500,
-    };
-  }
-
-  // Check if limit exceeded
-  if (result.count !== null && result.count >= limit) {
-    return {
-      error: `Daily message limit reached (${result.count}/${limit}). Please try again tomorrow or upgrade your plan.`,
-      status: 429,
-    };
-  }
-
-  return {}; // No errors, under limit
-}
-
 async function checkBillingPeriodLimit(
   supabase: SupabaseClient,
   user: User,
   limit: number,
   periodStart: Date,
-  periodEnd: Date,
+  periodEnd: Date
 ): Promise<{ error?: string; status?: number }> {
   // Get message count for the current billing period
   const result = await getMessageCount(
     supabase,
     user.id,
     periodStart,
-    periodEnd,
+    periodEnd
   );
 
   if (result.error) {
@@ -161,12 +116,4 @@ async function checkBillingPeriodLimit(
   }
 
   return {}; // No errors, under limit
-}
-
-export async function checkDailyMessageLimit(
-  supabase: SupabaseClient,
-  user: User,
-): Promise<{ error?: string; status?: number }> {
-  // Default to free plan
-  return await checkDailyLimit(supabase, user, DEFAULT_LIMITS.free);
 }

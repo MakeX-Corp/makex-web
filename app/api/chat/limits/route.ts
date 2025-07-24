@@ -46,10 +46,12 @@ export async function POST(req: Request) {
         0,
         0,
         0,
-        0,
+        0
       );
-      endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
-      periodType = "daily";
+      //endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+      endDate = new Date(Date.now() + 30);
+      periodType = "monthly";
+      //periodType = "daily";
     } else {
       // Paid plans with valid subscription: billing period limit
       limit =
@@ -64,7 +66,7 @@ export async function POST(req: Request) {
     if (result.error) {
       return NextResponse.json(
         { error: "Failed to fetch message count" },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -72,7 +74,7 @@ export async function POST(req: Request) {
 
     // Return usage info
     return NextResponse.json({
-      remaining: Math.max(0, limit - used), // Ensure remaining is never negative
+      remaining: Math.max(0, parseInt(limit) - used), // Ensure remaining is never negative
       total: limit,
       used: used,
       resetDate: endDate.toISOString(),
@@ -82,7 +84,7 @@ export async function POST(req: Request) {
     console.error("Error in message count API:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
