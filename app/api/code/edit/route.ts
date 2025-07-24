@@ -3,7 +3,7 @@ import { getSupabaseWithUser } from "@/utils/server/auth";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 
 export async function POST(req: Request) {
-  const { apiUrl, path, content, operation } = await req.json();
+  const { apiUrl, path, content, operation, isFolder } = await req.json();
 
   if (!apiUrl || !path) {
     return NextResponse.json(
@@ -21,20 +21,33 @@ export async function POST(req: Request) {
     const client = createFileBackendApiClient(apiUrl);
     const sanitizedPath = path.replace(/^\/+/, "");
 
-    // If delete
     if (operation && operation === "delete") {
-      const responseData = await client.delete("/file", {
-        path: sanitizedPath,
-      });
-      return NextResponse.json({ success: true, data: responseData });
+      if (isFolder) {
+        const responseData = await client.delete("/directory", {
+          path: sanitizedPath,
+        });
+        return NextResponse.json({ success: true, data: responseData });
+      } else {
+        const responseData = await client.delete("/file", {
+          path: sanitizedPath,
+        });
+        return NextResponse.json({ success: true, data: responseData });
+      }
     } else {
-      // this is for file editing/creation
-      // The backend will handle creating the file if it doesn't exist
-      const responseData = await client.post("/file", {
-        path: sanitizedPath,
-        content: content || "",
-      });
-      return NextResponse.json({ success: true, data: responseData });
+      if (isFolder) {
+        const responseData = await client.post("/directory", {
+          path: sanitizedPath,
+        });
+        return NextResponse.json({ success: true, data: responseData });
+      } else {
+        // this is for file editing/creation
+        // The backend will handle creating the file if it doesn't exist
+        const responseData = await client.post("/file", {
+          path: sanitizedPath,
+          content: content || "",
+        });
+        return NextResponse.json({ success: true, data: responseData });
+      }
     }
   } catch (error: any) {
     console.error("File operation error:", error);

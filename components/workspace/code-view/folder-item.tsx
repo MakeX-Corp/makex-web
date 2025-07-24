@@ -28,6 +28,7 @@ export default function FolderItem({
   activePath,
   onSelect,
   onCreateFile,
+  onCreateFolder,
   onDelete,
   apiUrl,
 }: {
@@ -35,12 +36,15 @@ export default function FolderItem({
   activePath?: string | null;
   onSelect: (f: { path: string; language: string }) => void;
   onCreateFile: (parentPath: string, fileName: string) => void;
+  onCreateFolder: (parentPath: string, folderName: string) => void;
   onDelete: (path: string) => void;
   apiUrl: string;
 }) {
   const [open, setOpen] = useState(false);
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
-  const [createFileDialogOpen, setCreateFileDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createType, setCreateType] = useState<"file" | "folder">("file");
+  const [createName, setCreateName] = useState("");
   const {
     data: children = [],
     isLoading,
@@ -58,9 +62,9 @@ export default function FolderItem({
     setContextMenuOpen(true);
   };
 
-  const handleCreateFile = () => {
+  const handleCreate = () => {
     setContextMenuOpen(false);
-    setCreateFileDialogOpen(true);
+    setCreateDialogOpen(true);
   };
 
   return (
@@ -102,9 +106,9 @@ export default function FolderItem({
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleCreateFile}>
+              <DropdownMenuItem onClick={handleCreate}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create File
+                Create
               </DropdownMenuItem>
               <DeleteConfirmationDialog
                 fileName={node.name}
@@ -115,35 +119,59 @@ export default function FolderItem({
         </div>
       </div>
 
-      {/* Context Menu Create File Dialog */}
-      <Dialog
-        open={createFileDialogOpen}
-        onOpenChange={setCreateFileDialogOpen}
-      >
+      {/* Unified Create Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New File</DialogTitle>
+            <DialogTitle>Create New</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              const fileName = formData.get("fileName") as string;
-              if (fileName.trim()) {
-                onCreateFile(node.path, fileName.trim());
-                setCreateFileDialogOpen(false);
+              if (!createName.trim()) return;
+              if (createType === "file") {
+                onCreateFile(node.path, createName.trim());
+              } else {
+                onCreateFolder(node.path, createName.trim());
               }
+              setCreateDialogOpen(false);
+              setCreateName("");
+              setCreateType("file");
             }}
             className="space-y-4"
           >
+            <div className="flex gap-2 mb-2">
+              <Button
+                type="button"
+                variant={createType === "file" ? "default" : "outline"}
+                onClick={() => setCreateType("file")}
+                className={createType === "file" ? "" : "bg-background"}
+              >
+                File
+              </Button>
+              <Button
+                type="button"
+                variant={createType === "folder" ? "default" : "outline"}
+                onClick={() => setCreateType("folder")}
+                className={createType === "folder" ? "" : "bg-background"}
+              >
+                Folder
+              </Button>
+            </div>
             <div>
-              <label htmlFor="fileName" className="text-sm font-medium">
-                File Name
+              <label htmlFor="createName" className="text-sm font-medium">
+                {createType === "file" ? "File Name" : "Folder Name"}
               </label>
               <Input
-                id="fileName"
-                name="fileName"
-                placeholder="Enter file name (e.g., index.tsx)"
+                id="createName"
+                name="createName"
+                value={createName}
+                onChange={(e) => setCreateName(e.target.value)}
+                placeholder={
+                  createType === "file"
+                    ? "Enter file name (e.g., index.tsx)"
+                    : "Enter folder name (e.g., new-folder)"
+                }
                 className="mt-1"
                 autoFocus
               />
@@ -153,12 +181,16 @@ export default function FolderItem({
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  setCreateFileDialogOpen(false);
+                  setCreateDialogOpen(false);
+                  setCreateName("");
+                  setCreateType("file");
                 }}
               >
                 Cancel
               </Button>
-              <Button type="submit">Create File</Button>
+              <Button type="submit" disabled={!createName.trim()}>
+                Create {createType === "file" ? "File" : "Folder"}
+              </Button>
             </div>
           </form>
         </DialogContent>
@@ -188,6 +220,7 @@ export default function FolderItem({
                   activePath={activePath}
                   onSelect={onSelect}
                   onCreateFile={onCreateFile}
+                  onCreateFolder={onCreateFolder}
                   onDelete={onDelete}
                   apiUrl={apiUrl}
                 />
