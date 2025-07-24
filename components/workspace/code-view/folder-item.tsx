@@ -31,6 +31,7 @@ export default function FolderItem({
   onCreateFolder,
   onDelete,
   apiUrl,
+  loading = false,
 }: {
   node: Extract<Node, { type: "folder" }>;
   activePath?: string | null;
@@ -39,6 +40,7 @@ export default function FolderItem({
   onCreateFolder: (parentPath: string, folderName: string) => void;
   onDelete: (path: string) => void;
   apiUrl: string;
+  loading?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
@@ -100,19 +102,27 @@ export default function FolderItem({
           >
             <DropdownMenuTrigger asChild>
               <div className="w-0 h-0 overflow-hidden">
-                <Button variant="ghost" size="icon" className="h-6 w-6">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  disabled={loading}
+                >
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleCreate}>
+              <DropdownMenuItem
+                onClick={loading ? () => {} : handleCreate}
+                disabled={loading}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Create
               </DropdownMenuItem>
               <DeleteConfirmationDialog
                 fileName={node.name}
-                onConfirm={() => onDelete(node.path)}
+                onConfirm={loading ? () => {} : () => onDelete(node.path)}
               />
             </DropdownMenuContent>
           </DropdownMenu>
@@ -146,6 +156,7 @@ export default function FolderItem({
                 variant={createType === "file" ? "default" : "outline"}
                 onClick={() => setCreateType("file")}
                 className={createType === "file" ? "" : "bg-background"}
+                disabled={loading}
               >
                 File
               </Button>
@@ -154,6 +165,7 @@ export default function FolderItem({
                 variant={createType === "folder" ? "default" : "outline"}
                 onClick={() => setCreateType("folder")}
                 className={createType === "folder" ? "" : "bg-background"}
+                disabled={loading}
               >
                 Folder
               </Button>
@@ -174,6 +186,7 @@ export default function FolderItem({
                 }
                 className="mt-1"
                 autoFocus
+                disabled={loading}
               />
             </div>
             <div className="flex justify-end space-x-2">
@@ -185,10 +198,11 @@ export default function FolderItem({
                   setCreateName("");
                   setCreateType("file");
                 }}
+                disabled={loading}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={!createName.trim()}>
+              <Button type="submit" disabled={!createName.trim() || loading}>
                 Create {createType === "file" ? "File" : "Folder"}
               </Button>
             </div>

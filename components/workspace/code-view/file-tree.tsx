@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export default function FileTree({
   onSelect,
@@ -40,9 +41,11 @@ export default function FileTree({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createType, setCreateType] = useState<"file" | "folder">("file");
   const [createName, setCreateName] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleCreateFile = async (parentPath: string, fileName: string) => {
     if (!fileName.trim()) return;
+    setLoading(true);
 
     const fullPath =
       parentPath === "/" ? `/${fileName}` : `${parentPath}/${fileName}`;
@@ -60,7 +63,7 @@ export default function FileTree({
 
       if (response.ok) {
         // Refresh the file tree
-        mutate();
+        await mutate();
         onFileTreeChange?.();
         toast({
           title: "File Created",
@@ -81,11 +84,14 @@ export default function FileTree({
         title: "Error",
         description: "Failed to create file",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCreateFolder = async (parentPath: string, folderName: string) => {
     if (!folderName.trim()) return;
+    setLoading(true);
     const fullPath =
       parentPath === "/" ? `/${folderName}` : `${parentPath}/${folderName}`;
     try {
@@ -99,7 +105,7 @@ export default function FileTree({
         }),
       });
       if (response.ok) {
-        mutate();
+        await mutate();
         onFileTreeChange?.();
         toast({
           title: "Folder Created",
@@ -118,11 +124,14 @@ export default function FileTree({
         title: "Error",
         description: "Failed to create folder",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDeleteFile = async (filePath: string, isFolder = false) => {
     const fileName = filePath.split("/").pop() || "file";
+    setLoading(true);
     try {
       const response = await fetch("/api/code/edit", {
         method: "POST",
@@ -135,7 +144,7 @@ export default function FileTree({
         }),
       });
       if (response.ok) {
-        mutate();
+        await mutate();
         onFileTreeChange?.();
         toast({
           title: isFolder ? "Folder Deleted" : "File Deleted",
@@ -154,6 +163,8 @@ export default function FileTree({
         title: "Error",
         description: `Failed to delete ${isFolder ? "folder" : "file"}`,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -176,7 +187,12 @@ export default function FileTree({
     );
 
   return (
-    <div className="h-full overflow-y-auto overscroll-contain">
+    <div className="h-full overflow-y-auto overscroll-contain relative">
+      {loading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/70">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      )}
       <div className="py-2">
         <div className="px-4 flex items-center justify-between mb-2">
           <h3 className="text-sm font-medium text-foreground">Project Files</h3>
@@ -186,6 +202,7 @@ export default function FileTree({
             className="h-6 w-6"
             onClick={() => setCreateDialogOpen(true)}
             aria-label="Create file or folder"
+            disabled={loading}
           >
             <Plus className="h-3 w-3" />
           </Button>
@@ -216,6 +233,7 @@ export default function FileTree({
                   variant={createType === "file" ? "default" : "outline"}
                   onClick={() => setCreateType("file")}
                   className={createType === "file" ? "" : "bg-background"}
+                  disabled={loading}
                 >
                   File
                 </Button>
@@ -224,6 +242,7 @@ export default function FileTree({
                   variant={createType === "folder" ? "default" : "outline"}
                   onClick={() => setCreateType("folder")}
                   className={createType === "folder" ? "" : "bg-background"}
+                  disabled={loading}
                 >
                   Folder
                 </Button>
@@ -244,6 +263,7 @@ export default function FileTree({
                   }
                   className="mt-1"
                   autoFocus
+                  disabled={loading}
                 />
               </div>
               <div className="flex justify-end space-x-2">
@@ -255,10 +275,11 @@ export default function FileTree({
                     setCreateName("");
                     setCreateType("file");
                   }}
+                  disabled={loading}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={!createName.trim()}>
+                <Button type="submit" disabled={!createName.trim() || loading}>
                   Create {createType === "file" ? "File" : "Folder"}
                 </Button>
               </div>
@@ -273,7 +294,7 @@ export default function FileTree({
                 node={n}
                 active={selectedPath === n.path}
                 onSelect={onSelect}
-                onDelete={handleDeleteFile}
+                onDelete={loading ? () => {} : handleDeleteFile}
               />
             ) : (
               <FolderItem
@@ -283,8 +304,9 @@ export default function FileTree({
                 onSelect={onSelect}
                 onCreateFile={handleCreateFile}
                 onCreateFolder={handleCreateFolder}
-                onDelete={(path) => handleDeleteFile(path, true)}
+                onDelete={loading ? () => {} : handleDeleteFile}
                 apiUrl={apiUrl}
+                loading={loading}
               />
             )
           )}
