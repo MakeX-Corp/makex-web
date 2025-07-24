@@ -9,6 +9,7 @@ import {
   FileCode,
   CodeXml,
   Image as ImageIcon,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
@@ -275,6 +276,26 @@ export default function CodeEditor({
         </Button>
       </div>
 
+      {/* Error message */}
+      {saveStatus === "error" && (
+        <div className="border-b border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <span className="text-sm text-red-700 dark:text-red-300">
+              Failed to save file. Please try again.
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSaveStatus(null)}
+            className="h-6 w-6 p-0 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
+
       {/* Monaco editor */}
       <div className="flex-1 relative">
         <Monaco
@@ -299,11 +320,6 @@ export default function CodeEditor({
           }}
           className="h-full w-full"
         />
-        {saveStatus === "error" && (
-          <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs shadow">
-            Error saving file
-          </div>
-        )}
       </div>
     </div>
   );
