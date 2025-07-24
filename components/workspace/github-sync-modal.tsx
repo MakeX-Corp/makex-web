@@ -21,11 +21,19 @@ interface GitHubSyncModalProps {
   onRefresh?: () => void;
 }
 
-export function GitHubSyncModal({ open, onClose, appId, github_sync_repo, onRefresh }: GitHubSyncModalProps) {
+export function GitHubSyncModal({
+  open,
+  onClose,
+  appId,
+  github_sync_repo,
+  onRefresh,
+}: GitHubSyncModalProps) {
   const [repoName, setRepoName] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [currentSyncRepo, setCurrentSyncRepo] = useState<string | null>(github_sync_repo);
+  const [currentSyncRepo, setCurrentSyncRepo] = useState<string | null>(
+    github_sync_repo,
+  );
   const [loading, setLoading] = useState(false);
   const [isChangingRepo, setIsChangingRepo] = useState(false);
   const { toast } = useToast();
@@ -46,7 +54,7 @@ export function GitHubSyncModal({ open, onClose, appId, github_sync_repo, onRefr
     try {
       setLoading(true);
       const res = await fetch(`/api/app?id=${appId}`);
-      
+
       if (!res.ok) {
         throw new Error("Failed to fetch app data");
       }
@@ -55,10 +63,10 @@ export function GitHubSyncModal({ open, onClose, appId, github_sync_repo, onRefr
       setCurrentSyncRepo(appData.github_sync_repo || null);
     } catch (err: any) {
       console.error("Error fetching sync status:", err);
-      toast({ 
-        title: "Error", 
-        description: "Failed to fetch current sync status", 
-        variant: "destructive" 
+      toast({
+        title: "Error",
+        description: "Failed to fetch current sync status",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -68,10 +76,10 @@ export function GitHubSyncModal({ open, onClose, appId, github_sync_repo, onRefr
   const handleSave = async () => {
     try {
       setSaving(true);
-      
+
       // If we're changing an existing repository or have an original sync repo, use PUT
-      const method = (currentSyncRepo || github_sync_repo) ? "PUT" : "POST";
-      
+      const method = currentSyncRepo || github_sync_repo ? "PUT" : "POST";
+
       const res = await fetch("/api/github-sync", {
         method,
         headers: { "Content-Type": "application/json" },
@@ -84,24 +92,28 @@ export function GitHubSyncModal({ open, onClose, appId, github_sync_repo, onRefr
       }
 
       const result = await res.json();
-      toast({ 
-        title: (currentSyncRepo || github_sync_repo) ? "GitHub Sync Updated!" : "GitHub Sync Configured!", 
-        description: result.message || `Your app will now sync with ${repoName}.` 
+      toast({
+        title:
+          currentSyncRepo || github_sync_repo
+            ? "GitHub Sync Updated!"
+            : "GitHub Sync Configured!",
+        description:
+          result.message || `Your app will now sync with ${repoName}.`,
       });
-      
+
       // Update local state
       setCurrentSyncRepo(repoName);
       setRepoName("");
-      
+
       // Refresh the session context to get updated data
       onRefresh?.();
-      
+
       onClose();
     } catch (err: any) {
-      toast({ 
-        title: "GitHub Sync Failed", 
-        description: err.message || "An unexpected error occurred", 
-        variant: "destructive" 
+      toast({
+        title: "GitHub Sync Failed",
+        description: err.message || "An unexpected error occurred",
+        variant: "destructive",
       });
     } finally {
       setSaving(false);
@@ -123,22 +135,22 @@ export function GitHubSyncModal({ open, onClose, appId, github_sync_repo, onRefr
       }
 
       const result = await res.json();
-      toast({ 
-        title: "GitHub Sync Removed!", 
-        description: result.message || "GitHub sync has been removed." 
+      toast({
+        title: "GitHub Sync Removed!",
+        description: result.message || "GitHub sync has been removed.",
       });
-      
+
       // Update local state
       setCurrentSyncRepo(null);
       setRepoName("");
-      
+
       // Refresh the session context to get updated data
       onRefresh?.();
     } catch (err: any) {
-      toast({ 
-        title: "Failed to Remove Sync", 
-        description: err.message || "An unexpected error occurred", 
-        variant: "destructive" 
+      toast({
+        title: "Failed to Remove Sync",
+        description: err.message || "An unexpected error occurred",
+        variant: "destructive",
       });
     } finally {
       setDeleting(false);
@@ -174,15 +186,14 @@ export function GitHubSyncModal({ open, onClose, appId, github_sync_repo, onRefr
         <DialogHeader>
           <DialogTitle>GitHub Sync Setup</DialogTitle>
           <DialogDescription>
-            {currentSyncRepo 
+            {currentSyncRepo
               ? "Manage your GitHub sync configuration"
               : isChangingRepo
-              ? "Change your GitHub repository"
-              : "Set up automatic syncing of your app code to GitHub"
-            }
+                ? "Change your GitHub repository"
+                : "Set up automatic syncing of your app code to GitHub"}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="flex flex-col gap-4">
           {currentSyncRepo ? (
             // Show current sync status
@@ -198,7 +209,7 @@ export function GitHubSyncModal({ open, onClose, appId, github_sync_repo, onRefr
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -233,21 +244,40 @@ export function GitHubSyncModal({ open, onClose, appId, github_sync_repo, onRefr
               {!isChangingRepo && (
                 <>
                   <div>
-                    <h4 className="font-medium mb-2">1. Create a GitHub repository</h4>
+                    <h4 className="font-medium mb-2">
+                      1. Create a GitHub repository
+                    </h4>
                     <p className="text-sm text-muted-foreground">
-                      Go to <a href="https://github.com/new" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">GitHub</a> and create a new repository for your app.
+                      Go to{" "}
+                      <a
+                        href="https://github.com/new"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline"
+                      >
+                        GitHub
+                      </a>{" "}
+                      and create a new repository for your app.
                     </p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="font-medium mb-2">2. Install MakeX Sync App</h4>
+                    <h4 className="font-medium mb-2">
+                      2. Install MakeX Sync App
+                    </h4>
                     <p className="text-sm text-muted-foreground mb-2">
-                      Install the MakeX Sync GitHub App on your repository to enable automatic syncing.
+                      Install the MakeX Sync GitHub App on your repository to
+                      enable automatic syncing.
                     </p>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open("https://github.com/apps/makex-sync/installations/select_target", "_blank")}
+                      onClick={() =>
+                        window.open(
+                          "https://github.com/apps/makex-sync/installations/select_target",
+                          "_blank",
+                        )
+                      }
                       className="w-full"
                     >
                       Install MakeX Sync App
@@ -255,19 +285,21 @@ export function GitHubSyncModal({ open, onClose, appId, github_sync_repo, onRefr
                   </div>
                 </>
               )}
-              
+
               <div>
                 <h4 className="font-medium mb-2">
-                  {isChangingRepo ? "Enter new repository name" : "3. Enter repository name"}
+                  {isChangingRepo
+                    ? "Enter new repository name"
+                    : "3. Enter repository name"}
                 </h4>
                 <Input
                   placeholder="username/repo (e.g. johndoe/my-app)"
                   value={repoName}
-                  onChange={e => setRepoName(e.target.value)}
+                  onChange={(e) => setRepoName(e.target.value)}
                   autoFocus
                 />
               </div>
-              
+
               {isChangingRepo && (
                 <DialogFooter>
                   <div className="flex w-full justify-between items-center">
@@ -290,17 +322,17 @@ export function GitHubSyncModal({ open, onClose, appId, github_sync_repo, onRefr
             </div>
           )}
         </div>
-        
-        {(!currentSyncRepo && !isChangingRepo) && (
+
+        {!currentSyncRepo && !isChangingRepo && (
           <DialogFooter>
             <div className="flex w-full justify-between items-center">
               <Button onClick={handleSave} disabled={!repoName || saving}>
                 {saving ? "Saving..." : "Save"}
               </Button>
               <DialogClose asChild>
-                <Button 
-                  variant="ghost" 
-                  type="button" 
+                <Button
+                  variant="ghost"
+                  type="button"
                   onClick={() => {
                     onClose();
                     setIsChangingRepo(false);
@@ -316,4 +348,4 @@ export function GitHubSyncModal({ open, onClose, appId, github_sync_repo, onRefr
       </DialogContent>
     </Dialog>
   );
-} 
+}

@@ -15,7 +15,7 @@ function chunkText(text: string, size = 800, overlap = 100): string[] {
 }
 
 // Add delay function with exponential backoff
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Add retry function with exponential backoff
 async function fetchWithRetry(url: string, maxRetries = 3) {
@@ -26,7 +26,7 @@ async function fetchWithRetry(url: string, maxRetries = 3) {
     } catch (error: any) {
       if (error.response?.status === 429 && retries < maxRetries) {
         const backoffTime = Math.pow(2, retries) * 2000; // 2s, 4s, 8s
-        console.log(`Rate limited, retrying in ${backoffTime/1000}s...`);
+        console.log(`Rate limited, retrying in ${backoffTime / 1000}s...`);
         await delay(backoffTime);
         retries++;
         continue;
@@ -56,20 +56,21 @@ export const fetchOpenAIDocs = schedules.task({
     }
 
     // 2. Fetch the OpenAPI YAML file
-    const rawUrl = "https://raw.githubusercontent.com/openai/openai-openapi/manual_spec/openapi.yaml";
+    const rawUrl =
+      "https://raw.githubusercontent.com/openai/openai-openapi/manual_spec/openapi.yaml";
     try {
       const response = await fetchWithRetry(rawUrl);
       const content = response.data;
 
       const chunks = chunkText(content);
-      
+
       // Process embeddings in batches to avoid token limit
       const batchSize = 50; // Process 50 chunks at a time
       let totalChunks = 0;
-      
+
       for (let i = 0; i < chunks.length; i += batchSize) {
         const batch = chunks.slice(i, i + batchSize);
-        
+
         const { embeddings } = await embedMany({
           model: embeddingModel,
           values: batch,
@@ -84,9 +85,9 @@ export const fetchOpenAIDocs = schedules.task({
 
         const { error } = await supabase.from("embeddings").insert(rows);
         if (error) throw error;
-        
+
         totalChunks += rows.length;
-        
+
         // Add small delay between batches to avoid rate limits
         if (i + batchSize < chunks.length) {
           await delay(1000);

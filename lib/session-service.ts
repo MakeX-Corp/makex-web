@@ -30,18 +30,18 @@ function isApiError(data: any): data is ApiError {
 
 // Get session list for an app
 export async function getSessionsForApp(
-  appId: string
+  appId: string,
 ): Promise<{ sessions: SessionListItem[] }> {
   try {
     const response = await fetch(
-      `/api/sessions?appId=${encodeURIComponent(appId)}`
+      `/api/sessions?appId=${encodeURIComponent(appId)}`,
     );
 
     const data = await response.json();
 
     if (!response.ok) {
       throw new Error(
-        isApiError(data) ? data.error : "Failed to fetch sessions"
+        isApiError(data) ? data.error : "Failed to fetch sessions",
       );
     }
 
@@ -65,7 +65,7 @@ export async function getSessionsForApp(
 // Get a specific session
 export async function getSession(
   appId: string,
-  sessionId: string
+  sessionId: string,
 ): Promise<SessionData | null> {
   try {
     console.log("TK getting session", sessionId);
@@ -75,7 +75,7 @@ export async function getSession(
       // Create a new session
       return createNewSession(
         appId,
-        `New Session ${new Date().toLocaleString()}`
+        `New Session ${new Date().toLocaleString()}`,
       );
     }
 
@@ -86,7 +86,7 @@ export async function getSession(
 
     if (!response.ok) {
       throw new Error(
-        isApiError(data) ? data.error : "Failed to fetch session"
+        isApiError(data) ? data.error : "Failed to fetch session",
       );
     }
 
@@ -111,7 +111,7 @@ export async function getSession(
 // Create a new session
 export async function createNewSession(
   appId: string,
-  title?: string
+  title?: string,
 ): Promise<SessionData | null> {
   try {
     const response = await fetch("/api/sessions", {
@@ -129,7 +129,7 @@ export async function createNewSession(
 
     if (!response.ok) {
       throw new Error(
-        isApiError(data) ? data.error : "Failed to create session"
+        isApiError(data) ? data.error : "Failed to create session",
       );
     }
 
@@ -155,14 +155,14 @@ export async function deleteSession(sessionId: string): Promise<boolean> {
       `/api/sessions?sessionId=${encodeURIComponent(sessionId)}`,
       {
         method: "DELETE",
-      }
+      },
     );
 
     const data = await response.json();
 
     if (!response.ok) {
       throw new Error(
-        isApiError(data) ? data.error : "Failed to delete session"
+        isApiError(data) ? data.error : "Failed to delete session",
       );
     }
 
@@ -178,7 +178,7 @@ export async function deleteSession(sessionId: string): Promise<boolean> {
 // Update session title
 export async function updateSessionTitle(
   sessionId: string,
-  title: string
+  title: string,
 ): Promise<boolean> {
   try {
     const response = await fetch(`/api/sessions/title`, {
@@ -194,7 +194,7 @@ export async function updateSessionTitle(
 
     if (!response.ok) {
       throw new Error(
-        isApiError(data) ? data.error : "Failed to update session title"
+        isApiError(data) ? data.error : "Failed to update session title",
       );
     }
 

@@ -11,7 +11,7 @@ const titleSchema = z.object({
   title: z
     .string()
     .describe(
-      "A short title (3 words or fewer) that captures the essence of the conversation"
+      "A short title (3 words or fewer) that captures the essence of the conversation",
     ),
 });
 
@@ -57,7 +57,7 @@ export async function PUT(request: Request) {
     if (!sessionId) {
       return NextResponse.json(
         { error: "Session ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -72,7 +72,7 @@ export async function PUT(request: Request) {
     if (sessionError || !session) {
       return NextResponse.json(
         { error: "Session not found or unauthorized" },
-        { status: 404 }
+        { status: 404 },
       );
     }
     //Make title if it is ai generated
@@ -101,7 +101,7 @@ export async function PUT(request: Request) {
       console.error("Error updating session title:", error);
       return NextResponse.json(
         { error: "Failed to update session title" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -110,7 +110,7 @@ export async function PUT(request: Request) {
     console.error("Session title update error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

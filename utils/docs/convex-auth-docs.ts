@@ -192,4 +192,4 @@ export default Password<DataModel>({
 - \`@auth/core@0.37.0\`
 - \`zod\` (for validation)
 
-This documentation covers the basic setup and configuration of Convex Auth with focus on simple password-based authentication.`; 
+This documentation covers the basic setup and configuration of Convex Auth with focus on simple password-based authentication.`;

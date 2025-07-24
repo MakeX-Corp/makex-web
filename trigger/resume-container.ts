@@ -7,24 +7,38 @@ import { startExpo } from "./start-expo";
 export const resumeContainer = task({
   id: "resume-container",
   retry: {
-    maxAttempts: 1
+    maxAttempts: 1,
   },
   run: async (payload: { userId: string; appId: string; appName: string }) => {
     const { userId, appId, appName } = payload;
     const adminSupabase = await getSupabaseAdmin();
 
-    const { data: activeSandbox, error: activeSandboxError } = await adminSupabase
-      .from("user_sandboxes")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("app_id", appId)
-      .in("sandbox_status", ["active", "starting", "paused", "resuming", "pausing"]);
+    const { data: activeSandbox, error: activeSandboxError } =
+      await adminSupabase
+        .from("user_sandboxes")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("app_id", appId)
+        .in("sandbox_status", [
+          "active",
+          "starting",
+          "paused",
+          "resuming",
+          "pausing",
+        ]);
 
     if (activeSandboxError) {
-      throw new Error(`Failed fetching active sandboxes: ${activeSandboxError.message}`);
+      throw new Error(
+        `Failed fetching active sandboxes: ${activeSandboxError.message}`,
+      );
     }
 
-    if (activeSandbox[0]?.sandbox_status === "temporary" || activeSandbox[0]?.sandbox_status === "starting" || activeSandbox[0]?.sandbox_status === "resuming" || activeSandbox[0]?.sandbox_status === "active") {
+    if (
+      activeSandbox[0]?.sandbox_status === "temporary" ||
+      activeSandbox[0]?.sandbox_status === "starting" ||
+      activeSandbox[0]?.sandbox_status === "resuming" ||
+      activeSandbox[0]?.sandbox_status === "active"
+    ) {
       return;
     }
 
@@ -34,20 +48,17 @@ export const resumeContainer = task({
         .update({ sandbox_status: "resuming" })
         .eq("id", sandboxDbId);
 
-        
-
       switch (activeSandbox[0]?.sandbox_provider) {
         case "daytona":
-          const daytonaContainer = await initiateResumeDaytonaContainer(sandboxId);
-          await startExpo.trigger(
-            {
-              appId: appId,
-              appName: appName,
-              containerId: sandboxId,
-              sandboxId: sandboxDbId,
-              initial: false,
-            }
-          );
+          const daytonaContainer =
+            await initiateResumeDaytonaContainer(sandboxId);
+          await startExpo.trigger({
+            appId: appId,
+            appName: appName,
+            containerId: sandboxId,
+            sandboxId: sandboxDbId,
+            initial: false,
+          });
           break;
         case "e2b":
           const { appHost, apiHost } = await resumeE2BContainer(sandboxId);
@@ -58,13 +69,14 @@ export const resumeContainer = task({
       // sleep for 5 seconds
       await adminSupabase
         .from("user_sandboxes")
-        .update({ 
+        .update({
           sandbox_status: "active",
-          ...(activeSandbox[0]?.sandbox_provider === "e2b" ? { app_status: "active" } : {})
+          ...(activeSandbox[0]?.sandbox_provider === "e2b"
+            ? { app_status: "active" }
+            : {}),
         })
         .eq("id", sandboxDbId);
     };
-
 
     if (activeSandbox && activeSandbox.length > 0) {
       const sandboxStatus = activeSandbox[0].sandbox_status;

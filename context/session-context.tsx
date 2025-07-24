@@ -92,13 +92,13 @@ export function SessionProvider({
 
   // Current session state
   const [currentSession, setCurrentSession] = useState<SessionData | null>(
-    null
+    null,
   );
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [loadingCurrentSession, setLoadingCurrentSession] =
     useState<boolean>(false);
   const [currentSessionError, setCurrentSessionError] = useState<string | null>(
-    null
+    null,
   );
   const [justCreatedSessionId, setJustCreatedSessionId] = useState<
     string | null
@@ -162,7 +162,7 @@ export function SessionProvider({
 
       if (error || !data) {
         throw new Error(
-          `Failed to fetch app configuration: ${error || "No data returned"}`
+          `Failed to fetch app configuration: ${error || "No data returned"}`,
         );
       }
 
@@ -262,7 +262,7 @@ export function SessionProvider({
             return prevSessions.map((session) =>
               session.id === sessionId
                 ? { ...session, title: sessionData.title || "New Chat" }
-                : session
+                : session,
             );
           });
         }
@@ -310,7 +310,7 @@ export function SessionProvider({
           window.history.pushState(
             { path: url.toString() },
             "",
-            url.toString()
+            url.toString(),
           );
         }
 
@@ -338,7 +338,7 @@ export function SessionProvider({
       if (result) {
         // Update the sessions list by removing the deleted session
         setSessions((prev) =>
-          prev.filter((session) => session.id !== sessionId)
+          prev.filter((session) => session.id !== sessionId),
         );
 
         // If we're deleting the current session, switch to another one
@@ -366,7 +366,7 @@ export function SessionProvider({
   // Update session title
   const updateSessionTitle = async (
     sessionId: string,
-    title: string
+    title: string,
   ): Promise<boolean> => {
     try {
       if (!appId || !title.trim()) return false;
@@ -380,8 +380,8 @@ export function SessionProvider({
           prevSessions.map((session) =>
             session.id === sessionId
               ? { ...session, title: title.trim() }
-              : session
-          )
+              : session,
+          ),
         );
 
         // Also update the current session object if this is the current session
@@ -405,11 +405,11 @@ export function SessionProvider({
   // Refresh app data
   const refreshApp = async () => {
     if (!appId) return;
-    
+
     try {
       // Re-fetch app info to get updated data
       const { data, error } = await getAppInfo(appId);
-      
+
       if (error || !data) {
         console.error("Failed to refresh app data:", error);
         return;
@@ -419,7 +419,7 @@ export function SessionProvider({
       setApiUrl(data.api_url || "");
       setAppUrl(data.app_url || "");
       setGithubSyncRepo(data.github_sync_repo || null);
-      
+
       setConvexConfig({
         devUrl: data.convex_dev_url || null,
         projectId: data.convex_project_id || null,

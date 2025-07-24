@@ -33,7 +33,7 @@ function DashboardFrame({
           deploymentUrl,
           deploymentName,
         },
-        "*"
+        "*",
       );
     };
 
@@ -137,7 +137,7 @@ export function ConvexDashboardEmbed() {
     convexConfig &&
       convexConfig.prodUrl &&
       convexConfig.projectId &&
-      convexConfig.prodAdminKey
+      convexConfig.prodAdminKey,
   );
 
   if (!isConfigComplete(convexConfig)) {

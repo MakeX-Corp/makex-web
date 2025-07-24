@@ -89,7 +89,7 @@ export function SessionSelector() {
       // Call the updateSessionTitle function from context
       const success = await updateSessionTitle(
         sessionId,
-        editSessionName.trim()
+        editSessionName.trim(),
       );
 
       if (!success) {
@@ -109,7 +109,7 @@ export function SessionSelector() {
   // Handle deleting session
   const handleDeleteSession = async (
     sessionId: string,
-    event: React.MouseEvent
+    event: React.MouseEvent,
   ) => {
     event.stopPropagation();
     if (isDeleting) return;
@@ -232,7 +232,7 @@ export function SessionSelector() {
                               "flex items-center py-1.5 px-2 text-sm rounded-md transition-colors font-medium w-full pr-12 cursor-pointer",
                               session.id === currentSessionId
                                 ? "bg-primary/10 text-primary"
-                                : "text-foreground hover:bg-muted"
+                                : "text-foreground hover:bg-muted",
                             )}
                           >
                             {/* Always use the title from the sessions array */}

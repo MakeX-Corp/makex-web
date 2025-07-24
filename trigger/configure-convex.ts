@@ -27,7 +27,7 @@ export const configureConvex = task({
     } catch (convexError) {
       console.error(
         "[configureConvex] Failed to create Convex project:",
-        convexError
+        convexError,
       );
 
       await adminSupabase
@@ -49,7 +49,7 @@ export const configureConvex = task({
     console.log(
       "[configureConvex] Updating app with Convex info",
       devUrl,
-      deploymentName
+      deploymentName,
     );
     const { error: updateError } = await adminSupabase
       .from("user_apps")
@@ -63,10 +63,10 @@ export const configureConvex = task({
     if (updateError) {
       console.error(
         "[configureConvex] Error updating app with convex info:",
-        updateError
+        updateError,
       );
       throw new Error(
-        `Failed updating app with convex info: ${updateError.message}`
+        `Failed updating app with convex info: ${updateError.message}`,
       );
     }
 
@@ -78,29 +78,29 @@ export const configureConvex = task({
         {
           deploymentName,
           convexUrl: devUrl,
-        }
+        },
       );
       console.log(
         "[configureConvex] Convex config + env written in container:",
-        writeConvexConfigResponse
+        writeConvexConfigResponse,
       );
 
       // Only start Convex if write succeeded
       const startConvexResponse = await startConvexInContainer(containerId);
       console.log(
         "[configureConvex] Convex started in container:",
-        startConvexResponse
+        startConvexResponse,
       );
     } catch (writeError) {
       console.error(
         "[configureConvex] Error writing convex config or env file:",
-        writeError
+        writeError,
       );
       throw new Error("Aborting: Failed to write convex config or env file");
     }
 
     console.log(
-      "[configureConvex] Convex configuration completed successfully"
+      "[configureConvex] Convex configuration completed successfully",
     );
   },
 });

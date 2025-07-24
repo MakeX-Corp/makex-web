@@ -6,7 +6,7 @@ import { killE2BContainer } from "@/utils/server/e2b";
 export const deleteContainer = task({
   id: "delete-container",
   retry: {
-    maxAttempts: 1
+    maxAttempts: 1,
   },
   run: async (payload: { userId: string; appId: string; appName: string }) => {
     const { userId, appId, appName } = payload;
@@ -35,13 +35,17 @@ export const deleteContainer = task({
       }
     }
 
-    // update status to deleted 
+    // update status to deleted
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
-      .update({ sandbox_status: "deleted",app_status: "deleted" })
+      .update({ sandbox_status: "deleted", app_status: "deleted" })
       .eq("id", sandbox.id);
 
-    await redisUrlSetter(appName, "https://makex.app/app-not-found", "https://makex.app/app-not-found");
+    await redisUrlSetter(
+      appName,
+      "https://makex.app/app-not-found",
+      "https://makex.app/app-not-found",
+    );
 
     if (updateError) {
       throw new Error(`Failed updating sandbox status: ${updateError.message}`);

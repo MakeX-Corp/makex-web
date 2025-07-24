@@ -1,8 +1,8 @@
 "use client";
-import Image from 'next/image';
-import { useEffect, useState, useRef } from 'react';
-import React from 'react';
-import QRCode from 'qrcode';
+import Image from "next/image";
+import { useEffect, useState, useRef } from "react";
+import React from "react";
+import QRCode from "qrcode";
 
 type PageParams = {
   id: string;
@@ -18,7 +18,11 @@ type ShareData = {
   dub_key: string;
 };
 
-export default function SharePage({ params: paramsPromise }: { params: Promise<PageParams> }) {
+export default function SharePage({
+  params: paramsPromise,
+}: {
+  params: Promise<PageParams>;
+}) {
   const params = React.use(paramsPromise);
   const [isMobile, setIsMobile] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -29,20 +33,20 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [shareData, setShareData] = useState<ShareData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
 
   useEffect(() => {
     const fetchShareData = async () => {
       try {
         const response = await fetch(`/api/share?share_id=${params.id}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch share data');
+          throw new Error("Failed to fetch share data");
         }
         const data = await response.json();
         setShareData(data);
       } catch (err) {
-        setError('Failed to load share data');
-        console.error('Error fetching share data:', err);
+        setError("Failed to load share data");
+        console.error("Error fetching share data:", err);
       } finally {
         setLoading(false);
       }
@@ -63,14 +67,17 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
     setIsMobile(isMobileDevice);
 
     // Detect dark mode
-    if (typeof window !== 'undefined') {
-      setIsDarkMode(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (typeof window !== "undefined") {
+      setIsDarkMode(
+        window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches,
+      );
     }
 
     if (isMobileDevice && shareData?.app_url) {
       // Try deep linking first
       window.location.href = shareData.app_url;
-      
+
       // Set a timeout to check if deep linking failed
       const timeout = setTimeout(() => {
         setDeepLinkFailed(true);
@@ -89,15 +96,15 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
             width: 256,
             margin: 1,
             color: {
-              dark: isDarkMode ? '#ffffff' : '#000000',
-              light: isDarkMode ? '#000000' : '#ffffff',
+              dark: isDarkMode ? "#ffffff" : "#000000",
+              light: isDarkMode ? "#000000" : "#ffffff",
             },
-            errorCorrectionLevel: 'H' // Higher error correction to allow for logo
+            errorCorrectionLevel: "H", // Higher error correction to allow for logo
           });
 
           // Create a canvas to draw the QR code and logo
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
           if (!ctx) return;
 
           // Set canvas size
@@ -116,7 +123,7 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
 
           // Load and draw logo
           const logo = new window.Image();
-          logo.src = '/logo.png';
+          logo.src = "/logo.png";
           await new Promise<void>((resolve) => {
             logo.onload = () => resolve();
           });
@@ -125,8 +132,8 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
           ctx.save();
           ctx.beginPath();
           ctx.arc(128, 128, 28, 0, 2 * Math.PI, false); // Center (128,128), radius 28
-          ctx.fillStyle = isDarkMode ? '#000000' : '#ffffff';
-          ctx.shadowColor = 'rgba(0,0,0,0.15)';
+          ctx.fillStyle = isDarkMode ? "#000000" : "#ffffff";
+          ctx.shadowColor = "rgba(0,0,0,0.15)";
           ctx.shadowBlur = 6;
           ctx.fill();
           ctx.restore();
@@ -140,7 +147,7 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
           // Convert to data URL
           setQrCodeDataUrl(canvas.toDataURL());
         } catch (err) {
-          console.error('Error generating QR code:', err);
+          console.error("Error generating QR code:", err);
         }
       }
     };
@@ -156,14 +163,14 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
 
   const handleInstallApp = () => {
     const appStoreUrl = isIOS
-      ? 'https://testflight.apple.com/join/yuPwpH4t'
-      : 'https://play.google.com/store/apps/details?id=host.exp.exponent';
+      ? "https://testflight.apple.com/join/yuPwpH4t"
+      : "https://play.google.com/store/apps/details?id=host.exp.exponent";
     window.location.href = appStoreUrl;
   };
 
   const handleCopyLink = async () => {
     if (!shareData?.share_url) return;
-    
+
     try {
       // Try using the Clipboard API first
       await navigator.clipboard.writeText(shareData.share_url);
@@ -171,21 +178,21 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
       setTimeout(() => setShowCopyFeedback(false), 2000);
     } catch (err) {
       // Fallback method using a temporary textarea
-      const textArea = document.createElement('textarea');
+      const textArea = document.createElement("textarea");
       textArea.value = shareData.share_url;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      textArea.style.top = '-999999px';
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
-      
+
       try {
-        document.execCommand('copy');
+        document.execCommand("copy");
         setShowCopyFeedback(true);
         setTimeout(() => setShowCopyFeedback(false), 2000);
       } catch (fallbackErr) {
-        console.error('Failed to copy:', fallbackErr);
+        console.error("Failed to copy:", fallbackErr);
       } finally {
         document.body.removeChild(textArea);
       }
@@ -216,7 +223,9 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
           <h1 className="text-2xl font-semibold mb-4">Not Found</h1>
-          <p className="text-muted-foreground">The requested share link could not be found.</p>
+          <p className="text-muted-foreground">
+            The requested share link could not be found.
+          </p>
         </div>
       </div>
     );
@@ -232,13 +241,13 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
             width={96}
             height={96}
             className="rounded-2xl mb-6"
-            onClick={() => window.location.href = 'https://makex.app'}
-            style={{ cursor: 'pointer' }}
+            onClick={() => (window.location.href = "https://makex.app")}
+            style={{ cursor: "pointer" }}
           />
           <h1 className="text-2xl font-semibold mb-4">
-            <a 
-              href="https://makex.app" 
-              target="_blank" 
+            <a
+              href="https://makex.app"
+              target="_blank"
               rel="noopener noreferrer"
               className="hover:underline"
             >
@@ -253,7 +262,16 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
               onClick={handleOpenInWeb}
               className="w-full bg-primary text-primary-foreground py-3 px-5 rounded-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                 <polyline points="15 3 21 3 21 9"></polyline>
                 <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -288,13 +306,13 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
             width={120}
             height={120}
             className="rounded-2xl mb-6"
-            onClick={() => window.location.href = 'https://makex.app'}
-            style={{ cursor: 'pointer' }}
+            onClick={() => (window.location.href = "https://makex.app")}
+            style={{ cursor: "pointer" }}
           />
           <h1 className="text-4xl font-bold mb-4">
-            <a 
-              href="https://makex.app" 
-              target="_blank" 
+            <a
+              href="https://makex.app"
+              target="_blank"
               rel="noopener noreferrer"
               className="hover:underline"
             >
@@ -302,7 +320,8 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
             </a>
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl">
-            This is a app created using MakeX. Scan the QR code with your mobile device to preview it, or copy the link to share with others.
+            This is a app created using MakeX. Scan the QR code with your mobile
+            device to preview it, or copy the link to share with others.
           </p>
         </div>
 
@@ -312,28 +331,65 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
               <h2 className="text-xl font-semibold mb-4">Share this app</h2>
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3 bg-muted/50 p-3 rounded-lg">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-muted-foreground"
+                  >
                     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                   </svg>
-                  <span className="text-sm text-muted-foreground flex-1 truncate">{shareData.share_url}</span>
+                  <span className="text-sm text-muted-foreground flex-1 truncate">
+                    {shareData.share_url}
+                  </span>
                 </div>
                 <div className="flex gap-3">
                   <button
                     onClick={handleCopyLink}
                     className="flex-1 relative flex items-center justify-center gap-2 bg-foreground text-background py-3 px-5 rounded-lg hover:bg-foreground/90 transition-colors"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect
+                        width="14"
+                        height="14"
+                        x="8"
+                        y="8"
+                        rx="2"
+                        ry="2"
+                      ></rect>
                       <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
                     </svg>
-                    {showCopyFeedback ? 'Copied!' : 'Copy link'}
+                    {showCopyFeedback ? "Copied!" : "Copy link"}
                   </button>
                   <button
                     onClick={handleOpenInWeb}
                     className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 px-5 rounded-lg hover:bg-primary/90 transition-colors"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                       <polyline points="15 3 21 3 21 9"></polyline>
                       <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -345,9 +401,12 @@ export default function SharePage({ params: paramsPromise }: { params: Promise<P
             </div>
 
             <div className="bg-card rounded-xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">Get the full experience</h2>
+              <h2 className="text-xl font-semibold mb-4">
+                Get the full experience
+              </h2>
               <p className="text-muted-foreground mb-4">
-                Install the MakeX app to get the best experience and create your own apps.
+                Install the MakeX app to get the best experience and create your
+                own apps.
               </p>
               <div className="flex gap-4">
                 <a
