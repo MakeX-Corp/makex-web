@@ -17,20 +17,15 @@ function DashboardFrame({
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Send credentials when iframe asks for them
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      console.log(
-        "[Convex Dashboard] Message received:",
-        event.origin,
-        event.data,
-      );
+      if (
+        event.data?.type !== "dashboard-credentials-request" ||
+        event.source !== iframeRef.current?.contentWindow
+      )
+        return;
 
-      if (event.data?.type !== "dashboard-credentials-request") return;
-
-      console.log("[Convex Dashboard] Sending credentials to iframe");
-
-      iframeRef.current?.contentWindow?.postMessage(
+      (event.source as Window).postMessage(
         {
           type: "dashboard-credentials",
           adminKey,
@@ -43,24 +38,6 @@ function DashboardFrame({
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [adminKey, deploymentUrl, deploymentName]);
-
-  // Proactively send credentials once iframe is ready
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      iframeRef.current?.contentWindow?.postMessage(
-        {
-          type: "dashboard-credentials",
-          adminKey,
-          deploymentUrl,
-          deploymentName,
-        },
-        "*",
-      );
-      console.log("[Convex Dashboard] Proactively sent credentials");
-    }, 1000); // wait for iframe to load
-
-    return () => clearTimeout(timer);
   }, [adminKey, deploymentUrl, deploymentName]);
 
   return (
@@ -89,7 +66,7 @@ export function ConvexDashboardEmbed() {
   const [error, setError] = useState<string | null>(null);
   const [env, setEnv] = useState<"dev" | "prod">("dev");
   const [credentialsReady, setCredentialsReady] = useState(false);
-
+  const [showIframe, setShowIframe] = useState(false);
   const supabase = createClient();
 
   const isConfigComplete = (cfg: any) =>
@@ -119,6 +96,7 @@ export function ConvexDashboardEmbed() {
 
         if (isConfigComplete(config)) {
           setCredentialsReady(true);
+          setTimeout(() => setShowIframe(true), 2500);
         }
       } catch (err: any) {
         setError(err.message || "Unknown error");
@@ -161,7 +139,7 @@ export function ConvexDashboardEmbed() {
     };
   }, [appId]);
 
-  if (loading || !convexConfig) {
+  if (loading || !convexConfig || !showIframe) {
     return (
       <div className="flex items-center justify-center h-full w-full">
         <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
