@@ -2,11 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { useSession } from "@/context/session-context";
-import { Loader2 } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
-//iframe for dev and prod
 function DashboardFrame({
   adminKey,
   deploymentUrl,
@@ -33,7 +32,7 @@ function DashboardFrame({
           deploymentUrl,
           deploymentName,
         },
-        "*",
+        "*"
       );
     };
 
@@ -54,6 +53,7 @@ function DashboardFrame({
 export function ConvexDashboardEmbed() {
   const session = useSession();
   const { appId, convexConfig: contextConvexConfig } = session;
+
   const [convexConfig, setConvexConfig] = useState<{
     devUrl: string | null;
     projectId: string | null;
@@ -61,34 +61,30 @@ export function ConvexDashboardEmbed() {
     prodUrl: string | null;
     prodAdminKey: string | null;
   } | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [env, setEnv] = useState<"dev" | "prod">("dev");
   const [credentialsReady, setCredentialsReady] = useState(false);
 
-  // Helper to check if a config is complete
+  const supabase = createClient();
+
   const isConfigComplete = (cfg: any) =>
     cfg && cfg.devUrl && cfg.projectId && cfg.devAdminKey;
 
   useEffect(() => {
-    if (!appId) return;
-    // If context config is complete, use it and skip API call
-    if (isConfigComplete(contextConvexConfig)) {
-      setConvexConfig(contextConvexConfig);
-      setLoading(false);
-      setError(null);
-      setCredentialsReady(true);
+    if (!appId) {
       return;
     }
-    // Otherwise, fetch from API
-    setLoading(true);
-    setError(null);
-    fetch(`/api/app?id=${appId}`)
-      .then(async (res) => {
+
+    const fetchInitialConfig = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/app?id=${appId}`);
         if (!res.ok) throw new Error("Failed to fetch app info");
-        return res.json();
-      })
-      .then((data) => {
+
+        const data = await res.json();
         const config = {
           devUrl: data.convex_dev_url || null,
           projectId: data.convex_project_id || null,
@@ -101,16 +97,47 @@ export function ConvexDashboardEmbed() {
         if (isConfigComplete(config)) {
           setCredentialsReady(true);
         }
-      })
-      .catch((err) => {
+      } catch (err: any) {
         setError(err.message || "Unknown error");
-      })
-      .finally(() => setLoading(false));
-  }, [appId, contextConvexConfig]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (!appId) {
-    return null;
-  }
+    fetchInitialConfig();
+
+    const channel = supabase
+      .channel(`realtime:user_apps:${appId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "user_apps",
+          filter: `id=eq.${appId}`,
+        },
+        (payload) => {
+          const updated = payload.new;
+          const config = {
+            devUrl: updated.convex_dev_url || null,
+            projectId: updated.convex_project_id || null,
+            devAdminKey: updated.convex_dev_admin_key || null,
+            prodUrl: updated.convex_prod_url || null,
+            prodAdminKey: updated.convex_prod_admin_key || null,
+          };
+          setConvexConfig(config);
+          if (isConfigComplete(config)) {
+            setCredentialsReady(true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [appId]);
+
   if (loading || !convexConfig) {
     return (
       <div className="flex items-center justify-center h-full w-full">
@@ -118,9 +145,7 @@ export function ConvexDashboardEmbed() {
       </div>
     );
   }
-  if (!credentialsReady) {
-    return null;
-  }
+
   if (error) {
     return (
       <div className="flex items-center justify-center h-full w-full">
@@ -133,11 +158,15 @@ export function ConvexDashboardEmbed() {
     );
   }
 
+  if (!credentialsReady) {
+    return null;
+  }
+
   const prodAvailable = Boolean(
     convexConfig &&
       convexConfig.prodUrl &&
       convexConfig.projectId &&
-      convexConfig.prodAdminKey,
+      convexConfig.prodAdminKey
   );
 
   if (!isConfigComplete(convexConfig)) {
