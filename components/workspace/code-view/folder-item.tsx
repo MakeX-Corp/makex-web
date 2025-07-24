@@ -1,8 +1,9 @@
 import { DropdownMenuContent } from "@/components/ui/dropdown-menu";
 import { DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { Folder, MoreHorizontal } from "lucide-react";
+import { Folder, MoreHorizontal, Plus } from "lucide-react";
 import DeleteConfirmationDialog from "./delete-file-dialog";
 import { FolderOpen } from "lucide-react";
 import { ChevronRight } from "lucide-react";
@@ -14,6 +15,13 @@ import CreateFileDialog from "./create-file-dialog";
 import { Button } from "@/components/ui/button";
 import { Node, fetchJSON } from "./utils";
 import FileItem from "./file-item";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export default function FolderItem({
   node,
@@ -32,6 +40,7 @@ export default function FolderItem({
 }) {
   const [open, setOpen] = useState(false);
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [createFileDialogOpen, setCreateFileDialogOpen] = useState(false);
   const {
     data: children = [],
     isLoading,
@@ -47,6 +56,11 @@ export default function FolderItem({
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     setContextMenuOpen(true);
+  };
+
+  const handleCreateFile = () => {
+    setContextMenuOpen(false);
+    setCreateFileDialogOpen(true);
   };
 
   return (
@@ -76,10 +90,6 @@ export default function FolderItem({
           <span>{node.name}</span>
         </div>
         <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <CreateFileDialog
-            parentPath={node.path}
-            onCreateFile={onCreateFile}
-          />
           <DropdownMenu
             open={contextMenuOpen}
             onOpenChange={setContextMenuOpen}
@@ -92,6 +102,10 @@ export default function FolderItem({
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleCreateFile}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create File
+              </DropdownMenuItem>
               <DeleteConfirmationDialog
                 fileName={node.name}
                 onConfirm={() => onDelete(node.path)}
@@ -100,6 +114,55 @@ export default function FolderItem({
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Context Menu Create File Dialog */}
+      <Dialog
+        open={createFileDialogOpen}
+        onOpenChange={setCreateFileDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New File</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const fileName = formData.get("fileName") as string;
+              if (fileName.trim()) {
+                onCreateFile(node.path, fileName.trim());
+                setCreateFileDialogOpen(false);
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label htmlFor="fileName" className="text-sm font-medium">
+                File Name
+              </label>
+              <Input
+                id="fileName"
+                name="fileName"
+                placeholder="Enter file name (e.g., index.tsx)"
+                className="mt-1"
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setCreateFileDialogOpen(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Create File</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {open && (
         <ul className="ml-5 mt-1 space-y-0.5">
