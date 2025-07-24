@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  RefreshCw,
-  ExternalLink,
-  Smartphone,
-  QrCode,
-  Code,
-  Database,
-} from "lucide-react";
+import { RefreshCw, ExternalLink, Smartphone, QrCode, Code, Database } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,15 +18,8 @@ interface PreviewProps {
   state: any;
 }
 
-export function Preview({
-  iframeKey,
-  isRefreshing,
-  onRefresh,
-  state,
-}: PreviewProps) {
-  const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code" | "convex">(
-    "mobile",
-  );
+export function Preview({ iframeKey, isRefreshing, onRefresh, state }: PreviewProps) {
+  const [viewMode, setViewMode] = useState<"mobile" | "qr" | "code" | "convex">("mobile");
   const { appUrl } = useSession();
 
   const switchView = (mode: typeof viewMode) => {
@@ -138,11 +124,7 @@ export function Preview({
         <div className="flex-1 overflow-auto">
           {viewMode === "mobile" && state && (
             <div className="h-full w-full flex items-center justify-center">
-              <MobileMockup
-                appUrl={appUrl || ""}
-                iframeKey={iframeKey}
-                state={state}
-              />
+              <MobileMockup appUrl={appUrl || ""} iframeKey={iframeKey} state={state} />
             </div>
           )}
 

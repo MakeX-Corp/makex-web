@@ -40,17 +40,13 @@ export const setupGit = task({
       console.log("[setupGit] Git repository created with ID:", repoId);
 
       if (!repoId) {
-        throw new Error(
-          "Failed to create Git repository - no repo ID returned",
-        );
+        throw new Error("Failed to create Git repository - no repo ID returned");
       }
 
       // Get the identity ID from environment variables
       const identityId = process.env.FREESTYLE_IDENTITY_ID;
       if (!identityId) {
-        throw new Error(
-          "FREESTYLE_IDENTITY_ID environment variable is not set",
-        );
+        throw new Error("FREESTYLE_IDENTITY_ID environment variable is not set");
       }
 
       // Grant write access to the identity
@@ -65,10 +61,7 @@ export const setupGit = task({
 
       // Set up Git in the E2B container
       console.log("[setupGit] Setting up Git in E2B container...");
-      const gitSetupResult = await setupFreestyleGitInContainer(
-        containerId,
-        repoId!,
-      );
+      const gitSetupResult = await setupFreestyleGitInContainer(containerId, repoId!);
 
       // Save the repository ID to the database
       console.log("[setupGit] Saving repository ID to database...");
@@ -83,9 +76,7 @@ export const setupGit = task({
         initialCommit = gitSetupResult.commitIdResult.stdout.trim();
         console.log("[setupGit] Initial commit hash:", initialCommit);
       } else {
-        console.log(
-          "[setupGit] No initial commit hash available - git repository may be empty",
-        );
+        console.log("[setupGit] No initial commit hash available - git repository may be empty");
       }
 
       const { error: updateError } = await adminSupabase
@@ -97,9 +88,7 @@ export const setupGit = task({
         .eq("id", appId);
 
       if (updateError) {
-        throw new Error(
-          `Failed to update app with git repo ID: ${updateError.message}`,
-        );
+        throw new Error(`Failed to update app with git repo ID: ${updateError.message}`);
       }
 
       console.log("[setupGit] Repository ID saved to database successfully");
@@ -117,25 +106,17 @@ export const setupGit = task({
       // Cleanup: Delete the Git repository if it was created
       if (repoId) {
         try {
-          console.log(
-            "[setupGit] Cleaning up: Deleting Git repository:",
-            repoId,
-          );
+          console.log("[setupGit] Cleaning up: Deleting Git repository:", repoId);
           await deleteGitRepository(repoId);
           console.log("[setupGit] Git repository deleted successfully");
         } catch (deleteError) {
-          console.error(
-            "[setupGit] Failed to delete Git repository:",
-            deleteError,
-          );
+          console.error("[setupGit] Failed to delete Git repository:", deleteError);
         }
       }
 
       // Cleanup: Clear the git_repo_id from the database
       try {
-        console.log(
-          "[setupGit] Cleaning up: Clearing git_repo_id from database",
-        );
+        console.log("[setupGit] Cleaning up: Clearing git_repo_id from database");
         const { error: clearError } = await adminSupabase
           .from("user_apps")
           .update({
@@ -144,20 +125,12 @@ export const setupGit = task({
           .eq("id", appId);
 
         if (clearError) {
-          console.error(
-            "[setupGit] Failed to clear git_repo_id from database:",
-            clearError,
-          );
+          console.error("[setupGit] Failed to clear git_repo_id from database:", clearError);
         } else {
-          console.log(
-            "[setupGit] git_repo_id cleared from database successfully",
-          );
+          console.log("[setupGit] git_repo_id cleared from database successfully");
         }
       } catch (clearError) {
-        console.error(
-          "[setupGit] Error clearing git_repo_id from database:",
-          clearError,
-        );
+        console.error("[setupGit] Error clearing git_repo_id from database:", clearError);
       }
 
       throw error;

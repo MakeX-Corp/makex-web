@@ -4,12 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export function SupabaseConnect({
   supabaseProject,
@@ -92,13 +87,10 @@ export function SupabaseConnect({
 
       // Construct the authorization URL
       const authUrl = new URL("https://api.supabase.com/v1/oauth/authorize");
-      authUrl.searchParams.append(
-        "client_id",
-        process.env.NEXT_PUBLIC_SUPABASE_OAUTH_CLIENT_ID!,
-      );
+      authUrl.searchParams.append("client_id", process.env.NEXT_PUBLIC_SUPABASE_OAUTH_CLIENT_ID!);
       authUrl.searchParams.append(
         "redirect_uri",
-        `${window.location.origin}/api/integrations/supabase/callback?app_id=${appId}`,
+        `${window.location.origin}/api/integrations/supabase/callback?app_id=${appId}`
       );
       authUrl.searchParams.append("response_type", "code");
       authUrl.searchParams.append("state", state);
@@ -119,20 +111,12 @@ export function SupabaseConnect({
         {supabaseProject ? (
           <Button
             onClick={() =>
-              window.open(
-                `https://supabase.com/dashboard/project/${supabaseProject?.id}`,
-                "_blank",
-              )
+              window.open(`https://supabase.com/dashboard/project/${supabaseProject?.id}`, "_blank")
             }
             className="w-full flex items-center gap-2"
             variant="outline"
           >
-            <Image
-              src="/supabase-logo-icon.svg"
-              alt="Supabase"
-              width={20}
-              height={20}
-            />
+            <Image src="/supabase-logo-icon.svg" alt="Supabase" width={20} height={20} />
             <span className="text-sm font-medium">
               {supabaseProject?.name || "Supabase Project"}
             </span>
@@ -144,12 +128,7 @@ export function SupabaseConnect({
             className="w-full flex items-center gap-2"
             variant="outline"
           >
-            <Image
-              src="/supabase-logo-icon.svg"
-              alt="Supabase"
-              width={20}
-              height={20}
-            />
+            <Image src="/supabase-logo-icon.svg" alt="Supabase" width={20} height={20} />
             {loading ? "Creating Project..." : "Create New Project"}
           </Button>
         ) : (
@@ -159,12 +138,7 @@ export function SupabaseConnect({
             className="w-full flex items-center gap-2"
             variant="outline"
           >
-            <Image
-              src="/supabase-logo-icon.svg"
-              alt="Supabase"
-              width={20}
-              height={20}
-            />
+            <Image src="/supabase-logo-icon.svg" alt="Supabase" width={20} height={20} />
             {isFetching
               ? "Loading..."
               : loading
@@ -179,18 +153,11 @@ export function SupabaseConnect({
       <Dialog open={showCreationModal} onOpenChange={setShowCreationModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-center">
-              Creating Supabase Project
-            </DialogTitle>
+            <DialogTitle className="text-center">Creating Supabase Project</DialogTitle>
             <div className="flex items-center justify-center gap-4 mb-6">
               <Image src="/logo.png" alt="MakeX" width={40} height={40} />
               <div className="text-xl">+</div>
-              <Image
-                src="/supabase-logo-icon.svg"
-                alt="Supabase"
-                width={40}
-                height={40}
-              />
+              <Image src="/supabase-logo-icon.svg" alt="Supabase" width={40} height={40} />
             </div>
           </DialogHeader>
 

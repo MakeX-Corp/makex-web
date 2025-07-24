@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 
@@ -29,9 +23,7 @@ interface PlanProps {
 const plans: PlanProps[] = [
   {
     name: process.env.NEXT_PUBLIC_FREE_PLAN_NAME || "Free",
-    description:
-      process.env.NEXT_PUBLIC_FREE_PLAN_DESCRIPTION ||
-      "For people just starting out",
+    description: process.env.NEXT_PUBLIC_FREE_PLAN_DESCRIPTION || "For people just starting out",
     price: process.env.NEXT_PUBLIC_FREE_PLAN_PRICE || "0",
     interval: "month",
     features: (
@@ -110,10 +102,7 @@ export default function PricingPage() {
     try {
       setIsLoading(priceId);
       if (subscription?.hasActiveSubscription) {
-        console.log(
-          "hasActiveSubscription",
-          subscription?.hasActiveSubscription,
-        );
+        console.log("hasActiveSubscription", subscription?.hasActiveSubscription);
         // Handle upgrade/downgrade for existing subscription
         const updateResponse = await fetch("/api/subscription/update", {
           method: "POST",
@@ -159,10 +148,7 @@ export default function PricingPage() {
       toast({
         variant: "destructive",
         title: "Checkout Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to initiate checkout",
+        description: error instanceof Error ? error.message : "Failed to initiate checkout",
       });
     } finally {
       setIsLoading(null);
@@ -172,16 +158,10 @@ export default function PricingPage() {
   // Check if button should be disabled for the current plan
   const isButtonDisabled = (priceId: string) => {
     // Find the current plan based on planName
-    const currentPlan = plans.find(
-      (plan) => plan.name === subscription?.planName,
-    );
+    const currentPlan = plans.find((plan) => plan.name === subscription?.planName);
 
     // Disable the button for the current plan
-    if (
-      subscription?.hasActiveSubscription &&
-      currentPlan &&
-      currentPlan.priceId === priceId
-    ) {
+    if (subscription?.hasActiveSubscription && currentPlan && currentPlan.priceId === priceId) {
       return true;
     }
 
@@ -191,9 +171,7 @@ export default function PricingPage() {
   return (
     <div className="container mx-auto py-16 px-4">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold tracking-tight mb-4">
-          Pricing Plans
-        </h1>
+        <h1 className="text-4xl font-bold tracking-tight mb-4">Pricing Plans</h1>
         <p className="text-xl text-muted-foreground max-w-[600px] mx-auto">
           Choose the perfect plan to power your app creation journey
         </p>
@@ -212,9 +190,7 @@ export default function PricingPage() {
               <CardContent className="flex-grow">
                 <div className="mb-6">
                   <span className="text-4xl font-bold">${plan.price}</span>
-                  <span className="text-muted-foreground">
-                    /{plan.interval}
-                  </span>
+                  <span className="text-muted-foreground">/{plan.interval}</span>
                 </div>
                 <ul className="space-y-2">
                   {plan.features.map((feature) => (
@@ -234,8 +210,7 @@ export default function PricingPage() {
                   >
                     {isLoading === plan.priceId
                       ? "Processing..."
-                      : subscription?.hasActiveSubscription &&
-                          subscription?.planName === plan.name
+                      : subscription?.hasActiveSubscription && subscription?.planName === plan.name
                         ? "Current Plan"
                         : "Subscribe"}
                   </Button>
@@ -257,9 +232,7 @@ export default function PricingPage() {
             </CardHeader>
             <CardContent className="flex-grow">
               <div className="mb-6">
-                <span className="text-4xl font-bold text-muted-foreground">
-                  Custom
-                </span>
+                <span className="text-4xl font-bold text-muted-foreground">Custom</span>
               </div>
               <ul className="space-y-2">
                 {(
@@ -281,10 +254,7 @@ export default function PricingPage() {
                 className="w-full"
                 variant="outline"
                 onClick={() =>
-                  window.open(
-                    "mailto:contact@makex.app?subject=Enterprise%20Inquiry",
-                    "_blank",
-                  )
+                  window.open("mailto:contact@makex.app?subject=Enterprise%20Inquiry", "_blank")
                 }
               >
                 Contact Us

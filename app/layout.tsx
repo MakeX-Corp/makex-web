@@ -18,8 +18,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "MakeX | Anyone can build",
-  description:
-    "Create fully functional iOS apps instantly with AI. No coding required.",
+  description: "Create fully functional iOS apps instantly with AI. No coding required.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

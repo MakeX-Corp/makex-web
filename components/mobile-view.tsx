@@ -24,19 +24,16 @@ export function MobileView() {
         <Card className="w-full p-6 flex flex-col items-center text-center space-y-6">
           <LaptopIcon className="h-16 w-16 text-primary mb-2" />
 
-          <h1 className="text-2xl font-bold text-foreground">
-            Mobile View Not Available
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground">Mobile View Not Available</h1>
 
           <p className="text-muted-foreground mb-4">
-            The AI Editor for{" "}
-            <span className="font-semibold text-foreground">{appName}</span>{" "}
+            The AI Editor for <span className="font-semibold text-foreground">{appName}</span>{" "}
             requires a larger screen for the best experience.
           </p>
 
           <p className="text-sm text-muted-foreground">
-            Please switch to a desktop or tablet device to access all features
-            and continue editing your application.
+            Please switch to a desktop or tablet device to access all features and continue editing
+            your application.
           </p>
         </Card>
       </div>

@@ -10,10 +10,7 @@ export async function POST(req: Request) {
   const { deviceToken } = await req.json();
   console.log("deviceToken", deviceToken);
   if (!deviceToken) {
-    return NextResponse.json(
-      { error: "Missing device token" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Missing device token" }, { status: 400 });
   }
 
   const { data, error } = await supabase.from("user_devices").upsert(
@@ -22,15 +19,12 @@ export async function POST(req: Request) {
       device_token: deviceToken,
       last_used_at: new Date().toISOString(),
     },
-    { onConflict: "device_token" },
+    { onConflict: "device_token" }
   );
 
   if (error) {
     console.error("Error saving token:", error);
-    return NextResponse.json(
-      { error: "Failed to save token" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to save token" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

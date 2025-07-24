@@ -1,14 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  ExternalLink,
-  MessageSquare,
-  HelpCircle,
-  Users,
-  Mail,
-  ArrowRight,
-} from "lucide-react";
+import { ExternalLink, MessageSquare, HelpCircle, Users, Mail, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 

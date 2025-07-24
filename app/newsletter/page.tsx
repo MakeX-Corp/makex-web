@@ -56,12 +56,9 @@ export default function NewsletterPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">
-              You're all set!
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground mb-2">You're all set!</h1>
             <p className="text-muted-foreground mb-6">
-              Welcome to the vibecoding community! Check your email for a
-              confirmation link.
+              Welcome to the vibecoding community! Check your email for a confirmation link.
             </p>
             <button
               onClick={() => setIsSubmitted(false)}
@@ -85,9 +82,8 @@ export default function NewsletterPage() {
             </span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Master the art of vibecoding with curated tips, discover amazing
-            products, and connect with thriving communities. Join the movement
-            that's changing how we code.
+            Master the art of vibecoding with curated tips, discover amazing products, and connect
+            with thriving communities. Join the movement that's changing how we code.
           </p>
         </div>
 
@@ -111,12 +107,9 @@ export default function NewsletterPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-foreground">
-                  Weekly VibeCode Tips
-                </h3>
+                <h3 className="text-lg font-semibold text-foreground">Weekly VibeCode Tips</h3>
                 <p className="text-muted-foreground">
-                  Level up your coding vibe with practical techniques and
-                  mindset shifts.
+                  Level up your coding vibe with practical techniques and mindset shifts.
                 </p>
               </div>
             </div>
@@ -138,12 +131,9 @@ export default function NewsletterPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-foreground">
-                  Product Discoveries
-                </h3>
+                <h3 className="text-lg font-semibold text-foreground">Product Discoveries</h3>
                 <p className="text-muted-foreground">
-                  Find tools, apps, and resources that enhance your vibecoding
-                  journey.
+                  Find tools, apps, and resources that enhance your vibecoding journey.
                 </p>
               </div>
             </div>
@@ -165,12 +155,9 @@ export default function NewsletterPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-foreground">
-                  Community Spotlights
-                </h3>
+                <h3 className="text-lg font-semibold text-foreground">Community Spotlights</h3>
                 <p className="text-muted-foreground">
-                  Connect with vibrant coding communities and like-minded
-                  developers.
+                  Connect with vibrant coding communities and like-minded developers.
                 </p>
               </div>
             </div>
@@ -192,9 +179,7 @@ export default function NewsletterPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-foreground">
-                  Exclusive Insights
-                </h3>
+                <h3 className="text-lg font-semibold text-foreground">Exclusive Insights</h3>
                 <p className="text-muted-foreground">
                   Get early access to vibecoding trends and insider knowledge.
                 </p>
@@ -203,8 +188,8 @@ export default function NewsletterPage() {
 
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
               <p className="text-sm text-primary/80">
-                <span className="font-semibold">Pure vibecoding content.</span>{" "}
-                No spam, just good vibes. Unsubscribe anytime.
+                <span className="font-semibold">Pure vibecoding content.</span> No spam, just good
+                vibes. Unsubscribe anytime.
               </p>
             </div>
           </div>
@@ -212,20 +197,13 @@ export default function NewsletterPage() {
           {/* Signup Form */}
           <div className="bg-card shadow-xl rounded-2xl p-8 border order-1 md:order-2">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                Join 1,000+ VibeCoders
-              </h2>
-              <p className="text-muted-foreground">
-                Start your vibecoding journey today.
-              </p>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Join 1,000+ VibeCoders</h2>
+              <p className="text-muted-foreground">Start your vibecoding journey today.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-foreground mb-1"
-                >
+                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
                   Email Address
                 </label>
                 <input

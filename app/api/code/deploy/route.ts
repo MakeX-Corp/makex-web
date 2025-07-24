@@ -35,10 +35,7 @@ export async function GET(req: NextRequest) {
   const appId = url.searchParams.get("appId");
 
   if (!appId) {
-    return NextResponse.json(
-      { error: "Missing appId parameter" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Missing appId parameter" }, { status: 400 });
   }
 
   // Authenticate the user

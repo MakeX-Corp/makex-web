@@ -20,16 +20,15 @@ export const pauseContainer = task({
       .eq("app_id", appId)
       .single();
 
-    const { data: updatedSandbox, error: updatedSandboxError } =
-      await adminSupabase
-        .from("user_sandboxes")
-        .update({
-          sandbox_status: "pausing",
-          app_status: "pausing",
-        })
-        .eq("id", sandbox.id)
-        .select()
-        .overrideTypes<UserSandbox[]>();
+    const { data: updatedSandbox, error: updatedSandboxError } = await adminSupabase
+      .from("user_sandboxes")
+      .update({
+        sandbox_status: "pausing",
+        app_status: "pausing",
+      })
+      .eq("id", sandbox.id)
+      .select()
+      .overrideTypes<UserSandbox[]>();
 
     if (updatedSandboxError) {
       console.error("Error updating sandbox:", updatedSandboxError.message);
@@ -64,7 +63,7 @@ export const pauseContainer = task({
     await redisUrlSetter(
       appName,
       "https://makex.app/app-not-found",
-      "https://makex.app/app-not-found",
+      "https://makex.app/app-not-found"
     );
 
     if (updateError) {

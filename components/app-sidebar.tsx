@@ -83,9 +83,7 @@ export function AppSidebar() {
   const discordUrl = "https://discord.gg/3EsUgb53Zp";
 
   // Get current app ID from pathname
-  const currentAppId = pathname.startsWith("/dashboard/")
-    ? pathname.split("/")[2]
-    : null;
+  const currentAppId = pathname.startsWith("/dashboard/") ? pathname.split("/")[2] : null;
 
   // Filter apps when search query changes
   useEffect(() => {
@@ -93,7 +91,7 @@ export function AppSidebar() {
       setFilteredApps(apps);
     } else {
       const filtered = apps.filter((app) =>
-        app.app_name.toLowerCase().includes(searchQuery.toLowerCase()),
+        app.app_name.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredApps(filtered);
     }
@@ -107,11 +105,7 @@ export function AppSidebar() {
   }, [editingAppId]);
 
   // Handle delete confirmation
-  const confirmDelete = (
-    e: React.MouseEvent,
-    appId: string,
-    appName: string,
-  ) => {
+  const confirmDelete = (e: React.MouseEvent, appId: string, appName: string) => {
     e.preventDefault(); // Prevent navigation
     e.stopPropagation(); // Prevent event bubbling
     setAppToDelete({ id: appId, name: appName });
@@ -140,11 +134,7 @@ export function AppSidebar() {
   };
 
   // Start editing app name
-  const startEditing = (
-    e: React.MouseEvent,
-    appId: string,
-    currentName: string,
-  ) => {
+  const startEditing = (e: React.MouseEvent, appId: string, currentName: string) => {
     e.preventDefault(); // Prevent navigation
     e.stopPropagation(); // Prevent event bubbling
     setEditingAppId(appId);
@@ -171,10 +161,8 @@ export function AppSidebar() {
 
       setApps((prevApps) =>
         prevApps.map((app) =>
-          app.id === appId
-            ? { ...app, display_name: editedAppName.trim() }
-            : app,
-        ),
+          app.id === appId ? { ...app, display_name: editedAppName.trim() } : app
+        )
       );
 
       setEditingAppId(null);
@@ -219,7 +207,7 @@ export function AppSidebar() {
       <div
         className={cn(
           "flex flex-col h-full border-r bg-background transition-all duration-300",
-          expanded ? "w-64" : "w-16",
+          expanded ? "w-64" : "w-16"
         )}
       >
         {/* Top header with logo and toggle button */}
@@ -239,9 +227,7 @@ export function AppSidebar() {
                     priority
                   />
                 </div>
-                <span className="font-semibold text-sm tracking-tight">
-                  MakeX
-                </span>
+                <span className="font-semibold text-sm tracking-tight">MakeX</span>
               </Link>
             </div>
           )}
@@ -252,10 +238,7 @@ export function AppSidebar() {
             className={cn("h-6 w-6", expanded ? "" : "ml-auto")}
           >
             <ChevronRight
-              className={cn(
-                "h-4 w-4 transition-transform",
-                expanded ? "rotate-180" : "",
-              )}
+              className={cn("h-4 w-4 transition-transform", expanded ? "rotate-180" : "")}
             />
           </Button>
         </div>
@@ -347,12 +330,10 @@ export function AppSidebar() {
                               "flex items-center py-1.5 px-2 text-sm rounded-md transition-colors font-medium w-full pr-12",
                               pathname.includes(`/dashboard/${app.id}`)
                                 ? "bg-primary/10 text-primary"
-                                : "text-foreground hover:bg-muted",
+                                : "text-foreground hover:bg-muted"
                             )}
                           >
-                            <span className="truncate">
-                              {app.display_name || app.app_name}
-                            </span>
+                            <span className="truncate">{app.display_name || app.app_name}</span>
                           </Link>
 
                           <div className="absolute right-1 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 transition-opacity">
@@ -365,9 +346,7 @@ export function AppSidebar() {
                                 startEditing(
                                   e,
                                   app.id,
-                                  app.display_name ||
-                                    app.app_name ||
-                                    "Untitled App",
+                                  app.display_name || app.app_name || "Untitled App"
                                 )
                               }
                             >
@@ -379,11 +358,7 @@ export function AppSidebar() {
                               size="icon"
                               className="h-6 w-6"
                               onClick={(e) =>
-                                confirmDelete(
-                                  e,
-                                  app.id,
-                                  app.display_name || app.app_name,
-                                )
+                                confirmDelete(e, app.id, app.display_name || app.app_name)
                               }
                             >
                               <Trash className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
@@ -435,7 +410,7 @@ export function AppSidebar() {
               className={cn(
                 "flex items-center h-10 px-3 w-full rounded-md text-sm transition-colors font-medium",
                 "text-foreground hover:bg-muted",
-                !expanded && "justify-center",
+                !expanded && "justify-center"
               )}
               style={{ textAlign: expanded ? "left" : "center" }}
             >
@@ -451,7 +426,7 @@ export function AppSidebar() {
             <h2
               className={cn(
                 "text-xs font-semibold uppercase tracking-wider text-muted-foreground",
-                !expanded && "sr-only",
+                !expanded && "sr-only"
               )}
             >
               Links
@@ -469,7 +444,7 @@ export function AppSidebar() {
                     className={cn(
                       "flex items-center h-10 px-3 rounded-md text-sm transition-colors font-medium",
                       "text-muted-foreground hover:bg-muted hover:text-foreground",
-                      !expanded && "justify-center",
+                      !expanded && "justify-center"
                     )}
                   >
                     <item.icon className="w-5 h-5" />
@@ -487,7 +462,7 @@ export function AppSidebar() {
                       pathname === item.href
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                      !expanded && "justify-center",
+                      !expanded && "justify-center"
                     )}
                   >
                     <item.icon className="w-5 h-5" />
@@ -507,16 +482,12 @@ export function AppSidebar() {
           <DialogHeader>
             <DialogTitle>Delete App</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{appToDelete?.name}"? This action
-              cannot be undone and all associated data will be permanently
-              removed.
+              Are you sure you want to delete "{appToDelete?.name}"? This action cannot be undone
+              and all associated data will be permanently removed.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex space-x-2 justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteModalOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
               Cancel
             </Button>
             <Button onClick={handleDeleteApp} disabled={isDeletingApp}>

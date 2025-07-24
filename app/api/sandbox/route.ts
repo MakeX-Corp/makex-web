@@ -38,19 +38,13 @@ export async function GET(req: Request) {
     }
 
     if (!data || data.length === 0) {
-      return NextResponse.json(
-        { message: "No active sandbox found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ message: "No active sandbox found" }, { status: 404 });
     }
 
     return NextResponse.json(data[0]);
   } catch (err: any) {
     console.error("Error fetching sandbox:", err);
-    return NextResponse.json(
-      { error: err?.message || "Unknown server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: err?.message || "Unknown server error" }, { status: 500 });
   }
 }
 
@@ -69,10 +63,7 @@ export async function DELETE(req: Request) {
       appName,
     });
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err?.message || "Unknown server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: err?.message || "Unknown server error" }, { status: 500 });
   }
 }
 
@@ -105,20 +96,11 @@ export async function PATCH(req: Request) {
       .single();
 
     if (sandboxError) {
-      return NextResponse.json(
-        { error: sandboxError.message },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: sandboxError.message }, { status: 500 });
     }
 
-    if (
-      sandbox.sandbox_status == "active" ||
-      sandbox.sandbox_status == "starting"
-    ) {
-      return NextResponse.json(
-        { error: "App is active, cannot change state" },
-        { status: 200 },
-      );
+    if (sandbox.sandbox_status == "active" || sandbox.sandbox_status == "starting") {
+      return NextResponse.json({ error: "App is active, cannot change state" }, { status: 200 });
     }
 
     if (targetState == "resume") {
@@ -138,12 +120,9 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json(
       { message: "Sandbox management started in background" },
-      { status: 202 },
+      { status: 202 }
     );
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err?.message || "Unknown server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: err?.message || "Unknown server error" }, { status: 500 });
   }
 }

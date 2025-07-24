@@ -1,8 +1,5 @@
 // Function to update app name
-export const updateAppName = async (
-  appId: string,
-  newName: string,
-): Promise<boolean> => {
+export const updateAppName = async (appId: string, newName: string): Promise<boolean> => {
   try {
     const response = await fetch("/api/app", {
       method: "PATCH",

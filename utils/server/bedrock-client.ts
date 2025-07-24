@@ -1,10 +1,6 @@
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 
-export function getBedrockClient(
-  userId?: string,
-  appId?: string,
-  appName?: string,
-) {
+export function getBedrockClient(userId?: string, appId?: string, appName?: string) {
   return createAmazonBedrock({
     baseURL: `https://bedrock.helicone.ai/v1/us-east-1`,
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,

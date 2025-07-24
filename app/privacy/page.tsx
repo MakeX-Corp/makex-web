@@ -19,9 +19,8 @@ const PrivacyPage = () => {
             <div className="text-center">
               <h1 className="text-3xl font-bold mb-3">Privacy Policy</h1>
               <p className="text-muted-foreground leading-relaxed">
-                This Privacy Policy explains what data we collect, how we use
-                it, and your rights. We are committed to transparency and data
-                protection.
+                This Privacy Policy explains what data we collect, how we use it, and your rights.
+                We are committed to transparency and data protection.
               </p>
             </div>
 
@@ -33,28 +32,24 @@ const PrivacyPage = () => {
                 </h2>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>
-                    <strong>Account and Identity Information:</strong> Your
-                    email address, full name, profile pictures, authentication
-                    credentials, account preferences, and other identifiers you
-                    voluntarily provide during sign-up or support.
+                    <strong>Account and Identity Information:</strong> Your email address, full
+                    name, profile pictures, authentication credentials, account preferences, and
+                    other identifiers you voluntarily provide during sign-up or support.
                   </li>
                   <li>
-                    <strong>Service Usage and AI Interaction Data:</strong> This
-                    includes your queries and prompts, interaction patterns,
-                    usage statistics, session duration, feature engagement, and
-                    feedback on AI responses.
+                    <strong>Service Usage and AI Interaction Data:</strong> This includes your
+                    queries and prompts, interaction patterns, usage statistics, session duration,
+                    feature engagement, and feedback on AI responses.
                   </li>
                   <li>
-                    <strong>Generated Content and Configuration Data:</strong>{" "}
-                    Content and applications you create, including source code,
-                    design settings, deployment configurations, and metadata for
-                    personalization and service improvement.
+                    <strong>Generated Content and Configuration Data:</strong> Content and
+                    applications you create, including source code, design settings, deployment
+                    configurations, and metadata for personalization and service improvement.
                   </li>
                   <li>
-                    <strong>Technical and Device Information:</strong> IP
-                    address, browser version, operating system, device
-                    identifiers, access logs, time zones, and general device
-                    diagnostics.
+                    <strong>Technical and Device Information:</strong> IP address, browser version,
+                    operating system, device identifiers, access logs, time zones, and general
+                    device diagnostics.
                   </li>
                 </ul>
               </div>
@@ -66,21 +61,20 @@ const PrivacyPage = () => {
                 </h2>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>
-                    <strong>Service Delivery:</strong> To provide and
-                    personalize your experience, optimize AI responses, and
-                    manage your account.
+                    <strong>Service Delivery:</strong> To provide and personalize your experience,
+                    optimize AI responses, and manage your account.
                   </li>
                   <li>
-                    <strong>Analytics & Improvement:</strong> To monitor usage
-                    patterns and enhance functionality and performance.
+                    <strong>Analytics & Improvement:</strong> To monitor usage patterns and enhance
+                    functionality and performance.
                   </li>
                   <li>
-                    <strong>Communication:</strong> For essential updates,
-                    customer support, and service-related notifications.
+                    <strong>Communication:</strong> For essential updates, customer support, and
+                    service-related notifications.
                   </li>
                   <li>
-                    <strong>Legal & Security:</strong> To comply with laws,
-                    prevent abuse, and safeguard rights and data.
+                    <strong>Legal & Security:</strong> To comply with laws, prevent abuse, and
+                    safeguard rights and data.
                   </li>
                 </ul>
               </div>
@@ -92,21 +86,19 @@ const PrivacyPage = () => {
                 </h2>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>
-                    <strong>No Tracking:</strong> We do not track you across
-                    apps or websites.
+                    <strong>No Tracking:</strong> We do not track you across apps or websites.
                   </li>
                   <li>
-                    <strong>No Third-Party Sharing:</strong> We do not sell or
-                    share your data with third parties.
+                    <strong>No Third-Party Sharing:</strong> We do not sell or share your data with
+                    third parties.
                   </li>
                   <li>
-                    <strong>Data Linked to You:</strong> Only your name and
-                    email are linked to your identity, solely for account access
-                    and functionality.
+                    <strong>Data Linked to You:</strong> Only your name and email are linked to your
+                    identity, solely for account access and functionality.
                   </li>
                   <li>
-                    <strong>Data Deletion:</strong> You may request deletion or
-                    access to your data at any time.
+                    <strong>Data Deletion:</strong> You may request deletion or access to your data
+                    at any time.
                   </li>
                 </ul>
               </div>
@@ -117,9 +109,8 @@ const PrivacyPage = () => {
                   4. Contact Us
                 </h2>
                 <p>
-                  If you have questions about your privacy, want to access or
-                  delete your data, or need support regarding this policy, you
-                  can reach us at:
+                  If you have questions about your privacy, want to access or delete your data, or
+                  need support regarding this policy, you can reach us at:
                 </p>
                 <p>
                   <strong>Email:</strong> contact@makex.app

@@ -74,16 +74,14 @@ export const fetchConvexDocs = schedules.task({
 
       for (let i = 0; i < chunks.length; i += batchSize) {
         const batch = chunks.slice(i, i + batchSize);
-        console.log(
-          `[ConvexDocs] Processing batch ${i / batchSize + 1}: ${batch.length} chunks`,
-        );
+        console.log(`[ConvexDocs] Processing batch ${i / batchSize + 1}: ${batch.length} chunks`);
 
         const { embeddings } = await embedMany({
           model: embeddingModel,
           values: batch,
         });
         console.log(
-          `[ConvexDocs] Got ${embeddings.length} embeddings for batch ${i / batchSize + 1}`,
+          `[ConvexDocs] Got ${embeddings.length} embeddings for batch ${i / batchSize + 1}`
         );
 
         const rows = batch.map((chunk, j) => ({
@@ -93,22 +91,19 @@ export const fetchConvexDocs = schedules.task({
           category: "convex",
         }));
         console.log(
-          `[ConvexDocs] Inserting ${rows.length} rows into DB for batch ${i / batchSize + 1}`,
+          `[ConvexDocs] Inserting ${rows.length} rows into DB for batch ${i / batchSize + 1}`
         );
 
         const { data, error } = await supabase.from("embeddings").insert(rows);
         console.log("[ConvexDocs] Inserted rows:", data);
         if (error) {
-          console.error(
-            `[ConvexDocs] Error inserting batch ${i / batchSize + 1}:`,
-            error,
-          );
+          console.error(`[ConvexDocs] Error inserting batch ${i / batchSize + 1}:`, error);
           throw error;
         }
 
         totalChunks += rows.length;
         console.log(
-          `[ConvexDocs] Inserted batch ${i / batchSize + 1}, total inserted: ${totalChunks}`,
+          `[ConvexDocs] Inserted batch ${i / batchSize + 1}, total inserted: ${totalChunks}`
         );
 
         // Add small delay between batches to avoid rate limits
@@ -117,9 +112,7 @@ export const fetchConvexDocs = schedules.task({
         }
       }
 
-      console.log(
-        `[ConvexDocs] All batches complete. Total chunks inserted: ${totalChunks}`,
-      );
+      console.log(`[ConvexDocs] All batches complete. Total chunks inserted: ${totalChunks}`);
       return {
         status: "success",
         totalChunks: totalChunks,

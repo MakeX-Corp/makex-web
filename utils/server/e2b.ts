@@ -71,7 +71,7 @@ export async function startExpoInContainer(sandboxId: string) {
         EXPO_PACKAGER_PROXY_URL: appUrl,
       },
       background: true,
-    },
+    }
   );
 
   return {
@@ -89,7 +89,7 @@ export async function killDefaultExpo(sandboxId: string) {
     // Kill all node processes
     try {
       const killResult = await sbx.commands.run(
-        "sudo kill -9 $(ps aux | grep node | grep -v grep | awk '{print $2}') 2>/dev/null || true",
+        "sudo kill -9 $(ps aux | grep node | grep -v grep | awk '{print $2}') 2>/dev/null || true"
       );
       console.log("Kill all node processes result:", killResult);
     } catch (error) {
@@ -119,7 +119,7 @@ export async function writeConvexConfigInContainer(
   }: {
     deploymentName: string;
     convexUrl: string;
-  },
+  }
 ) {
   const sbx = await Sandbox.connect(sandboxId);
   const CONFIG_DIR = "/root/.convex";
@@ -144,7 +144,7 @@ export async function writeConvexConfigInContainer(
 export async function deployConvexProdInContainer(
   sandboxId: string,
   convexUrl: string,
-  gitRepoId: string,
+  gitRepoId: string
 ) {
   const sbx = await Sandbox.connect(sandboxId);
   const gitRepoDir = `/app/deploy-app`;
@@ -220,7 +220,7 @@ export async function startConvexInContainer(sandboxId: string) {
     `sudo pm2 start "npx convex dev" --name convex-server --merge-logs --log ${LOG_FILE}`,
     {
       cwd: APP_DIR,
-    },
+    }
   );
 
   return {
@@ -229,10 +229,7 @@ export async function startConvexInContainer(sandboxId: string) {
   };
 }
 
-export async function setupFreestyleGitInContainer(
-  sandboxId: string,
-  repoId: string,
-) {
+export async function setupFreestyleGitInContainer(sandboxId: string, repoId: string) {
   console.log("[setupGit] Tanmay was here");
   const sbx = await Sandbox.connect(sandboxId);
 
@@ -251,7 +248,7 @@ export async function setupFreestyleGitInContainer(
     `sudo git config user.name "MakeX Bot" && sudo git config user.email "bot@makex.app"`,
     {
       cwd: APP_DIR,
-    },
+    }
   );
 
   // Add all files to git
@@ -260,12 +257,9 @@ export async function setupFreestyleGitInContainer(
   });
 
   // Create initial commit if there are changes
-  const commitResult = await sbx.commands.run(
-    `sudo git commit -m "Initial commit" || true`,
-    {
-      cwd: APP_DIR,
-    },
-  );
+  const commitResult = await sbx.commands.run(`sudo git commit -m "Initial commit" || true`, {
+    cwd: APP_DIR,
+  });
 
   const commitIdResult = await sbx.commands.run(`sudo git rev-parse HEAD`, {
     cwd: APP_DIR,
@@ -278,7 +272,7 @@ export async function setupFreestyleGitInContainer(
     `sudo git remote add freestyle https://${process.env.FREESTYLE_IDENTITY_ID}:${process.env.FREESTYLE_IDENTITY_TOKEN}@git.freestyle.sh/${repoId}`,
     {
       cwd: APP_DIR,
-    },
+    }
   );
 
   // Create main branch and push to master

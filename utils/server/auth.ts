@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  createClient as createTokenClient,
-  SupabaseClient,
-  User,
-} from "@supabase/supabase-js";
+import { createClient as createTokenClient, SupabaseClient, User } from "@supabase/supabase-js";
 import { createClient as createCookieClient } from "@/utils/supabase/server";
 
 type AuthResult =
   | { supabase: SupabaseClient<any>; user: User; token: string }
   | { error: NextResponse };
 
-export async function getSupabaseWithUser(
-  request: NextRequest,
-): Promise<AuthResult> {
+export async function getSupabaseWithUser(request: NextRequest): Promise<AuthResult> {
   const authHeader = request.headers.get("authorization");
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
@@ -25,17 +19,14 @@ export async function getSupabaseWithUser(
         global: {
           headers: { Authorization: `Bearer ${token}` },
         },
-      },
+      }
     );
 
     const { data, error } = await supabase.auth.getUser(token);
 
     if (error || !data?.user) {
       return {
-        error: NextResponse.json(
-          { error: "Invalid or expired token" },
-          { status: 401 },
-        ),
+        error: NextResponse.json({ error: "Invalid or expired token" }, { status: 401 }),
       };
     }
 
@@ -49,20 +40,14 @@ export async function getSupabaseWithUser(
 
     if (error || !data?.user) {
       return {
-        error: NextResponse.json(
-          { error: "Not authenticated" },
-          { status: 401 },
-        ),
+        error: NextResponse.json({ error: "Not authenticated" }, { status: 401 }),
       };
     }
 
     return { supabase, user: data.user, token: "cookie" };
   } catch {
     return {
-      error: NextResponse.json(
-        { error: "Authentication failed" },
-        { status: 401 },
-      ),
+      error: NextResponse.json({ error: "Authentication failed" }, { status: 401 }),
     };
   }
 }

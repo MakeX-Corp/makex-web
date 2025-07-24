@@ -7,8 +7,7 @@ export async function POST(request: Request) {
   try {
     // Get authenticated user
     const userResult = await getSupabaseWithUser(request as NextRequest);
-    if (userResult instanceof NextResponse || "error" in userResult)
-      return userResult;
+    if (userResult instanceof NextResponse || "error" in userResult) return userResult;
     const { supabase, user } = userResult;
 
     const body = await request.json();
@@ -21,10 +20,7 @@ export async function POST(request: Request) {
       .single();
 
     if (appError) {
-      return NextResponse.json(
-        { error: "Failed to fetch app details" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to fetch app details" }, { status: 500 });
     }
 
     const apiUrl = app.api_url;
@@ -40,8 +36,7 @@ export async function POST(request: Request) {
       });
       console.log("checkpointResponse", checkpointResponse);
       // Store the commit hash from the response
-      commitHash =
-        checkpointResponse.commit || checkpointResponse.current_commit;
+      commitHash = checkpointResponse.commit || checkpointResponse.current_commit;
     } catch (error) {
       console.error("Failed to save checkpoint:", error);
       throw error;
@@ -66,9 +61,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error saving AI message:", error);
-    return NextResponse.json(
-      { error: "Failed to save AI message" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to save AI message" }, { status: 500 });
   }
 }

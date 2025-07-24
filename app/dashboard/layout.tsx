@@ -1,11 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppProvider } from "@/context/AppContext";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <AppProvider>
       <div className="flex h-screen overflow-hidden">

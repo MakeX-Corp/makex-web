@@ -1,10 +1,7 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { createConvexProject } from "@/utils/server/convex";
-import {
-  writeConvexConfigInContainer,
-  startConvexInContainer,
-} from "@/utils/server/e2b";
+import { writeConvexConfigInContainer, startConvexInContainer } from "@/utils/server/e2b";
 
 export const configureConvex = task({
   id: "configure-convex",
@@ -25,10 +22,7 @@ export const configureConvex = task({
       });
       console.log("[configureConvex] Convex project created:", convex);
     } catch (convexError) {
-      console.error(
-        "[configureConvex] Failed to create Convex project:",
-        convexError,
-      );
+      console.error("[configureConvex] Failed to create Convex project:", convexError);
 
       await adminSupabase
         .from("user_apps")
@@ -46,11 +40,7 @@ export const configureConvex = task({
     const devUrl = convex.prodUrl; //very confusing, but this is correct since we are using "dev" deployment
     const devAdminKey = convex.adminKey;
     const projectId = convex.projectId;
-    console.log(
-      "[configureConvex] Updating app with Convex info",
-      devUrl,
-      deploymentName,
-    );
+    console.log("[configureConvex] Updating app with Convex info", devUrl, deploymentName);
     const { error: updateError } = await adminSupabase
       .from("user_apps")
       .update({
@@ -61,46 +51,30 @@ export const configureConvex = task({
       .eq("id", appId);
 
     if (updateError) {
-      console.error(
-        "[configureConvex] Error updating app with convex info:",
-        updateError,
-      );
-      throw new Error(
-        `Failed updating app with convex info: ${updateError.message}`,
-      );
+      console.error("[configureConvex] Error updating app with convex info:", updateError);
+      throw new Error(`Failed updating app with convex info: ${updateError.message}`);
     }
 
     console.log("[configureConvex] Writing Convex config in container");
     try {
       // Write Convex config
-      const writeConvexConfigResponse = await writeConvexConfigInContainer(
-        containerId,
-        {
-          deploymentName,
-          convexUrl: devUrl,
-        },
-      );
+      const writeConvexConfigResponse = await writeConvexConfigInContainer(containerId, {
+        deploymentName,
+        convexUrl: devUrl,
+      });
       console.log(
         "[configureConvex] Convex config + env written in container:",
-        writeConvexConfigResponse,
+        writeConvexConfigResponse
       );
 
       // Only start Convex if write succeeded
       const startConvexResponse = await startConvexInContainer(containerId);
-      console.log(
-        "[configureConvex] Convex started in container:",
-        startConvexResponse,
-      );
+      console.log("[configureConvex] Convex started in container:", startConvexResponse);
     } catch (writeError) {
-      console.error(
-        "[configureConvex] Error writing convex config or env file:",
-        writeError,
-      );
+      console.error("[configureConvex] Error writing convex config or env file:", writeError);
       throw new Error("Aborting: Failed to write convex config or env file");
     }
 
-    console.log(
-      "[configureConvex] Convex configuration completed successfully",
-    );
+    console.log("[configureConvex] Convex configuration completed successfully");
   },
 });

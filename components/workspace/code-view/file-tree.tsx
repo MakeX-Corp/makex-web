@@ -10,12 +10,7 @@ import FolderItem from "./folder-item";
 import { Node, fetchJSON } from "./utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import { Loader2 } from "lucide-react";
@@ -47,8 +42,7 @@ export default function FileTree({
     if (!fileName.trim()) return;
     setLoading(true);
 
-    const fullPath =
-      parentPath === "/" ? `/${fileName}` : `${parentPath}/${fileName}`;
+    const fullPath = parentPath === "/" ? `/${fileName}` : `${parentPath}/${fileName}`;
 
     try {
       const response = await fetch("/api/code/file", {
@@ -92,8 +86,7 @@ export default function FileTree({
   const handleCreateFolder = async (parentPath: string, folderName: string) => {
     if (!folderName.trim()) return;
     setLoading(true);
-    const fullPath =
-      parentPath === "/" ? `/${folderName}` : `${parentPath}/${folderName}`;
+    const fullPath = parentPath === "/" ? `/${folderName}` : `${parentPath}/${folderName}`;
     try {
       const response = await fetch("/api/code/directory", {
         method: "POST",
@@ -318,7 +311,7 @@ export default function FileTree({
                 apiUrl={apiUrl}
                 loading={loading}
               />
-            ),
+            )
           )}
         </ul>
       </div>

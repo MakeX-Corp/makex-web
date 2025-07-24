@@ -72,9 +72,7 @@ export async function downloadGitRepositoryZip(repoId: string, ref?: string) {
   });
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to download repository zip: ${response.status} ${response.statusText}`,
-    );
+    throw new Error(`Failed to download repository zip: ${response.status} ${response.statusText}`);
   }
 
   return response.arrayBuffer();
@@ -84,7 +82,7 @@ export async function downloadGitRepositoryZip(repoId: string, ref?: string) {
 export async function deployWebFromGit(
   gitRepoId: string,
   domains: string[],
-  build: boolean | { envVars?: Record<string, string> } = true,
+  build: boolean | { envVars?: Record<string, string> } = true
 ) {
   const sandboxes = getFreestyleClient();
 
@@ -100,7 +98,7 @@ export async function deployWebFromGit(
       kind: "git",
       url: `https://git.freestyle.sh/${gitRepoId}`,
     },
-    deploymentConfig,
+    deploymentConfig
   );
 }
 

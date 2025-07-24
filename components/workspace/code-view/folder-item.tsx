@@ -15,12 +15,7 @@ import CreateFileDialog from "./create-file-dialog";
 import { Button } from "@/components/ui/button";
 import { Node, fetchJSON } from "./utils";
 import FileItem from "./file-item";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 export default function FolderItem({
@@ -52,13 +47,9 @@ export default function FolderItem({
     isLoading,
     mutate,
   } = useSWR<Node[]>(
-    open
-      ? `/api/code/directory?path=${encodeURIComponent(
-          node.path,
-        )}&api_url=${apiUrl}`
-      : null,
+    open ? `/api/code/directory?path=${encodeURIComponent(node.path)}&api_url=${apiUrl}` : null,
     fetchJSON,
-    { refreshInterval: 5000 },
+    { refreshInterval: 5000 }
   );
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -74,15 +65,12 @@ export default function FolderItem({
 
   return (
     <li className="py-0.5">
-      <div
-        className="flex items-center group"
-        onContextMenu={handleContextMenu}
-      >
+      <div className="flex items-center group" onContextMenu={handleContextMenu}>
         <div
           className={cn(
             "flex flex-1 items-center gap-2 cursor-pointer px-2 py-1 rounded-md",
             "hover:bg-accent hover:text-accent-foreground",
-            "transition-colors",
+            "transition-colors"
           )}
           onClick={() => setOpen((o) => !o)}
         >
@@ -99,27 +87,16 @@ export default function FolderItem({
           <span>{node.name}</span>
         </div>
         <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <DropdownMenu
-            open={contextMenuOpen}
-            onOpenChange={setContextMenuOpen}
-          >
+          <DropdownMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
             <DropdownMenuTrigger asChild>
               <div className="w-0 h-0 overflow-hidden">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  disabled={loading}
-                >
+                <Button variant="ghost" size="icon" className="h-6 w-6" disabled={loading}>
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="right">
-              <DropdownMenuItem
-                onClick={loading ? () => {} : handleCreate}
-                disabled={loading}
-              >
+              <DropdownMenuItem onClick={loading ? () => {} : handleCreate} disabled={loading}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create
               </DropdownMenuItem>
@@ -241,12 +218,10 @@ export default function FolderItem({
                   onDelete={onDelete}
                   apiUrl={apiUrl}
                 />
-              ),
+              )
             )
           ) : (
-            <div className="px-2 py-1 text-xs text-muted-foreground italic">
-              Empty folder
-            </div>
+            <div className="px-2 py-1 text-xs text-muted-foreground italic">Empty folder</div>
           )}
         </ul>
       )}

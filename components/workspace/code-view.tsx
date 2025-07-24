@@ -3,11 +3,7 @@
 import { useState, useEffect } from "react";
 import FileTree from "@/components/workspace/code-view/file-tree";
 import CodeEditor from "@/components/workspace/code-view/code-editor";
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from "@/components/ui/resizable";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { FolderTree } from "lucide-react";
 
 export default function CodeView() {
@@ -72,9 +68,7 @@ export default function CodeView() {
           alignItems: "center",
         }}
       >
-        <FolderTree
-          style={{ height: "16px", width: "16px", marginRight: "8px" }}
-        />
+        <FolderTree style={{ height: "16px", width: "16px", marginRight: "8px" }} />
         <span>Explorer</span>
       </div>
 
@@ -87,10 +81,7 @@ export default function CodeView() {
           overflow: "hidden",
         }}
       >
-        <ResizablePanelGroup
-          direction="horizontal"
-          style={{ height: "100%", width: "100%" }}
-        >
+        <ResizablePanelGroup direction="horizontal" style={{ height: "100%", width: "100%" }}>
           {/* File tree sidebar */}
           <ResizablePanel
             defaultSize={25}
@@ -114,10 +105,7 @@ export default function CodeView() {
           <ResizableHandle withHandle />
 
           {/* Code editor */}
-          <ResizablePanel
-            defaultSize={75}
-            style={{ overflow: "auto", maxHeight: "100%" }}
-          >
+          <ResizablePanel defaultSize={75} style={{ overflow: "auto", maxHeight: "100%" }}>
             <div style={{ height: "100%", overflow: "auto" }}>
               <CodeEditor file={selectedFile} />
             </div>

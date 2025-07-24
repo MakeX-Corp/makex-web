@@ -1,13 +1,6 @@
 import { useState } from "react";
 
-import {
-  ChevronDown,
-  ChevronRight,
-  Check,
-  X,
-  Loader2,
-  Eye,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Check, X, Loader2, Eye } from "lucide-react";
 import { toolStates, ToolName } from "@/utils/client/tools-dictionary";
 import CodeRenderer from "./code-renderer";
 
@@ -20,9 +13,7 @@ export default function ToolInvocation({ part }: { part: any }) {
   const hasError = part.state === "output-available" && !part.output?.success;
   const hasResultData = part.state === "output-available" && part.output?.data;
   const isInProgress =
-    part.state === "partial-call" ||
-    part.state === "call" ||
-    part.state === "pending";
+    part.state === "partial-call" || part.state === "call" || part.state === "pending";
   const toolState = hasError ? "error" : (part.state as "call" | "result");
   const toolMessage = toolStates[toolName]?.[toolState] || toolName;
   const isFileRelated = toolName !== "runSql";
@@ -34,9 +25,7 @@ export default function ToolInvocation({ part }: { part: any }) {
         onClick={() => setIsExpanded(!isExpanded)}
         disabled={isInProgress || (!isSuccess && !hasResultData)}
         className={`w-full flex items-center justify-between text-sm font-medium text-foreground rounded-md transition-colors ${
-          isInProgress || (!isSuccess && !hasResultData)
-            ? "opacity-50 cursor-not-allowed"
-            : ""
+          isInProgress || (!isSuccess && !hasResultData) ? "opacity-50 cursor-not-allowed" : ""
         }`}
       >
         <div className="flex items-center gap-2">
@@ -48,9 +37,7 @@ export default function ToolInvocation({ part }: { part: any }) {
               <ChevronRight className="h-4 w-4" />
             ))}
           <span className="font-medium">{toolMessage}</span>
-          {filePath && (
-            <span className="text-muted-foreground text-xs">({filePath})</span>
-          )}
+          {filePath && <span className="text-muted-foreground text-xs">({filePath})</span>}
         </div>
         <div className="flex items-center gap-2">
           {isInProgress ? (
@@ -117,19 +104,13 @@ export default function ToolInvocation({ part }: { part: any }) {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-lg font-medium">
-                            {filePath || "Code View"}
-                          </h3>
+                          <h3 className="text-lg font-medium">{filePath || "Code View"}</h3>
                           <button onClick={() => setShowCodePopup(false)}>
                             <X className="h-4 w-4" />
                           </button>
                         </div>
                         <CodeRenderer
-                          content={
-                            toolName === "readFile"
-                              ? part.output.data
-                              : part.input.content
-                          }
+                          content={toolName === "readFile" ? part.output.data : part.input.content}
                           language="javascript"
                         />
                       </div>

@@ -4,13 +4,7 @@ import dynamic from "next/dynamic";
 import useSWR from "swr";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  AlertCircle,
-  FileCode,
-  CodeXml,
-  Image as ImageIcon,
-  X,
-} from "lucide-react";
+import { AlertCircle, FileCode, CodeXml, Image as ImageIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
@@ -108,36 +102,24 @@ function ImageViewer({ src }: { src: BinaryImageData }) {
   );
 }
 
-export default function CodeEditor({
-  file,
-}: {
-  file: { path: string; language?: string } | null;
-}) {
+export default function CodeEditor({ file }: { file: { path: string; language?: string } | null }) {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const { apiUrl } = useSession();
 
   // Detect language if not provided
-  const detectedLanguage = file
-    ? file.language || detectLanguage(file.path)
-    : "";
+  const detectedLanguage = file ? file.language || detectLanguage(file.path) : "";
 
   const { data, error, isLoading } = useSWR<BinaryImageData>(
-    file
-      ? `/api/code/file?path=${encodeURIComponent(file.path)}&api_url=${apiUrl}`
-      : null,
-    fetchJSON,
+    file ? `/api/code/file?path=${encodeURIComponent(file.path)}&api_url=${apiUrl}` : null,
+    fetchJSON
   );
 
   // Get file name from path if available
   const fileName = file?.path ? file.path.split("/").pop() : "";
 
   // Choose a theme based on the system/user preference
-  const editorTheme = !mounted
-    ? "vs-dark"
-    : theme === "dark"
-      ? "vs-dark"
-      : "vs-light";
+  const editorTheme = !mounted ? "vs-dark" : theme === "dark" ? "vs-dark" : "vs-light";
 
   // Ensure we have access to the theme after hydration
   useEffect(() => {
@@ -146,9 +128,7 @@ export default function CodeEditor({
 
   // Track code in state for editing (non-image files)
   const [code, setCode] = useState<string>("");
-  const [saveStatus, setSaveStatus] = useState<
-    null | "success" | "error" | "saving"
-  >(null);
+  const [saveStatus, setSaveStatus] = useState<null | "success" | "error" | "saving">(null);
 
   // Update code state when file or data changes
   useEffect(() => {
@@ -241,12 +221,7 @@ export default function CodeEditor({
           <div className="text-xs text-muted-foreground ml-2 px-2 py-0.5 rounded bg-muted">
             {detectedLanguage}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled
-            className="ml-auto"
-          ></Button>
+          <Button variant="outline" size="sm" disabled className="ml-auto"></Button>
         </div>
         {data && <ImageViewer src={data} />}
       </div>
@@ -268,11 +243,7 @@ export default function CodeEditor({
           onClick={handleSave}
           disabled={saveStatus === "saving"}
         >
-          {saveStatus === "saving"
-            ? "Saving..."
-            : saveStatus === "success"
-              ? "Saved!"
-              : "Save"}
+          {saveStatus === "saving" ? "Saving..." : saveStatus === "success" ? "Saved!" : "Save"}
         </Button>
       </div>
 

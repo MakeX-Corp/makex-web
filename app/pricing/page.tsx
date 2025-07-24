@@ -1,13 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -25,9 +19,7 @@ interface PlanProps {
 const plans: PlanProps[] = [
   {
     name: process.env.NEXT_PUBLIC_FREE_PLAN_NAME || "Free",
-    description:
-      process.env.NEXT_PUBLIC_FREE_PLAN_DESCRIPTION ||
-      "For people just starting out",
+    description: process.env.NEXT_PUBLIC_FREE_PLAN_DESCRIPTION || "For people just starting out",
     price: process.env.NEXT_PUBLIC_FREE_PLAN_PRICE || "0",
     interval: "month",
     features: (
@@ -95,9 +87,7 @@ export default function PricingPage() {
   return (
     <div className="container mx-auto py-16 px-4">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold tracking-tight mb-4">
-          Simple, transparent pricing
-        </h1>
+        <h1 className="text-4xl font-bold tracking-tight mb-4">Simple, transparent pricing</h1>
         <p className="text-xl text-muted-foreground max-w-[600px] mx-auto">
           Choose the plan that's right for you
         </p>
@@ -107,9 +97,7 @@ export default function PricingPage() {
         {plans.map((plan) => (
           <Card
             key={plan.name}
-            className={`flex flex-col ${
-              plan.popular ? "border-2 border-primary shadow-lg" : ""
-            }`}
+            className={`flex flex-col ${plan.popular ? "border-2 border-primary shadow-lg" : ""}`}
           >
             <CardHeader>
               {plan.popular && (
@@ -161,9 +149,7 @@ export default function PricingPage() {
           </CardHeader>
           <CardContent className="flex-grow">
             <div className="mb-6">
-              <span className="text-4xl font-bold text-muted-foreground">
-                Custom
-              </span>
+              <span className="text-4xl font-bold text-muted-foreground">Custom</span>
             </div>
             <ul className="space-y-2">
               {(
@@ -185,10 +171,7 @@ export default function PricingPage() {
               className="w-full"
               variant="outline"
               onClick={() =>
-                window.open(
-                  "mailto:contact@makex.app?subject=Enterprise%20Inquiry",
-                  "_blank",
-                )
+                window.open("mailto:contact@makex.app?subject=Enterprise%20Inquiry", "_blank")
               }
             >
               Contact Us

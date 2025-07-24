@@ -37,10 +37,7 @@ export function createTools(config: ToolConfig = {}) {
     listDirectory: tool({
       description: "List contents of a directory",
       inputSchema: z.object({
-        path: z
-          .string()
-          .describe("The path to list contents from")
-          .default("."),
+        path: z.string().describe("The path to list contents from").default("."),
       }),
       execute: async ({ path }) => {
         try {
@@ -94,9 +91,7 @@ export function createTools(config: ToolConfig = {}) {
     installPackages: tool({
       description: "Install yarn packages",
       inputSchema: z.object({
-        packages: z
-          .array(z.string())
-          .describe("List of packages to install in an array"),
+        packages: z.array(z.string()).describe("List of packages to install in an array"),
       }),
       execute: async ({ packages }) => {
         try {
@@ -117,10 +112,7 @@ export function createTools(config: ToolConfig = {}) {
       description: "Write content to a file",
       inputSchema: z.object({
         path: z.string().describe("The path where to write the file"),
-        content: z
-          .string()
-          .describe("The content to write to the file")
-          .default(""),
+        content: z.string().describe("The content to write to the file").default(""),
       }),
       execute: async ({ path, content }) => {
         try {
@@ -157,19 +149,14 @@ export function createTools(config: ToolConfig = {}) {
     }),
 
     editFile: tool({
-      description:
-        "Edit a file by replacing a specific string or create a new file",
+      description: "Edit a file by replacing a specific string or create a new file",
       inputSchema: z.object({
         path: z.string().describe("The path of the file to edit or create"),
         old_str: z
           .string()
           .optional()
-          .describe(
-            "The exact string to replace (must match exactly once in the file)",
-          ),
-        new_str: z
-          .string()
-          .describe("The new content to write or replace with"),
+          .describe("The exact string to replace (must match exactly once in the file)"),
+        new_str: z.string().describe("The new content to write or replace with"),
       }),
       execute: async ({ path, old_str, new_str }) => {
         try {
@@ -191,10 +178,7 @@ export function createTools(config: ToolConfig = {}) {
     getFileTree: tool({
       description: "Get the directory tree structure",
       inputSchema: z.object({
-        path: z
-          .string()
-          .describe("The path to get the directory tree from")
-          .default("."),
+        path: z.string().describe("The path to get the directory tree from").default("."),
       }),
       execute: async ({ path }) => {
         try {
@@ -307,18 +291,13 @@ export function createTools(config: ToolConfig = {}) {
     linterRun: tool({
       description: "Run the linter on specified file or directory",
       inputSchema: z.object({
-        path: z
-          .string()
-          .describe("The file or directory path to lint")
-          .optional(),
+        path: z.string().describe("The file or directory path to lint").optional(),
       }),
       execute: async ({ path }) => {
         try {
           console.log("Running linter on", path);
           path = ".";
-          const command = path
-            ? `npx eslint ${path} --fix --quiet`
-            : "npx eslint . --fix --quiet";
+          const command = path ? `npx eslint ${path} --fix --quiet` : "npx eslint . --fix --quiet";
           const data = await apiClient.post("/command", { command });
           return { success: true, data };
         } catch (error: any) {
@@ -348,7 +327,7 @@ export function createTools(config: ToolConfig = {}) {
               "extract",
               "json",
               "changeTracking",
-            ]),
+            ])
           )
           .describe("The formats to return")
           .default(["markdown"]),
@@ -356,26 +335,13 @@ export function createTools(config: ToolConfig = {}) {
           .array(
             z.object({
               type: z
-                .enum([
-                  "wait",
-                  "click",
-                  "write",
-                  "press",
-                  "scrape",
-                  "screenshot",
-                ])
+                .enum(["wait", "click", "write", "press", "scrape", "screenshot"])
                 .describe("Action type"),
-              milliseconds: z
-                .number()
-                .optional()
-                .describe("Milliseconds to wait"),
-              selector: z
-                .string()
-                .optional()
-                .describe("CSS selector for click action"),
+              milliseconds: z.number().optional().describe("Milliseconds to wait"),
+              selector: z.string().optional().describe("CSS selector for click action"),
               text: z.string().optional().describe("Text to write"),
               key: z.string().optional().describe("Key to press"),
-            }),
+            })
           )
           .optional()
           .describe("Actions to perform before scraping"),
@@ -416,9 +382,7 @@ export function createTools(config: ToolConfig = {}) {
       description:
         "Search the web for real-time information and get up-to-date answers with citations",
       inputSchema: z.object({
-        query: z
-          .string()
-          .describe("The search query to find relevant information"),
+        query: z.string().describe("The search query to find relevant information"),
       }),
       execute: async ({ query }) => {
         return {

@@ -12,12 +12,11 @@ const AboutPage = () => {
           <Card className="border-none shadow-lg bg-background/50 backdrop-blur-sm">
             <CardContent className="pt-6">
               <p className="text-xl text-muted-foreground leading-relaxed">
-                MakeX is revolutionizing the way applications are built. We're
-                creating a platform that empowers developers and businesses to
-                build powerful applications with unprecedented ease. Our vision
-                extends beyond just building apps - we're creating an ecosystem
-                that will include our own AI-powered app store, making advanced
-                technology accessible to everyone.
+                MakeX is revolutionizing the way applications are built. We're creating a platform
+                that empowers developers and businesses to build powerful applications with
+                unprecedented ease. Our vision extends beyond just building apps - we're creating an
+                ecosystem that will include our own AI-powered app store, making advanced technology
+                accessible to everyone.
               </p>
             </CardContent>
           </Card>
@@ -27,9 +26,7 @@ const AboutPage = () => {
 
         {/* Backers Section */}
         <section>
-          <h2 className="text-4xl font-bold tracking-tight mb-6">
-            Backed By Industry Leaders
-          </h2>
+          <h2 className="text-4xl font-bold tracking-tight mb-6">Backed By Industry Leaders</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="border-none shadow-lg bg-background/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
               <CardHeader>

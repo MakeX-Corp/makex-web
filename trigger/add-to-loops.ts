@@ -24,10 +24,7 @@ export const addToLoops = task({
         }),
       };
 
-      const response = await fetch(
-        "https://app.loops.so/api/v1/contacts/create",
-        options,
-      );
+      const response = await fetch("https://app.loops.so/api/v1/contacts/create", options);
 
       if (!response.ok) {
         throw new Error(`Failed to add to Loop.so: ${response.statusText}`);

@@ -8,13 +8,9 @@ interface MobileMockupProps {
   state: any;
 }
 
-export default function MobileMockup({
-  appUrl,
-  iframeKey,
-  state,
-}: MobileMockupProps) {
+export default function MobileMockup({ appUrl, iframeKey, state }: MobileMockupProps) {
   const [windowWidth, setWindowWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1200,
+    typeof window !== "undefined" ? window.innerWidth : 1200
   );
 
   useEffect(() => {
@@ -116,11 +112,7 @@ export default function MobileMockup({
         state?.app_status === "active" &&
         appUrl ? (
           <iframe
-            key={[
-              iframeKey,
-              state?.sandbox_status,
-              state?.app_status,
-            ].toString()}
+            key={[iframeKey, state?.sandbox_status, state?.app_status].toString()}
             src={appUrl}
             style={{
               width: `${contentWidth}px`,
@@ -132,9 +124,7 @@ export default function MobileMockup({
           />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white text-black">
-            <span style={{ fontSize: `${14 * scaleFactor}px` }}>
-              {displayContent.message}
-            </span>
+            <span style={{ fontSize: `${14 * scaleFactor}px` }}>{displayContent.message}</span>
             {displayContent.showSpinner && (
               <Loader2
                 className="animate-spin mt-2"

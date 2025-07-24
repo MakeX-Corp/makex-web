@@ -31,9 +31,7 @@ export function GitHubSyncModal({
   const [repoName, setRepoName] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [currentSyncRepo, setCurrentSyncRepo] = useState<string | null>(
-    github_sync_repo,
-  );
+  const [currentSyncRepo, setCurrentSyncRepo] = useState<string | null>(github_sync_repo);
   const [loading, setLoading] = useState(false);
   const [isChangingRepo, setIsChangingRepo] = useState(false);
   const { toast } = useToast();
@@ -94,11 +92,8 @@ export function GitHubSyncModal({
       const result = await res.json();
       toast({
         title:
-          currentSyncRepo || github_sync_repo
-            ? "GitHub Sync Updated!"
-            : "GitHub Sync Configured!",
-        description:
-          result.message || `Your app will now sync with ${repoName}.`,
+          currentSyncRepo || github_sync_repo ? "GitHub Sync Updated!" : "GitHub Sync Configured!",
+        description: result.message || `Your app will now sync with ${repoName}.`,
       });
 
       // Update local state
@@ -171,9 +166,7 @@ export function GitHubSyncModal({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>GitHub Sync Setup</DialogTitle>
-            <DialogDescription>
-              Loading current sync status...
-            </DialogDescription>
+            <DialogDescription>Loading current sync status...</DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
@@ -204,18 +197,12 @@ export function GitHubSyncModal({
                   <p className="font-medium text-blue-800 dark:text-blue-200">
                     Currently syncing with:
                   </p>
-                  <p className="text-sm text-blue-600 dark:text-blue-300">
-                    {currentSyncRepo}
-                  </p>
+                  <p className="text-sm text-blue-600 dark:text-blue-300">{currentSyncRepo}</p>
                 </div>
               </div>
 
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleUpdate}
-                  className="flex-1"
-                >
+                <Button variant="outline" onClick={handleUpdate} className="flex-1">
                   Change Repository
                 </Button>
                 <Button
@@ -244,9 +231,7 @@ export function GitHubSyncModal({
               {!isChangingRepo && (
                 <>
                   <div>
-                    <h4 className="font-medium mb-2">
-                      1. Create a GitHub repository
-                    </h4>
+                    <h4 className="font-medium mb-2">1. Create a GitHub repository</h4>
                     <p className="text-sm text-muted-foreground">
                       Go to{" "}
                       <a
@@ -262,12 +247,10 @@ export function GitHubSyncModal({
                   </div>
 
                   <div>
-                    <h4 className="font-medium mb-2">
-                      2. Install MakeX Sync App
-                    </h4>
+                    <h4 className="font-medium mb-2">2. Install MakeX Sync App</h4>
                     <p className="text-sm text-muted-foreground mb-2">
-                      Install the MakeX Sync GitHub App on your repository to
-                      enable automatic syncing.
+                      Install the MakeX Sync GitHub App on your repository to enable automatic
+                      syncing.
                     </p>
                     <Button
                       variant="outline"
@@ -275,7 +258,7 @@ export function GitHubSyncModal({
                       onClick={() =>
                         window.open(
                           "https://github.com/apps/makex-sync/installations/select_target",
-                          "_blank",
+                          "_blank"
                         )
                       }
                       className="w-full"
@@ -288,9 +271,7 @@ export function GitHubSyncModal({
 
               <div>
                 <h4 className="font-medium mb-2">
-                  {isChangingRepo
-                    ? "Enter new repository name"
-                    : "3. Enter repository name"}
+                  {isChangingRepo ? "Enter new repository name" : "3. Enter repository name"}
                 </h4>
                 <Input
                   placeholder="username/repo (e.g. johndoe/my-app)"

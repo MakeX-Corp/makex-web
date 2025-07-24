@@ -10,9 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 const titleSchema = z.object({
   title: z
     .string()
-    .describe(
-      "A short title (3 words or fewer) that captures the essence of the conversation",
-    ),
+    .describe("A short title (3 words or fewer) that captures the essence of the conversation"),
 });
 
 const summarizeChat = async (content: string) => {
@@ -55,10 +53,7 @@ export async function PUT(request: Request) {
     const { sessionId, title, isAiGenerated, content } = await request.json();
 
     if (!sessionId) {
-      return NextResponse.json(
-        { error: "Session ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Session ID is required" }, { status: 400 });
     }
 
     // Verify the session belongs to the user
@@ -70,19 +65,12 @@ export async function PUT(request: Request) {
       .single();
 
     if (sessionError || !session) {
-      return NextResponse.json(
-        { error: "Session not found or unauthorized" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Session not found or unauthorized" }, { status: 404 });
     }
     //Make title if it is ai generated
     let formattedTitle = "";
     //@ts-ignore
-    if (
-      isAiGenerated &&
-      content &&
-      (session?.title === "New Chat" || !session?.title)
-    ) {
+    if (isAiGenerated && content && (session?.title === "New Chat" || !session?.title)) {
       // summarizing the chat
       formattedTitle = await summarizeChat(content);
     } else {
@@ -99,18 +87,12 @@ export async function PUT(request: Request) {
 
     if (error) {
       console.error("Error updating session title:", error);
-      return NextResponse.json(
-        { error: "Failed to update session title" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to update session title" }, { status: 500 });
     }
 
     return NextResponse.json(data);
   } catch (error) {
     console.error("Session title update error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

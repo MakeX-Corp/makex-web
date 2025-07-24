@@ -37,22 +37,14 @@ export async function checkSubscription(userId: string) {
 
   const type = subscription.subscription_type;
   const used = subscription.messages_used_this_period ?? 0;
-  const start = subscription.subscription_start
-    ? new Date(subscription.subscription_start)
-    : null;
-  const end = subscription.subscription_end
-    ? new Date(subscription.subscription_end)
-    : null;
+  const start = subscription.subscription_start ? new Date(subscription.subscription_start) : null;
+  const end = subscription.subscription_end ? new Date(subscription.subscription_end) : null;
 
   let updatedUsed = used;
 
   const isFree = type === "free";
   const isActive =
-    subscription.subscription_status === "active" &&
-    start &&
-    end &&
-    now >= start &&
-    now <= end;
+    subscription.subscription_status === "active" && start && end && now >= start && now <= end;
 
   //  If expired, "renew" the free period
   if (isFree && end && now > end) {
@@ -76,8 +68,7 @@ export async function checkSubscription(userId: string) {
   }
 
   const freeLimit = Number(process.env.NEXT_PUBLIC_FREE_PLAN_LIMIT) || 20;
-  const starterLimit =
-    Number(process.env.NEXT_PUBLIC_STARTER_PLAN_LIMIT) || 250;
+  const starterLimit = Number(process.env.NEXT_PUBLIC_STARTER_PLAN_LIMIT) || 250;
 
   let limit = 0;
   let canSend = false;

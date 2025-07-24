@@ -22,10 +22,7 @@ export async function GET(request: Request) {
         .single();
 
       if (error || !data) {
-        return NextResponse.json(
-          { error: "Session not found or unauthorized" },
-          { status: 404 },
-        );
+        return NextResponse.json({ error: "Session not found or unauthorized" }, { status: 404 });
       }
 
       return NextResponse.json(data);
@@ -44,10 +41,7 @@ export async function GET(request: Request) {
         .single();
 
       if (error || !app) {
-        return NextResponse.json(
-          { error: "App not found or unauthorized" },
-          { status: 404 },
-        );
+        return NextResponse.json({ error: "App not found or unauthorized" }, { status: 404 });
       }
 
       resolvedAppId = app.id;
@@ -64,10 +58,7 @@ export async function GET(request: Request) {
         .order("created_at", { ascending: false });
 
       if (error) {
-        return NextResponse.json(
-          { error: "Failed to fetch chat sessions" },
-          { status: 500 },
-        );
+        return NextResponse.json({ error: "Failed to fetch chat sessions" }, { status: 500 });
       }
 
       return NextResponse.json(sessions);
@@ -75,13 +66,10 @@ export async function GET(request: Request) {
 
     return NextResponse.json(
       { error: "Must provide either sessionId, appId, or appName" },
-      { status: 400 },
+      { status: 400 }
     );
   } catch (error) {
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -98,10 +86,7 @@ export async function POST(request: Request) {
     const { appId, title, metadata } = body;
 
     if (!appId) {
-      return NextResponse.json(
-        { error: "App ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "App ID is required" }, { status: 400 });
     }
 
     // Verify the app belongs to the user
@@ -113,10 +98,7 @@ export async function POST(request: Request) {
       .single();
 
     if (appError || !app) {
-      return NextResponse.json(
-        { error: "App not found or unauthorized" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "App not found or unauthorized" }, { status: 404 });
     }
 
     // Create new chat session
@@ -132,18 +114,12 @@ export async function POST(request: Request) {
       .single();
 
     if (createError) {
-      return NextResponse.json(
-        { error: "Failed to create chat session" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to create chat session" }, { status: 500 });
     }
 
     return NextResponse.json(session);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -160,10 +136,7 @@ export async function DELETE(request: Request) {
     const sessionId = searchParams.get("sessionId");
 
     if (!sessionId) {
-      return NextResponse.json(
-        { error: "Session ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Session ID is required" }, { status: 400 });
     }
 
     // Verify the session belongs to the user
@@ -175,10 +148,7 @@ export async function DELETE(request: Request) {
       .single();
 
     if (sessionError || !session) {
-      return NextResponse.json(
-        { error: "Session not found or unauthorized" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Session not found or unauthorized" }, { status: 404 });
     }
 
     // Soft delete the session by setting visible to false
@@ -188,17 +158,11 @@ export async function DELETE(request: Request) {
       .eq("id", sessionId);
 
     if (updateError) {
-      return NextResponse.json(
-        { error: "Failed to delete chat session" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to delete chat session" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

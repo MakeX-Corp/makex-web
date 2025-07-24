@@ -10,19 +10,12 @@ export async function POST(request: Request) {
   // query supabase app_chat_history to get the commit hash
   if (userResult instanceof NextResponse) return userResult;
   const { supabase, user } = userResult;
-  const { data, error } = await supabase
-    .from("user_apps")
-    .select("*")
-    .eq("id", appId)
-    .single();
+  const { data, error } = await supabase.from("user_apps").select("*").eq("id", appId).single();
 
   // Transform the URL similar to chat route
 
   if (error) {
-    return NextResponse.json(
-      { error: "Failed to get app details" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to get app details" }, { status: 500 });
   }
 
   console.log("data", data);
@@ -37,9 +30,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(responseData);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to restore checkpoint" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to restore checkpoint" }, { status: 500 });
   }
 }

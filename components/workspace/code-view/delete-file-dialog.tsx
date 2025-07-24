@@ -43,8 +43,7 @@ export default function DeleteConfirmationDialog({
         <DialogHeader>
           <DialogTitle>Delete File</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete "{fileName}"? This action cannot be
-            undone.
+            Are you sure you want to delete "{fileName}"? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

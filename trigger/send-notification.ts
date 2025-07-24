@@ -16,12 +16,7 @@ export const sendNotification = task({
     payload?: Record<string, any>;
   }) => {
     try {
-      const {
-        userId,
-        title,
-        body,
-        payload: notificationPayload = {},
-      } = payload;
+      const { userId, title, body, payload: notificationPayload = {} } = payload;
 
       console.log(`${LOG_PREFIX} Starting notification send:`, {
         userId,
@@ -41,10 +36,7 @@ export const sendNotification = task({
         payload: notificationPayload,
       });
 
-      console.log(
-        `${LOG_PREFIX} Notification sent successfully to user:`,
-        userId,
-      );
+      console.log(`${LOG_PREFIX} Notification sent successfully to user:`, userId);
 
       return {
         success: true,

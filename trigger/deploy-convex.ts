@@ -44,12 +44,10 @@ export const deployConvex = task({
         "[deployConvex] Found app record - gitRepoId:",
         git_repo_id,
         "convexDevUrl:",
-        convex_dev_url,
+        convex_dev_url
       );
 
-      console.log(
-        "[deployConvex] Creating E2B container for Convex deployment...",
-      );
+      console.log("[deployConvex] Creating E2B container for Convex deployment...");
 
       const containerResult = await createE2BContainer({
         userId: "convex-container",
@@ -65,12 +63,10 @@ export const deployConvex = task({
       const deployResult = await deployConvexProdInContainer(
         containerId,
         convex_dev_url,
-        git_repo_id,
+        git_repo_id
       );
 
-      console.log(
-        "[deployConvex] Convex prod deployment initiated successfully",
-      );
+      console.log("[deployConvex] Convex prod deployment initiated successfully");
 
       // Kill the container
       console.log("[deployConvex] Killing the container...");
@@ -85,10 +81,7 @@ export const deployConvex = task({
         convexDevUrl: convex_dev_url,
       };
     } catch (error: any) {
-      console.error(
-        "[deployConvex] Failed to deploy Convex in container:",
-        error.message,
-      );
+      console.error("[deployConvex] Failed to deploy Convex in container:", error.message);
 
       // Kill the container if it was created
       if (containerId) {
@@ -96,16 +89,11 @@ export const deployConvex = task({
         try {
           await killE2BContainer(containerId);
         } catch (killError: any) {
-          console.error(
-            "[deployConvex] Failed to kill container:",
-            killError.message,
-          );
+          console.error("[deployConvex] Failed to kill container:", killError.message);
         }
       }
 
-      throw new Error(
-        `Failed to deploy Convex in container: ${error.message || "Unknown error"}`,
-      );
+      throw new Error(`Failed to deploy Convex in container: ${error.message || "Unknown error"}`);
     }
   },
 });

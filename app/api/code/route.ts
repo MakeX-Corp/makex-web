@@ -24,10 +24,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    return NextResponse.json(
-      { error: "Failed to get commit hash" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to get commit hash" }, { status: 500 });
   }
 
   console.log("data", data);
@@ -42,9 +39,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(responseData);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to restore checkpoint" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to restore checkpoint" }, { status: 500 });
   }
 }

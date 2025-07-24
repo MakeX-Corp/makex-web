@@ -8,10 +8,7 @@ export async function GET(request: NextRequest) {
     const appId = searchParams.get("app_id");
 
     if (!shareId && !appId) {
-      return NextResponse.json(
-        { error: "Either share_id or app_id is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Either share_id or app_id is required" }, { status: 400 });
     }
 
     const supabase = await getSupabaseAdmin();
@@ -27,18 +24,12 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query.single();
 
     if (error) {
-      return NextResponse.json(
-        { error: "Error fetching URL mapping" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Error fetching URL mapping" }, { status: 500 });
     }
 
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error in share route:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

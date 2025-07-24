@@ -60,10 +60,7 @@ export async function POST(req: Request) {
     // Get Supabase client
     const supabase = getSupabaseClient();
     if (!supabase) {
-      return NextResponse.json(
-        { error: "Database connection not available" },
-        { status: 503 },
-      );
+      return NextResponse.json({ error: "Database connection not available" }, { status: 503 });
     }
 
     // Process different event types
@@ -88,10 +85,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Webhook processing error:", error);
-    return NextResponse.json(
-      { error: "Webhook processing failed" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 }
 
@@ -137,9 +131,7 @@ async function handleSubscriptionUpdated(event: any, supabase: any) {
         price_id: event.items[0].price?.id,
         quantity: event.items[0].quantity || 1,
         cancel_at_period_end:
-          event.scheduled_change?.action === "cancel"
-            ? true
-            : event.cancel_at_period_end || false,
+          event.scheduled_change?.action === "cancel" ? true : event.cancel_at_period_end || false,
         canceled_at:
           event.scheduled_change?.action === "cancel"
             ? event.scheduled_change?.effective_at

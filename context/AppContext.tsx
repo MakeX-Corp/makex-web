@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useState,
-  useContext,
-  ReactNode,
-  useEffect,
-} from "react";
+import { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getPlanName } from "@/utils/client/auth";
 import { createClient } from "@/utils/supabase/client";
@@ -92,9 +86,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 // Helper function to extract app ID from path
 const getAppIdFromPath = (pathname: string): string | null => {
   const pathSegments = pathname.split("/");
-  const workspaceIndex = pathSegments.findIndex(
-    (segment) => segment === "workspace",
-  );
+  const workspaceIndex = pathSegments.findIndex((segment) => segment === "workspace");
 
   if (workspaceIndex !== -1 && workspaceIndex + 1 < pathSegments.length) {
     return pathSegments[workspaceIndex + 1];
@@ -124,9 +116,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [apps, setApps] = useState<AppData[]>([]);
 
   // Initialize subscription state
-  const [subscription, setSubscription] = useState<SubscriptionData | null>(
-    null,
-  );
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
 
   const [isAIResponding, setIsAIResponding] = useState(false);
 

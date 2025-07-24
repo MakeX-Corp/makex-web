@@ -29,20 +29,14 @@ function isApiError(data: any): data is ApiError {
 }
 
 // Get session list for an app
-export async function getSessionsForApp(
-  appId: string,
-): Promise<{ sessions: SessionListItem[] }> {
+export async function getSessionsForApp(appId: string): Promise<{ sessions: SessionListItem[] }> {
   try {
-    const response = await fetch(
-      `/api/sessions?appId=${encodeURIComponent(appId)}`,
-    );
+    const response = await fetch(`/api/sessions?appId=${encodeURIComponent(appId)}`);
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(
-        isApiError(data) ? data.error : "Failed to fetch sessions",
-      );
+      throw new Error(isApiError(data) ? data.error : "Failed to fetch sessions");
     }
 
     // Map to our SessionListItem format
@@ -63,20 +57,14 @@ export async function getSessionsForApp(
 }
 
 // Get a specific session
-export async function getSession(
-  appId: string,
-  sessionId: string,
-): Promise<SessionData | null> {
+export async function getSession(appId: string, sessionId: string): Promise<SessionData | null> {
   try {
     console.log("TK getting session", sessionId);
 
     // First check if this is a new session request
     if (sessionId.startsWith("new-session-")) {
       // Create a new session
-      return createNewSession(
-        appId,
-        `New Session ${new Date().toLocaleString()}`,
-      );
+      return createNewSession(appId, `New Session ${new Date().toLocaleString()}`);
     }
 
     // Fetch the session from the API
@@ -85,9 +73,7 @@ export async function getSession(
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(
-        isApiError(data) ? data.error : "Failed to fetch session",
-      );
+      throw new Error(isApiError(data) ? data.error : "Failed to fetch session");
     }
 
     // Process the session data
@@ -109,10 +95,7 @@ export async function getSession(
 }
 
 // Create a new session
-export async function createNewSession(
-  appId: string,
-  title?: string,
-): Promise<SessionData | null> {
+export async function createNewSession(appId: string, title?: string): Promise<SessionData | null> {
   try {
     const response = await fetch("/api/sessions", {
       method: "POST",
@@ -128,9 +111,7 @@ export async function createNewSession(
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(
-        isApiError(data) ? data.error : "Failed to create session",
-      );
+      throw new Error(isApiError(data) ? data.error : "Failed to create session");
     }
 
     return {
@@ -151,19 +132,14 @@ export async function createNewSession(
 // Delete a session (soft delete)
 export async function deleteSession(sessionId: string): Promise<boolean> {
   try {
-    const response = await fetch(
-      `/api/sessions?sessionId=${encodeURIComponent(sessionId)}`,
-      {
-        method: "DELETE",
-      },
-    );
+    const response = await fetch(`/api/sessions?sessionId=${encodeURIComponent(sessionId)}`, {
+      method: "DELETE",
+    });
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(
-        isApiError(data) ? data.error : "Failed to delete session",
-      );
+      throw new Error(isApiError(data) ? data.error : "Failed to delete session");
     }
 
     return true;
@@ -176,10 +152,7 @@ export async function deleteSession(sessionId: string): Promise<boolean> {
 // Add this function to lib/session-service.ts
 
 // Update session title
-export async function updateSessionTitle(
-  sessionId: string,
-  title: string,
-): Promise<boolean> {
+export async function updateSessionTitle(sessionId: string, title: string): Promise<boolean> {
   try {
     const response = await fetch(`/api/sessions/title`, {
       method: "PUT",
@@ -193,9 +166,7 @@ export async function updateSessionTitle(
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(
-        isApiError(data) ? data.error : "Failed to update session title",
-      );
+      throw new Error(isApiError(data) ? data.error : "Failed to update session title");
     }
 
     return true;
@@ -219,9 +190,7 @@ export async function getAppInfo(appId: string): Promise<{
     if (!response.ok) {
       return {
         data: null,
-        error: isApiError(data)
-          ? data.error
-          : `Failed to fetch app info: ${response.status}`,
+        error: isApiError(data) ? data.error : `Failed to fetch app info: ${response.status}`,
       };
     }
 
@@ -246,10 +215,7 @@ export async function getAppInfo(appId: string): Promise<{
     console.error("[SESSION SERVICE] Error fetching app info:", error);
     return {
       data: null,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unknown error fetching app info",
+      error: error instanceof Error ? error.message : "Unknown error fetching app info",
     };
   }
 }

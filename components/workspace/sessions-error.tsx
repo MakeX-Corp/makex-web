@@ -14,16 +14,10 @@ export const SessionsError = ({ sessionsError }: { sessionsError: string }) => {
           <AlertDescription>
             <p>{sessionsError}</p>
             <div className="flex gap-2 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => window.location.reload()}
-              >
+              <Button variant="outline" onClick={() => window.location.reload()}>
                 Try Again
               </Button>
-              <Button
-                variant="default"
-                onClick={() => router.push("/dashboard")}
-              >
+              <Button variant="default" onClick={() => router.push("/dashboard")}>
                 Return to Dashboard
               </Button>
             </div>

@@ -17,10 +17,7 @@ export async function GET(request: Request) {
     .eq("integration_type", "supabase");
 
   if (error) {
-    return NextResponse.json(
-      { error: "Error fetching user integrations" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Error fetching user integrations" }, { status: 500 });
   }
 
   return NextResponse.json({ exists: data && data.length > 0 });

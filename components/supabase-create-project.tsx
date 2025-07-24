@@ -16,15 +16,12 @@ export function SupabaseCreateProject() {
       try {
         const appId = window.location.pathname.split("/")[2];
 
-        const response = await fetch(
-          `/api/integrations/supabase/projects?appId=${appId}`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              appId: appId,
-            }),
-          },
-        );
+        const response = await fetch(`/api/integrations/supabase/projects?appId=${appId}`, {
+          method: "POST",
+          body: JSON.stringify({
+            appId: appId,
+          }),
+        });
         const data = await response.json();
         if (data && data.exists) {
           setIsConnected(true);
@@ -66,8 +63,7 @@ export function SupabaseCreateProject() {
       console.error("Error creating project:", error);
       toast({
         title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to create project",
+        description: error instanceof Error ? error.message : "Failed to create project",
         variant: "destructive",
       });
     } finally {
@@ -85,12 +81,7 @@ export function SupabaseCreateProject() {
       className="flex items-center gap-2"
       variant="outline"
     >
-      <Image
-        src="/supabase-logo-icon.svg"
-        alt="Supabase"
-        width={20}
-        height={20}
-      />
+      <Image src="/supabase-logo-icon.svg" alt="Supabase" width={20} height={20} />
       {loading ? "Creating Project..." : "Create Project"}
     </Button>
   );

@@ -135,9 +135,7 @@ export default function LandingPage() {
             return Array(9).fill(null);
           }
 
-          const randomIndex = emptyCells[
-            Math.floor(Math.random() * emptyCells.length)
-          ] as number;
+          const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)] as number;
           const newState = [...prev];
           newState[randomIndex] = currentPlayer;
           setCurrentPlayer(currentPlayer === "X" ? "O" : "X");
@@ -292,9 +290,7 @@ export default function LandingPage() {
                   <div className="flex-none h-10 sm:h-14 bg-white border-b flex items-center justify-between px-3 sm:px-4">
                     <div className="flex items-center space-x-2">
                       <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                      <span className="text-xs sm:text-sm font-medium text-gray-900">
-                        MakeX
-                      </span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-900">MakeX</span>
                     </div>
                   </div>
 

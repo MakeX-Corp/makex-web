@@ -4,7 +4,7 @@ import { getSupabaseWithUser } from "@/utils/server/auth";
 // Add this enhanced logging to your build status API route
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ appId: string }> },
+  { params }: { params: Promise<{ appId: string }> }
 ) {
   try {
     const result = await getSupabaseWithUser(request);
@@ -15,18 +15,13 @@ export async function GET(
     const { appId } = await params;
 
     if (!appId) {
-      return NextResponse.json(
-        { error: "App ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "App ID is required" }, { status: 400 });
     }
 
     // Query the user_sandboxes table for the current status
     const { data: sandbox, error } = await supabase
       .from("user_sandboxes")
-      .select(
-        "sandbox_status, app_status, api_url, sandbox_updated_at, expo_status",
-      )
+      .select("sandbox_status, app_status, api_url, sandbox_updated_at, expo_status")
       .eq("app_id", appId)
       .eq("user_id", user.id)
       .single();
@@ -36,10 +31,7 @@ export async function GET(
       if (error.code === "PGRST116") {
         return NextResponse.json({ error: "App not found" }, { status: 404 });
       }
-      return NextResponse.json(
-        { error: "Failed to fetch app status" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to fetch app status" }, { status: 500 });
     }
 
     // Simple status mapping based on both sandbox_status and app_status
@@ -54,10 +46,7 @@ export async function GET(
     if (sandboxIsActive && appIsActive && expoIsActive) {
       status = "complete";
       message = "Your app is ready!";
-    } else if (
-      sandbox.sandbox_status === "error" ||
-      sandbox.app_status === "error"
-    ) {
+    } else if (sandbox.sandbox_status === "error" || sandbox.app_status === "error") {
       status = "failed";
       message = "Build failed";
     } else if (sandbox.app_status === "changing") {
@@ -82,9 +71,6 @@ export async function GET(
     return NextResponse.json(response);
   } catch (error) {
     console.error("Build status API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

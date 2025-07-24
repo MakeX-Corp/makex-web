@@ -1,10 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-export async function checkActiveContainer(
-  supabase: SupabaseClient,
-  userId: string,
-) {
+export async function checkActiveContainer(supabase: SupabaseClient, userId: string) {
   // Get the user's most recent active subscription
   const { data: subscription, error: subscriptionError } = await supabase
     .from("subscriptions")
@@ -16,37 +13,25 @@ export async function checkActiveContainer(
     .single();
 
   if (subscriptionError && subscriptionError.code !== "PGRST116") {
-    return NextResponse.json(
-      { error: "Failed to check subscription status" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to check subscription status" }, { status: 500 });
   }
 
   // Determine the container limit based on the subscription
   let maxContainers: number;
   if (!subscription) {
     // Free plan
-    maxContainers = parseInt(
-      process.env.NEXT_PUBLIC_FREE_CONTAINERS || "1",
-      10,
-    );
+    maxContainers = parseInt(process.env.NEXT_PUBLIC_FREE_CONTAINERS || "1", 10);
   } else {
     switch (subscription.price_id) {
       case process.env.NEXT_PUBLIC_PADDLE_STARTER_ID:
-        maxContainers = parseInt(
-          process.env.NEXT_PUBLIC_STARTER_CONTAINERS || "3",
-          10,
-        );
+        maxContainers = parseInt(process.env.NEXT_PUBLIC_STARTER_CONTAINERS || "3", 10);
         break;
       case process.env.NEXT_PUBLIC_PADDLE_PRO_ID:
         // Pro plan has unlimited containers
         return null;
       default:
         // Default to free plan limit
-        maxContainers = parseInt(
-          process.env.NEXT_PUBLIC_FREE_CONTAINERS || "1",
-          10,
-        );
+        maxContainers = parseInt(process.env.NEXT_PUBLIC_FREE_CONTAINERS || "1", 10);
     }
   }
 
@@ -58,10 +43,7 @@ export async function checkActiveContainer(
     .or("status.is.null,status.neq.deleted");
 
   if (error) {
-    return NextResponse.json(
-      { error: "Failed to check active containers" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to check active containers" }, { status: 500 });
   }
 
   if (activeContainers && activeContainers.length >= maxContainers) {
@@ -71,7 +53,7 @@ export async function checkActiveContainer(
         currentCount: activeContainers.length,
         maxAllowed: maxContainers,
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 

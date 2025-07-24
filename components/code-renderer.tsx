@@ -8,10 +8,7 @@ interface CodeRendererProps {
   language?: string;
 }
 
-export default function CodeRenderer({
-  content,
-  language = "javascript",
-}: CodeRendererProps) {
+export default function CodeRenderer({ content, language = "javascript" }: CodeRendererProps) {
   const { theme } = useTheme();
   const style = theme === "dark" ? atomDark : vs;
 

@@ -21,10 +21,8 @@ export async function GET(request: Request) {
       .single();
 
     console.log("data =====", data);
-    const messagesLimit =
-      data?.subscription_type === "makex_starter_plan" ? 250 : 20;
-    const planName =
-      data?.subscription_type === "makex_starter_plan" ? "Starter" : "Free";
+    const messagesLimit = data?.subscription_type === "makex_starter_plan" ? 250 : 20;
+    const planName = data?.subscription_type === "makex_starter_plan" ? "Starter" : "Free";
     console.log("data?.subscription_status", data?.subscription_status);
     console.log("planName", planName);
     console.log("messagesLimit", messagesLimit);
@@ -37,9 +35,6 @@ export async function GET(request: Request) {
     });
   } catch (err) {
     console.error("Failed to fetch subscription:", err);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

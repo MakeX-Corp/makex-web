@@ -15,11 +15,7 @@ function chunkText(text: string, size = 800, overlap = 100): string[] {
 
 export const createEmbeddings = task({
   id: "create-embeddings",
-  run: async (payload: {
-    content: string;
-    source: string;
-    category: string;
-  }) => {
+  run: async (payload: { content: string; source: string; category: string }) => {
     try {
       // 1. Chunk the content
       const chunks = chunkText(payload.content);

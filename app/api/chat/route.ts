@@ -27,10 +27,7 @@ export async function GET(req: Request) {
     const appId = searchParams.get("appId");
 
     if (!sessionId || !appId) {
-      return NextResponse.json(
-        { error: "Session ID and App ID are required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Session ID and App ID are required" }, { status: 400 });
     }
 
     // Verify the session belongs to the user and app
@@ -43,10 +40,7 @@ export async function GET(req: Request) {
       .single();
 
     if (sessionError || !session) {
-      return NextResponse.json(
-        { error: "Session not found or unauthorized" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Session not found or unauthorized" }, { status: 404 });
     }
 
     // Get all messages for this session
@@ -59,18 +53,12 @@ export async function GET(req: Request) {
       .order("created_at", { ascending: true });
 
     if (messagesError) {
-      return NextResponse.json(
-        { error: "Failed to fetch messages" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 });
     }
 
     return NextResponse.json(messages);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -82,8 +70,7 @@ export async function POST(req: Request) {
     const lastUserMessage = messages[messages.length - 1];
     // Get the user API client
     const userResult = await getSupabaseWithUser(req as NextRequest);
-    if (userResult instanceof NextResponse || "error" in userResult)
-      return userResult;
+    if (userResult instanceof NextResponse || "error" in userResult) return userResult;
 
     const { supabase, user, token } = userResult;
 
@@ -95,16 +82,13 @@ export async function POST(req: Request) {
       .single();
 
     if (statusError) {
-      return NextResponse.json(
-        { error: "Failed to check app status" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to check app status" }, { status: 500 });
     }
 
     if (appStatus?.app_status === "changing") {
       return NextResponse.json(
         { error: "App is currently being modified. Please try again later." },
-        { status: 409 },
+        { status: 409 }
       );
     }
 
@@ -131,20 +115,14 @@ export async function POST(req: Request) {
     }
 
     if (lockError) {
-      return NextResponse.json(
-        { error: "Failed to lock app" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to lock app" }, { status: 500 });
     }
 
     try {
       // Check daily message limit using the new utility function
       const limitCheck = await checkMessageLimit(supabase, user, subscription);
       if (limitCheck.error) {
-        return NextResponse.json(
-          { error: limitCheck.error },
-          { status: limitCheck.status },
-        );
+        return NextResponse.json({ error: limitCheck.error }, { status: limitCheck.status });
       }
 
       // Get app details from the database
@@ -155,10 +133,7 @@ export async function POST(req: Request) {
         .single();
 
       if (appError) {
-        return NextResponse.json(
-          { error: "Failed to fetch app details" },
-          { status: 500 },
-        );
+        return NextResponse.json({ error: "Failed to fetch app details" }, { status: 500 });
       }
 
       const apiClient = createFileBackendApiClient(app.api_url);
@@ -173,8 +148,7 @@ export async function POST(req: Request) {
         apiUrl: app.api_url,
       });
 
-      const plainText =
-        lastUserMessage.parts?.map((p: any) => p.text).join(" ") ?? "";
+      const plainText = lastUserMessage.parts?.map((p: any) => p.text).join(" ") ?? "";
 
       const { data: chatHistoryData, error: chatHistoryError } = await supabase
         .from("app_chat_history")
@@ -213,10 +187,7 @@ export async function POST(req: Request) {
               console.error("Error updating app_status to active:", error);
             }
           } catch (err) {
-            console.error(
-              "Exception while updating app_status to active:",
-              err,
-            );
+            console.error("Exception while updating app_status to active:", err);
           }
         },
       });
@@ -228,10 +199,9 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "Internal Server Error: " +
-            (error instanceof Error ? error.message : String(error)),
+            "Internal Server Error: " + (error instanceof Error ? error.message : String(error)),
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
   } catch (error) {
@@ -239,11 +209,9 @@ export async function POST(req: Request) {
     console.error("Detailed chat error:", error);
     return NextResponse.json(
       {
-        error:
-          "Internal Server Error: " +
-          (error instanceof Error ? error.message : String(error)),
+        error: "Internal Server Error: " + (error instanceof Error ? error.message : String(error)),
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

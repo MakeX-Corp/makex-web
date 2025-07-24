@@ -1,12 +1,4 @@
-import {
-  Plus,
-  ChevronDown,
-  Check,
-  X,
-  Loader2,
-  Trash,
-  Edit,
-} from "lucide-react";
+import { Plus, ChevronDown, Check, X, Loader2, Trash, Edit } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,10 +79,7 @@ export function SessionSelector() {
       console.log(`Updating session ${sessionId} to name: ${editSessionName}`);
 
       // Call the updateSessionTitle function from context
-      const success = await updateSessionTitle(
-        sessionId,
-        editSessionName.trim(),
-      );
+      const success = await updateSessionTitle(sessionId, editSessionName.trim());
 
       if (!success) {
         console.error("Failed to update session title");
@@ -107,10 +96,7 @@ export function SessionSelector() {
   };
 
   // Handle deleting session
-  const handleDeleteSession = async (
-    sessionId: string,
-    event: React.MouseEvent,
-  ) => {
+  const handleDeleteSession = async (sessionId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     if (isDeleting) return;
     if (sessions.length <= 1) return;
@@ -180,12 +166,9 @@ export function SessionSelector() {
                               ref={editInputRef}
                               placeholder="Session name"
                               value={editSessionName}
-                              onChange={(e) =>
-                                setEditSessionName(e.target.value)
-                              }
+                              onChange={(e) => setEditSessionName(e.target.value)}
                               onKeyDown={(e) => {
-                                if (e.key === "Enter")
-                                  handleEditSession(session.id);
+                                if (e.key === "Enter") handleEditSession(session.id);
                                 if (e.key === "Escape") {
                                   setEditingSessionId(null);
                                   setEditSessionName("");
@@ -232,13 +215,11 @@ export function SessionSelector() {
                               "flex items-center py-1.5 px-2 text-sm rounded-md transition-colors font-medium w-full pr-12 cursor-pointer",
                               session.id === currentSessionId
                                 ? "bg-primary/10 text-primary"
-                                : "text-foreground hover:bg-muted",
+                                : "text-foreground hover:bg-muted"
                             )}
                           >
                             {/* Always use the title from the sessions array */}
-                            <span className="truncate">
-                              {session.title || "Untitled Session"}
-                            </span>
+                            <span className="truncate">{session.title || "Untitled Session"}</span>
                           </div>
                           <div className="absolute right-1 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 transition-opacity">
                             {/* Edit button */}
@@ -255,9 +236,7 @@ export function SessionSelector() {
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6"
-                              onClick={(e) =>
-                                handleDeleteSession(session.id, e)
-                              }
+                              onClick={(e) => handleDeleteSession(session.id, e)}
                             >
                               {isDeleting ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -273,9 +252,7 @@ export function SessionSelector() {
                 </div>
               </>
             ) : (
-              <div className="p-3 text-center text-sm text-muted-foreground">
-                No sessions found
-              </div>
+              <div className="p-3 text-center text-sm text-muted-foreground">No sessions found</div>
             )}
 
             <DropdownMenuSeparator className="my-2" />

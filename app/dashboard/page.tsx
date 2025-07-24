@@ -31,12 +31,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { checkMessageLimit } from "@/lib/chat-service";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Expanded app suggestion chips for multiple rows
 const APP_SUGGESTIONS = [
@@ -143,7 +138,7 @@ export default function DashboardPage() {
     const animateRow = (
       rowRef: { current: HTMLDivElement | null },
       direction: "left" | "right",
-      speed: number,
+      speed: number
     ) => {
       if (!rowRef.current) return;
 
@@ -246,17 +241,9 @@ export default function DashboardPage() {
           {/* Header with logo */}
           <div className="mb-10 text-center">
             <div className="mb-2">
-              <Image
-                src="/logo.png"
-                alt="makeX logo"
-                width={128}
-                height={32}
-                className="mx-auto"
-              />
+              <Image src="/logo.png" alt="makeX logo" width={128} height={32} className="mx-auto" />
             </div>
-            <h1 className="text-4xl font-bold tracking-tight mb-3">
-              What do you want to build?
-            </h1>
+            <h1 className="text-4xl font-bold tracking-tight mb-3">What do you want to build?</h1>
           </div>
           {/* Moving suggestion pills in three rows */}
           <div className="mb-8">
@@ -382,9 +369,7 @@ export default function DashboardPage() {
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
               </button>
-              <p className="font-medium text-foreground">
-                Message limit reached
-              </p>
+              <p className="font-medium text-foreground">Message limit reached</p>
               <p className="text-xs text-muted-foreground mt-1">
                 <span
                   className="text-primary cursor-pointer hover:underline"
@@ -401,9 +386,7 @@ export default function DashboardPage() {
         <Dialog open={isCreating} onOpenChange={() => {}}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-center">
-                Setting Up Your App
-              </DialogTitle>
+              <DialogTitle className="text-center">Setting Up Your App</DialogTitle>
             </DialogHeader>
             <div className="flex flex-col gap-6 py-4">
               {[

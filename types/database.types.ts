@@ -1,10 +1,4 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   // Allows to automatically instanciate createClient with right options
@@ -440,9 +434,7 @@ export type Database = {
           id: string;
           sandbox_created_at: string | null;
           sandbox_id: string | null;
-          sandbox_provider:
-            | Database["public"]["Enums"]["sandbox_provider"]
-            | null;
+          sandbox_provider: Database["public"]["Enums"]["sandbox_provider"] | null;
           sandbox_status: Database["public"]["Enums"]["sandbox_status"];
           sandbox_updated_at: string | null;
           user_id: string | null;
@@ -455,9 +447,7 @@ export type Database = {
           id?: string;
           sandbox_created_at?: string | null;
           sandbox_id?: string | null;
-          sandbox_provider?:
-            | Database["public"]["Enums"]["sandbox_provider"]
-            | null;
+          sandbox_provider?: Database["public"]["Enums"]["sandbox_provider"] | null;
           sandbox_status: Database["public"]["Enums"]["sandbox_status"];
           sandbox_updated_at?: string | null;
           user_id?: string | null;
@@ -470,9 +460,7 @@ export type Database = {
           id?: string;
           sandbox_created_at?: string | null;
           sandbox_id?: string | null;
-          sandbox_provider?:
-            | Database["public"]["Enums"]["sandbox_provider"]
-            | null;
+          sandbox_provider?: Database["public"]["Enums"]["sandbox_provider"] | null;
           sandbox_status?: Database["public"]["Enums"]["sandbox_status"];
           sandbox_updated_at?: string | null;
           user_id?: string | null;
@@ -626,10 +614,7 @@ export type Database = {
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<
-  keyof Database,
-  "public"
->];
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
@@ -650,10 +635,8 @@ export type Tables<
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R;
       }
       ? R

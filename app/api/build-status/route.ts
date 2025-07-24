@@ -13,27 +13,19 @@ export async function POST(request: NextRequest) {
     const { appIds } = body;
 
     if (!Array.isArray(appIds) || appIds.length === 0) {
-      return NextResponse.json(
-        { error: "appIds must be a non-empty array" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "appIds must be a non-empty array" }, { status: 400 });
     }
 
     // Fetch all matching sandboxes in one query
     const { data: sandboxes, error } = await supabase
       .from("user_sandboxes")
-      .select(
-        "app_id, sandbox_status, app_status, api_url, sandbox_updated_at, expo_status",
-      )
+      .select("app_id, sandbox_status, app_status, api_url, sandbox_updated_at, expo_status")
       .in("app_id", appIds)
       .eq("user_id", user.id);
 
     if (error) {
       console.error("Supabase batch query error:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch app statuses" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to fetch app statuses" }, { status: 500 });
     }
 
     // Map results by app ID
@@ -53,20 +45,14 @@ export async function POST(request: NextRequest) {
       let message = "Building your app...";
 
       const sandboxIsActive =
-        sandbox.sandbox_status === "active" ||
-        sandbox.sandbox_status === "paused";
-      const appIsActive =
-        sandbox.app_status === "active" || sandbox.app_status === "paused";
+        sandbox.sandbox_status === "active" || sandbox.sandbox_status === "paused";
+      const appIsActive = sandbox.app_status === "active" || sandbox.app_status === "paused";
 
-      const expoIsActive =
-        sandbox.expo_status === "bundled" || sandbox.expo_status === null;
+      const expoIsActive = sandbox.expo_status === "bundled" || sandbox.expo_status === null;
       if (sandboxIsActive && appIsActive && expoIsActive) {
         status = "complete";
         message = "Your app is ready!";
-      } else if (
-        sandbox.sandbox_status === "error" ||
-        sandbox.app_status === "error"
-      ) {
+      } else if (sandbox.sandbox_status === "error" || sandbox.app_status === "error") {
         status = "failed";
         message = "Build failed";
       } else if (sandbox.app_status === "changing") {
@@ -92,9 +78,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ statuses: statusMap });
   } catch (error) {
     console.error("Batch build status API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

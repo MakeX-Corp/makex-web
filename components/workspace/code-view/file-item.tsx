@@ -1,8 +1,4 @@
-import {
-  TooltipContent,
-  TooltipTrigger,
-  Tooltip,
-} from "@/components/ui/tooltip";
+import { TooltipContent, TooltipTrigger, Tooltip } from "@/components/ui/tooltip";
 import { DropdownMenuContent } from "@/components/ui/dropdown-menu";
 import { DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
@@ -38,27 +34,19 @@ export default function FileItem({
       <TooltipProvider delayDuration={300}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div
-              className="flex items-center group"
-              onContextMenu={handleContextMenu}
-            >
+            <div className="flex items-center group" onContextMenu={handleContextMenu}>
               <button
-                onClick={() =>
-                  onSelect({ path: node.path, language: node.language })
-                }
+                onClick={() => onSelect({ path: node.path, language: node.language })}
                 className={cn(
                   "flex flex-1 items-center gap-2 px-2 py-1 rounded-md transition-colors",
                   "hover:bg-accent hover:text-accent-foreground",
-                  active && "bg-accent text-accent-foreground font-medium",
+                  active && "bg-accent text-accent-foreground font-medium"
                 )}
               >
                 {getFileIcon(node.name)}
                 <span className="truncate">{node.name}</span>
               </button>
-              <DropdownMenu
-                open={contextMenuOpen}
-                onOpenChange={setContextMenuOpen}
-              >
+              <DropdownMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
                 <DropdownMenuTrigger asChild>
                   <div className="w-0 h-0 overflow-hidden">
                     <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -77,9 +65,7 @@ export default function FileItem({
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>{node.path}</p>
-            <p className="text-xs text-muted-foreground">
-              {formatFileSize(node.size)}
-            </p>
+            <p className="text-xs text-muted-foreground">{formatFileSize(node.size)}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

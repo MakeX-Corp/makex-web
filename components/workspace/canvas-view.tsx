@@ -10,7 +10,7 @@ export default function CanvasView() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [canvasScale, setCanvasScale] = useState(0.5);
   const [windowWidth, setWindowWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1200,
+    typeof window !== "undefined" ? window.innerWidth : 1200
   );
   const { appUrl } = useSession();
 

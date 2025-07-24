@@ -1,10 +1,4 @@
-import {
-  uniqueNamesGenerator,
-  Config,
-  adjectives,
-  colors,
-  animals,
-} from "unique-names-generator";
+import { uniqueNamesGenerator, Config, adjectives, colors, animals } from "unique-names-generator";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
@@ -22,7 +16,7 @@ export function generateAppName() {
 
 export async function generateDisplayName(
   initialPrompt: string,
-  fallback: string,
+  fallback: string
 ): Promise<string> {
   try {
     const result = await generateObject({

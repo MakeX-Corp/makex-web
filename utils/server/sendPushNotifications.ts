@@ -51,10 +51,7 @@ export async function sendPushNotifications({
   for (const token of deviceTokens) {
     try {
       const result = await apnProvider.send(notification, token);
-      console.log(
-        `✅ Notification sent to ${token}:`,
-        JSON.stringify(result, null, 2),
-      );
+      console.log(`✅ Notification sent to ${token}:`, JSON.stringify(result, null, 2));
     } catch (err) {
       console.error(`❌ Error sending to ${token}:`, err);
     }

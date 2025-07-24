@@ -2,10 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { aiAgent } from "@/trigger/ai-agent";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import {
-  generateAppName,
-  generateDisplayName,
-} from "@/utils/server/app-name-generator";
+import { generateAppName, generateDisplayName } from "@/utils/server/app-name-generator";
 import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { checkSubscription } from "@/utils/server/check-subscription";
@@ -22,10 +19,7 @@ export async function POST(request: NextRequest) {
     const { appId, userPrompt, isNewApp, images } = body;
 
     if (!userPrompt) {
-      return NextResponse.json(
-        { error: "Missing required field: userPrompt" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing required field: userPrompt" }, { status: 400 });
     }
 
     const canSend = await checkSubscription(user.id);
@@ -138,7 +132,7 @@ export async function POST(request: NextRequest) {
       if (!finalAppId) {
         return NextResponse.json(
           { error: "Missing appId for existing app update" },
-          { status: 400 },
+          { status: 400 }
         );
       }
 
@@ -166,9 +160,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[Mobile API] Error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

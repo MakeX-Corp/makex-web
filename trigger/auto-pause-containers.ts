@@ -15,7 +15,7 @@ export const firstScheduledTask = schedules.task({
           `
                     *,
                     user_apps!inner(app_name)
-                `,
+                `
         )
         .in("sandbox_status", ["active"])
         .eq("app_status", "active");
@@ -58,7 +58,7 @@ export const firstScheduledTask = schedules.task({
 
           console.log("RECENT TIME", new Date().getTime());
           const diffMinutes = Math.floor(
-            (new Date().getTime() - mostRecentActivity.getTime()) / (1000 * 60),
+            (new Date().getTime() - mostRecentActivity.getTime()) / (1000 * 60)
           );
 
           console.log("Diff minutes:", diffMinutes);
@@ -73,7 +73,7 @@ export const firstScheduledTask = schedules.task({
               },
               {
                 queue: { name: "auto-pause-containers" },
-              },
+              }
             );
           }
         } catch (appError) {
@@ -81,9 +81,7 @@ export const firstScheduledTask = schedules.task({
         }
       }
 
-      console.log(
-        `Auto-stop completed. Stopped ${stoppedApps.length} inactive apps.`,
-      );
+      console.log(`Auto-stop completed. Stopped ${stoppedApps.length} inactive apps.`);
     } catch (error) {
       console.error("Error in auto-stop routine:", error);
       console.error("Internal server error during auto-stop");

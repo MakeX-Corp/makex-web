@@ -1,10 +1,5 @@
 import { task } from "@trigger.dev/sdk/v3";
-import {
-  convertToModelMessages,
-  stepCountIs,
-  type UIMessage,
-  generateText,
-} from "ai";
+import { convertToModelMessages, stepCountIs, type UIMessage, generateText } from "ai";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
@@ -21,11 +16,7 @@ export const aiAgent = task({
   retry: {
     maxAttempts: 0,
   },
-  run: async (payload: {
-    appId: string;
-    userPrompt: string;
-    images?: string[];
-  }) => {
+  run: async (payload: { appId: string; userPrompt: string; images?: string[] }) => {
     try {
       const { appId, userPrompt, images = [] } = payload;
 
@@ -42,9 +33,7 @@ export const aiAgent = task({
         .single();
 
       if (sessionError) {
-        throw new Error(
-          `Failed to fetch latest session: ${sessionError.message}`,
-        );
+        throw new Error(`Failed to fetch latest session: ${sessionError.message}`);
       }
 
       if (!latestSession) {
@@ -61,10 +50,7 @@ export const aiAgent = task({
         .order("created_at", { ascending: true });
 
       if (historyError) {
-        console.error(
-          `${LOG_PREFIX} Failed to fetch chat history:`,
-          historyError,
-        );
+        console.error(`${LOG_PREFIX} Failed to fetch chat history:`, historyError);
         // Continue without history if there's an error
       }
 
@@ -109,9 +95,7 @@ export const aiAgent = task({
         .single();
 
       if (sandboxError) {
-        throw new Error(
-          `Failed to fetch sandbox status: ${sandboxError.message}`,
-        );
+        throw new Error(`Failed to fetch sandbox status: ${sandboxError.message}`);
       }
 
       if (!sandbox) {
@@ -250,8 +234,7 @@ export const aiAgent = task({
         });
 
         // Store the commit hash from the response
-        commitHash =
-          checkpointResponse.commit || checkpointResponse.current_commit;
+        commitHash = checkpointResponse.commit || checkpointResponse.current_commit;
       } catch (error) {
         console.error("Failed to save checkpoint:", error);
         throw error;
@@ -321,14 +304,12 @@ export const aiAgent = task({
       if (finalUpdateError) {
         console.error(
           `${LOG_PREFIX} Failed to update sandbox status back to active:`,
-          finalUpdateError,
+          finalUpdateError
         );
       }
 
       // Poll app status until ready, then send push notification
-      console.log(
-        `${LOG_PREFIX} Starting status polling for push notification...`,
-      );
+      console.log(`${LOG_PREFIX} Starting status polling for push notification...`);
 
       const maxPollingAttempts = 20; // 20 attempts
       const pollingIntervalMs = 10000; // 10 seconds
@@ -338,9 +319,7 @@ export const aiAgent = task({
 
       while (pollingAttempt < maxPollingAttempts && !isAppReady) {
         pollingAttempt++;
-        console.log(
-          `${LOG_PREFIX} Status poll attempt ${pollingAttempt}/${maxPollingAttempts}`,
-        );
+        console.log(`${LOG_PREFIX} Status poll attempt ${pollingAttempt}/${maxPollingAttempts}`);
 
         try {
           const { data: sandboxData, error: statusCheckError } = await supabase
@@ -354,12 +333,10 @@ export const aiAgent = task({
           if (statusCheckError) {
             console.error(
               `${LOG_PREFIX} Failed to check app status on attempt ${pollingAttempt}:`,
-              statusCheckError,
+              statusCheckError
             );
             // Continue polling even if there's an error
-            await new Promise((resolve) =>
-              setTimeout(resolve, pollingIntervalMs),
-            );
+            await new Promise((resolve) => setTimeout(resolve, pollingIntervalMs));
             continue;
           }
 
@@ -377,31 +354,23 @@ export const aiAgent = task({
           });
 
           if (isAppReady) {
-            console.log(
-              `${LOG_PREFIX} App is ready! Sending push notification...`,
-            );
+            console.log(`${LOG_PREFIX} App is ready! Sending push notification...`);
             break;
           }
 
           // Wait before next poll
-          await new Promise((resolve) =>
-            setTimeout(resolve, pollingIntervalMs),
-          );
+          await new Promise((resolve) => setTimeout(resolve, pollingIntervalMs));
         } catch (error) {
           console.error(
             `${LOG_PREFIX} Error during status polling attempt ${pollingAttempt}:`,
-            error,
+            error
           );
-          await new Promise((resolve) =>
-            setTimeout(resolve, pollingIntervalMs),
-          );
+          await new Promise((resolve) => setTimeout(resolve, pollingIntervalMs));
         }
       }
 
       if (!isAppReady) {
-        console.log(
-          `${LOG_PREFIX} App did not become ready within timeout period`,
-        );
+        console.log(`${LOG_PREFIX} App did not become ready within timeout period`);
       }
 
       // Only send notification if app is ready
@@ -445,10 +414,7 @@ export const aiAgent = task({
           .update({ app_status: "active" })
           .eq("app_id", payload.appId);
       } catch (recoveryError) {
-        console.error(
-          `${LOG_PREFIX} Failed to recover sandbox status:`,
-          recoveryError,
-        );
+        console.error(`${LOG_PREFIX} Failed to recover sandbox status:`, recoveryError);
       }
 
       console.error(`${LOG_PREFIX} Error:`, error);

@@ -37,8 +37,7 @@ export async function POST(request: Request) {
     const now = new Date();
     const isExpiredEvent = eventType === "EXPIRATION";
     console.log("isExpiredEvent", isExpiredEvent);
-    const isBillingExpired =
-      eventType === "BILLING_ISSUE" && expirationDate < now;
+    const isBillingExpired = eventType === "BILLING_ISSUE" && expirationDate < now;
     console.log("isBillingExpired", isBillingExpired);
     const status = isExpiredEvent || isBillingExpired ? "expired" : "active";
     console.log("status", status);
@@ -62,7 +61,7 @@ export async function POST(request: Request) {
     const { data: existing, error: fetchError } = await admin
       .from("mobile_subscriptions")
       .select(
-        "last_transaction_id, subscription_end, subscription_status, messages_used_this_period",
+        "last_transaction_id, subscription_end, subscription_status, messages_used_this_period"
       )
       .eq("user_id", userId)
       .single();
@@ -74,15 +73,12 @@ export async function POST(request: Request) {
 
     const existingTx = existing?.last_transaction_id;
     console.log("existingTx", existingTx);
-    const existingEnd = existing?.subscription_end
-      ? new Date(existing.subscription_end)
-      : null;
+    const existingEnd = existing?.subscription_end ? new Date(existing.subscription_end) : null;
     const existingStatus = existing?.subscription_status;
 
     const isSameTx = transaction_id === existingTx;
     const isSameStatus = existingStatus === status;
-    const isSameEnd =
-      existingEnd && expirationDate.getTime() === existingEnd.getTime();
+    const isSameEnd = existingEnd && expirationDate.getTime() === existingEnd.getTime();
 
     const isDuplicate = isSameTx && isSameStatus && isSameEnd;
     const isStale = existingEnd && expirationDate < existingEnd;
@@ -110,25 +106,21 @@ export async function POST(request: Request) {
     console.log("event.product_id", event.product_id);
     const isNewBillingCycle = !existingEnd || expirationDate > existingEnd;
     console.log("isNewBillingCycle", isNewBillingCycle);
-    const newMessageCount = isNewBillingCycle
-      ? 0
-      : existing?.messages_used_this_period || 0;
+    const newMessageCount = isNewBillingCycle ? 0 : existing?.messages_used_this_period || 0;
 
     console.log("newMessageCount", newMessageCount);
-    const { error: upsertError } = await admin
-      .from("mobile_subscriptions")
-      .upsert(
-        {
-          user_id: userId,
-          subscription_type: product_id,
-          subscription_status: status,
-          subscription_start: purchaseDate.toISOString(),
-          subscription_end: expirationDate.toISOString(),
-          last_transaction_id: transaction_id,
-          messages_used_this_period: newMessageCount,
-        },
-        { onConflict: "user_id" },
-      );
+    const { error: upsertError } = await admin.from("mobile_subscriptions").upsert(
+      {
+        user_id: userId,
+        subscription_type: product_id,
+        subscription_status: status,
+        subscription_start: purchaseDate.toISOString(),
+        subscription_end: expirationDate.toISOString(),
+        last_transaction_id: transaction_id,
+        messages_used_this_period: newMessageCount,
+      },
+      { onConflict: "user_id" }
+    );
 
     if (upsertError) {
       console.error("❌ Failed to update subscription", upsertError);

@@ -18,11 +18,7 @@ type ShareData = {
   dub_key: string;
 };
 
-export default function SharePage({
-  params: paramsPromise,
-}: {
-  params: Promise<PageParams>;
-}) {
+export default function SharePage({ params: paramsPromise }: { params: Promise<PageParams> }) {
   const params = React.use(paramsPromise);
   const [isMobile, setIsMobile] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -68,10 +64,7 @@ export default function SharePage({
 
     // Detect dark mode
     if (typeof window !== "undefined") {
-      setIsDarkMode(
-        window.matchMedia &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches,
-      );
+      setIsDarkMode(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
     }
 
     if (isMobileDevice && shareData?.app_url) {
@@ -223,9 +216,7 @@ export default function SharePage({
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
           <h1 className="text-2xl font-semibold mb-4">Not Found</h1>
-          <p className="text-muted-foreground">
-            The requested share link could not be found.
-          </p>
+          <p className="text-muted-foreground">The requested share link could not be found.</p>
         </div>
       </div>
     );
@@ -282,12 +273,7 @@ export default function SharePage({
               onClick={handleInstallApp}
               className="w-full bg-primary text-primary-foreground py-3 px-5 rounded-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
             >
-              <Image
-                src="/icons/apple-dark.svg"
-                alt="Apple logo"
-                width={20}
-                height={20}
-              />
+              <Image src="/icons/apple-dark.svg" alt="Apple logo" width={20} height={20} />
               Install App for Full Experience
             </button>
           </div>
@@ -320,8 +306,8 @@ export default function SharePage({
             </a>
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl">
-            This is a app created using MakeX. Scan the QR code with your mobile
-            device to preview it, or copy the link to share with others.
+            This is a app created using MakeX. Scan the QR code with your mobile device to preview
+            it, or copy the link to share with others.
           </p>
         </div>
 
@@ -364,14 +350,7 @@ export default function SharePage({
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
-                      <rect
-                        width="14"
-                        height="14"
-                        x="8"
-                        y="8"
-                        rx="2"
-                        ry="2"
-                      ></rect>
+                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
                       <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
                     </svg>
                     {showCopyFeedback ? "Copied!" : "Copy link"}
@@ -401,12 +380,9 @@ export default function SharePage({
             </div>
 
             <div className="bg-card rounded-xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">
-                Get the full experience
-              </h2>
+              <h2 className="text-xl font-semibold mb-4">Get the full experience</h2>
               <p className="text-muted-foreground mb-4">
-                Install the MakeX app to get the best experience and create your
-                own apps.
+                Install the MakeX app to get the best experience and create your own apps.
               </p>
               <div className="flex gap-4">
                 <a
@@ -415,12 +391,7 @@ export default function SharePage({
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 px-5 rounded-lg hover:bg-primary/90 transition-colors"
                 >
-                  <Image
-                    src="/icons/apple-dark.svg"
-                    alt="Apple logo"
-                    width={20}
-                    height={20}
-                  />
+                  <Image src="/icons/apple-dark.svg" alt="Apple logo" width={20} height={20} />
                   iOS App
                 </a>
                 <a
@@ -444,13 +415,7 @@ export default function SharePage({
           <div className="flex flex-col items-center">
             <div className="bg-card rounded-xl p-8 shadow-sm w-full max-w-sm">
               <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center">
-                {qrCodeDataUrl && (
-                  <img
-                    src={qrCodeDataUrl}
-                    alt="QR Code"
-                    className="w-64 h-64"
-                  />
-                )}
+                {qrCodeDataUrl && <img src={qrCodeDataUrl} alt="QR Code" className="w-64 h-64" />}
               </div>
               <p className="text-center text-muted-foreground">
                 Scan with your phone camera to preview

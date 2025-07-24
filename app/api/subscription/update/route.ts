@@ -7,10 +7,7 @@ export async function POST(request: Request) {
   const result = await getSupabaseWithUser(request as NextRequest);
   if (result instanceof NextResponse || "error" in result) return result;
   if (!subscriptionId || !priceId) {
-    return NextResponse.json(
-      { error: "Missing required parameters" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
   }
 
   try {
@@ -40,9 +37,7 @@ export async function POST(request: Request) {
     console.log("response", response);
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(
-        errorData.error?.message || "Failed to update subscription",
-      );
+      throw new Error(errorData.error?.message || "Failed to update subscription");
     }
 
     const result = await response.json();
@@ -52,7 +47,7 @@ export async function POST(request: Request) {
     console.error("Error updating subscription:", error);
     return NextResponse.json(
       { error: error.message || "Failed to update subscription" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

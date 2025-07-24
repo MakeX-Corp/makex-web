@@ -44,7 +44,7 @@ export const deleteContainer = task({
     await redisUrlSetter(
       appName,
       "https://makex.app/app-not-found",
-      "https://makex.app/app-not-found",
+      "https://makex.app/app-not-found"
     );
 
     if (updateError) {

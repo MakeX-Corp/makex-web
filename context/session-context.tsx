@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  ReactNode,
-  useEffect,
-} from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
 import {
   getSessionsForApp,
@@ -91,18 +85,11 @@ export function SessionProvider({
   const [sessionsError, setSessionsError] = useState<string | null>(null);
 
   // Current session state
-  const [currentSession, setCurrentSession] = useState<SessionData | null>(
-    null,
-  );
+  const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [loadingCurrentSession, setLoadingCurrentSession] =
-    useState<boolean>(false);
-  const [currentSessionError, setCurrentSessionError] = useState<string | null>(
-    null,
-  );
-  const [justCreatedSessionId, setJustCreatedSessionId] = useState<
-    string | null
-  >(null);
+  const [loadingCurrentSession, setLoadingCurrentSession] = useState<boolean>(false);
+  const [currentSessionError, setCurrentSessionError] = useState<string | null>(null);
+  const [justCreatedSessionId, setJustCreatedSessionId] = useState<string | null>(null);
 
   // Convex config state
   const [convexConfig, setConvexConfig] = useState<{
@@ -133,10 +120,7 @@ export function SessionProvider({
       // Find the current app in the AppContext apps array
       const currentApp = apps.find((app) => app.id === appId);
 
-      if (
-        currentApp &&
-        (currentApp.display_name !== appName || currentApp.app_name !== appName)
-      ) {
+      if (currentApp && (currentApp.display_name !== appName || currentApp.app_name !== appName)) {
         // Update local appName state when it changes in AppContext
         setAppName(currentApp.display_name || currentApp.app_name || "");
       }
@@ -161,9 +145,7 @@ export function SessionProvider({
       const { data, error } = await getAppInfo(newAppId);
 
       if (error || !data) {
-        throw new Error(
-          `Failed to fetch app configuration: ${error || "No data returned"}`,
-        );
+        throw new Error(`Failed to fetch app configuration: ${error || "No data returned"}`);
       }
 
       // Set the configuration values from database
@@ -215,10 +197,7 @@ export function SessionProvider({
           ? new URL(window.location.href).searchParams.get("sessionId")
           : null;
 
-      if (
-        urlSessionId &&
-        sessionsList.some((session) => session.id === urlSessionId)
-      ) {
+      if (urlSessionId && sessionsList.some((session) => session.id === urlSessionId)) {
         // Use session ID from URL if it's valid
         await switchSession(urlSessionId);
       } else {
@@ -262,7 +241,7 @@ export function SessionProvider({
             return prevSessions.map((session) =>
               session.id === sessionId
                 ? { ...session, title: sessionData.title || "New Chat" }
-                : session,
+                : session
             );
           });
         }
@@ -307,11 +286,7 @@ export function SessionProvider({
         if (typeof window !== "undefined") {
           const url = new URL(window.location.href);
           url.searchParams.set("sessionId", sessionWithTitle.id);
-          window.history.pushState(
-            { path: url.toString() },
-            "",
-            url.toString(),
-          );
+          window.history.pushState({ path: url.toString() }, "", url.toString());
         }
 
         return sessionWithTitle;
@@ -337,9 +312,7 @@ export function SessionProvider({
 
       if (result) {
         // Update the sessions list by removing the deleted session
-        setSessions((prev) =>
-          prev.filter((session) => session.id !== sessionId),
-        );
+        setSessions((prev) => prev.filter((session) => session.id !== sessionId));
 
         // If we're deleting the current session, switch to another one
         if (sessionId === currentSessionId) {
@@ -364,10 +337,7 @@ export function SessionProvider({
   };
 
   // Update session title
-  const updateSessionTitle = async (
-    sessionId: string,
-    title: string,
-  ): Promise<boolean> => {
+  const updateSessionTitle = async (sessionId: string, title: string): Promise<boolean> => {
     try {
       if (!appId || !title.trim()) return false;
 
@@ -378,10 +348,8 @@ export function SessionProvider({
         // Update the sessions list with the new title
         setSessions((prevSessions) =>
           prevSessions.map((session) =>
-            session.id === sessionId
-              ? { ...session, title: title.trim() }
-              : session,
-          ),
+            session.id === sessionId ? { ...session, title: title.trim() } : session
+          )
         );
 
         // Also update the current session object if this is the current session
@@ -463,9 +431,7 @@ export function SessionProvider({
     refreshApp,
   };
 
-  return (
-    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
-  );
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 
 // Hook to use the session context

@@ -35,7 +35,7 @@ async function startExpo(container: any, sessionId: string, appPreview: any) {
       command: expoCommand,
       async: true,
     },
-    30,
+    30
   ); // 30 second timeout
   console.log("expo start result:", expoResult);
 

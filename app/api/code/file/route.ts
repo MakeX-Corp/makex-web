@@ -5,8 +5,7 @@ import { getSupabaseWithUser } from "@/utils/server/auth";
 export async function GET(req: NextRequest) {
   // Get the user API client
   const userResult = await getSupabaseWithUser(req as NextRequest);
-  if (userResult instanceof NextResponse || "error" in userResult)
-    return userResult;
+  if (userResult instanceof NextResponse || "error" in userResult) return userResult;
 
   // Get and decode the path parameter
   const encodedPath = req.nextUrl.searchParams.get("path") ?? "";
@@ -24,15 +23,11 @@ export async function POST(req: Request) {
   const { apiUrl, path, content } = await req.json();
 
   if (!apiUrl || !path) {
-    return NextResponse.json(
-      { error: "Missing required fields" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
   const userResult = await getSupabaseWithUser(req as NextRequest);
-  if (userResult instanceof NextResponse || "error" in userResult)
-    return userResult;
+  if (userResult instanceof NextResponse || "error" in userResult) return userResult;
   const { user } = userResult;
 
   try {
@@ -50,7 +45,7 @@ export async function POST(req: Request) {
     console.error("File operation error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to perform file operation" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -58,8 +53,7 @@ export async function POST(req: Request) {
 export async function DELETE(req: NextRequest) {
   const { apiUrl, path } = await req.json();
   const userResult = await getSupabaseWithUser(req as NextRequest);
-  if (userResult instanceof NextResponse || "error" in userResult)
-    return userResult;
+  if (userResult instanceof NextResponse || "error" in userResult) return userResult;
 
   try {
     const client = createFileBackendApiClient(apiUrl);
@@ -73,7 +67,7 @@ export async function DELETE(req: NextRequest) {
     console.error("File operation error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to perform file operation" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

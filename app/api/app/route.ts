@@ -45,10 +45,7 @@ export async function POST(request: Request) {
 
     if (insertError) {
       console.error("Supabase insert error:", insertError);
-      return NextResponse.json(
-        { error: "Failed to save app data" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to save app data" }, { status: 500 });
     }
 
     const adminSupabase = await getSupabaseAdmin();
@@ -68,9 +65,7 @@ export async function POST(request: Request) {
       .limit(1);
 
     if (newSandboxError) {
-      throw new Error(
-        `Failed inserting new sandbox: ${newSandboxError.message}`,
-      );
+      throw new Error(`Failed inserting new sandbox: ${newSandboxError.message}`);
     }
 
     const sandboxDbId = newSandbox?.[0]?.id;
@@ -131,9 +126,7 @@ export async function POST(request: Request) {
       })
       .eq("id", insertedApp.id);
     if (updateError) {
-      throw new Error(
-        `Failed updating sandbox with container info: ${updateError.message}`,
-      );
+      throw new Error(`Failed updating sandbox with container info: ${updateError.message}`);
     }
 
     // Create the session in the same transaction
@@ -152,10 +145,7 @@ export async function POST(request: Request) {
 
     if (sessionError) {
       console.error("Session creation error:", sessionError);
-      return NextResponse.json(
-        { error: "Failed to create session" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to create session" }, { status: 500 });
     }
 
     timings.totalTime = performance.now() - startTime;
@@ -177,10 +167,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error in app creation:", error);
-    return NextResponse.json(
-      { error: "Failed to process request" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
   }
 }
 
@@ -208,7 +195,7 @@ export async function GET(request: Request) {
       if (error) {
         return NextResponse.json(
           { error: "Failed to fetch app", details: error.message },
-          { status: error.code === "PGRST116" ? 404 : 500 },
+          { status: error.code === "PGRST116" ? 404 : 500 }
         );
       }
 
@@ -223,17 +210,14 @@ export async function GET(request: Request) {
           `
         *,
         chat_sessions(id)
-      `,
+      `
         )
         .eq("user_id", user?.id)
         .or("status.is.null")
         .order("created_at", { ascending: false });
 
       if (error) {
-        return NextResponse.json(
-          { error: "Failed to fetch apps" },
-          { status: 500 },
-        );
+        return NextResponse.json({ error: "Failed to fetch apps" }, { status: 500 });
       }
 
       // Transform to include session_id field
@@ -244,10 +228,7 @@ export async function GET(request: Request) {
       return NextResponse.json(appsWithSessionId);
     }
   } catch (error) {
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -265,10 +246,7 @@ export async function DELETE(request: Request) {
     const appId = searchParams.get("id");
 
     if (!appId) {
-      return NextResponse.json(
-        { error: "App ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "App ID is required" }, { status: 400 });
     }
 
     // Get the app details from Supabase first
@@ -308,7 +286,7 @@ export async function DELETE(request: Request) {
     console.error("Error deleting app:", error);
     return NextResponse.json(
       { error: "An error occurred while deleting the app" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -327,17 +305,11 @@ export async function PATCH(request: Request) {
     const { appId, displayName } = body;
 
     if (!appId) {
-      return NextResponse.json(
-        { error: "App ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "App ID is required" }, { status: 400 });
     }
 
     if (!displayName) {
-      return NextResponse.json(
-        { error: "display_name is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "display_name is required" }, { status: 400 });
     }
 
     // Verify the app belongs to the user
@@ -349,10 +321,7 @@ export async function PATCH(request: Request) {
       .single();
 
     if (fetchError || !app) {
-      return NextResponse.json(
-        { error: "App not found or access denied" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "App not found or access denied" }, { status: 404 });
     }
 
     // Update only the display_name field
@@ -366,10 +335,7 @@ export async function PATCH(request: Request) {
 
     if (updateError) {
       console.error("Error updating app:", updateError);
-      return NextResponse.json(
-        { error: "Failed to update app" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to update app" }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -378,9 +344,6 @@ export async function PATCH(request: Request) {
     });
   } catch (error) {
     console.error("Error in app update:", error);
-    return NextResponse.json(
-      { error: "Failed to process update request" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to process update request" }, { status: 500 });
   }
 }

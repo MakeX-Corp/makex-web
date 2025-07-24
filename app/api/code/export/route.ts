@@ -8,8 +8,7 @@ export async function POST(req: Request) {
 
     // Get user info and validate authentication
     const userResult = await getSupabaseWithUser(req as NextRequest);
-    if (userResult instanceof NextResponse || "error" in userResult)
-      return userResult;
+    if (userResult instanceof NextResponse || "error" in userResult) return userResult;
     const { user, supabase } = userResult;
 
     // Get the app details to find the git repository ID
@@ -21,17 +20,11 @@ export async function POST(req: Request) {
       .single();
 
     if (appError || !app) {
-      return NextResponse.json(
-        { error: "App not found or access denied" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "App not found or access denied" }, { status: 404 });
     }
 
     if (!app.git_repo_id) {
-      return NextResponse.json(
-        { error: "No Git repository found for this app" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "No Git repository found for this app" }, { status: 400 });
     }
 
     // Download the zip from Freestyle Git API
@@ -42,7 +35,7 @@ export async function POST(req: Request) {
     responseHeaders.set("Content-Type", "application/zip");
     responseHeaders.set(
       "Content-Disposition",
-      `attachment; filename="${app.app_name || "export"}.zip"`,
+      `attachment; filename="${app.app_name || "export"}.zip"`
     );
 
     return new Response(zipBuffer, {
@@ -51,9 +44,6 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("Export route error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

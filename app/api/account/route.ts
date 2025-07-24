@@ -10,16 +10,13 @@ export async function DELETE(request: Request) {
   const SUPABASE_PROJECT_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
   try {
-    const res = await fetch(
-      `${SUPABASE_PROJECT_URL}/auth/v1/admin/users/${user.id}`,
-      {
-        method: "DELETE",
-        headers: {
-          apikey: SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-        },
+    const res = await fetch(`${SUPABASE_PROJECT_URL}/auth/v1/admin/users/${user.id}`, {
+      method: "DELETE",
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
       },
-    );
+    });
 
     if (!res.ok) {
       const error = await res.json();
@@ -29,9 +26,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Error deleting user:", err);
-    return NextResponse.json(
-      { error: "Failed to delete account" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to delete account" }, { status: 500 });
   }
 }

@@ -17,16 +17,13 @@ interface QRCodeDisplayProps {
 
 export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
-  const [downloadQrCodeDataUrl, setDownloadQrCodeDataUrl] =
-    useState<string>("");
+  const [downloadQrCodeDataUrl, setDownloadQrCodeDataUrl] = useState<string>("");
   const [isIOS, setIsIOS] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { theme } = useTheme();
 
   useEffect(() => {
-    let expoUrl = isIOS
-      ? url.replace("https://", "makex://")
-      : url.replace("https://", "exp://");
+    let expoUrl = isIOS ? url.replace("https://", "makex://") : url.replace("https://", "exp://");
     const generateQR = async () => {
       try {
         const dataUrl = await QRCode.toDataURL(expoUrl, {
@@ -77,10 +74,9 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
 
   const handleDownloadClick = (e: React.MouseEvent, isIOSLink: boolean) => {
     // Check if user is on mobile device
-    const isMobile =
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent,
-      );
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
 
     if (isMobile) {
       // On mobile, let the link work normally
@@ -162,9 +158,7 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
             </ol>
           </div>
           <img src={qrCodeDataUrl} alt="QR Code" className="w-64 h-64" />
-          <p className="text-sm text-muted-foreground">
-            Scan to view on mobile device
-          </p>
+          <p className="text-sm text-muted-foreground">Scan to view on mobile device</p>
         </>
       )}
 
@@ -179,26 +173,18 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
           <div className="flex flex-col items-center gap-6 py-4">
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-4">
-                To view this app on your mobile device, you'll need to download
-                the app first.
+                To view this app on your mobile device, you'll need to download the app first.
               </p>
             </div>
 
             {/* QR Code in Modal for App Download */}
             {downloadQrCodeDataUrl && (
               <div className="flex flex-col items-center gap-4">
-                <img
-                  src={downloadQrCodeDataUrl}
-                  alt="Download QR Code"
-                  className="w-48 h-48"
-                />
+                <img src={downloadQrCodeDataUrl} alt="Download QR Code" className="w-48 h-48" />
                 <div className="text-center">
-                  <p className="text-sm font-medium mb-2">
-                    Scan this QR code to download the app
-                  </p>
+                  <p className="text-sm font-medium mb-2">Scan this QR code to download the app</p>
                   <p className="text-xs text-muted-foreground">
-                    This will take you to the{" "}
-                    {isIOS ? "App Store" : "Google Play Store"}
+                    This will take you to the {isIOS ? "App Store" : "Google Play Store"}
                   </p>
                 </div>
               </div>
@@ -209,15 +195,9 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
               <p className="font-medium mb-2">How to get the app:</p>
               <ol className="text-left space-y-2">
                 <li>1. On your mobile device, scan the QR code above</li>
-                <li>
-                  2. Or search for "{isIOS ? "MakeX App" : "Expo Go"}" in your
-                  app store
-                </li>
+                <li>2. Or search for "{isIOS ? "MakeX App" : "Expo Go"}" in your app store</li>
                 <li>3. Download and install the app</li>
-                <li>
-                  4. Once installed, come back and scan the app QR code to view
-                  your app
-                </li>
+                <li>4. Once installed, come back and scan the app QR code to view your app</li>
               </ol>
             </div>
 

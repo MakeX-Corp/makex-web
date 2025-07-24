@@ -9,11 +9,7 @@ interface EmbeddingRow {
   category?: string;
 }
 
-export async function getRelevantContext(
-  query: string,
-  limit = 5,
-  category: string,
-) {
+export async function getRelevantContext(query: string, limit = 5, category: string) {
   const { embedding } = await embed({
     model: openai.embedding("text-embedding-3-small"),
     value: query,

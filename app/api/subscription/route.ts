@@ -38,8 +38,7 @@ export async function GET(request: Request) {
     }
 
     // Check if subscription is past the current period end date
-    const isExpired =
-      subscription && new Date(subscription.current_period_end) < new Date();
+    const isExpired = subscription && new Date(subscription.current_period_end) < new Date();
 
     // Get any pending or scheduled cancellations
     let pendingCancellation = false;
@@ -65,7 +64,7 @@ export async function GET(request: Request) {
         error: "Failed to fetch subscription",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

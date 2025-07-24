@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
-import {
-  configureGitHubSync,
-  removeGitHubSync,
-} from "@/utils/server/freestyle";
+import { configureGitHubSync, removeGitHubSync } from "@/utils/server/freestyle";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +10,7 @@ export async function POST(request: NextRequest) {
     if (!appId || !repoName) {
       return NextResponse.json(
         { error: "Missing required fields: appId, or repoName" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -22,7 +19,7 @@ export async function POST(request: NextRequest) {
     if (!repoNameRegex.test(repoName)) {
       return NextResponse.json(
         { error: "Invalid repository name format. Use: username/repo" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -49,10 +46,9 @@ export async function POST(request: NextRequest) {
     if (!app.git_repo_id) {
       return NextResponse.json(
         {
-          error:
-            "No Git repository found for this app. Please create a repository first.",
+          error: "No Git repository found for this app. Please create a repository first.",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -74,7 +70,7 @@ export async function POST(request: NextRequest) {
         console.error("Failed to update GitHub sync repo:", updateError);
         return NextResponse.json(
           { error: "Failed to save GitHub sync configuration" },
-          { status: 500 },
+          { status: 500 }
         );
       }
     } catch (freestyleError) {
@@ -86,36 +82,25 @@ export async function POST(request: NextRequest) {
 
       if (freestyleError instanceof Error) {
         const message = freestyleError.message.toLowerCase();
-        if (
-          message.includes("not yet available") ||
-          message.includes("coming soon")
-        ) {
+        if (message.includes("not yet available") || message.includes("coming soon")) {
           errorMessage =
             "GitHub sync functionality is not yet available. This feature is coming soon!";
         } else if (message.includes("not found") || message.includes("404")) {
           errorMessage =
             "Repository not found. Please check the repository name and ensure it exists.";
-        } else if (
-          message.includes("permission") ||
-          message.includes("access")
-        ) {
+        } else if (message.includes("permission") || message.includes("access")) {
           errorMessage =
             "Access denied. Please ensure the MakeX Sync GitHub App is installed on the repository.";
         } else if (message.includes("already") || message.includes("exists")) {
-          errorMessage =
-            "GitHub sync is already configured for this repository.";
+          errorMessage = "GitHub sync is already configured for this repository.";
         } else if (message.includes("invalid") || message.includes("format")) {
           errorMessage =
             "Invalid repository format. Please use the format: username/repository-name";
         } else if (message.includes("[object object]")) {
           // Handle the case where error is serialized as [object Object]
-          errorMessage =
-            "GitHub sync configuration failed. Please try again in a few moments.";
+          errorMessage = "GitHub sync configuration failed. Please try again in a few moments.";
         }
-      } else if (
-        typeof freestyleError === "object" &&
-        freestyleError !== null
-      ) {
+      } else if (typeof freestyleError === "object" && freestyleError !== null) {
         // Handle API error objects that might not be Error instances
         const errorObj = freestyleError as any;
         if (errorObj.message) {
@@ -133,14 +118,11 @@ export async function POST(request: NextRequest) {
         success: true,
         message: `GitHub sync configured for ${repoName}`,
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     console.error("GitHub sync error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -150,10 +132,7 @@ export async function DELETE(request: NextRequest) {
 
     // Validate required fields
     if (!appId) {
-      return NextResponse.json(
-        { error: "Missing required field: appId" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing required field: appId" }, { status: 400 });
     }
 
     // Get authenticated Supabase client and user
@@ -179,7 +158,7 @@ export async function DELETE(request: NextRequest) {
     if (!app.github_sync_repo) {
       return NextResponse.json(
         { error: "No GitHub sync configured for this app" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -204,7 +183,7 @@ export async function DELETE(request: NextRequest) {
       console.error("Failed to remove GitHub sync repo:", updateError);
       return NextResponse.json(
         { error: "Failed to remove GitHub sync configuration" },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -213,14 +192,11 @@ export async function DELETE(request: NextRequest) {
         success: true,
         message: `GitHub sync removed for ${app.github_sync_repo}`,
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     console.error("GitHub sync removal error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -232,7 +208,7 @@ export async function PUT(request: NextRequest) {
     if (!appId || !repoName) {
       return NextResponse.json(
         { error: "Missing required fields: appId, or repoName" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -241,7 +217,7 @@ export async function PUT(request: NextRequest) {
     if (!repoNameRegex.test(repoName)) {
       return NextResponse.json(
         { error: "Invalid repository name format. Use: username/repo" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -268,10 +244,9 @@ export async function PUT(request: NextRequest) {
     if (!app.git_repo_id) {
       return NextResponse.json(
         {
-          error:
-            "No Git repository found for this app. Please create a repository first.",
+          error: "No Git repository found for this app. Please create a repository first.",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -308,7 +283,7 @@ export async function PUT(request: NextRequest) {
         console.error("Failed to update GitHub sync repo:", updateError);
         return NextResponse.json(
           { error: "Failed to save GitHub sync configuration" },
-          { status: 500 },
+          { status: 500 }
         );
       }
     } catch (freestyleError) {
@@ -319,7 +294,7 @@ export async function PUT(request: NextRequest) {
           error:
             "Failed to configure GitHub sync. Please ensure your GitHub App is installed on the repository.",
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -328,13 +303,10 @@ export async function PUT(request: NextRequest) {
         success: true,
         message: `GitHub sync updated to ${repoName}`,
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     console.error("GitHub sync update error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

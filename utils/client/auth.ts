@@ -10,9 +10,7 @@ export const getAuthToken = (): string | null => {
       ?.split("=")[1];
 
     // Decode the URL-encoded token and parse it
-    const decodedToken = token
-      ? JSON.parse(decodeURIComponent(token))[0]
-      : null;
+    const decodedToken = token ? JSON.parse(decodeURIComponent(token))[0] : null;
 
     return decodedToken || null;
   } catch (error) {
@@ -30,7 +28,7 @@ export const decodeToken = (token: string): any => {
       atob(base64)
         .split("")
         .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join(""),
+        .join("")
     );
 
     return JSON.parse(jsonPayload);

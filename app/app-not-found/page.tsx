@@ -19,20 +19,13 @@ export default function AppNotFound() {
           <RefreshCw className="h-8 w-8 text-primary" />
         </div>
 
-        <h1 className="text-2xl font-bold text-foreground">
-          App Server Closed
-        </h1>
+        <h1 className="text-2xl font-bold text-foreground">App Server Closed</h1>
 
         <p className="text-muted-foreground">
-          The app server has been closed due to inactivity. Please refresh the
-          page to reconnect.
+          The app server has been closed due to inactivity. Please refresh the page to reconnect.
         </p>
 
-        <Button
-          onClick={handleRefresh}
-          className="w-full"
-          disabled={isRefreshing}
-        >
+        <Button onClick={handleRefresh} className="w-full" disabled={isRefreshing}>
           {isRefreshing ? (
             <>
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />

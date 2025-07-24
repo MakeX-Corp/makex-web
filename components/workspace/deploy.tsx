@@ -41,13 +41,7 @@ interface ShareInfo {
   created_at: string;
 }
 
-export function DeployButton({
-  appId,
-  apiUrl,
-}: {
-  appId: string | null;
-  apiUrl: string;
-}) {
+export function DeployButton({ appId, apiUrl }: { appId: string | null; apiUrl: string }) {
   const { theme } = useTheme();
   const [isDeploying, setIsDeploying] = useState(false);
   const [lastDeployment, setLastDeployment] = useState<Deployment | null>(null);
@@ -140,7 +134,7 @@ export function DeployButton({
               fetchShareUrl(appId);
             }, 1000); // 1 second delay
           }
-        },
+        }
       )
       .subscribe((status) => {});
 
@@ -179,9 +173,7 @@ export function DeployButton({
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(
-            errorData.error || `Deployment failed (${response.status})`,
-          );
+          throw new Error(errorData.error || `Deployment failed (${response.status})`);
         }
 
         const data = await response.json();
@@ -206,7 +198,7 @@ export function DeployButton({
         setIsDeploying(false);
       }
     },
-    [apiUrl, appId],
+    [apiUrl, appId]
   );
 
   // Format timestamp
@@ -284,11 +276,7 @@ export function DeployButton({
           </div>
         )}
 
-        <DropdownMenuItem
-          onClick={deployWeb}
-          disabled={isDeploying}
-          className="cursor-pointer"
-        >
+        <DropdownMenuItem onClick={deployWeb} disabled={isDeploying} className="cursor-pointer">
           <Globe className="h-4 w-4 mr-2" />
           {isDeploying ? (
             <>
@@ -306,9 +294,7 @@ export function DeployButton({
           className="cursor-not-allowed opacity-50"
         >
           <img
-            src={
-              theme === "dark" ? "/icons/apple-dark.svg" : "/icons/apple.svg"
-            }
+            src={theme === "dark" ? "/icons/apple-dark.svg" : "/icons/apple.svg"}
             alt="App Store"
             className="h-4 w-4 mr-2"
           />
@@ -321,11 +307,7 @@ export function DeployButton({
           className="cursor-not-allowed opacity-50"
         >
           <img
-            src={
-              theme === "dark"
-                ? "/icons/play-store-dark.svg"
-                : "/icons/play-store.svg"
-            }
+            src={theme === "dark" ? "/icons/play-store-dark.svg" : "/icons/play-store.svg"}
             alt="Play Store"
             className="h-4 w-4 mr-2"
           />
@@ -378,13 +360,12 @@ export function DeployButton({
                 </span>
               </div>
 
-              {lastDeployment.status === "failed" &&
-                lastDeployment.error_message && (
-                  <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-sm text-xs">
-                    <div className="font-medium mb-1">Error:</div>
-                    {lastDeployment.error_message}
-                  </div>
-                )}
+              {lastDeployment.status === "failed" && lastDeployment.error_message && (
+                <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-sm text-xs">
+                  <div className="font-medium mb-1">Error:</div>
+                  {lastDeployment.error_message}
+                </div>
+              )}
             </div>
           </>
         )}

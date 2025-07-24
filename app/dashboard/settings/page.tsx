@@ -108,12 +108,7 @@ export default function ProfileSettings() {
     <div className="w-full max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold">Settings</h1>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="hover:bg-secondary/80"
-          onClick={handleSignOut}
-        >
+        <Button variant="ghost" size="sm" className="hover:bg-secondary/80" onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
           Sign out
         </Button>
@@ -160,9 +155,7 @@ export default function ProfileSettings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Email Address */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Email Address
-                </label>
+                <label className="text-sm font-medium text-muted-foreground">Email Address</label>
                 <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
                   <p className="text-sm font-medium">{email}</p>
                 </div>
@@ -178,11 +171,7 @@ export default function ProfileSettings() {
                     <Globe className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">English (US)</span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                  ></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8"></Button>
                 </div>
               </div>
             </div>
@@ -194,11 +183,7 @@ export default function ProfileSettings() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Subscription & Billing</h2>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/dashboard/pricing")}
-          >
+          <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/pricing")}>
             {planName === "Free" ? "Upgrade" : "Change Plan"}
           </Button>
         </div>

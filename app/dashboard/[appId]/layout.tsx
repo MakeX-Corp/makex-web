@@ -25,9 +25,7 @@ export default function DashboardLayout({
   return (
     <div className="flex flex-col h-screen dark:bg-gray-950">
       {/* We'll move the header into the page component */}
-      <main className="flex-1 overflow-auto bg-background text-foreground">
-        {children}
-      </main>
+      <main className="flex-1 overflow-auto bg-background text-foreground">{children}</main>
     </div>
   );
 }

@@ -3,8 +3,7 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 
 function decodeBase64Url(input: string) {
   const base64 = input.replace(/-/g, "+").replace(/_/g, "/");
-  const pad =
-    base64.length % 4 === 0 ? "" : "=".repeat(4 - (base64.length % 4));
+  const pad = base64.length % 4 === 0 ? "" : "=".repeat(4 - (base64.length % 4));
   return atob(base64 + pad);
 }
 
@@ -23,18 +22,12 @@ export async function POST(req: NextRequest) {
   try {
     const { identityToken } = await req.json();
     if (!identityToken) {
-      return NextResponse.json(
-        { error: "Missing identityToken" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing identityToken" }, { status: 400 });
     }
 
     const payload = parseJwtPayload(identityToken);
     if (!payload) {
-      return NextResponse.json(
-        { error: "Invalid token format" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid token format" }, { status: 400 });
     }
 
     const expectedIssuer = "https://appleid.apple.com";
@@ -74,7 +67,7 @@ export async function POST(req: NextRequest) {
     console.error("Apple sign-in error:", err);
     return NextResponse.json(
       { error: "Apple sign-in failed", message: err.message },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

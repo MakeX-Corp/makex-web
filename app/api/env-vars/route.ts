@@ -16,10 +16,7 @@ export async function GET(request: NextRequest) {
     const appUrl = searchParams.get("appUrl");
 
     if (!appUrl) {
-      return NextResponse.json(
-        { error: "appUrl is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "appUrl is required" }, { status: 400 });
     }
 
     const envVarManager = await EnvVarManager.create(appUrl);
@@ -28,10 +25,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(Object.fromEntries(envVars));
   } catch (error) {
     console.error("Get env vars error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -49,10 +43,7 @@ export async function POST(request: NextRequest) {
     const { appUrl, key, value } = body;
 
     if (!appUrl || !key || value === undefined) {
-      return NextResponse.json(
-        { error: "appUrl, key, and value are required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "appUrl, key, and value are required" }, { status: 400 });
     }
 
     const envVarManager = await EnvVarManager.create(appUrl);
@@ -61,10 +52,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Set env var error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -83,10 +71,7 @@ export async function DELETE(request: NextRequest) {
     const key = searchParams.get("key");
 
     if (!appUrl || !key) {
-      return NextResponse.json(
-        { error: "appUrl and key are required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "appUrl and key are required" }, { status: 400 });
     }
 
     const envVarManager = await EnvVarManager.create(appUrl);
@@ -95,9 +80,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: deleted });
   } catch (error) {
     console.error("Delete env var error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

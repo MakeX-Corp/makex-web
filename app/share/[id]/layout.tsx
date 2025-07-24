@@ -16,11 +16,7 @@ function DiscordIcon() {
   );
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { id: string };
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const imageUrl = `https://makex.app/share.png?v=4`;
 
   return {
@@ -62,11 +58,7 @@ export async function generateMetadata({
   };
 }
 
-export default function ShareLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ShareLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-screen bg-background flex flex-col">
       <main className="container mx-auto px-4 py-8 flex-1">{children}</main>

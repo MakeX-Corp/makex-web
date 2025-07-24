@@ -17,7 +17,7 @@ export async function POST(request: Request) {
       {
         error: error instanceof Error ? error.message : "Something went wrong",
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 }

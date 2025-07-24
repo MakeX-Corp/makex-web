@@ -44,9 +44,7 @@ function PasswordResetForm() {
           setError("Invalid or expired reset link. Please request a new one.");
         }
       } else {
-        setError(
-          "Missing verification parameters. Please request a new reset link.",
-        );
+        setError("Missing verification parameters. Please request a new reset link.");
       }
     };
 
@@ -102,9 +100,7 @@ function PasswordResetForm() {
       ) : (
         <>
           {error && (
-            <div className="bg-red-500/10 text-red-500 text-sm p-3 rounded-lg mb-4">
-              {error}
-            </div>
+            <div className="bg-red-500/10 text-red-500 text-sm p-3 rounded-lg mb-4">{error}</div>
           )}
 
           {!verified ? (
@@ -168,9 +164,7 @@ export default function ResetPassword() {
       <main className="flex-1 flex items-center justify-center relative z-10">
         <Suspense
           fallback={
-            <div className="w-full max-w-md px-8 py-12">
-              Loading password reset form...
-            </div>
+            <div className="w-full max-w-md px-8 py-12">Loading password reset form...</div>
           }
         >
           <PasswordResetForm />

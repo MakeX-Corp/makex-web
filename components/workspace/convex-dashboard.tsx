@@ -69,8 +69,7 @@ export function ConvexDashboardEmbed() {
 
   const supabase = createClient();
 
-  const isConfigComplete = (cfg: any) =>
-    cfg && cfg.devUrl && cfg.projectId && cfg.devAdminKey;
+  const isConfigComplete = (cfg: any) => cfg && cfg.devUrl && cfg.projectId && cfg.devAdminKey;
 
   useEffect(() => {
     if (!appId) {
@@ -163,10 +162,7 @@ export function ConvexDashboardEmbed() {
   }
 
   const prodAvailable = Boolean(
-    convexConfig &&
-      convexConfig.prodUrl &&
-      convexConfig.projectId &&
-      convexConfig.prodAdminKey
+    convexConfig && convexConfig.prodUrl && convexConfig.projectId && convexConfig.prodAdminKey
   );
 
   if (!isConfigComplete(convexConfig)) {
@@ -176,9 +172,7 @@ export function ConvexDashboardEmbed() {
   return (
     <div className="h-full w-full flex flex-col">
       <div className="flex items-center gap-2 mb-4 p-2 border-b">
-        <span className="text-sm font-medium text-muted-foreground">
-          Environment:
-        </span>
+        <span className="text-sm font-medium text-muted-foreground">Environment:</span>
         <div className="flex items-center gap-1 border rounded-lg p-1 bg-background">
           <Button
             variant="ghost"
@@ -233,8 +227,8 @@ export function ConvexDashboardEmbed() {
                   Production Not Deployed
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Your app hasn't been deployed to production yet. Deploy it to
-                  see the production Convex dashboard here.
+                  Your app hasn't been deployed to production yet. Deploy it to see the production
+                  Convex dashboard here.
                 </p>
               </div>
             </div>
