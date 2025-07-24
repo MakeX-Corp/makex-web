@@ -36,7 +36,7 @@ const plans: PlanProps[] = [
     interval: "month",
     features: (
       process.env.NEXT_PUBLIC_FREE_PLAN_FEATURES ||
-      "5 messages a day, Slower app start times, Discord support"
+      "20 messages a month, Slower app start times, Discord support"
     )
       .split(",")
       .map((feature) => feature.trim()),
@@ -47,7 +47,7 @@ const plans: PlanProps[] = [
     description:
       process.env.NEXT_PUBLIC_STARTER_PLAN_DESCRIPTION ||
       "Perfect for individuals starting with AI app creation",
-    price: process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || "19",
+    price: process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || "9.99",
     interval: "month",
     features: (
       process.env.NEXT_PUBLIC_STARTER_PLAN_FEATURES ||
@@ -247,9 +247,12 @@ export default function PricingPage() {
           {/* Contact Us Card */}
           <Card className="flex flex-col border-dashed">
             <CardHeader>
-              <CardTitle className="text-2xl">Enterprise</CardTitle>
+              <CardTitle className="text-2xl">
+                {process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_NAME || "Enterprise"}
+              </CardTitle>
               <p className="text-muted-foreground">
-                Need higher limits? Contact us for custom solutions
+                {process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_DESCRIPTION ||
+                  "Need higher limits? Contact us for custom solutions"}
               </p>
             </CardHeader>
             <CardContent className="flex-grow">
@@ -259,22 +262,18 @@ export default function PricingPage() {
                 </span>
               </div>
               <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-primary" />
-                  <span>Advanced AI editing</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-primary" />
-                  <span>Priority support</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-primary" />
-                  <span>Custom integrations</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-primary" />
-                  <span>Dedicated account manager</span>
-                </li>
+                {(
+                  process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_FEATURES ||
+                  "Advanced AI editing,Priority support,Custom integrations,Dedicated account manager"
+                )
+                  .split(",")
+                  .map((feature) => feature.trim())
+                  .map((feature) => (
+                    <li key={feature} className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-primary" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
               </ul>
             </CardContent>
             <CardFooter>
