@@ -66,7 +66,7 @@ export default function FileItem({
                     </Button>
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent side="right">
                   <DeleteConfirmationDialog
                     fileName={node.name}
                     onConfirm={() => onDelete(node.path)}

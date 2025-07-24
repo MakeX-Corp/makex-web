@@ -113,7 +113,7 @@ export default function FolderItem({
                 </Button>
               </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent side="right">
               <DropdownMenuItem
                 onClick={loading ? () => {} : handleCreate}
                 disabled={loading}
