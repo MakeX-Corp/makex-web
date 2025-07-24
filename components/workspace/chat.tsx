@@ -316,7 +316,11 @@ export function Chat({
 
     switch (part.type) {
       case "text":
-        return <div className="text-sm">{part.text}</div>;
+        return (
+          <div className="text-sm whitespace-pre-wrap break-words break-all">
+            {part.text}
+          </div>
+        );
 
       case "file":
         /* show images inline; fallback text for other mime types */

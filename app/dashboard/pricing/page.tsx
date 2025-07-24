@@ -28,48 +28,41 @@ interface PlanProps {
 
 const plans: PlanProps[] = [
   {
-    name: "Free",
-    description: "For people just starting out",
-    price: "0",
+    name: process.env.NEXT_PUBLIC_FREE_PLAN_NAME || "Free",
+    description:
+      process.env.NEXT_PUBLIC_FREE_PLAN_DESCRIPTION ||
+      "For people just starting out",
+    price: process.env.NEXT_PUBLIC_FREE_PLAN_PRICE || "0",
     interval: "month",
-    features: ["5 messages a day", "Slower app start times", "Discord support"],
+    features: (
+      process.env.NEXT_PUBLIC_FREE_PLAN_FEATURES ||
+      "20 messages a month, Slower app start times, Discord support"
+    )
+      .split(",")
+      .map((feature) => feature.trim()),
     priceId: "",
   },
   {
-    name: "Starter",
-    description: "Perfect for individuals starting with AI app creation",
-    price: "19",
+    name: process.env.NEXT_PUBLIC_STARTER_PLAN_NAME || "Starter",
+    description:
+      process.env.NEXT_PUBLIC_STARTER_PLAN_DESCRIPTION ||
+      "Perfect for individuals starting with AI app creation",
+    price: process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || "9.99",
     interval: "month",
-    features: [
-      "250 messages a month",
-      "Basic AI editing",
-      "Faster app start times",
-      "Priority support",
-      "Publish to App Store and Google Play (coming soon)",
-    ],
+    features: (
+      process.env.NEXT_PUBLIC_STARTER_PLAN_FEATURES ||
+      "250 messages a month,Basic AI editing,Faster app start times,Priority support,Publish to App Store and Google Play (coming soon)"
+    )
+      .split(",")
+      .map((feature) => feature.trim()),
     priceId: process.env.NEXT_PUBLIC_PADDLE_STARTER_ID || "",
-  },
-  {
-    name: "Pro",
-    description: "For professionals who need more power",
-    price: "49",
-    interval: "month",
-    features: [
-      "Unlimited apps",
-      "500 messages a month",
-      "Advanced AI editing",
-      "Faster app start times",
-      "1-1 support",
-      "White glove service",
-    ],
-    priceId: process.env.NEXT_PUBLIC_PADDLE_PRO_ID || "",
   },
 ];
 
 const PricingSkeleton = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-      {[1, 2, 3].map((i) => (
+      {[1, 2].map((i) => (
         <Card key={i} className="flex flex-col">
           <CardHeader>
             <Skeleton className="h-8 w-24 mb-2" />
@@ -98,10 +91,7 @@ const PricingSkeleton = () => {
 };
 
 export default function PricingPage() {
-  const {
-    subscription,
-    isLoading: subscriptionLoading,
-  } = useApp();
+  const { subscription, isLoading: subscriptionLoading } = useApp();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
@@ -120,7 +110,10 @@ export default function PricingPage() {
     try {
       setIsLoading(priceId);
       if (subscription?.hasActiveSubscription) {
-        console.log("hasActiveSubscription", subscription?.hasActiveSubscription);
+        console.log(
+          "hasActiveSubscription",
+          subscription?.hasActiveSubscription
+        );
         // Handle upgrade/downgrade for existing subscription
         const updateResponse = await fetch("/api/subscription/update", {
           method: "POST",
@@ -179,7 +172,9 @@ export default function PricingPage() {
   // Check if button should be disabled for the current plan
   const isButtonDisabled = (priceId: string) => {
     // Find the current plan based on planName
-    const currentPlan = plans.find((plan) => plan.name === subscription?.planName);
+    const currentPlan = plans.find(
+      (plan) => plan.name === subscription?.planName
+    );
 
     // Disable the button for the current plan
     if (
@@ -239,7 +234,8 @@ export default function PricingPage() {
                   >
                     {isLoading === plan.priceId
                       ? "Processing..."
-                      : subscription?.hasActiveSubscription && subscription?.planName === plan.name
+                      : subscription?.hasActiveSubscription &&
+                        subscription?.planName === plan.name
                       ? "Current Plan"
                       : "Subscribe"}
                   </Button>
@@ -247,6 +243,54 @@ export default function PricingPage() {
               </CardFooter>
             </Card>
           ))}
+
+          {/* Contact Us Card */}
+          <Card className="flex flex-col border-dashed">
+            <CardHeader>
+              <CardTitle className="text-2xl">
+                {process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_NAME || "Enterprise"}
+              </CardTitle>
+              <p className="text-muted-foreground">
+                {process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_DESCRIPTION ||
+                  "Need higher limits? Contact us for custom solutions"}
+              </p>
+            </CardHeader>
+            <CardContent className="flex-grow">
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-muted-foreground">
+                  Custom
+                </span>
+              </div>
+              <ul className="space-y-2">
+                {(
+                  process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_FEATURES ||
+                  "Advanced AI editing,Priority support,Custom integrations,Dedicated account manager"
+                )
+                  .split(",")
+                  .map((feature) => feature.trim())
+                  .map((feature) => (
+                    <li key={feature} className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-primary" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+              </ul>
+            </CardContent>
+            <CardFooter>
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() =>
+                  window.open(
+                    "mailto:contact@makex.app?subject=Enterprise%20Inquiry",
+                    "_blank"
+                  )
+                }
+              >
+                Contact Us
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
       )}
     </div>
