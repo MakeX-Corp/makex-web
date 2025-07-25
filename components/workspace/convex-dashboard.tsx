@@ -84,6 +84,7 @@ export function ConvexDashboardEmbed() {
     // Otherwise, fetch from API
     setLoading(true);
     setError(null);
+    setTimeout(() => {}, 3000);
     fetch(`/api/app?id=${appId}`)
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch app info");
@@ -99,9 +100,7 @@ export function ConvexDashboardEmbed() {
         };
         setConvexConfig(config);
 
-        console.log("config", config);
         if (isConfigComplete(config)) {
-          console.log("setting credentialsReady to true");
           setCredentialsReady(true);
         }
       })
@@ -113,10 +112,10 @@ export function ConvexDashboardEmbed() {
 
   useEffect(() => {
     if (!credentialsReady) return;
-    console.log("setting showIframe to true");
+
     const timer = setTimeout(() => {
       setShowIframe(true);
-    }, 3000); // delay iframe MOUNT by 3s
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [credentialsReady]);
