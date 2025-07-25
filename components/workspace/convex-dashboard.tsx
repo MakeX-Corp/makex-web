@@ -72,12 +72,15 @@ export function ConvexDashboardEmbed() {
     cfg && cfg.devUrl && cfg.projectId && cfg.devAdminKey;
 
   useEffect(() => {
-    if (!appId) return;
+    if (!appId) {
+      console.log("🚨 No appId, bailing out");
+      return;
+    }
 
+    // If context config is already complete, skip fetch
     if (isConfigComplete(contextConvexConfig)) {
+      console.log("✅ Using context config");
       setConvexConfig(contextConvexConfig);
-      setLoading(false);
-      setError(null);
       setCredentialsReady(true);
       return;
     }
@@ -85,33 +88,43 @@ export function ConvexDashboardEmbed() {
     setLoading(true);
     setError(null);
 
-    const timer = setTimeout(() => {
-      fetch(`/api/app?id=${appId}`)
-        .then(async (res) => {
-          if (!res.ok) throw new Error("Failed to fetch app info");
-          return res.json();
-        })
-        .then((data) => {
-          const config = {
-            devUrl: data.convex_dev_url || null,
-            projectId: data.convex_project_id || null,
-            devAdminKey: data.convex_dev_admin_key || null,
-            prodUrl: data.convex_prod_url || null,
-            prodAdminKey: data.convex_prod_admin_key || null,
-          };
-          setConvexConfig(config);
+    const delayAndFetch = async () => {
+      console.log("⏳ Waiting 3s before fetch...");
+      await new Promise((res) => setTimeout(res, 4000));
+      console.log("🚀 Fetching config...");
 
-          if (isConfigComplete(config)) {
-            setCredentialsReady(true);
-          }
-        })
-        .catch((err) => {
-          setError(err.message || "Unknown error");
-        })
-        .finally(() => setLoading(false));
-    }, 3000);
+      try {
+        const res = await fetch(`/api/app?id=${appId}`);
+        console.log("📡 Status:", res.status);
+        if (!res.ok) throw new Error("Failed to fetch app info");
+        const data = await res.json();
+        console.log("✅ Data:", data);
 
-    return () => clearTimeout(timer);
+        const config = {
+          devUrl: data.convex_dev_url || null,
+          projectId: data.convex_project_id || null,
+          devAdminKey: data.convex_dev_admin_key || null,
+          prodUrl: data.convex_prod_url || null,
+          prodAdminKey: data.convex_prod_admin_key || null,
+        };
+
+        setConvexConfig(config);
+
+        if (isConfigComplete(config)) {
+          console.log("✅ Config complete, setting credentialsReady");
+          setCredentialsReady(true);
+        } else {
+          console.warn("⚠️ Incomplete config:", config);
+        }
+      } catch (err: any) {
+        console.error("❌ Fetch failed:", err.message);
+        setError(err.message || "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    delayAndFetch();
   }, [appId, contextConvexConfig]);
 
   useEffect(() => {
