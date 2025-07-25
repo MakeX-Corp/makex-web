@@ -65,12 +65,11 @@ export function ConvexDashboardEmbed() {
   const [error, setError] = useState<string | null>(null);
   const [env, setEnv] = useState<"dev" | "prod">("dev");
   const [credentialsReady, setCredentialsReady] = useState(false);
+  const [showIframe, setShowIframe] = useState(false);
 
   // Helper to check if a config is complete
   const isConfigComplete = (cfg: any) =>
     cfg && cfg.devUrl && cfg.projectId && cfg.devAdminKey;
-
-  const [delayDone, setDelayDone] = useState(false);
 
   useEffect(() => {
     if (!appId) return;
@@ -100,7 +99,9 @@ export function ConvexDashboardEmbed() {
         };
         setConvexConfig(config);
 
+        console.log("config", config);
         if (isConfigComplete(config)) {
+          console.log("setting credentialsReady to true");
           setCredentialsReady(true);
         }
       })
@@ -110,12 +111,16 @@ export function ConvexDashboardEmbed() {
       .finally(() => setLoading(false));
   }, [appId, contextConvexConfig]);
 
-  // ⏱️ Wait 3s after credentialsReady before rendering iframe
   useEffect(() => {
     if (!credentialsReady) return;
-    const timer = setTimeout(() => setDelayDone(true), 3000);
+    console.log("setting showIframe to true");
+    const timer = setTimeout(() => {
+      setShowIframe(true);
+    }, 3000); // delay iframe MOUNT by 3s
+
     return () => clearTimeout(timer);
   }, [credentialsReady]);
+
   if (!appId) {
     return null;
   }
@@ -126,7 +131,7 @@ export function ConvexDashboardEmbed() {
       </div>
     );
   }
-  if (!credentialsReady || !delayDone) {
+  if (!credentialsReady || !showIframe) {
     return (
       <div className="flex items-center justify-center h-full w-full">
         <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
@@ -192,7 +197,7 @@ export function ConvexDashboardEmbed() {
       </div>
 
       <div className="flex-1 overflow-hidden">
-        {env === "dev" && (
+        {env === "dev" && showIframe && (
           <DashboardFrame
             key="dev"
             adminKey={convexConfig.devAdminKey!}
@@ -202,6 +207,7 @@ export function ConvexDashboardEmbed() {
         )}
 
         {env === "prod" &&
+          showIframe &&
           (prodAvailable ? (
             <DashboardFrame
               key="prod"
