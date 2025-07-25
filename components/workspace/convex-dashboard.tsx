@@ -82,6 +82,7 @@ export function ConvexDashboardEmbed() {
       return;
     }
     // Otherwise, fetch from API
+    console.log("fetching app info");
     setLoading(true);
     setError(null);
     setTimeout(() => {}, 3000);
@@ -91,6 +92,7 @@ export function ConvexDashboardEmbed() {
         return res.json();
       })
       .then((data) => {
+        console.log("data", data);
         const config = {
           devUrl: data.convex_dev_url || null,
           projectId: data.convex_project_id || null,
@@ -101,6 +103,7 @@ export function ConvexDashboardEmbed() {
         setConvexConfig(config);
 
         if (isConfigComplete(config)) {
+          console.log("setting credentialsReady to true");
           setCredentialsReady(true);
         }
       })
@@ -119,6 +122,9 @@ export function ConvexDashboardEmbed() {
 
     return () => clearTimeout(timer);
   }, [credentialsReady]);
+
+  console.log("credentialsReady", credentialsReady);
+  console.log("showIframe", showIframe);
 
   if (!appId) {
     return null;
