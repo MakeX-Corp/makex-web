@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useSession } from "@/context/session-context";
-import { createClient } from "@/utils/supabase/client";
+import { Loader2 } from "lucide-react";
 
+//iframe for dev and prod
 function DashboardFrame({
   adminKey,
   deploymentUrl,
@@ -53,7 +54,6 @@ function DashboardFrame({
 export function ConvexDashboardEmbed() {
   const session = useSession();
   const { appId, convexConfig: contextConvexConfig } = session;
-
   const [convexConfig, setConvexConfig] = useState<{
     devUrl: string | null;
     projectId: string | null;
@@ -61,30 +61,36 @@ export function ConvexDashboardEmbed() {
     prodUrl: string | null;
     prodAdminKey: string | null;
   } | null>(null);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [env, setEnv] = useState<"dev" | "prod">("dev");
   const [credentialsReady, setCredentialsReady] = useState(false);
-  const [showIframe, setShowIframe] = useState(false);
-  const supabase = createClient();
 
+  // Helper to check if a config is complete
   const isConfigComplete = (cfg: any) =>
     cfg && cfg.devUrl && cfg.projectId && cfg.devAdminKey;
 
+  const [delayDone, setDelayDone] = useState(false);
+
   useEffect(() => {
-    if (!appId) {
+    if (!appId) return;
+    // If context config is complete, use it and skip API call
+    if (isConfigComplete(contextConvexConfig)) {
+      setConvexConfig(contextConvexConfig);
+      setLoading(false);
+      setError(null);
+      setCredentialsReady(true);
       return;
     }
-
-    const fetchInitialConfig = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`/api/app?id=${appId}`);
+    // Otherwise, fetch from API
+    setLoading(true);
+    setError(null);
+    fetch(`/api/app?id=${appId}`)
+      .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch app info");
-
-        const data = await res.json();
+        return res.json();
+      })
+      .then((data) => {
         const config = {
           devUrl: data.convex_dev_url || null,
           projectId: data.convex_project_id || null,
@@ -96,50 +102,31 @@ export function ConvexDashboardEmbed() {
 
         if (isConfigComplete(config)) {
           setCredentialsReady(true);
-          setTimeout(() => setShowIframe(true), 2500);
         }
-      } catch (err: any) {
+      })
+      .catch((err) => {
         setError(err.message || "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    };
+      })
+      .finally(() => setLoading(false));
+  }, [appId, contextConvexConfig]);
 
-    fetchInitialConfig();
-
-    const channel = supabase
-      .channel(`realtime:user_apps:${appId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "user_apps",
-          filter: `id=eq.${appId}`,
-        },
-        (payload) => {
-          const updated = payload.new;
-          const config = {
-            devUrl: updated.convex_dev_url || null,
-            projectId: updated.convex_project_id || null,
-            devAdminKey: updated.convex_dev_admin_key || null,
-            prodUrl: updated.convex_prod_url || null,
-            prodAdminKey: updated.convex_prod_admin_key || null,
-          };
-          setConvexConfig(config);
-          if (isConfigComplete(config)) {
-            setCredentialsReady(true);
-          }
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [appId]);
-
-  if (loading || !convexConfig || !showIframe) {
+  // ⏱️ Wait 3s after credentialsReady before rendering iframe
+  useEffect(() => {
+    if (!credentialsReady) return;
+    const timer = setTimeout(() => setDelayDone(true), 3000);
+    return () => clearTimeout(timer);
+  }, [credentialsReady]);
+  if (!appId) {
+    return null;
+  }
+  if (loading || !convexConfig) {
+    return (
+      <div className="flex items-center justify-center h-full w-full">
+        <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
+      </div>
+    );
+  }
+  if (!credentialsReady || !delayDone) {
     return (
       <div className="flex items-center justify-center h-full w-full">
         <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
@@ -157,10 +144,6 @@ export function ConvexDashboardEmbed() {
         </div>
       </div>
     );
-  }
-
-  if (!credentialsReady) {
-    return null;
   }
 
   const prodAvailable = Boolean(
