@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseWithUser } from "@/utils/server/auth";
-import { getMessageCount } from "@/utils/server/check-daily-limit"; // Import existing function
+import { getSupabaseWithUser } from "@/utils/server/auth"; // Import existing function
 import { DEFAULT_LIMITS } from "@/const/const";
+
 /**
  * Get message usage stats based on subscription plan using POST method
  * Allows passing subscription data in the request body
@@ -14,11 +14,19 @@ export async function POST(req: Request) {
       return userResult;
     const { supabase, user } = userResult;
 
+    //check if user is in mobile subscriptions table, get that message count if so
+    // if not in mobile subscription table, i guess just manually calculate the message count
+
+    // ok but say we insert him into mobile_subscriptions table , then what?
+    // if they buy a subscription from  paddle then mobile subscriptions will never know right?
+    // or maybe next time you send a message it will update mobile subscriptions table?
+
     // Get subscription data from request body
     let subscriptionData = null;
     try {
       const body = await req.json();
       subscriptionData = body.subscription || null;
+      console.log("subscriptionData", subscriptionData);
     } catch (e) {
       console.warn("Failed to parse request body", e);
       // Continue with null subscriptionData
@@ -39,16 +47,9 @@ export async function POST(req: Request) {
       limit = DEFAULT_LIMITS.free;
 
       const now = new Date();
-      startDate = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        0,
-        0,
-        0,
-        0,
-      );
-      endDate = new Date(Date.now() + 30);
+      endDate = new Date();
+      startDate = new Date();
+      startDate.setMonth(endDate.getMonth() - 1);
       periodType = "monthly";
     } else {
       // Paid plans with valid subscription: billing period limit
@@ -60,7 +61,8 @@ export async function POST(req: Request) {
     }
 
     // Get message count for the determined period
-    const result = await getMessageCount(supabase, user.id, startDate, endDate);
+    //const result = await getMessageCount(supabase, user.id, startDate, endDate);
+    const result = { count: 0, error: null };
     if (result.error) {
       return NextResponse.json(
         { error: "Failed to fetch message count" },
@@ -69,6 +71,13 @@ export async function POST(req: Request) {
     }
 
     const used = result.count || 0;
+
+    //check if user is in mobile subscriptions table, get that message count if so
+    // if not in mobile subscription table, i guess just manually calculate the message count
+
+    // ok but say we insert him into mobile_subscriptions table , then what?
+    // if they buy a subscription from  paddle then mobile subscriptions will never know right?
+    // or maybe next time you send a message it will update mobile subscriptions table?
 
     // Return usage info
     return NextResponse.json({

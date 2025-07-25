@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
+import {
+  fetchMobileSubscription,
+  fetchWebSubscription,
+  handleExistingMobileSubscription,
+  handleWebSubscription,
+  handleNoSubscription,
+} from "@/utils/server/subscription-helpers";
 
 export async function GET(request: Request) {
   // Get authenticated user and Supabase client
@@ -9,53 +16,35 @@ export async function GET(request: Request) {
     return result; // This handles auth errors automatically
   }
 
-  const { supabase, user } = result;
+  const { user } = result;
 
   try {
-    // Get the user's most recent active subscription
-    const { data: subscription, error } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", user.id)
-      .in("status", ["active", "trialing", "past_due"]) // Only get active-like subscriptions
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+    // Step 1: First try to fetch from mobile_subscriptions table
+    const { data: mobileSubscription, error: mobileError } =
+      await fetchMobileSubscription(user.id);
 
-    if (error) {
-      // Check if it's a not found error (which is expected for users with no subscription)
-      if (error.code === "PGRST116") {
-        // Return a 200 with null data to indicate no subscription found
-        return NextResponse.json({
-          subscription: null,
-          hasActiveSubscription: false,
-          message: "No active subscription found",
-        });
-      }
-
-      // For other errors, throw to be caught by the catch block
-      throw error;
+    console.log("mobileSubscription", mobileSubscription);
+    // If user found in mobile_subscriptions, return the data
+    if (mobileSubscription && !mobileError) {
+      const response = await handleExistingMobileSubscription(
+        mobileSubscription,
+      );
+      return NextResponse.json(response);
     }
 
-    // Check if subscription is past the current period end date
-    const isExpired =
-      subscription && new Date(subscription.current_period_end) < new Date();
+    // Step 2: If not found in mobile_subscriptions, check subscriptions table
+    const { data: webSubscription, error: webError } =
+      await fetchWebSubscription(user.id);
 
-    // Get any pending or scheduled cancellations
-    let pendingCancellation = false;
-    if (subscription && subscription.cancel_at_period_end) {
-      pendingCancellation = true;
+    if (webSubscription && !webError) {
+      // Step 3: Found in subscriptions table, insert into mobile_subscriptions
+      const response = await handleWebSubscription(webSubscription, user.id);
+      return NextResponse.json(response);
     }
-    // Return subscription details with additional useful flags
-    return NextResponse.json({
-      subscription,
-      hasActiveSubscription: subscription && !isExpired,
-      pendingCancellation,
-      expiresAt: subscription?.current_period_end || null,
-      planId: subscription?.price_id || null,
-      customerId: subscription?.customer_id || null,
-      userId: user.id,
-    });
+
+    // Step 4: Not found in either table, create free plan entry
+    const response = await handleNoSubscription(user.id);
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Error fetching subscription:", error);
 

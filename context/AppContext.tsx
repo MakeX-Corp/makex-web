@@ -212,7 +212,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       const data = await subscriptionResponse.json();
 
-      // Get email from token using the provided utility function
+      console.log("data from app context, fetch subscription", data);
+
       const planName = getPlanName(data.subscription?.planId || "");
       data.planName = planName;
 

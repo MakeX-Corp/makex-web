@@ -2,7 +2,6 @@ import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
-import { checkMessageLimit } from "@/utils/server/check-daily-limit";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
@@ -138,14 +137,7 @@ export async function POST(req: Request) {
     }
 
     try {
-      // Check daily message limit using the new utility function
-      const limitCheck = await checkMessageLimit(supabase, user, subscription);
-      if (limitCheck.error) {
-        return NextResponse.json(
-          { error: limitCheck.error },
-          { status: limitCheck.status },
-        );
-      }
+      // need new way of checking limit here  =============
 
       // Get app details from the database
       const { data: app, error: appError } = await supabase
