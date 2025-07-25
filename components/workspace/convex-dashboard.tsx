@@ -89,16 +89,13 @@ export function ConvexDashboardEmbed() {
     setError(null);
 
     const delayAndFetch = async () => {
-      console.log("⏳ Waiting 3s before fetch...");
-      await new Promise((res) => setTimeout(res, 4000));
-      console.log("🚀 Fetching config...");
+      await new Promise((res) => setTimeout(res, 8000));
 
       try {
         const res = await fetch(`/api/app?id=${appId}`);
-        console.log("📡 Status:", res.status);
+
         if (!res.ok) throw new Error("Failed to fetch app info");
         const data = await res.json();
-        console.log("✅ Data:", data);
 
         const config = {
           devUrl: data.convex_dev_url || null,
@@ -111,10 +108,10 @@ export function ConvexDashboardEmbed() {
         setConvexConfig(config);
 
         if (isConfigComplete(config)) {
-          console.log("✅ Config complete, setting credentialsReady");
+          console.log("Config complete, setting credentialsReady");
           setCredentialsReady(true);
         } else {
-          console.warn("⚠️ Incomplete config:", config);
+          console.warn("Incomplete config:");
         }
       } catch (err: any) {
         console.error("❌ Fetch failed:", err.message);
