@@ -36,7 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FeedbackFish } from '@feedback-fish/react';
+import { FeedbackFish } from "@feedback-fish/react";
 
 // Theme toggle component
 function ThemeToggle() {
@@ -93,7 +93,7 @@ export function AppSidebar() {
       setFilteredApps(apps);
     } else {
       const filtered = apps.filter((app) =>
-        app.app_name.toLowerCase().includes(searchQuery.toLowerCase())
+        app.app_name.toLowerCase().includes(searchQuery.toLowerCase()),
       );
       setFilteredApps(filtered);
     }
@@ -110,7 +110,7 @@ export function AppSidebar() {
   const confirmDelete = (
     e: React.MouseEvent,
     appId: string,
-    appName: string
+    appName: string,
   ) => {
     e.preventDefault(); // Prevent navigation
     e.stopPropagation(); // Prevent event bubbling
@@ -143,7 +143,7 @@ export function AppSidebar() {
   const startEditing = (
     e: React.MouseEvent,
     appId: string,
-    currentName: string
+    currentName: string,
   ) => {
     e.preventDefault(); // Prevent navigation
     e.stopPropagation(); // Prevent event bubbling
@@ -173,8 +173,8 @@ export function AppSidebar() {
         prevApps.map((app) =>
           app.id === appId
             ? { ...app, display_name: editedAppName.trim() }
-            : app
-        )
+            : app,
+        ),
       );
 
       setEditingAppId(null);
@@ -219,7 +219,7 @@ export function AppSidebar() {
       <div
         className={cn(
           "flex flex-col h-full border-r bg-background transition-all duration-300",
-          expanded ? "w-64" : "w-16"
+          expanded ? "w-64" : "w-16",
         )}
       >
         {/* Top header with logo and toggle button */}
@@ -254,7 +254,7 @@ export function AppSidebar() {
             <ChevronRight
               className={cn(
                 "h-4 w-4 transition-transform",
-                expanded ? "rotate-180" : ""
+                expanded ? "rotate-180" : "",
               )}
             />
           </Button>
@@ -347,7 +347,7 @@ export function AppSidebar() {
                               "flex items-center py-1.5 px-2 text-sm rounded-md transition-colors font-medium w-full pr-12",
                               pathname.includes(`/dashboard/${app.id}`)
                                 ? "bg-primary/10 text-primary"
-                                : "text-foreground hover:bg-muted"
+                                : "text-foreground hover:bg-muted",
                             )}
                           >
                             <span className="truncate">
@@ -367,7 +367,7 @@ export function AppSidebar() {
                                   app.id,
                                   app.display_name ||
                                     app.app_name ||
-                                    "Untitled App"
+                                    "Untitled App",
                                 )
                               }
                             >
@@ -382,7 +382,7 @@ export function AppSidebar() {
                                 confirmDelete(
                                   e,
                                   app.id,
-                                  app.display_name || app.app_name
+                                  app.display_name || app.app_name,
                                 )
                               }
                             >
@@ -435,9 +435,9 @@ export function AppSidebar() {
               className={cn(
                 "flex items-center h-10 px-3 w-full rounded-md text-sm transition-colors font-medium",
                 "text-foreground hover:bg-muted",
-                !expanded && "justify-center"
+                !expanded && "justify-center",
               )}
-              style={{ textAlign: expanded ? 'left' : 'center' }}
+              style={{ textAlign: expanded ? "left" : "center" }}
             >
               <MessageSquare className="w-5 h-5 text-foreground" />
               {expanded && <span className="ml-3">Send Feedback</span>}
@@ -451,7 +451,7 @@ export function AppSidebar() {
             <h2
               className={cn(
                 "text-xs font-semibold uppercase tracking-wider text-muted-foreground",
-                !expanded && "sr-only"
+                !expanded && "sr-only",
               )}
             >
               Links
@@ -469,7 +469,7 @@ export function AppSidebar() {
                     className={cn(
                       "flex items-center h-10 px-3 rounded-md text-sm transition-colors font-medium",
                       "text-muted-foreground hover:bg-muted hover:text-foreground",
-                      !expanded && "justify-center"
+                      !expanded && "justify-center",
                     )}
                   >
                     <item.icon className="w-5 h-5" />
@@ -487,7 +487,7 @@ export function AppSidebar() {
                       pathname === item.href
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                      !expanded && "justify-center"
+                      !expanded && "justify-center",
                     )}
                   >
                     <item.icon className="w-5 h-5" />

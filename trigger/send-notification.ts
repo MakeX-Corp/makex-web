@@ -43,7 +43,7 @@ export const sendNotification = task({
 
       console.log(
         `${LOG_PREFIX} Notification sent successfully to user:`,
-        userId
+        userId,
       );
 
       return {

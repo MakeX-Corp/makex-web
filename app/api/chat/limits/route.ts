@@ -10,7 +10,8 @@ export async function POST(req: Request) {
   try {
     // Get the user API client
     const userResult = await getSupabaseWithUser(req as NextRequest);
-    if (userResult instanceof NextResponse || 'error' in userResult) return userResult;
+    if (userResult instanceof NextResponse || "error" in userResult)
+      return userResult;
     const { supabase, user } = userResult;
 
     // Get subscription data from request body
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
         0,
         0,
         0,
-        0
+        0,
       );
       endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
       periodType = "daily";
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
     if (result.error) {
       return NextResponse.json(
         { error: "Failed to fetch message count" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -81,7 +82,7 @@ export async function POST(req: Request) {
     console.error("Error in message count API:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -20,7 +20,26 @@ function countTokens(text: string): number {
 const embeddingModel = openai.textEmbeddingModel("text-embedding-3-small");
 
 // Add delay function with exponential backoff
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Add retry function with exponential backoff
+async function fetchWithRetry(url: string, maxRetries = 3) {
+  let retries = 0;
+  while (true) {
+    try {
+      return await axios.get(url);
+    } catch (error: any) {
+      if (error.response?.status === 429 && retries < maxRetries) {
+        const backoffTime = Math.pow(2, retries) * 2000; // 2s, 4s, 8s
+        console.log(`Rate limited, retrying in ${backoffTime / 1000}s...`);
+        await delay(backoffTime);
+        retries++;
+        continue;
+      }
+      throw error;
+    }
+  }
+}
 
 export const fetchOpenAIDocs = schedules.task({
   id: "fetch-openai-docs",
@@ -44,7 +63,8 @@ export const fetchOpenAIDocs = schedules.task({
     console.log("[OpenAIDocs] Existing OpenAI docs deleted");
 
     // 2. Fetch the OpenAPI YAML file
-    const rawUrl = "https://raw.githubusercontent.com/openai/openai-openapi/manual_spec/openapi.yaml";
+    const rawUrl =
+      "https://raw.githubusercontent.com/openai/openai-openapi/manual_spec/openapi.yaml";
     try {
       // Use Python script for contextual chunking
       const result = await python.runScript("./python/chunk-runner.py", [rawUrl,'code','yaml']);

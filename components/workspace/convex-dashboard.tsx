@@ -33,7 +33,7 @@ function DashboardFrame({
           deploymentUrl,
           deploymentName,
         },
-        "*"
+        "*",
       );
     };
 
@@ -65,30 +65,38 @@ export function ConvexDashboardEmbed() {
   const [error, setError] = useState<string | null>(null);
   const [env, setEnv] = useState<"dev" | "prod">("dev");
   const [credentialsReady, setCredentialsReady] = useState(false);
+  const [showIframe, setShowIframe] = useState(false);
 
   // Helper to check if a config is complete
   const isConfigComplete = (cfg: any) =>
     cfg && cfg.devUrl && cfg.projectId && cfg.devAdminKey;
 
   useEffect(() => {
-    if (!appId) return;
-    // If context config is complete, use it and skip API call
+    if (!appId) {
+      console.log("🚨 No appId, bailing out");
+      return;
+    }
+
+    // If context config is already complete, skip fetch
     if (isConfigComplete(contextConvexConfig)) {
+      console.log("✅ Using context config");
       setConvexConfig(contextConvexConfig);
-      setLoading(false);
-      setError(null);
       setCredentialsReady(true);
       return;
     }
-    // Otherwise, fetch from API
+
     setLoading(true);
     setError(null);
-    fetch(`/api/app?id=${appId}`)
-      .then(async (res) => {
+
+    const delayAndFetch = async () => {
+      await new Promise((res) => setTimeout(res, 8000));
+
+      try {
+        const res = await fetch(`/api/app?id=${appId}`);
+
         if (!res.ok) throw new Error("Failed to fetch app info");
-        return res.json();
-      })
-      .then((data) => {
+        const data = await res.json();
+
         const config = {
           devUrl: data.convex_dev_url || null,
           projectId: data.convex_project_id || null,
@@ -96,17 +104,35 @@ export function ConvexDashboardEmbed() {
           prodUrl: data.convex_prod_url || null,
           prodAdminKey: data.convex_prod_admin_key || null,
         };
+
         setConvexConfig(config);
 
         if (isConfigComplete(config)) {
+          console.log("Config complete, setting credentialsReady");
           setCredentialsReady(true);
+        } else {
+          console.warn("Incomplete config:");
         }
-      })
-      .catch((err) => {
+      } catch (err: any) {
+        console.error("❌ Fetch failed:", err.message);
         setError(err.message || "Unknown error");
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    delayAndFetch();
   }, [appId, contextConvexConfig]);
+
+  useEffect(() => {
+    if (!credentialsReady) return;
+
+    const timer = setTimeout(() => {
+      setShowIframe(true);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [credentialsReady]);
 
   if (!appId) {
     return null;
@@ -118,9 +144,14 @@ export function ConvexDashboardEmbed() {
       </div>
     );
   }
-  if (!credentialsReady) {
-    return null;
+  if (!credentialsReady || !showIframe) {
+    return (
+      <div className="flex items-center justify-center h-full w-full">
+        <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
+      </div>
+    );
   }
+
   if (error) {
     return (
       <div className="flex items-center justify-center h-full w-full">
@@ -137,7 +168,7 @@ export function ConvexDashboardEmbed() {
     convexConfig &&
       convexConfig.prodUrl &&
       convexConfig.projectId &&
-      convexConfig.prodAdminKey
+      convexConfig.prodAdminKey,
   );
 
   if (!isConfigComplete(convexConfig)) {
@@ -179,7 +210,7 @@ export function ConvexDashboardEmbed() {
       </div>
 
       <div className="flex-1 overflow-hidden">
-        {env === "dev" && (
+        {env === "dev" && showIframe && (
           <DashboardFrame
             key="dev"
             adminKey={convexConfig.devAdminKey!}
@@ -189,6 +220,7 @@ export function ConvexDashboardEmbed() {
         )}
 
         {env === "prod" &&
+          showIframe &&
           (prodAvailable ? (
             <DashboardFrame
               key="prod"

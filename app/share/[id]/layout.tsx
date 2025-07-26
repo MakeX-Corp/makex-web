@@ -1,7 +1,7 @@
-import { Metadata } from 'next'
-import Link from 'next/link'
-import Image from 'next/image'
-import { Twitter } from 'lucide-react'
+import { Metadata } from "next";
+import Link from "next/link";
+import Image from "next/image";
+import { Twitter } from "lucide-react";
 
 function DiscordIcon() {
   return (
@@ -16,55 +16,60 @@ function DiscordIcon() {
   );
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
   const imageUrl = `https://makex.app/share.png?v=4`;
-  
+
   return {
-    title: 'Check out my app built with MakeX',
-    description: 'I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!',
+    title: "Check out my app built with MakeX",
+    description:
+      "I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!",
     openGraph: {
-      title: 'Check out my app built with MakeX',
-      description: 'I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!',
-      siteName: 'MakeX',
+      title: "Check out my app built with MakeX",
+      description:
+        "I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!",
+      siteName: "MakeX",
       images: [
         {
           url: imageUrl,
           secureUrl: imageUrl,
           width: 1200,
           height: 630,
-          alt: 'MakeX Shared Content',
-          type: 'image/png',
+          alt: "MakeX Shared Content",
+          type: "image/png",
         },
       ],
-      locale: 'en_US',
-      type: 'website',
+      locale: "en_US",
+      type: "website",
     },
     twitter: {
-      card: 'summary_large_image',
-      title: 'Check out my app built with MakeX',
-      description: 'I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!',
+      card: "summary_large_image",
+      title: "Check out my app built with MakeX",
+      description:
+        "I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!",
       images: [imageUrl],
-      creator: '@makexapp',
+      creator: "@makexapp",
     },
     other: {
-      'og:image:secure_url': imageUrl,
-      'og:image:type': 'image/png',
-      'og:image:width': '1200',
-      'og:image:height': '630',
+      "og:image:secure_url": imageUrl,
+      "og:image:type": "image/png",
+      "og:image:width": "1200",
+      "og:image:height": "630",
     },
-  }
+  };
 }
 
 export default function ShareLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <div className="h-screen bg-background flex flex-col">
-      <main className="container mx-auto px-4 py-8 flex-1">
-        {children}
-      </main>
+      <main className="container mx-auto px-4 py-8 flex-1">{children}</main>
 
       {/* Custom Footer */}
       <footer className="border-t bg-background">
@@ -78,13 +83,21 @@ export default function ShareLayout({
                 height={24}
                 className="h-6 w-auto"
               />
-              <span className="text-sm text-muted-foreground">© 2025 MakeX. All rights reserved.</span>
+              <span className="text-sm text-muted-foreground">
+                © 2025 MakeX. All rights reserved.
+              </span>
             </div>
             <div className="flex items-center space-x-6">
-              <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link
+                href="/terms"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
                 Terms
               </Link>
-              <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link
+                href="/privacy"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
                 Privacy
               </Link>
               <div className="flex items-center space-x-4">
@@ -110,5 +123,5 @@ export default function ShareLayout({
         </div>
       </footer>
     </div>
-  )
+  );
 }

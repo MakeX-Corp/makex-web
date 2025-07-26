@@ -44,7 +44,7 @@ export const fetchExpoDocs = schedules.task({
       for (const file of files) {
         // Add 2 second base delay between each file to avoid rate limits
         await delay(2000);
-        
+
         const rawUrl = `https://raw.githubusercontent.com/expo/expo/main/docs/pages/versions/v53.0.0/sdk/${file}`;
         try {
 

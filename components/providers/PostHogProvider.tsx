@@ -4,16 +4,15 @@ import { useEffect, Suspense } from "react";
 import posthog from "posthog-js";
 import { usePathname, useSearchParams } from "next/navigation";
 
-
 function PostHogContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production') {
-    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_API_KEY || "", {
-      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "",
-      autocapture: true,
+    if (process.env.NODE_ENV === "production") {
+      posthog.init(process.env.NEXT_PUBLIC_POSTHOG_API_KEY || "", {
+        api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "",
+        autocapture: true,
         capture_pageview: false,
         capture_pageleave: true,
         debug: false,

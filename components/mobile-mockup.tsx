@@ -11,10 +11,10 @@ interface MobileMockupProps {
 export default function MobileMockup({
   appUrl,
   iframeKey,
-  state
+  state,
 }: MobileMockupProps) {
   const [windowWidth, setWindowWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1200
+    typeof window !== "undefined" ? window.innerWidth : 1200,
   );
 
   useEffect(() => {
@@ -63,14 +63,14 @@ export default function MobileMockup({
     if (sandboxStatus === "paused") {
       return {
         message: "Refresh page to restart container",
-        showSpinner: false
+        showSpinner: false,
       };
     }
 
     if (sandboxStatus === "pausing") {
       return {
         message: "Container is pausing...",
-        showSpinner: false
+        showSpinner: false,
       };
     }
 
@@ -80,7 +80,7 @@ export default function MobileMockup({
       if (expoStatus !== "bundled") {
         return {
           message: `Expo: ${expoStatus || "loading"}...`,
-          showSpinner: true
+          showSpinner: true,
         };
       }
 
@@ -88,7 +88,7 @@ export default function MobileMockup({
       if (expoStatus === "bundled") {
         return {
           message: `App: ${appStatus || "loading"}...`,
-          showSpinner: true
+          showSpinner: true,
         };
       }
     }
@@ -96,7 +96,7 @@ export default function MobileMockup({
     // Default fallback
     return {
       message: "App is loading...",
-      showSpinner: true
+      showSpinner: true,
     };
   };
 
@@ -111,12 +111,16 @@ export default function MobileMockup({
         padding={padding}
       >
         {/* Show the app if container is active, expo_status is bundled, and app_status is active */}
-        {state?.sandbox_status === "active" && 
-         state?.expo_status === "bundled" && 
-         state?.app_status === "active" && 
-         appUrl ? (
+        {state?.sandbox_status === "active" &&
+        state?.expo_status === "bundled" &&
+        state?.app_status === "active" &&
+        appUrl ? (
           <iframe
-            key={[iframeKey, state?.sandbox_status, state?.app_status].toString()}
+            key={[
+              iframeKey,
+              state?.sandbox_status,
+              state?.app_status,
+            ].toString()}
             src={appUrl}
             style={{
               width: `${contentWidth}px`,

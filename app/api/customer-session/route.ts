@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       const errorData = await response.json();
       return NextResponse.json(
         { error: "Failed to generate portal link", details: errorData },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     console.error("Error generating portal URL:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     if (appError) {
       return NextResponse.json(
         { error: "Failed to fetch app details" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     console.error("Error saving AI message:", error);
     return NextResponse.json(
       { error: "Failed to save AI message" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

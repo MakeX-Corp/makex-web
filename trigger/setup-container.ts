@@ -14,7 +14,10 @@ export const setupContainer = task({
     containerId: string;
     sandboxId: string;
   }) => {
-    console.log("[setupContainer] Starting container setup with payload:", payload);
+    console.log(
+      "[setupContainer] Starting container setup with payload:",
+      payload,
+    );
     const { appId, appName, containerId, sandboxId } = payload;
 
     try {

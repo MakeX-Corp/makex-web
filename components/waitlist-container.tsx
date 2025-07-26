@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 export default function WaitlistContainer() {
   return (
@@ -9,8 +9,12 @@ export default function WaitlistContainer() {
         rel="noopener noreferrer"
         className="inline-block"
       >
-        <img src="/app-store.svg" alt="Pre-order on the App Store" className="h-[62px] w-[180px] md:h-[82px] md:w-[240px]" />
+        <img
+          src="/app-store.svg"
+          alt="Pre-order on the App Store"
+          className="h-[62px] w-[180px] md:h-[82px] md:w-[240px]"
+        />
       </a>
     </div>
-  )
-} 
+  );
+}

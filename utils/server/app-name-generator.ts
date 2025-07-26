@@ -22,7 +22,7 @@ export function generateAppName() {
 
 export async function generateDisplayName(
   initialPrompt: string,
-  fallback: string
+  fallback: string,
 ): Promise<string> {
   try {
     const result = await generateObject({

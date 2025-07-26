@@ -43,7 +43,7 @@ export const aiAgent = task({
 
       if (sessionError) {
         throw new Error(
-          `Failed to fetch latest session: ${sessionError.message}`
+          `Failed to fetch latest session: ${sessionError.message}`,
         );
       }
 
@@ -63,7 +63,7 @@ export const aiAgent = task({
       if (historyError) {
         console.error(
           `${LOG_PREFIX} Failed to fetch chat history:`,
-          historyError
+          historyError,
         );
         // Continue without history if there's an error
       }
@@ -110,7 +110,7 @@ export const aiAgent = task({
 
       if (sandboxError) {
         throw new Error(
-          `Failed to fetch sandbox status: ${sandboxError.message}`
+          `Failed to fetch sandbox status: ${sandboxError.message}`,
         );
       }
 
@@ -321,13 +321,13 @@ export const aiAgent = task({
       if (finalUpdateError) {
         console.error(
           `${LOG_PREFIX} Failed to update sandbox status back to active:`,
-          finalUpdateError
+          finalUpdateError,
         );
       }
 
       // Poll app status until ready, then send push notification
       console.log(
-        `${LOG_PREFIX} Starting status polling for push notification...`
+        `${LOG_PREFIX} Starting status polling for push notification...`,
       );
 
       const maxPollingAttempts = 20; // 20 attempts
@@ -339,7 +339,7 @@ export const aiAgent = task({
       while (pollingAttempt < maxPollingAttempts && !isAppReady) {
         pollingAttempt++;
         console.log(
-          `${LOG_PREFIX} Status poll attempt ${pollingAttempt}/${maxPollingAttempts}`
+          `${LOG_PREFIX} Status poll attempt ${pollingAttempt}/${maxPollingAttempts}`,
         );
 
         try {
@@ -354,11 +354,11 @@ export const aiAgent = task({
           if (statusCheckError) {
             console.error(
               `${LOG_PREFIX} Failed to check app status on attempt ${pollingAttempt}:`,
-              statusCheckError
+              statusCheckError,
             );
             // Continue polling even if there's an error
             await new Promise((resolve) =>
-              setTimeout(resolve, pollingIntervalMs)
+              setTimeout(resolve, pollingIntervalMs),
             );
             continue;
           }
@@ -378,29 +378,29 @@ export const aiAgent = task({
 
           if (isAppReady) {
             console.log(
-              `${LOG_PREFIX} App is ready! Sending push notification...`
+              `${LOG_PREFIX} App is ready! Sending push notification...`,
             );
             break;
           }
 
           // Wait before next poll
           await new Promise((resolve) =>
-            setTimeout(resolve, pollingIntervalMs)
+            setTimeout(resolve, pollingIntervalMs),
           );
         } catch (error) {
           console.error(
             `${LOG_PREFIX} Error during status polling attempt ${pollingAttempt}:`,
-            error
+            error,
           );
           await new Promise((resolve) =>
-            setTimeout(resolve, pollingIntervalMs)
+            setTimeout(resolve, pollingIntervalMs),
           );
         }
       }
 
       if (!isAppReady) {
         console.log(
-          `${LOG_PREFIX} App did not become ready within timeout period`
+          `${LOG_PREFIX} App did not become ready within timeout period`,
         );
       }
 
@@ -447,7 +447,7 @@ export const aiAgent = task({
       } catch (recoveryError) {
         console.error(
           `${LOG_PREFIX} Failed to recover sandbox status:`,
-          recoveryError
+          recoveryError,
         );
       }
 

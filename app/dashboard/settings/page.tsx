@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, LogOut, Globe } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from "@/utils/supabase/client";
 export default function ProfileSettings() {
   const router = useRouter();
   const { subscription, isLoading: subscriptionLoading, user } = useApp();
@@ -132,12 +132,13 @@ export default function ProfileSettings() {
               <h2 className="text-xl font-semibold mb-1">{email}</h2>
               <div className="flex items-center">
                 <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${planName === "Free"
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    planName === "Free"
                       ? "bg-muted text-muted-foreground"
                       : pendingCancellation
                         ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
                         : "bg-primary/10 text-primary"
-                    }`}
+                  }`}
                 >
                   {planName} Plan
                   {pendingCancellation && " (Cancelling)"}
