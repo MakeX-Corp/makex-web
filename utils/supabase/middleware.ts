@@ -54,6 +54,7 @@ export async function updateSession(request: NextRequest) {
     "/api/share",
     "/api/newsletter-signup",
     "/newsletter",
+    '/api/test'
   ];
 
   // Check if user is new (created after May 21, 2025)

@@ -56,6 +56,7 @@
     "@sentry/nextjs": "^9.12.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.4",
+    "@trigger.dev/python": "^3.3.17",
     "@trigger.dev/sdk": "^3.3.17",
     "@types/pg": "^8.10.9",
     "@types/qrcode": "^1.5.5",
