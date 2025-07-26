@@ -46,7 +46,6 @@ export const fetchOpenAIDocs = schedules.task({
   // Run every Sunday at midnight UTC
   cron: "0 0 * * 0",
   run: async (payload) => {
-    console.log("[OpenAIDocs] Task started");
     // 1. Delete existing OpenAI docs
     const { error: deleteError } = await supabase
       .from("embeddings")
@@ -60,7 +59,6 @@ export const fetchOpenAIDocs = schedules.task({
         message: "Failed to delete existing OpenAI docs",
       };
     }
-    console.log("[OpenAIDocs] Existing OpenAI docs deleted");
 
     // 2. Fetch the OpenAPI YAML file
     const rawUrl =
