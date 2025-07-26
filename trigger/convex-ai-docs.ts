@@ -3,6 +3,7 @@ import axios from "axios";
 import { embedMany } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { supabase } from "@/utils/supabase/basic"; // update path as needed
+import { python } from "@trigger.dev/python";
 
 const embeddingModel = openai.textEmbeddingModel("text-embedding-3-small");
 
@@ -17,24 +18,6 @@ function chunkText(text: string, size = 800, overlap = 100): string[] {
 // Add delay function with exponential backoff
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Add retry function with exponential backoff
-async function fetchWithRetry(url: string, maxRetries = 3) {
-  let retries = 0;
-  while (true) {
-    try {
-      return await axios.get(url);
-    } catch (error: any) {
-      if (error.response?.status === 429 && retries < maxRetries) {
-        const backoffTime = Math.pow(2, retries) * 2000; // 2s, 4s, 8s
-        console.log(`Rate limited, retrying in ${backoffTime/1000}s...`);
-        await delay(backoffTime);
-        retries++;
-        continue;
-      }
-      throw error;
-    }
-  }
-}
 
 export const fetchConvexDocs = schedules.task({
   id: "fetch-convex-docs",
@@ -60,13 +43,13 @@ export const fetchConvexDocs = schedules.task({
     // 2. Fetch the Convex llms.txt file
     const rawUrl = "https://www.convex.dev/llms.txt";
     try {
-      console.log(`[ConvexDocs] Fetching llms.txt from: ${rawUrl}`);
-      const response = await fetchWithRetry(rawUrl);
-      const content = response.data;
-      console.log(`[ConvexDocs] Fetched llms.txt, length: ${content.length}`);
-
-      const chunks = chunkText(content);
-      console.log(`[ConvexDocs] Split into ${chunks.length} chunks`);
+      // Use Python script for contextual chunking
+      const result = await python.runScript("./python/chunk-runner.py", [rawUrl]);
+      const chunks = JSON.parse(result.stdout);
+      console.log(`[ConvexDocs] Python chunker produced ${chunks.length} chunks`);
+      chunks.forEach((chunk: string, idx: number) => {
+        console.log(`[ConvexDocs] Chunk ${idx + 1}:`, JSON.stringify(chunk));
+      });
       
       // Process embeddings in batches to avoid token limit
       const batchSize = 50; // Process 50 chunks at a time
@@ -76,14 +59,15 @@ export const fetchConvexDocs = schedules.task({
         const batch = chunks.slice(i, i + batchSize);
         console.log(`[ConvexDocs] Processing batch ${i / batchSize + 1}: ${batch.length} chunks`);
         
+        const texts = batch.map((chunk: { text: string }) => chunk.text);
         const { embeddings } = await embedMany({
           model: embeddingModel,
-          values: batch,
+          values: texts,
         });
         console.log(`[ConvexDocs] Got ${embeddings.length} embeddings for batch ${i / batchSize + 1}`);
 
-        const rows = batch.map((chunk, j) => ({
-          content: chunk,
+        const rows = batch.map((chunk: { text: string }, j: number) => ({
+          content: chunk.text,
           embedding: embeddings[j],
           source: "llms.txt",
           category: "convex",

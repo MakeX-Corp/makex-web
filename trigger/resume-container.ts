@@ -45,7 +45,6 @@ export const resumeContainer = task({
               appName: appName,
               containerId: sandboxId,
               sandboxId: sandboxDbId,
-              initial: false,
             }
           );
           break;
