@@ -50,15 +50,15 @@ export const resumeContainer = task({
 
       switch (activeSandbox[0]?.sandbox_provider) {
         case "daytona":
-          const daytonaContainer =
-            await initiateResumeDaytonaContainer(sandboxId);
-          await startExpo.trigger({
-            appId: appId,
-            appName: appName,
-            containerId: sandboxId,
-            sandboxId: sandboxDbId,
-            initial: false,
-          });
+          const daytonaContainer = await initiateResumeDaytonaContainer(sandboxId);
+          await startExpo.trigger(
+            {
+              appId: appId,
+              appName: appName,
+              containerId: sandboxId,
+              sandboxId: sandboxDbId,
+            }
+          );
           break;
         case "e2b":
           const { appHost, apiHost } = await resumeE2BContainer(sandboxId);
