@@ -29,5 +29,5 @@ next-env.d.ts
 .trigger
 **/CLAUDE.local.md
 
+python/venv
 
-python/venv/

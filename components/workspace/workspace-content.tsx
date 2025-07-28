@@ -59,8 +59,6 @@ export default function WorkspaceContent({
   } = useSession();
 
   const { theme } = useTheme();
-  const { toast } = useToast();
-  const { user } = useApp();
   const [githubSyncOpen, setGitHubSyncOpen] = useState(false);
 
   // State for UI elements
@@ -77,7 +75,6 @@ export default function WorkspaceContent({
 
   // Track window width for responsive design
   const [windowWidth, setWindowWidth] = useState(0);
-  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
 
   const [state, setState] = useState<any>(null);
   const supabase = createClient();
@@ -254,35 +251,6 @@ export default function WorkspaceContent({
   // Determine if we're on mobile/tablet or desktop
   const isDesktop = windowWidth >= 1024; // lg breakpoint is 1024px
 
-  // Handler for when a screenshot is captured
-  const handleScreenshotCaptured = (dataUrl: string) => {
-    // If on mobile, switch to chat view after screenshot is taken
-    if (windowWidth < 1024) {
-      setActiveView("chat");
-    }
-
-    // Convert data URL to a File object
-    const blob = dataURLToBlob(dataUrl);
-    const file = new File([blob], `screenshot-${Date.now()}.png`, {
-      type: "image/png",
-    });
-
-    // Find the file input in the Chat component and programmatically add the file
-    const fileInput = document.querySelector(
-      '.chat-component input[type="file"]',
-    );
-    if (fileInput) {
-      // Create a DataTransfer object to hold our file
-      const dataTransfer = new DataTransfer();
-      dataTransfer.items.add(file);
-
-      // Set the files property of the file input
-      (fileInput as HTMLInputElement).files = dataTransfer.files;
-
-      // Dispatch a change event to trigger the image upload handler
-      fileInput.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-  };
   return (
     <div className="flex flex-col h-screen">
       {/* Top navigation bar */}
@@ -302,10 +270,6 @@ export default function WorkspaceContent({
           </div>
 
           <div className="flex items-center space-x-2">
-            {/* <SupabaseConnect
-              supabaseProject={supabaseProject}
-              setSupabaseProject={setSupabaseProject}
-            /> */}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
