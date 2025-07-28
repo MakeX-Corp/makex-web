@@ -28,3 +28,6 @@ next-env.d.ts
 .DS_Store
 .trigger
 **/CLAUDE.local.md
+
+python/venv
+

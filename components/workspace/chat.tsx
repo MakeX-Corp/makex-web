@@ -5,7 +5,7 @@ import { DefaultChatTransport, UIMessage } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Image as ImageIcon, X } from "lucide-react";
+import { Send, Loader2, Image as ImageIcon, X, MoreVertical } from "lucide-react";
 import ToolInvocation from "@/components/tool-render";
 import { useSession } from "@/context/session-context";
 import { useApp } from "@/context/AppContext";
@@ -19,6 +19,13 @@ import {
 } from "@/lib/chat-service";
 import { updateSessionTitle } from "@/utils/client/session-utils";
 import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { UIMessagePart } from "ai";
 
 type MessagePart = UIMessagePart<any, any>;
@@ -29,6 +36,30 @@ interface ChatProps {
   onSessionError?: (error: string) => void;
   containerState: string;
 }
+
+// Available AI models
+const AI_MODELS = [
+  {
+    id: "claude-4-sonnet-latest",
+    name: "Claude 4",
+    description: "Fast and capable",
+  },
+  {
+    id: "claude-3-7-sonnet-latest",
+    name: "Claude 3.7",
+    description: "Latest and most capable",
+  },
+  {
+    id: "gpt-4-5-turbo",
+    name: "GPT-4o",
+    description: "OpenAI's latest model",
+  },
+  {
+    id: "gemini-2-5-pro",
+    name: "Gemini 2.5 Pro",
+    description: "Google's advanced model",
+  },
+];
 
 export function Chat({
   sessionId,
@@ -59,6 +90,7 @@ export function Chat({
     null,
   );
   const [input, setInput] = useState("");
+  const [selectedModel, setSelectedModel] = useState("claude-4-sonnet-latest");
 
   const injectedPromptRef = useRef(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -232,6 +264,7 @@ export function Chat({
             appId,
             sessionId,
             subscription,
+            model: selectedModel,
           },
         },
       );
@@ -291,6 +324,7 @@ export function Chat({
             appId,
             sessionId,
             subscription,
+            model: selectedModel,
           },
         },
       );
@@ -493,7 +527,30 @@ export function Chat({
           </div>
         )}
 
-        <form ref={formRef} onSubmit={handleFormSubmit} className="flex gap-2">
+        <form ref={formRef} onSubmit={handleFormSubmit} className="flex gap-1.5">
+          {/* Model picker */}
+          <Select
+            value={selectedModel}
+            onValueChange={setSelectedModel}
+            disabled={isAIResponding || isLoading}
+          >
+            <SelectTrigger className="min-h-[38px] h-auto w-[24px] p-0 [&>svg:last-child]:hidden flex items-center justify-center">
+              <MoreVertical className="h-4 w-4 text-muted-foreground" />
+            </SelectTrigger>
+            <SelectContent>
+              {AI_MODELS.map((model) => (
+                <SelectItem key={model.id} value={model.id}>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{model.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {model.description}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <textarea
             ref={inputRef}
             value={input}
@@ -534,11 +591,12 @@ export function Chat({
           {/* Image upload button */}
           <Button
             type="button"
-            size="icon"
+            size="sm"
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
             disabled={isAIResponding || isLoading}
             title="Upload images"
+            className="h-[38px] w-[38px] p-0"
           >
             <ImageIcon className="h-4 w-4" />
           </Button>
@@ -546,12 +604,13 @@ export function Chat({
           {/* Send button */}
           <Button
             type="submit"
-            size="icon"
+            size="sm"
             disabled={
               isAIResponding ||
               (!input.trim() && selectedImages.length === 0) ||
               isLoading
             }
+            className="h-[38px] w-[38px] p-0"
           >
             {isAIResponding ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -561,16 +620,21 @@ export function Chat({
           </Button>
         </form>
 
-        {/* Remaining messages counter */}
-        {remainingMessages !== null && !limitReached && (
-          <div className="text-xs text-muted-foreground flex justify-end mt-2">
-            <span>
-              {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
-              remaining{" "}
-              {subscription?.planName === "Free" ? "today" : "in this cycle"}
-            </span>
+        {/* Model name and remaining messages counter */}
+        <div className="flex justify-between items-center mt-2">
+          <div className="text-xs text-muted-foreground">
+            {AI_MODELS.find(model => model.id === selectedModel)?.name || selectedModel}
           </div>
-        )}
+          {remainingMessages !== null && !limitReached && (
+            <div className="text-xs text-muted-foreground">
+              <span>
+                {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
+                remaining{" "}
+                {subscription?.planName === "Free" ? "today" : "in this cycle"}
+              </span>
+            </div>
+          )}
+        </div>
 
         {error && (
           <div className="text-red-500 text-sm mt-2">
