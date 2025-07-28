@@ -5,7 +5,7 @@ import { DefaultChatTransport, UIMessage } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Image as ImageIcon, X, Bot } from "lucide-react";
+import { Send, Loader2, Image as ImageIcon, X, MoreVertical } from "lucide-react";
 import ToolInvocation from "@/components/tool-render";
 import { useSession } from "@/context/session-context";
 import { useApp } from "@/context/AppContext";
@@ -528,6 +528,29 @@ export function Chat({
         )}
 
         <form ref={formRef} onSubmit={handleFormSubmit} className="flex gap-1.5">
+          {/* Model picker */}
+          <Select
+            value={selectedModel}
+            onValueChange={setSelectedModel}
+            disabled={isAIResponding || isLoading}
+          >
+            <SelectTrigger className="min-h-[38px] h-auto w-[24px] p-0 [&>svg:last-child]:hidden flex items-center justify-center">
+              <MoreVertical className="h-4 w-4 text-muted-foreground" />
+            </SelectTrigger>
+            <SelectContent>
+              {AI_MODELS.map((model) => (
+                <SelectItem key={model.id} value={model.id}>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{model.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {model.description}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <textarea
             ref={inputRef}
             value={input}
@@ -565,29 +588,6 @@ export function Chat({
             disabled={isAIResponding || isLoading}
           />
 
-          {/* Model picker */}
-          <Select
-            value={selectedModel}
-            onValueChange={setSelectedModel}
-            disabled={isAIResponding || isLoading}
-          >
-            <SelectTrigger className="h-[38px] w-[38px] p-0 border rounded-md [&>svg:last-child]:hidden flex items-center justify-center">
-              <Bot className="h-4 w-4" />
-            </SelectTrigger>
-            <SelectContent>
-              {AI_MODELS.map((model) => (
-                <SelectItem key={model.id} value={model.id}>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium">{model.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {model.description}
-                    </span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           {/* Image upload button */}
           <Button
             type="button"
@@ -620,16 +620,21 @@ export function Chat({
           </Button>
         </form>
 
-        {/* Remaining messages counter */}
-        {remainingMessages !== null && !limitReached && (
-          <div className="text-xs text-muted-foreground flex justify-end mt-2">
-            <span>
-              {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
-              remaining{" "}
-              {subscription?.planName === "Free" ? "today" : "in this cycle"}
-            </span>
+        {/* Model name and remaining messages counter */}
+        <div className="flex justify-between items-center mt-2">
+          <div className="text-xs text-muted-foreground">
+            {AI_MODELS.find(model => model.id === selectedModel)?.name || selectedModel}
           </div>
-        )}
+          {remainingMessages !== null && !limitReached && (
+            <div className="text-xs text-muted-foreground">
+              <span>
+                {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
+                remaining{" "}
+                {subscription?.planName === "Free" ? "today" : "in this cycle"}
+              </span>
+            </div>
+          )}
+        </div>
 
         {error && (
           <div className="text-red-500 text-sm mt-2">
