@@ -195,16 +195,18 @@ export function createTools(config: ToolConfig = {}) {
             ],
           });
 
-          const mergedCode = response.choices[0].message.content;
+          const data = response.choices[0].message.content;
 
 
           // Write the merged code back to the file
-          const data = await apiClient.post("/file", {
+          const fileWriteRes = await apiClient.post("/file", {
             path: target_file,
-            content: mergedCode,
+            content: data,
           });
 
-          return { success: true, data: mergedCode };
+          console.log("Edit data",data)
+
+          return { success: true, data };
         } catch (error: any) {
           return {
             success: false,
@@ -435,25 +437,6 @@ export function createTools(config: ToolConfig = {}) {
             error: error.message || "Unknown error occurred",
           };
         }
-      },
-    }),
-
-    webSearch: tool({
-      description:
-        "Search the web for real-time information and get up-to-date answers with citations",
-      inputSchema: z.object({
-        query: z
-          .string()
-          .describe("The search query to find relevant information"),
-      }),
-      execute: async ({ query }) => {
-        return {
-          type: "web_search_20250305",
-          name: "web_search",
-          input: {
-            query,
-          },
-        };
       },
     }),
 
