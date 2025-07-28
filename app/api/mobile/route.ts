@@ -9,6 +9,7 @@ import {
 import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { checkSubscription } from "@/utils/server/check-subscription";
+import { incrementMessageCount } from "@/utils/server/subscription-helpers";
 import { setupContainer } from "@/trigger/setup-container";
 
 export async function POST(request: NextRequest) {
@@ -32,6 +33,9 @@ export async function POST(request: NextRequest) {
     if (!canSend) {
       return NextResponse.json({ error: "LIMIT_REACHED" }, { status: 429 });
     }
+
+    // Increment message count
+    await incrementMessageCount(user.id);
 
     let finalAppId = appId;
     let appName = "";

@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-
+import { DEFAULT_LIMITS } from "@/const/const";
 // Types for better type safety
 export interface SubscriptionData {
   subscription_type: string;
@@ -17,18 +17,21 @@ export interface SubscriptionResponse {
   subscription: any;
 }
 
-// Utility functions
+//get limit from const
 export function getSubscriptionLimits(subscriptionType: string): {
   messagesLimit: number;
   planName: string;
 } {
   const isStarterPlan = subscriptionType === "makex_starter_plan";
   return {
-    messagesLimit: isStarterPlan ? 250 : 20,
+    messagesLimit: isStarterPlan
+      ? parseInt(DEFAULT_LIMITS.starter)
+      : parseInt(DEFAULT_LIMITS.free),
     planName: isStarterPlan ? "Starter" : "Free",
   };
 }
 
+//??? what is this
 export function formatSubscriptionResponse(
   subscription: SubscriptionData,
 ): SubscriptionResponse {
@@ -156,4 +159,95 @@ export async function handleNoSubscription(userId: string) {
   await insertMobileSubscription(freeSubscriptionData);
 
   return formatSubscriptionResponse(freeSubscriptionData);
+}
+
+// Main function to get user subscription with all logic combined
+export async function getUserSubscription(userId: string) {
+  try {
+    // Step 1: First try to fetch from mobile_subscriptions table
+    const { data: mobileSubscription, error: mobileError } =
+      await fetchMobileSubscription(userId);
+
+    // If user found in mobile_subscriptions, return the data
+    if (mobileSubscription && !mobileError) {
+      return await handleExistingMobileSubscription(mobileSubscription);
+    }
+
+    // Step 2: If not found in mobile_subscriptions, check subscriptions table
+    const { data: webSubscription, error: webError } =
+      await fetchWebSubscription(userId);
+
+    if (webSubscription && !webError) {
+      // Step 3: Found in subscriptions table, insert into mobile_subscriptions
+      return await handleWebSubscription(webSubscription, userId);
+    }
+
+    // Step 4: Not found in either table, create free plan entry
+    return await handleNoSubscription(userId);
+  } catch (error) {
+    console.error("Error fetching subscription:", error);
+    throw error;
+  }
+}
+
+// Function to check message limits and return limit status
+export async function checkMessageLimit(userId: string) {
+  try {
+    const subscription = await getUserSubscription(userId);
+
+    const remainingMessages = Math.max(
+      0,
+      subscription.messagesLimit - subscription.messagesUsed,
+    );
+    const reachedLimit = remainingMessages <= 0;
+
+    return {
+      reachedLimit,
+      remainingMessages,
+      total: subscription.messagesLimit,
+      used: subscription.messagesUsed,
+      planName: subscription.planName,
+      hasActiveSubscription: subscription.hasActiveSubscription,
+      nextBillingDate: subscription.nextBillingDate,
+    };
+  } catch (error) {
+    console.error("Error checking message limit:", error);
+    throw error;
+  }
+}
+
+// Function to increment message count for a user
+export async function incrementMessageCount(userId: string) {
+  try {
+    const admin = await getSupabaseAdmin();
+
+    // Get current subscription
+    const { data: mobileSubscription, error: fetchError } = await admin
+      .from("mobile_subscriptions")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    if (fetchError || !mobileSubscription) {
+      // If no subscription found, create one first
+      await getUserSubscription(userId);
+    }
+
+    // Increment the message count
+    const { error: updateError } = await admin
+      .from("mobile_subscriptions")
+      .update({
+        messages_used_this_period:
+          mobileSubscription?.messages_used_this_period + 1 || 1,
+      })
+      .eq("user_id", userId);
+
+    if (updateError) {
+      console.error("Failed to increment message count:", updateError);
+      throw updateError;
+    }
+  } catch (error) {
+    console.error("Error incrementing message count:", error);
+    throw error;
+  }
 }

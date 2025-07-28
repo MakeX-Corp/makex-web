@@ -138,9 +138,7 @@ export function Chat({
     let isMounted = true;
 
     const checkLimit = async () => {
-      if (!subscription) return;
-
-      const result = await checkMessageLimit(subscription);
+      const result = await checkMessageLimit();
       if (isMounted && result) {
         setRemainingMessages(result.remainingMessages);
         setLimitReached(result.reachedLimit);
@@ -152,7 +150,7 @@ export function Chat({
     return () => {
       isMounted = false;
     };
-  }, [subscription]);
+  }, []);
 
   // 4. Initialize useChat
   const { messages, sendMessage, setMessages, status, error } = useChat({
@@ -194,7 +192,7 @@ export function Chat({
       }
 
       // Check message limits
-      checkMessageLimit(subscription).then((result) => {
+      checkMessageLimit().then((result) => {
         if (result) {
           const { remainingMessages, reachedLimit } = result;
           setRemainingMessages(remainingMessages);
@@ -568,7 +566,7 @@ export function Chat({
           <div className="text-xs text-muted-foreground flex justify-end mt-2">
             <span>
               {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
-              remaining {"this month"}
+              remaining
             </span>
           </div>
         )}

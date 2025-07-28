@@ -117,20 +117,23 @@ export const restoreCheckpoint = async (
   }
 };
 
-export const checkMessageLimit = async (subscription: any) => {
+export const checkMessageLimit = async () => {
   try {
     const response = await fetch("/api/chat/limits", {
       method: "POST",
-      body: JSON.stringify({
-        subscription,
-      }),
     });
 
     if (response.ok) {
       const data = await response.json();
-      const reachedLimit = data.remaining <= 0;
-      const remainingMessages = data.remaining;
-      return { reachedLimit, remainingMessages };
+      return {
+        reachedLimit: data.reachedLimit,
+        remainingMessages: data.remaining,
+        total: data.total,
+        used: data.used,
+        planName: data.planName,
+        hasActiveSubscription: data.hasActiveSubscription,
+        nextBillingDate: data.nextBillingDate,
+      };
     }
   } catch (error) {
     console.error("Error checking message limit:", error);

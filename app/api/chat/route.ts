@@ -8,6 +8,10 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { getBedrockClient } from "@/utils/server/bedrock-client";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
 import { gateway } from "@/utils/server/gateway";
+import {
+  checkMessageLimit,
+  incrementMessageCount,
+} from "@/utils/server/subscription-helpers";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
@@ -137,7 +141,24 @@ export async function POST(req: Request) {
     }
 
     try {
-      // need new way of checking limit here  =============
+      // Check message limits before processing
+      const limitResult = await checkMessageLimit(user.id);
+      if (limitResult.reachedLimit) {
+        return NextResponse.json(
+          {
+            error: "Message limit reached",
+            limitInfo: {
+              planName: limitResult.planName,
+              hasActiveSubscription: limitResult.hasActiveSubscription,
+              nextBillingDate: limitResult.nextBillingDate,
+            },
+          },
+          { status: 429 },
+        );
+      }
+
+      // Increment message count
+      await incrementMessageCount(user.id);
 
       // Get app details from the database
       const { data: app, error: appError } = await supabase
