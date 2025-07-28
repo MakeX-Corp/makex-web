@@ -4,17 +4,10 @@ import { embedMany } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { supabase } from "@/utils/supabase/basic"; // update path as needed
 import { python } from "@trigger.dev/python";
-import { encoding_for_model } from "tiktoken";
-
-const enc = encoding_for_model("text-embedding-3-small"); // or "gpt-3.5-turbo", etc.
 
 function sanitizeText(text: string): string {
   // Remove all occurrences of <|endoftext|>
   return text.replace(/<\|endoftext\|>/g, "");
-}
-
-function countTokens(text: string): number {
-  return enc.encode(text).length;
 }
 
 const embeddingModel = openai.textEmbeddingModel("text-embedding-3-small");
@@ -72,25 +65,12 @@ export const fetchOpenAIDocs = schedules.task({
         console.log(`[OpenAIDocs] Chunk ${idx + 1}:`, JSON.stringify(chunk));
       });
 
-      // Log chunks that exceed the OpenAI embedding model's token limit
-      const MAX_TOKENS = 8192;
-      // Filter out chunks that exceed the token limit
-      const filteredChunks = chunks.filter((chunk: { text: string }, idx: number) => {
-        const sanitized = sanitizeText(chunk.text);
-        const tokenCount = countTokens(sanitized);
-        if (tokenCount > MAX_TOKENS) {
-          console.warn(`[OpenAIDocs] Chunk ${idx + 1} exceeds ${MAX_TOKENS} tokens: ${tokenCount} tokens. Skipping.`);
-          return false;
-        }
-        return true;
-      });
-      
-      // Process embeddings in batches to avoid token limit
+      // Process embeddings in batches
       const batchSize = 50; // Process 50 chunks at a time
       let totalChunks = 0;
       
-      for (let i = 0; i < filteredChunks.length; i += batchSize) {
-        const batch = filteredChunks.slice(i, i + batchSize);
+      for (let i = 0; i < chunks.length; i += batchSize) {
+        const batch = chunks.slice(i, i + batchSize);
         console.log(`[OpenAIDocs] Processing batch ${i / batchSize + 1}: ${batch.length} chunks`);
         
         const texts = batch.map((chunk: { text: string }) => sanitizeText(chunk.text));
@@ -119,7 +99,7 @@ export const fetchOpenAIDocs = schedules.task({
         console.log(`[OpenAIDocs] Inserted batch ${i / batchSize + 1}, total inserted: ${totalChunks}`);
         
         // Add small delay between batches to avoid rate limits
-        if (i + batchSize < filteredChunks.length) {
+        if (i + batchSize < chunks.length) {
           await delay(1000);
         }
       }

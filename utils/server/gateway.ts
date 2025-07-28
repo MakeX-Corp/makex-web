@@ -6,10 +6,10 @@ export const gateway = createGateway({
   baseURL: "https://vercel.helicone.ai/v1/ai",
   headers: {
     "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-    "Helicone-Target-URL": "https://ai-gateway.vercel.sh",
-    "Helicone-Target-Provider": "VERCEL",
   },
 });
+
+
 
 // Map model names to gateway models and determine provider order
 export const getModelAndOrder = (modelName: string) => {
