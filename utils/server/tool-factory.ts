@@ -204,8 +204,6 @@ export function createTools(config: ToolConfig = {}) {
             content: data,
           });
 
-          console.log("Edit data",data)
-
           return { success: true, data };
         } catch (error: any) {
           return {
