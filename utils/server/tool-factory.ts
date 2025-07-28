@@ -1,5 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
+import OpenAI from "openai";
 import { createFileBackendApiClient } from "./file-backend-api-client";
 import { getRelevantContext } from "./getRelevantContext";
 import FirecrawlApp, { ScrapeResponse, Action } from "@mendable/firecrawl-js";
@@ -157,28 +158,53 @@ export function createTools(config: ToolConfig = {}) {
     }),
 
     editFile: tool({
-      description:
-        "Edit a file by replacing a specific string or create a new file",
+      description: "Use Morph's Fast Apply API to make accurate code edits to an existing file",
       inputSchema: z.object({
-        path: z.string().describe("The path of the file to edit or create"),
-        old_str: z
-          .string()
-          .optional()
-          .describe(
-            "The exact string to replace (must match exactly once in the file)",
-          ),
-        new_str: z
-          .string()
-          .describe("The new content to write or replace with"),
+        target_file: z.string().describe("The target file to modify"),
+        instructions: z.string().describe("A single sentence instruction describing what you are going to do for the sketched edit. This is used to assist the less intelligent model in applying the edit. Use the first person to describe what you are going to do. Use it to disambiguate uncertainty in the edit."),
+        code_edit: z.string().describe("Specify ONLY the precise lines of code that you wish to edit. NEVER specify or write out unchanged code. Instead, represent all unchanged code using the comment of the language you're editing in - example: // ... existing code ..."),
       }),
-      execute: async ({ path, old_str, new_str }) => {
+      execute: async ({ target_file, instructions, code_edit }) => {
         try {
-          const data = await apiClient.put("/file/edit", {
-            path,
-            old_str,
-            new_str,
+          // First, read the current file content
+          const currentFileData = await apiClient.get("/file", { path: target_file });
+          const initialCode = currentFileData;
+
+          // Use Morph's Fast Apply API to merge the edit
+          const morphApiKey = process.env.MORPH_API_KEY;
+          if (!morphApiKey) {
+            return {
+              success: false,
+              error: "Morph API key not configured. Please set MORPH_API_KEY environment variable.",
+            };
+          }
+
+          // Use OpenAI SDK with Morph's base URL
+          const openai = new OpenAI({
+            apiKey: morphApiKey,
+            baseURL: "https://api.morphllm.com/v1",
           });
-          return { success: true, data };
+
+          const response = await openai.chat.completions.create({
+            model: "morph-v3-fast",
+            messages: [
+              {
+                role: "user",
+                content: `<instruction>${instructions}</instruction>\n<code>${initialCode}</code>\n<update>${code_edit}</update>`,
+              },
+            ],
+          });
+
+          const mergedCode = response.choices[0].message.content;
+
+
+          // Write the merged code back to the file
+          const data = await apiClient.post("/file", {
+            path: target_file,
+            content: mergedCode,
+          });
+
+          return { success: true, data: mergedCode };
         } catch (error: any) {
           return {
             success: false,
