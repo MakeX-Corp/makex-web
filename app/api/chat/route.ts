@@ -205,7 +205,6 @@ export async function POST(req: Request) {
         stopWhen: stepCountIs(100),
         experimental_telemetry: { isEnabled: true },
         onFinish: async (message) => {
-          console.log('Provider metadata:', JSON.stringify(await result.providerMetadata, null, 2));
           try {
             const { data, error } = await supabaseAdmin
               .from("user_sandboxes")
