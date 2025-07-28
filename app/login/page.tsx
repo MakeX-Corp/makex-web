@@ -173,8 +173,8 @@ export default function Login() {
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <Link href="/" className="text-primary hover:underline">
-                Join the waitlist
+              <Link href="/signup" className="text-primary hover:underline">
+                Sign Up
               </Link>
             </p>
           </CardContent>
