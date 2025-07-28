@@ -6,9 +6,7 @@ import { checkMessageLimit } from "@/utils/server/check-daily-limit";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { getBedrockClient } from "@/utils/server/bedrock-client";
-import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
-import { gateway } from "@/utils/server/gateway";
+import { gateway, getModelAndOrder } from "@/utils/server/gateway";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
@@ -76,7 +74,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { messages, appId, sessionId, subscription } = await req.json();
+    const { messages, appId, sessionId, subscription, model } = await req.json();
 
     // Get the last user message
     const lastUserMessage = messages[messages.length - 1];
@@ -167,7 +165,7 @@ export async function POST(req: Request) {
       const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
       const fileTree = fileTreeResponse;
 
-      const modelName = "claude-4-sonnet-latest";
+      const modelName = model || "claude-4-sonnet-latest";
 
       const tools = createTools({
         apiUrl: app.api_url,
@@ -190,11 +188,15 @@ export async function POST(req: Request) {
           message_id: lastUserMessage.id,
         });
 
+      // Get model configuration from helper function
+
+      const { model: gatewayModel, order: providerOrder } = getModelAndOrder(modelName);
+
       const result = streamText({
-        model: gateway(CLAUDE_SONNET_4_MODEL),
+        model: gateway(gatewayModel),
         providerOptions: {
           gateway: {
-            order: ["anthropic", "bedrock", "vertex"], // Try Amazon Bedrock first, then Anthropic
+            order: providerOrder,
           },
         },
         messages: convertToModelMessages(messages),
@@ -220,6 +222,9 @@ export async function POST(req: Request) {
           }
         },
       });
+
+
+      // console.log the provider metadata
 
       return result.toUIMessageStreamResponse();
     } catch (error) {

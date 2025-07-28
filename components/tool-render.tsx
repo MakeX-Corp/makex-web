@@ -85,10 +85,14 @@ export default function ToolInvocation({ part }: { part: any }) {
                 <code className="text-red-500 whitespace-pre-wrap break-all">
                   {part.output?.errorText || "Tool execution failed"}
                 </code>
-              ) : toolName === "readFile" || toolName === "writeFile" ? (
+              ) : toolName === "readFile" || toolName === "writeFile" || toolName === "editFile" ? (
                 <div className="relative">
                   <code className="text-foreground whitespace-pre-wrap break-all overflow-wrap break-word">
                     {toolName === "readFile"
+                      ? typeof part.output.data === "string"
+                        ? part.output.data
+                        : JSON.stringify(part.output.data, null, 2)
+                      : toolName === "editFile"
                       ? typeof part.output.data === "string"
                         ? part.output.data
                         : JSON.stringify(part.output.data, null, 2)
@@ -127,6 +131,8 @@ export default function ToolInvocation({ part }: { part: any }) {
                         <CodeRenderer
                           content={
                             toolName === "readFile"
+                              ? part.output.data
+                              : toolName === "editFile"
                               ? part.output.data
                               : part.input.content
                           }
