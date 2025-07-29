@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const { supabase, user } = userResult;
 
     const body = await request.json();
-    const { appId, userPrompt, isNewApp, images } = body;
+    const { appId, userPrompt, isNewApp, images, model } = body;
 
     if (!userPrompt) {
       return NextResponse.json(
@@ -27,6 +27,9 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+
+    // Use default model if none provided, same as chat endpoint
+    const modelName = model || "claude-4-sonnet-latest";
 
     const canSend = await checkSubscription(user.id);
     if (!canSend) {
@@ -154,6 +157,7 @@ export async function POST(request: NextRequest) {
       appId: finalAppId,
       userPrompt,
       images,
+      model: modelName,
     });
 
     return NextResponse.json({
