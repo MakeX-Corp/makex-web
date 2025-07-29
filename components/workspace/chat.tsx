@@ -5,7 +5,13 @@ import { DefaultChatTransport, UIMessage } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Image as ImageIcon, X, MoreVertical } from "lucide-react";
+import {
+  Send,
+  Loader2,
+  Image as ImageIcon,
+  X,
+  MoreVertical,
+} from "lucide-react";
 import ToolInvocation from "@/components/tool-render";
 import { useSession } from "@/context/session-context";
 import { useApp } from "@/context/AppContext";
@@ -13,7 +19,6 @@ import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import {
   fetchChatMessages,
-  saveAIMessage,
   checkMessageLimit,
   restoreCheckpoint,
 } from "@/lib/chat-service";
@@ -196,10 +201,7 @@ export function Chat({
     onFinish: (result) => {
       setIsAIResponding(false);
       onResponseComplete();
-      // Save AI message and update session title
-      saveAIMessage(sessionId, appId, apiUrl, result.message).catch((error) => {
-        console.error("Error saving AI message:", error);
-      });
+      // AI message saving is now handled in the chat endpoint's onFinish callback
 
       // Update session title if needed
       if (
@@ -435,7 +437,9 @@ export function Chat({
             messages.map((message, index) => (
               <div
                 key={message.id || `message-${index}`}
-                className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"}`}
+                className={`flex flex-col ${
+                  message.role === "user" ? "items-end" : "items-start"
+                }`}
               >
                 <Card
                   className={`max-w-[80%] ${
@@ -527,7 +531,11 @@ export function Chat({
           </div>
         )}
 
-        <form ref={formRef} onSubmit={handleFormSubmit} className="flex gap-1.5">
+        <form
+          ref={formRef}
+          onSubmit={handleFormSubmit}
+          className="flex gap-1.5"
+        >
           {/* Model picker */}
           <Select
             value={selectedModel}
@@ -623,7 +631,8 @@ export function Chat({
         {/* Model name and remaining messages counter */}
         <div className="flex justify-between items-center mt-2">
           <div className="text-xs text-muted-foreground">
-            {AI_MODELS.find(model => model.id === selectedModel)?.name || selectedModel}
+            {AI_MODELS.find((model) => model.id === selectedModel)?.name ||
+              selectedModel}
           </div>
           {remainingMessages !== null && !limitReached && (
             <div className="text-xs text-muted-foreground">
