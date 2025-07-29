@@ -24,7 +24,6 @@ export async function getOrCreateSubscription(
 
   const now = new Date();
 
-  console.log("subscription", subscription);
   // Create free subscription if none exists
   if (error || !subscription) {
     const start = now;
@@ -34,7 +33,6 @@ export async function getOrCreateSubscription(
     const { data: newSubscription, error: createError } = await admin
       .from("subscriptions")
       .insert({
-        id: `free_${userId}_${Date.now()}`, // Generate unique ID for free subscription
         user_id: userId,
         subscription_type: "free",
         status: "active",
