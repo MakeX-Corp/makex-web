@@ -12,7 +12,7 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { resumeContainer } from "./resume-container";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
-import { gateway } from "@/utils/server/gateway";
+import { gateway, getModelAndOrder } from "@/utils/server/gateway";
 
 const LOG_PREFIX = "[AI Agent]";
 
@@ -25,9 +25,13 @@ export const aiAgent = task({
     appId: string;
     userPrompt: string;
     images?: string[];
+    model?: string;
   }) => {
     try {
-      const { appId, userPrompt, images = [] } = payload;
+      const { appId, userPrompt, images = [], model } = payload;
+
+      // Use provided model or fall back to default
+      const modelName = model || CLAUDE_SONNET_4_MODEL;
 
       // Get Supabase admin client
       const supabase = await getSupabaseAdmin();
@@ -210,7 +214,7 @@ export const aiAgent = task({
           fromApp: true,
         },
         role: "user",
-        model_used: CLAUDE_SONNET_4_MODEL,
+        model_used: modelName,
         plain_text: userPrompt,
         session_id: sessionId,
         message_id: currentUserMessageId,
@@ -219,17 +223,21 @@ export const aiAgent = task({
 
       console.log(`${LOG_PREFIX} Starting generation:`, {
         appId,
-        model: CLAUDE_SONNET_4_MODEL,
+        model: modelName,
         messageCount: messages.length,
         toolCount: tools.length,
       });
 
+      // Get model configuration from helper function
+      const { model: gatewayModel, order: providerOrder } =
+        getModelAndOrder(modelName);
+
       // Generate response using Vercel AI SDK
       const result = await generateText({
-        model: gateway(CLAUDE_SONNET_4_MODEL),
+        model: gateway(gatewayModel),
         providerOptions: {
           gateway: {
-            order: ["anthropic", "bedrock", "vertex"],
+            order: providerOrder,
           },
         },
         messages: convertToModelMessages(messages),
@@ -262,7 +270,7 @@ export const aiAgent = task({
         user_id: latestSession.user_id,
         content: result.text,
         role: "assistant",
-        model_used: CLAUDE_SONNET_4_MODEL,
+        model_used: modelName,
         plain_text: result.text,
         input_tokens_used: result.usage?.inputTokens,
         output_tokens_used: result.usage?.outputTokens,
