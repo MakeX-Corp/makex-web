@@ -60,7 +60,7 @@ async function shareIdGenerator(appId: string, supabase: any): Promise<string> {
 async function handleUrlMapping(
   supabase: any,
   appId: string,
-  appName: string,
+  displayName: string,
   deploymentUrl: string,
   easUrl?: string,
 ) {
@@ -71,7 +71,7 @@ async function handleUrlMapping(
       .eq("app_id", appId)
       .single();
 
-    const title = `Check out my ${appName} app`;
+    const title = `Check out my ${displayName} app`;
     const description = `I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!`;
 
     console.log(`[DeployWeb] Generated title: ${title}`);
@@ -292,7 +292,7 @@ export const deployWeb = task({
       const { data: appRecord } = await supabase
         .from("user_apps")
         .select(
-          "api_url,user_id,app_name,git_repo_id,convex_project_id,convex_dev_url",
+          "api_url,user_id,app_name,display_name,git_repo_id,convex_project_id,convex_dev_url",
         )
         .eq("id", appId)
         .single();
@@ -304,12 +304,13 @@ export const deployWeb = task({
       const {
         user_id,
         app_name,
+        display_name,
         git_repo_id,
         convex_project_id,
         convex_dev_url,
       } = appRecord;
       console.log(
-        `[DeployWeb] Found app record - name: ${app_name}, userId: ${user_id}, gitRepoId: ${git_repo_id}, convexProjectId: ${convex_project_id}`,
+        `[DeployWeb] Found app record - name: ${app_name}, displayName: ${display_name}, userId: ${user_id}, gitRepoId: ${git_repo_id}, convexProjectId: ${convex_project_id}`,
       );
 
       if (!git_repo_id) {
@@ -462,7 +463,7 @@ export const deployWeb = task({
         const { dubLink } = await handleUrlMapping(
           supabase,
           appId,
-          app_name,
+          display_name,
           deploymentUrl,
           easUrl,
         );
