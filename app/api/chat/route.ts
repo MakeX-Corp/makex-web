@@ -7,6 +7,7 @@ import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { gateway, getModelAndOrder } from "@/utils/server/gateway";
+import { extractPlainText } from "@/utils/server/message-helpers";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
@@ -172,8 +173,7 @@ export async function POST(req: Request) {
         apiUrl: app.api_url,
       });
 
-      const plainText =
-        lastUserMessage.parts?.map((p: any) => p.text).join(" ") ?? "";
+      const plainText = extractPlainText(lastUserMessage.parts);
 
       const { data: chatHistoryData, error: chatHistoryError } = await supabase
         .from("app_chat_history")
@@ -229,9 +229,7 @@ export async function POST(req: Request) {
 
             // Get the assistant message from the result
             const assistantMessage = message.steps[message.steps.length - 1];
-            const plainText =
-              assistantMessage?.content?.map((p: any) => p.text).join(" ") ??
-              "";
+            const plainText = extractPlainText(assistantMessage?.content);
 
             // Insert assistant's message into chat history
             const { error: insertError } = await supabase
