@@ -8,7 +8,6 @@ import {
   useEffect,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { getPlanName } from "@/utils/client/auth";
 import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
 import posthog from "posthog-js";
@@ -55,7 +54,6 @@ export interface SubscriptionData {
   customerId: string | null;
   userId: string;
   email: string;
-  planName: string;
 }
 
 // Define the context shape
@@ -211,10 +209,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await subscriptionResponse.json();
-
-      // Get email from token using the provided utility function
-      const planName = getPlanName(data.subscription?.planId || "");
-      data.planName = planName;
 
       setSubscription(data);
     } catch (error) {

@@ -5,7 +5,13 @@ import { DefaultChatTransport, UIMessage } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Image as ImageIcon, X, MoreVertical } from "lucide-react";
+import {
+  Send,
+  Loader2,
+  Image as ImageIcon,
+  X,
+  MoreVertical,
+} from "lucide-react";
 import ToolInvocation from "@/components/tool-render";
 import { useSession } from "@/context/session-context";
 import { useApp } from "@/context/AppContext";
@@ -14,8 +20,8 @@ import { useImageUpload } from "@/hooks/use-image-upload";
 import {
   fetchChatMessages,
   saveAIMessage,
-  checkMessageLimit,
   restoreCheckpoint,
+  checkMessageLimit,
 } from "@/lib/chat-service";
 import { updateSessionTitle } from "@/utils/client/session-utils";
 import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
@@ -172,11 +178,15 @@ export function Chat({
     const checkLimit = async () => {
       if (!subscription) return;
 
-      const result = await checkMessageLimit(subscription);
-      if (isMounted && result) {
-        setRemainingMessages(result.remainingMessages);
-        setLimitReached(result.reachedLimit);
-      }
+      setRemainingMessages(
+        subscription.subscription?.messagesLimit -
+          subscription.subscription?.messagesUsed,
+      );
+      setLimitReached(
+        subscription.subscription?.messagesLimit -
+          subscription.subscription?.messagesUsed <=
+          0,
+      );
     };
 
     checkLimit();
@@ -225,10 +235,11 @@ export function Chat({
         });
       }
 
-      // Check message limits
-      checkMessageLimit(subscription).then((result) => {
+      // Check message limits, might not need this could just decrement and see maybe
+      checkMessageLimit().then((result) => {
         if (result) {
           const { remainingMessages, reachedLimit } = result;
+
           setRemainingMessages(remainingMessages);
           setLimitReached(reachedLimit);
         }
@@ -435,7 +446,9 @@ export function Chat({
             messages.map((message, index) => (
               <div
                 key={message.id || `message-${index}`}
-                className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"}`}
+                className={`flex flex-col ${
+                  message.role === "user" ? "items-end" : "items-start"
+                }`}
               >
                 <Card
                   className={`max-w-[80%] ${
@@ -527,7 +540,11 @@ export function Chat({
           </div>
         )}
 
-        <form ref={formRef} onSubmit={handleFormSubmit} className="flex gap-1.5">
+        <form
+          ref={formRef}
+          onSubmit={handleFormSubmit}
+          className="flex gap-1.5"
+        >
           {/* Model picker */}
           <Select
             value={selectedModel}
@@ -623,14 +640,14 @@ export function Chat({
         {/* Model name and remaining messages counter */}
         <div className="flex justify-between items-center mt-2">
           <div className="text-xs text-muted-foreground">
-            {AI_MODELS.find(model => model.id === selectedModel)?.name || selectedModel}
+            {AI_MODELS.find((model) => model.id === selectedModel)?.name ||
+              selectedModel}
           </div>
           {remainingMessages !== null && !limitReached && (
             <div className="text-xs text-muted-foreground">
               <span>
                 {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
                 remaining{" "}
-                {subscription?.planName === "Free" ? "today" : "in this cycle"}
               </span>
             </div>
           )}
