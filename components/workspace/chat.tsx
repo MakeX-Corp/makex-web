@@ -17,7 +17,11 @@ import { useSession } from "@/context/session-context";
 import { useApp } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/use-image-upload";
-import { fetchChatMessages, checkMessageLimit } from "@/lib/chat-service";
+import {
+  fetchChatMessages,
+  checkMessageLimit,
+  restoreCheckpoint,
+} from "@/lib/chat-service";
 import { updateSessionTitle } from "@/utils/client/session-utils";
 import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
 import {
