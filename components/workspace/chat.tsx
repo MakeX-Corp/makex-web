@@ -17,12 +17,7 @@ import { useSession } from "@/context/session-context";
 import { useApp } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/use-image-upload";
-import {
-  fetchChatMessages,
-  saveAIMessage,
-  restoreCheckpoint,
-  checkMessageLimit,
-} from "@/lib/chat-service";
+import { fetchChatMessages, checkMessageLimit } from "@/lib/chat-service";
 import { updateSessionTitle } from "@/utils/client/session-utils";
 import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
 import {
@@ -206,10 +201,7 @@ export function Chat({
     onFinish: (result) => {
       setIsAIResponding(false);
       onResponseComplete();
-      // Save AI message and update session title
-      saveAIMessage(sessionId, appId, apiUrl, result.message).catch((error) => {
-        console.error("Error saving AI message:", error);
-      });
+      // AI message saving is now handled in the chat endpoint's onFinish callback
 
       // Update session title if needed
       if (

@@ -7,6 +7,8 @@ import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { gateway, getModelAndOrder } from "@/utils/server/gateway";
+import { extractPlainText } from "@/utils/server/message-helpers";
+import { generateCheckpointInfo } from "@/utils/server/checkpoint-generator";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
@@ -177,8 +179,7 @@ export async function POST(req: Request) {
         apiUrl: app.api_url,
       });
 
-      const plainText =
-        lastUserMessage.parts?.map((p: any) => p.text).join(" ") ?? "";
+      const plainText = extractPlainText(lastUserMessage.parts);
 
       const { data: chatHistoryData, error: chatHistoryError } = await supabase
         .from("app_chat_history")
@@ -213,6 +214,51 @@ export async function POST(req: Request) {
         experimental_telemetry: { isEnabled: true },
         onFinish: async (message) => {
           try {
+            // Get the assistant message from the result
+            const assistantMessage = message.steps[message.steps.length - 1];
+            const plainText = extractPlainText(assistantMessage?.content);
+
+            // Save checkpoint after completing the response
+            let commitHash = null;
+            try {
+              const checkpointInfo = await generateCheckpointInfo(plainText);
+              const checkpointResponse = await apiClient.post(
+                "/checkpoint/save",
+                {
+                  name: checkpointInfo.name,
+                  message: checkpointInfo.message,
+                },
+              );
+              console.log("checkpointResponse", checkpointResponse);
+              // Store the commit hash from the response
+              commitHash =
+                checkpointResponse.commit || checkpointResponse.current_commit;
+            } catch (error) {
+              console.error("Failed to save checkpoint:", error);
+              // Don't throw here, continue with message saving
+            }
+
+            // Insert assistant's message into chat history
+            const { error: insertError } = await supabase
+              .from("app_chat_history")
+              .insert({
+                app_id: trimmedAppId,
+                user_id: user.id,
+                content: plainText, //will be removed later, cannot be removed now because it has non null constraint
+                plain_text: plainText,
+                role: "assistant",
+                model_used: modelName,
+                parts: assistantMessage?.content,
+                session_id: sessionId,
+                commit_hash: commitHash,
+                message_id: crypto.randomUUID(),
+              });
+
+            if (insertError) {
+              console.error("Error inserting AI message:", insertError);
+            }
+
+            // Update app status to active
             const { data, error } = await supabaseAdmin
               .from("user_sandboxes")
               .update({ app_status: "active" })

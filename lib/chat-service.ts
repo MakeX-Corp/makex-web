@@ -58,37 +58,6 @@ export const fetchChatMessages = async (
 };
 
 /**
- * Save an AI message
- */
-export const saveAIMessage = async (
-  sessionId: string,
-  appId: string,
-  apiUrl: string,
-  message: any,
-): Promise<any> => {
-  try {
-    const response = await fetch("/api/chat/ai-message-save", {
-      method: "POST",
-      body: JSON.stringify({
-        sessionId,
-        appId,
-        apiUrl,
-        message,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to save AI message");
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Error saving AI message:", error);
-    throw error;
-  }
-};
-
-/**
  * Restore a checkpoint
  */
 export const restoreCheckpoint = async (
