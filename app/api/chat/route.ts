@@ -8,6 +8,7 @@ import { getPrompt } from "@/utils/server/prompt";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { gateway, getModelAndOrder } from "@/utils/server/gateway";
 import { extractPlainText } from "@/utils/server/message-helpers";
+import { generateCheckpointInfo } from "@/utils/server/checkpoint-generator";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
@@ -208,14 +209,19 @@ export async function POST(req: Request) {
         experimental_telemetry: { isEnabled: true },
         onFinish: async (message) => {
           try {
+            // Get the assistant message from the result
+            const assistantMessage = message.steps[message.steps.length - 1];
+            const plainText = extractPlainText(assistantMessage?.content);
+
             // Save checkpoint after completing the response
             let commitHash = null;
             try {
+              const checkpointInfo = await generateCheckpointInfo(plainText);
               const checkpointResponse = await apiClient.post(
                 "/checkpoint/save",
                 {
-                  name: "ai-assistant-checkpoint",
-                  message: "Checkpoint after AI assistant changes",
+                  name: checkpointInfo.name,
+                  message: checkpointInfo.message,
                 },
               );
               console.log("checkpointResponse", checkpointResponse);
@@ -226,10 +232,6 @@ export async function POST(req: Request) {
               console.error("Failed to save checkpoint:", error);
               // Don't throw here, continue with message saving
             }
-
-            // Get the assistant message from the result
-            const assistantMessage = message.steps[message.steps.length - 1];
-            const plainText = extractPlainText(assistantMessage?.content);
 
             // Insert assistant's message into chat history
             const { error: insertError } = await supabase
