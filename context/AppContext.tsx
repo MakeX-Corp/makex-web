@@ -38,14 +38,13 @@ export interface SessionData {
 // Define subscription data interface based on the API response
 export interface SubscriptionData {
   subscription: {
-    id: string;
-    user_id: string;
-    status: string;
-    price_id: string;
-    customer_id: string;
-    current_period_end: string;
-    cancel_at_period_end: boolean;
-    created_at: string;
+    hasActiveSubscription: boolean;
+    messagesLimit: number;
+    planName: string;
+    messagesUsed: number;
+    nextBillingDate: string | null;
+    subscriptionType: string;
+    canSendMessage: boolean;
   } | null;
   hasActiveSubscription: boolean;
   pendingCancellation: boolean;
