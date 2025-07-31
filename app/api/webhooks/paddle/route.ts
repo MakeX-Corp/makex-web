@@ -110,8 +110,6 @@ async function handleSubscriptionCreated(event: any, supabase: any) {
 
   if (priceId === process.env.NEXT_PUBLIC_PADDLE_STARTER_ID) {
     subscriptionType = "starter";
-  } else if (priceId === process.env.NEXT_PUBLIC_PADDLE_PRO_ID) {
-    subscriptionType = "pro";
   }
 
   try {
@@ -188,8 +186,6 @@ async function handleSubscriptionUpdated(event: any, supabase: any) {
 
     if (priceId === process.env.NEXT_PUBLIC_PADDLE_STARTER_ID) {
       subscriptionType = "starter";
-    } else if (priceId === process.env.NEXT_PUBLIC_PADDLE_PRO_ID) {
-      subscriptionType = "pro";
     }
 
     const { error } = await supabase

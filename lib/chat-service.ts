@@ -97,8 +97,7 @@ export const checkMessageLimit = async () => {
     }
 
     const data = await response.json();
-    const remainingMessages =
-      data.subscription.messagesLimit - data.subscription.messagesUsed;
+    const remainingMessages = data.messagesLimit - data.messagesUsed;
     const reachedLimit = remainingMessages <= 0;
     return { remainingMessages, reachedLimit };
   } catch (error) {

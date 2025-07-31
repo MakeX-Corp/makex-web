@@ -28,13 +28,6 @@ const getPlanFeatures = (planName: string): string[] => {
       )
         .split(",")
         .map((feature) => feature.trim());
-    case "Enterprise":
-      return (
-        process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_FEATURES ||
-        "Advanced AI editing,Priority support,Custom integrations,Dedicated account manager"
-      )
-        .split(",")
-        .map((feature) => feature.trim());
     default:
       return [];
   }
