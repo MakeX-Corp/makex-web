@@ -273,10 +273,13 @@ export default function ProfileSettings() {
                 </p>
                 {hasActiveSubscription() && subscription?.nextBillingDate && (
                   <p className="text-xs text-muted-foreground">
-                    Next billing:{" "}
-                    {new Date(
-                      subscription.nextBillingDate,
-                    ).toLocaleDateString()}
+                    {isOnFreePlan()
+                      ? `Message count resets: ${new Date(
+                          subscription.nextBillingDate,
+                        ).toLocaleDateString()}`
+                      : `Next billing: ${new Date(
+                          subscription.nextBillingDate,
+                        ).toLocaleDateString()}`}
                   </p>
                 )}
               </div>
