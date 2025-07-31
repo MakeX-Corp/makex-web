@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PausedAppModal } from "@/components/workspace/paused-app-modal";
 import type { UIMessagePart } from "ai";
 
 type MessagePart = UIMessagePart<any, any>;
@@ -96,6 +97,7 @@ export function Chat({
   );
   const [input, setInput] = useState("");
   const [selectedModel, setSelectedModel] = useState("claude-4-sonnet-latest");
+  const [isPausedAppModalOpen, setIsPausedAppModalOpen] = useState(false);
 
   const injectedPromptRef = useRef(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -298,7 +300,7 @@ export function Chat({
     e.preventDefault();
 
     if (containerState !== "active") {
-      alert("Please refresh the page and try again, your app was paused");
+      setIsPausedAppModalOpen(true);
       return;
     }
 
@@ -655,6 +657,12 @@ export function Chat({
           </div>
         )}
       </div>
+
+      {/* Paused App Modal */}
+      <PausedAppModal
+        open={isPausedAppModalOpen}
+        onOpenChange={setIsPausedAppModalOpen}
+      />
     </div>
   );
 }
