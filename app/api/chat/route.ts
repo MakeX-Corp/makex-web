@@ -140,7 +140,7 @@ export async function POST(req: Request) {
 
     try {
       // Check subscription using existing data and increment usage
-      const canSendMessage = subscription.subscription?.canSendMessage;
+      const canSendMessage = subscription?.canSendMessage;
       if (!canSendMessage) {
         return NextResponse.json(
           {

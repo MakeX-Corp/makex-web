@@ -96,7 +96,6 @@ export default function PricingPage() {
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
   const handleCheckout = async (priceId: string) => {
-    console.log("priceId", priceId);
     const paddle = await initPaddle();
     if (!paddle) {
       toast({
@@ -109,51 +108,22 @@ export default function PricingPage() {
 
     try {
       setIsLoading(priceId);
-      if (subscription?.hasActiveSubscription) {
-        console.log(
-          "hasActiveSubscription",
-          subscription?.hasActiveSubscription,
-        );
-        // Handle upgrade/downgrade for existing subscription
-        const updateResponse = await fetch("/api/subscription/update", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+      paddle.Checkout.open({
+        settings: {
+          theme: "light",
+          displayMode: "overlay",
+          successUrl: `${window.location.origin}/dashboard`,
+        },
+        items: [
+          {
+            priceId,
+            quantity: 1,
           },
-          body: JSON.stringify({
-            subscriptionId: subscription?.subscription?.id,
-            priceId: priceId,
-          }),
-        });
-        const result = await updateResponse.json();
-
-        if (result.success) {
-          toast({
-            title: "Success",
-            description: "Your subscription has been updated.",
-          });
-          // Redirect to dashboard or success page
-          window.location.href = `${window.location.origin}/dashboard`;
-        } else {
-          throw new Error(result.error || "Failed to update subscription");
-        }
-      } else {
-        console.log("priceId", priceId);
-        const checkout = paddle.Checkout.open({
-          items: [
-            {
-              priceId: priceId,
-              quantity: 1,
-            },
-          ],
-          customData: {
-            userId: subscription?.userId,
-          },
-          settings: {
-            successUrl: `${window.location.origin}/dashboard`,
-          },
-        });
-      }
+        ],
+        customData: {
+          userId: subscription?.userId,
+        },
+      });
     } catch (error) {
       console.error("Checkout error:", error);
       toast({
@@ -235,9 +205,9 @@ export default function PricingPage() {
                     {isLoading === plan.priceId
                       ? "Processing..."
                       : subscription?.hasActiveSubscription &&
-                          subscription?.planName === plan.name
-                        ? "Current Plan"
-                        : "Subscribe"}
+                        subscription?.planName === plan.name
+                      ? "Current Plan"
+                      : "Subscribe"}
                   </Button>
                 )}
               </CardFooter>

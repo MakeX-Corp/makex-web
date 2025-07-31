@@ -21,9 +21,7 @@ export async function GET(request: Request) {
       user.id,
     );
 
-    return NextResponse.json({
-      subscription: subscriptionInfo,
-    });
+    return NextResponse.json({ ...subscriptionInfo, userId: user.id });
   } catch (error) {
     console.error("Error fetching subscription:", error);
 

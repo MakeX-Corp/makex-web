@@ -178,12 +178,11 @@ export function Chat({
       if (!subscription) return;
 
       setRemainingMessages(
-        (subscription.subscription?.messagesLimit || 0) -
-          (subscription.subscription?.messagesUsed || 0),
+        (subscription?.messagesLimit || 0) - (subscription?.messagesUsed || 0),
       );
       setLimitReached(
-        (subscription.subscription?.messagesLimit || 0) -
-          (subscription.subscription?.messagesUsed || 0) <=
+        (subscription?.messagesLimit || 0) -
+          (subscription?.messagesUsed || 0) <=
           0,
       );
     };
@@ -497,7 +496,7 @@ export function Chat({
                 Message limit reached
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                {subscription?.subscription?.planName === "Free" ? (
+                {subscription?.planName === "Free" ? (
                   <>
                     Try again tomorrow or{" "}
                     <span
