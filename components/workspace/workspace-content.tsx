@@ -233,6 +233,9 @@ export default function WorkspaceContent({
   const refreshPreview = async () => {
     setIsRefreshing(true);
     setIframeKey(Math.random().toString(36).substring(2, 15));
+    if(state?.sandbox_status === 'paused'){
+      await resumeSandbox();
+    }
     setTimeout(() => {
       setIsRefreshing(false);
     }, 1000);

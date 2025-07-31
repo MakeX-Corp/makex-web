@@ -42,7 +42,7 @@ export async function GET(request: Request) {
         body: new URLSearchParams({
           grant_type: "authorization_code",
           code,
-          redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/integrations/supabase/callback?app_id=${appId}`,
+          redirect_uri: `${process.env.NEXT_PUBLIC_SITE_URL}/api/integrations/supabase/callback?app_id=${appId}`,
         }),
       },
     );
@@ -106,7 +106,7 @@ export async function GET(request: Request) {
       if (error) {
         console.error("Error updating user_integrations table:", error);
         return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}/ai-editor/${appId}?integration_type=supabase&status=error`,
+          `${process.env.NEXT_PUBLIC_SITE_URL}/ai-editor/${appId}?integration_type=supabase&status=error`,
         );
       }
     } else {
@@ -122,18 +122,18 @@ export async function GET(request: Request) {
       if (error) {
         console.error("Error inserting into user_integrations table:", error);
         return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}/ai-editor/${appId}?integration_type=supabase&status=error`,
+          `${process.env.NEXT_PUBLIC_SITE_URL}/ai-editor/${appId}?integration_type=supabase&status=error`,
         );
       }
     }
 
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/ai-editor/${appId}?integration_type=supabase&status=success`,
+      `${process.env.NEXT_PUBLIC_SITE_URL}/ai-editor/${appId}?integration_type=supabase&status=success`,
     );
   } catch (error) {
     console.error("Callback error:", error);
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/ai-editor/${appId}?integration_type=supabase&status=error`,
+      `${process.env.NEXT_PUBLIC_SITE_URL}/ai-editor/${appId}?integration_type=supabase&status=error`,
     );
   }
 }
