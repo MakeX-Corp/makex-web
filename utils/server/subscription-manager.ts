@@ -93,13 +93,11 @@ export async function getOrCreateSubscription(
   const limits = {
     free: Number(process.env.NEXT_PUBLIC_FREE_PLAN_LIMIT) || 20,
     starter: Number(process.env.NEXT_PUBLIC_STARTER_PLAN_LIMIT) || 250,
-    pro: -1, // Unlimited
   };
 
   const planNames = {
     free: "Free",
     starter: "Starter",
-    pro: "Pro",
   };
 
   const subscriptionType = subscription.subscription_type || "free";
