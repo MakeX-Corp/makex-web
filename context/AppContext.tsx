@@ -45,6 +45,7 @@ export interface SubscriptionData {
   subscriptionType: string;
   canSendMessage: boolean;
   userId: string;
+  customerId: string | null;
 }
 
 // Define the context shape

@@ -8,6 +8,7 @@ export interface SubscriptionInfo {
   nextBillingDate: string | null;
   subscriptionType: string;
   canSendMessage: boolean;
+  customerId: string | null;
 }
 
 export async function getOrCreateSubscription(
@@ -126,6 +127,7 @@ export async function getOrCreateSubscription(
     nextBillingDate: subscription.current_period_end,
     subscriptionType,
     canSendMessage,
+    customerId: subscription.customer_id,
   };
 }
 

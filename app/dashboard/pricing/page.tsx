@@ -173,46 +173,66 @@ export default function PricingPage() {
         <PricingSkeleton />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan) => (
-            <Card key={plan.name} className="flex flex-col">
-              <CardHeader>
-                <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                <p className="text-muted-foreground">{plan.description}</p>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">${plan.price}</span>
-                  <span className="text-muted-foreground">
-                    /{plan.interval}
-                  </span>
-                </div>
-                <ul className="space-y-2">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-primary" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-              <CardFooter>
-                {plan?.name !== "Free" && (
-                  <Button
-                    className="w-full"
-                    onClick={() => handleCheckout(plan.priceId)}
-                    disabled={isButtonDisabled(plan.priceId)}
-                  >
-                    {isLoading === plan.priceId
-                      ? "Processing..."
-                      : subscription?.hasActiveSubscription &&
-                        subscription?.planName === plan.name
-                      ? "Current Plan"
-                      : "Subscribe"}
-                  </Button>
-                )}
-              </CardFooter>
-            </Card>
-          ))}
+          {plans.map((plan) => {
+            const isCurrentPlan = subscription?.planName === plan.name;
+            const isFreePlan = plan.name === "Free";
+
+            return (
+              <Card
+                key={plan.name}
+                className={`flex flex-col ${
+                  isCurrentPlan ? "ring-2 ring-primary" : ""
+                }`}
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                    {isCurrentPlan && (
+                      <span className="px-2 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-full">
+                        Current Plan
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground">{plan.description}</p>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <div className="mb-6">
+                    <span className="text-4xl font-bold">${plan.price}</span>
+                    <span className="text-muted-foreground">
+                      /{plan.interval}
+                    </span>
+                  </div>
+                  <ul className="space-y-2">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-primary" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+                <CardFooter>
+                  {isFreePlan ? (
+                    <Button className="w-full" variant="outline" disabled>
+                      {isCurrentPlan ? "Current Plan" : "Free Plan"}
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full"
+                      onClick={() => handleCheckout(plan.priceId)}
+                      disabled={isButtonDisabled(plan.priceId)}
+                    >
+                      {isLoading === plan.priceId
+                        ? "Processing..."
+                        : isCurrentPlan
+                        ? "Current Plan"
+                        : "Subscribe"}
+                    </Button>
+                  )}
+                </CardFooter>
+              </Card>
+            );
+          })}
 
           {/* Contact Us Card */}
           <Card className="flex flex-col border-dashed">
