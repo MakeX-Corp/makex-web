@@ -1,7 +1,5 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { startExpoInContainer } from "@/utils/server/daytona";
-import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { startExpoInContainer as startExpoInContainerE2B } from "@/utils/server/e2b";
 

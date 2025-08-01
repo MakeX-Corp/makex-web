@@ -1,7 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
 import OpenAI from "openai";
-import { createFileBackendApiClient } from "./file-backend-api-client";
 import { getRelevantContext } from "./getRelevantContext";
 import FirecrawlApp, { ScrapeResponse, Action } from "@mendable/firecrawl-js";
 import { CONVEX_AUTH_DOCS } from "../docs/convex-auth-docs";
@@ -23,7 +22,6 @@ type ToolConfig = {
 };
 
 export function createTools(config: ToolConfig) {
-  const apiClient = createFileBackendApiClient(config.apiUrl || "");
   const firecrawl = process.env.FIRECRAWL_API_KEY
     ? new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY })
     : null;
@@ -130,7 +128,7 @@ export function createTools(config: ToolConfig) {
       }),
       execute: async ({ packages }) => {
         try {
-          const command = `cd /app/expo-app && yarn add ${packages.join(' ')}`;
+          const command = `yarn add ${packages.join(' ')}`;
           const data = await e2bRunCommand(config.sandboxId, command);
           return { success: true, data };
         } catch (error: any) {

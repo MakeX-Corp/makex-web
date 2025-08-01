@@ -327,13 +327,13 @@ export async function deleteFile(sandboxId: string, filePath: string) {
 
 export async function createDirectory(sandboxId: string, dirPath: string) {
   const sbx = await Sandbox.connect(sandboxId);
-  const result = await sbx.commands.run(`mkdir -p "${dirPath}"`);
+  const result = await sbx.commands.run(`sudo mkdir -p "${dirPath}"`);
   return result;
 }
 
 export async function deleteDirectory(sandboxId: string, dirPath: string) {
   const sbx = await Sandbox.connect(sandboxId);
-  const result = await sbx.commands.run(`rm -rf "${dirPath}"`);
+  const result = await sbx.commands.run(`sudo rm -rf "${dirPath}"`);
   return result;
 }
 
@@ -344,7 +344,7 @@ export async function listDirectory(sandboxId: string, dirPath: string) {
 }
 
 // Directory tree management
-export async function getDirectoryTree(sandboxId: string, path: string = ".") {
+export async function getDirectoryTree(sandboxId: string, path: string = APP_DIR) {
   const sbx = await Sandbox.connect(sandboxId);
   
   try {
@@ -605,9 +605,17 @@ export async function runCommand(sandboxId: string, command: string) {
     // Connect to the sandbox
     const sbx = await Sandbox.connect(sandboxId);
 
+    // For yarn/npm commands, automatically add sudo if not present
+    let finalCommand = command;
+    if ((baseCommand === 'yarn' || baseCommand === 'npm') && !command.includes('sudo')) {
+      finalCommand = `sudo ${command}`;
+    }
+
+    console.log("command being run ", finalCommand)
     // Execute the command with timeout
-    const result = await sbx.commands.run(command, {
-      timeoutMs: 45000 // 45 second timeout
+    const result = await sbx.commands.run(finalCommand, {
+      timeoutMs: 450000, // 45 second timeout
+      cwd: APP_DIR
     });
 
     return {
@@ -638,3 +646,205 @@ export async function runCommand(sandboxId: string, command: string) {
   }
 }
 
+
+// Git commands 
+export async function saveCheckpoint(
+  sandboxId: string,
+  {
+    branch,
+    message,
+  }: {
+    branch: string;
+    message: string;
+  }
+) {
+  const sbx = await Sandbox.connect(sandboxId);
+  
+  try {
+    // Check if git repository exists
+    const gitExists = await sbx.commands.run(`test -d .git && echo "exists" || echo "not_exists"`, {
+      cwd: APP_DIR,
+    });
+    
+    if (gitExists.stdout.trim() === "not_exists") {
+      // Initialize git repository
+      await sbx.commands.run(`sudo git init`, {
+        cwd: APP_DIR,
+      });
+      
+      // Set git config
+      await sbx.commands.run(`sudo git config user.email "bot@makex.app"`, {
+        cwd: APP_DIR,
+      });
+      await sbx.commands.run(`sudo git config user.name "MakeX Bot"`, {
+        cwd: APP_DIR,
+      });
+      
+      // Create initial commit if repository is empty
+      const hasCommits = await sbx.commands.run(`sudo git rev-parse --verify HEAD >/dev/null 2>&1 && echo "has_commits" || echo "no_commits"`, {
+        cwd: APP_DIR,
+      });
+      
+      if (hasCommits.stdout.trim() === "no_commits") {
+        // Create .gitkeep file for initial commit
+        await sbx.files.write(`${APP_DIR}/.gitkeep`, '');
+        await sbx.commands.run(`sudo git add .gitkeep`, {
+          cwd: APP_DIR,
+        });
+        await sbx.commands.run(`sudo git commit -m "Initial commit"`, {
+          cwd: APP_DIR,
+        });
+      }
+    } else {
+      // Ensure git config is set for existing repository
+      await sbx.commands.run(`sudo git config user.email "bot@makex.app"`, {
+        cwd: APP_DIR,
+      });
+      await sbx.commands.run(`sudo git config user.name "MakeX Bot"`, {
+        cwd: APP_DIR,
+      });
+    }
+    
+    // Check if branch exists, if not create it
+    const branchExists = await sbx.commands.run(`sudo git branch --list ${branch}`, {
+      cwd: APP_DIR,
+    });
+    
+    if (!branchExists.stdout.trim()) {
+      await sbx.commands.run(`sudo git checkout -b ${branch}`, {
+        cwd: APP_DIR,
+      });
+    } else {
+      await sbx.commands.run(`sudo git checkout ${branch}`, {
+        cwd: APP_DIR,
+      });
+    }
+    
+    // Check if there are any changes
+    const status = await sbx.commands.run(`sudo git status --porcelain`, {
+      cwd: APP_DIR,
+    });
+    
+    if (!status.stdout.trim()) {
+      // No changes to commit
+      const currentCommit = await sbx.commands.run(`sudo git rev-parse HEAD`, {
+        cwd: APP_DIR,
+      });
+      
+      return {
+        message: "No changes to commit",
+        current_commit: currentCommit.stdout.trim(),
+        branch: branch,
+      };
+    }
+    
+    // Add all files
+    await sbx.commands.run(`sudo git add .`, {
+      cwd: APP_DIR,
+    });
+    
+    // Create a commit with the message
+    await sbx.commands.run(`sudo git commit -m "${message}"`, {
+      cwd: APP_DIR,
+    });
+    
+    // Get the commit hash
+    const commitHash = await sbx.commands.run(`sudo git rev-parse HEAD`, {
+      cwd: APP_DIR,
+    });
+    
+    // Push to freestyle master branch
+    let pushSuccess = false;
+    let pushMessage = "";
+    
+    try {
+      await sbx.commands.run(`sudo git push freestyle master --force`, {
+        cwd: APP_DIR,
+      });
+      pushSuccess = true;
+      pushMessage = "Successfully pushed to freestyle master branch";
+    } catch (pushError) {
+      pushSuccess = false;
+      pushMessage = `Failed to push to freestyle: ${pushError}`;
+    }
+    
+    return {
+      message: "Changes committed successfully",
+      commit: commitHash.stdout.trim(),
+      branch: branch,
+      push_success: pushSuccess,
+      push_message: pushMessage,
+    };
+    
+  } catch (error) {
+    throw new Error(`Failed to save checkpoint: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+export async function restoreCheckpoint(
+  sandboxId: string,
+  {
+    branch,
+    name,
+  }: {
+    branch: string;
+    name: string;
+  }
+) {
+  const sbx = await Sandbox.connect(sandboxId);
+  
+  try {
+    // Check if git repository exists
+    const gitExists = await sbx.commands.run(`test -d .git && echo "exists" || echo "not_exists"`, {
+      cwd: APP_DIR,
+    });
+    
+    if (gitExists.stdout.trim() === "not_exists") {
+      throw new Error("No git repository found");
+    }
+    
+    // Check if branch exists
+    const branchExists = await sbx.commands.run(`sudo git branch --list ${branch}`, {
+      cwd: APP_DIR,
+    });
+    
+    if (!branchExists.stdout.trim()) {
+      throw new Error(`Branch '${branch}' not found`);
+    }
+    
+    // Switch to the specified branch
+    await sbx.commands.run(`sudo git checkout ${branch}`, {
+      cwd: APP_DIR,
+    });
+    
+    // Try to restore by commit hash
+    try {
+      // Verify the commit exists
+      await sbx.commands.run(`sudo git rev-parse --verify ${name}`, {
+        cwd: APP_DIR,
+      });
+      
+      // Reset to the specified commit
+      await sbx.commands.run(`sudo git reset --hard ${name}`, {
+        cwd: APP_DIR,
+      });
+      
+      // Get the current commit hash
+      const currentCommit = await sbx.commands.run(`sudo git rev-parse HEAD`, {
+        cwd: APP_DIR,
+      });
+      
+      return {
+        message: `Successfully restored to commit ${name}`,
+        commit: currentCommit.stdout.trim(),
+        branch: branch,
+      };
+      
+    } catch (commitError) {
+      throw new Error(`Commit '${name}' not found`);
+    }
+    
+  } catch (error) {
+    throw new Error(`Failed to restore checkpoint: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+} 
