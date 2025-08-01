@@ -13,11 +13,35 @@ export async function GET(req: NextRequest) {
   const path = decodeURIComponent(encodedPath);
   const apiUrl = req.nextUrl.searchParams.get("api_url") ?? "";
 
-  const fileClient = createFileBackendApiClient(apiUrl);
+  if (!apiUrl || !path) {
+    return NextResponse.json(
+      { error: "Missing required fields" },
+      { status: 400 },
+    );
+  }
 
-  const data = await fileClient.get(`/code?path=${encodeURIComponent(path)}`);
+  try {
+    const fileClient = createFileBackendApiClient(apiUrl);
+    const sanitizedPath = path.replace(/^\/+/, "");
 
-  return NextResponse.json(data);
+    const data = await fileClient.get("/file", {
+      path: sanitizedPath,
+    });
+
+    // Transform the /file response to match what editor expects
+    const transformedData = {
+      type: "text",
+      code: typeof data === "string" ? data : JSON.stringify(data, null, 2),
+    };
+
+    return NextResponse.json(transformedData);
+  } catch (error: any) {
+    console.error("File operation error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to perform file operation" },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(req: Request) {
