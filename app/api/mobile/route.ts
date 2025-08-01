@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         appName,
       });
 
-      await redisUrlSetter(appName, container.appHost, container.apiHost);
+      await redisUrlSetter(appName, container.appHost);
 
       const { error: updateError } = await admin
         .from("user_sandboxes")
@@ -166,7 +166,6 @@ export async function POST(request: NextRequest) {
       sessionId,
       appName,
       appUrl,
-      apiUrl: apiHost,
     });
   } catch (error) {
     console.error("[Mobile API] Error:", error);

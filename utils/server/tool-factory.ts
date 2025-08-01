@@ -17,7 +17,6 @@ import {
 } from "./e2b";
 
 type ToolConfig = {
-  apiUrl?: string;
   sandboxId: string;
 };
 
@@ -369,9 +368,64 @@ export function createTools(config: ToolConfig) {
           console.log("Running linter on", path);
           const targetPath = path || ".";
           const absolutePath = getAbsolutePath(targetPath);
-          const command = `npx eslint ${absolutePath} --fix --quiet`;
-          const data = await e2bRunCommand(config.sandboxId, command);
-          return { success: true, data };
+          
+          // First check if eslint is available
+          const checkEslint = await e2bRunCommand(config.sandboxId, "npx eslint --version");
+          if (checkEslint.error || checkEslint.returnCode !== 0) {
+            console.log("ESLint not found, attempting to install...");
+            
+            // Try to install eslint
+            const installEslint = await e2bRunCommand(config.sandboxId, "yarn add -D eslint");
+            if (installEslint.error || installEslint.returnCode !== 0) {
+              return {
+                success: false,
+                error: "Failed to install ESLint. Please install it manually with: yarn add -D eslint",
+                stdout: installEslint.stdout,
+                stderr: installEslint.stderr,
+                returnCode: installEslint.returnCode
+              };
+            }
+            
+            console.log("ESLint installed successfully");
+          }
+          
+                    const command = `npx eslint ${absolutePath} --fix --quiet`;
+          console.log("Running ESLint command:", command);
+          const result = await e2bRunCommand(config.sandboxId, command);
+          
+          console.log("ESLint result:", JSON.stringify(result, null, 2));
+          
+          // Check if the command failed
+          if (result.error) {
+            return {
+              success: false,
+              error: result.error,
+              stdout: result.stdout,
+              stderr: result.stderr,
+              returnCode: result.returnCode
+            };
+          }
+          
+          // Check if eslint returned a non-zero exit code (indicating linting errors)
+          if (result.returnCode !== 0) {
+            return {
+              success: false,
+              error: `ESLint found linting issues (exit code: ${result.returnCode})`,
+              stdout: result.stdout,
+              stderr: result.stderr,
+              returnCode: result.returnCode
+            };
+          }
+          
+          return { 
+            success: true, 
+            data: {
+              stdout: result.stdout,
+              stderr: result.stderr,
+              returnCode: result.returnCode,
+              message: "Linting completed successfully"
+            }
+          };
         } catch (error: any) {
           return {
             success: false,

@@ -35,12 +35,10 @@ export const startExpo = task({
         );
       }
 
-      const { appUrl, apiUrl } = await startExpoInContainerE2B(containerId);
+      const { appUrl} = await startExpoInContainerE2B(containerId);
       console.log(
         "[startExpo] Expo started successfully. App URL:",
         appUrl,
-        "API URL:",
-        apiUrl,
       );
 
       // Set status to 'bundling' after Expo is started
@@ -90,7 +88,7 @@ export const startExpo = task({
           "App preview never became available after multiple attempts.",
         );
       }
-      await redisUrlSetter(appName, appUrl, apiUrl);
+      await redisUrlSetter(appName, appUrl);
 
       // Set status to 'ready' at the end
       console.log(
@@ -99,7 +97,6 @@ export const startExpo = task({
       const { error: updateError } = await adminSupabase
         .from("user_sandboxes")
         .update({
-          api_url: apiUrl,
           app_url: appUrl,
           expo_status: "bundled",
         })

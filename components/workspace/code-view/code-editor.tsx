@@ -115,7 +115,7 @@ export default function CodeEditor({
 }) {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const { apiUrl } = useSession();
+  const { appId } = useSession();
 
   // Detect language if not provided
   const detectedLanguage = file
@@ -124,7 +124,7 @@ export default function CodeEditor({
 
   const { data, error, isLoading } = useSWR<BinaryImageData>(
     file
-      ? `/api/code/file?path=${encodeURIComponent(file.path)}&api_url=${apiUrl}`
+      ? `/api/code/file?path=${encodeURIComponent(file.path)}&appId=${appId}`
       : null,
     fetchJSON,
   );
@@ -168,7 +168,7 @@ export default function CodeEditor({
         body: JSON.stringify({
           path: file.path,
           content: code,
-          apiUrl: apiUrl,
+          appId: appId,
         }),
       });
       if (res.ok) {

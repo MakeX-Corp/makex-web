@@ -45,7 +45,6 @@ export default function WorkspaceContent({
   const {
     appId,
     appName,
-    apiUrl,
     sessions,
     loadingSessions,
     sessionsError,
@@ -342,7 +341,7 @@ export default function WorkspaceContent({
               )}
             </Button>
 
-            <DeployButton appId={appId} apiUrl={apiUrl} />
+            <DeployButton appId={appId} />
           </div>
         </div>
 

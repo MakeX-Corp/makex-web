@@ -13,20 +13,16 @@ export const connectRedis = async () => {
 export const redisUrlSetter = async (
   appName: string,
   appUrl: string,
-  apiUrl: string,
 ) => {
   // connect to redis
   await connectRedis();
 
-  console.log("App Deets", appName, appUrl, apiUrl);
+  console.log("App Deets", appName, appUrl);
 
   const appUrlSet = await redis.set(`proxy:${appName}.makex.app`, `${appUrl}`);
-  const apiUrlSet = await redis.set(
-    `proxy:api-${appName}.makex.app`,
-    `${apiUrl}`,
-  );
 
-  console.log("Redis URLs set successfully", appUrlSet, apiUrlSet);
+
+  console.log("Redis URLs set successfully", appUrlSet);
 
   // disconnect from redis
   if (redis.isOpen) {

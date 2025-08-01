@@ -43,10 +43,8 @@ interface ShareInfo {
 
 export function DeployButton({
   appId,
-  apiUrl,
 }: {
   appId: string | null;
-  apiUrl: string;
 }) {
   const { theme } = useTheme();
   const [isDeploying, setIsDeploying] = useState(false);
@@ -206,7 +204,7 @@ export function DeployButton({
         setIsDeploying(false);
       }
     },
-    [apiUrl, appId],
+    [appId],
   );
 
   // Format timestamp
