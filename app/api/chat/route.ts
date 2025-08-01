@@ -212,13 +212,13 @@ export async function POST(req: Request) {
         system: getPrompt(fileTree),
         stopWhen: stepCountIs(100),
         experimental_telemetry: { isEnabled: true },
-        onFinish: async (message) => {
-          try {
-            // Get the assistant message from the result
-            const assistantMessage = message.steps[message.steps.length - 1];
-            const plainText = extractPlainText(assistantMessage?.content);
+      });
 
-            // Save checkpoint after completing the response
+      return result.toUIMessageStreamResponse({
+        originalMessages: messages,
+        onFinish: async ({ responseMessage }) => {
+          try {
+            const plainText = extractPlainText(responseMessage.parts);
             let commitHash = null;
             try {
               const checkpointInfo = await generateCheckpointInfo(plainText);
@@ -229,44 +229,29 @@ export async function POST(req: Request) {
                   message: checkpointInfo.message,
                 },
               );
-              console.log("checkpointResponse", checkpointResponse);
-              // Store the commit hash from the response
               commitHash =
                 checkpointResponse.commit || checkpointResponse.current_commit;
             } catch (error) {
               console.error("Failed to save checkpoint:", error);
-              // Don't throw here, continue with message saving
             }
 
-            // Insert assistant's message into chat history
-            const { error: insertError } = await supabase
-              .from("app_chat_history")
-              .insert({
-                app_id: trimmedAppId,
-                user_id: user.id,
-                content: plainText, //will be removed later, cannot be removed now because it has non null constraint
-                plain_text: plainText,
-                role: "assistant",
-                model_used: modelName,
-                parts: assistantMessage?.content,
-                session_id: sessionId,
-                commit_hash: commitHash,
-                message_id: crypto.randomUUID(),
-              });
+            await supabase.from("app_chat_history").insert({
+              app_id: trimmedAppId,
+              user_id: user.id,
+              content: plainText,
+              plain_text: plainText,
+              role: "assistant",
+              model_used: modelName,
+              parts: responseMessage.parts,
+              session_id: sessionId,
+              commit_hash: commitHash,
+              message_id: responseMessage.id,
+            });
 
-            if (insertError) {
-              console.error("Error inserting AI message:", insertError);
-            }
-
-            // Update app status to active
-            const { data, error } = await supabaseAdmin
+            await supabaseAdmin
               .from("user_sandboxes")
               .update({ app_status: "active" })
-              .eq("app_id", appId)
-              .select();
-            if (error) {
-              console.error("Error updating app_status to active:", error);
-            }
+              .eq("app_id", appId);
           } catch (err) {
             console.error(
               "Exception while updating app_status to active:",
@@ -275,10 +260,6 @@ export async function POST(req: Request) {
           }
         },
       });
-
-      // console.log the provider metadata
-
-      return result.toUIMessageStreamResponse();
     } catch (error) {
       // Comprehensive error handling
       console.error("Detailed chat error:", error);
