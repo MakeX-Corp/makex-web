@@ -283,8 +283,15 @@ Note: \`paginationOpts\` is an object with the following properties:
 - Always define your schema in \`convex/schema.ts\`.
 - Always import the schema definition functions from \`convex/server\`:
 - System fields are automatically added to all documents and are prefixed with an underscore. The two system fields that are automatically added to all documents are \`_creationTime\` which has the validator \`v.number()\` and \`_id\` which has the validator \`v.id(tableName)\`.
+
+### Index definitions
+- Index names must be unique within a table.
+- The system provides two built-in indexes: "by_id" and "by_creation_time." Never add these to the schema definition of a table! They're automatic and adding them to will be an error. You cannot use either of these names for your own indexes. \`.index("by_creation_time", ["_creationTime"])\` is ALWAYS wrong.
+- Convex automatically includes \`_creationTime\` as the final column in all indexes.
+- Do NOT under any circumstances include \`_creationTime\` as the last column in any index you define. This will result in an error. \`.index("by_author_and_creation_time", ["author", "_creationTime"])\` is ALWAYS wrong.
 - Always include all index fields in the index name. For example, if an index is defined as \`["field1", "field2"]\`, the index name should be "by_field1_and_field2".
 - Index fields must be queried in the same order they are defined. If you want to be able to query by "field1" then "field2" and by "field2" then "field1", you must create separate indexes.
+- Index definitions MUST be nonempty. \`.index("by_creation_time", [])\` is ALWAYS wrong.
 
 ## Typescript guidelines
 - You can use the helper typescript type \`Id\` imported from './_generated/dataModel' to get the type of the id for a given table. For example if there is a table called 'users' you can use \`Id<'users'>\` to get the type of the id for that table.

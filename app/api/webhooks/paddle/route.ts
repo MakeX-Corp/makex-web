@@ -103,24 +103,73 @@ async function handleSubscriptionCreated(event: any, supabase: any) {
     return;
   }
   console.log("userId", userId);
-  try {
-    // Insert subscription record
-    const { error } = await supabase.from("subscriptions").insert({
-      id: event.id,
-      user_id: userId,
-      status: event.status,
-      price_id: event.items[0].price.id,
-      quantity: event.items[0].quantity || 1,
-      cancel_at_period_end: event.cancel_at_period_end || false,
-      canceled_at: event.canceled_at,
-      current_period_start: event.current_billing_period.starts_at,
-      current_period_end: event.current_billing_period.ends_at,
-      created_at: event.created_at,
-      customer_id: event.customer_id,
-    });
 
-    if (error) throw error;
-    console.log(`Subscription ${event.id} created successfully`);
+  // Determine subscription type based on price_id
+  const priceId = event.items[0].price.id;
+  let subscriptionType = "free";
+
+  if (priceId === process.env.NEXT_PUBLIC_PADDLE_STARTER_ID) {
+    subscriptionType = "starter";
+  }
+
+  try {
+    // Check if user already has a free subscription that needs to be updated
+    const { data: existingSubscription } = await supabase
+      .from("subscriptions")
+      .select("id, subscription_type")
+      .eq("user_id", userId)
+      .eq("subscription_type", "free")
+      .single();
+
+    if (existingSubscription) {
+      // Update existing free subscription to paid
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({
+          subscription_id: event.id,
+          user_id: userId,
+          status: event.status,
+          price_id: priceId,
+          quantity: event.items[0].quantity || 1,
+          cancel_at_period_end: event.cancel_at_period_end || false,
+          canceled_at: event.canceled_at,
+          current_period_start: event.current_billing_period.starts_at,
+          current_period_end: event.current_billing_period.ends_at,
+          created_at: event.created_at,
+          customer_id: event.customer_id,
+          subscription_type: subscriptionType,
+          messages_used_this_period:
+            existingSubscription.messages_used_this_period || 0,
+        })
+        .eq("id", existingSubscription.id);
+
+      if (error) throw error;
+      console.log(
+        `Updated existing subscription ${existingSubscription.id} to ${subscriptionType} plan`,
+      );
+    } else {
+      // Insert new subscription record
+      const { error } = await supabase.from("subscriptions").insert({
+        subscription_id: event.id,
+        user_id: userId,
+        status: event.status,
+        price_id: priceId,
+        quantity: event.items[0].quantity || 1,
+        cancel_at_period_end: event.cancel_at_period_end || false,
+        canceled_at: event.canceled_at,
+        current_period_start: event.current_billing_period.starts_at,
+        current_period_end: event.current_billing_period.ends_at,
+        created_at: event.created_at,
+        customer_id: event.customer_id,
+        subscription_type: subscriptionType,
+        messages_used_this_period: 0,
+      });
+
+      if (error) throw error;
+      console.log(
+        `Subscription ${event.id} created successfully with type: ${subscriptionType}`,
+      );
+    }
   } catch (error) {
     console.error("Error creating subscription:", error);
   }
@@ -130,11 +179,20 @@ async function handleSubscriptionUpdated(event: any, supabase: any) {
   try {
     // Update subscription record
     console.log("event", event);
+
+    // Determine subscription type based on price_id
+    const priceId = event.items[0].price?.id;
+    let subscriptionType = "free";
+
+    if (priceId === process.env.NEXT_PUBLIC_PADDLE_STARTER_ID) {
+      subscriptionType = "starter";
+    }
+
     const { error } = await supabase
       .from("subscriptions")
       .update({
         status: event.status,
-        price_id: event.items[0].price?.id,
+        price_id: priceId,
         quantity: event.items[0].quantity || 1,
         cancel_at_period_end:
           event.scheduled_change?.action === "cancel"
@@ -146,11 +204,14 @@ async function handleSubscriptionUpdated(event: any, supabase: any) {
             : event.canceled_at,
         current_period_start: event.current_billing_period?.starts_at,
         current_period_end: event.current_billing_period?.ends_at,
+        subscription_type: subscriptionType,
       })
-      .eq("id", event.id);
+      .eq("subscription_id", event.id);
 
     if (error) throw error;
-    console.log(`Subscription ${event.id} updated successfully`);
+    console.log(
+      `Subscription ${event.id} updated successfully with type: ${subscriptionType}`,
+    );
   } catch (error) {
     console.error("Error updating subscription:", error);
   }
@@ -167,7 +228,7 @@ async function handleSubscriptionCanceled(event: any, supabase: any) {
         canceled_at: event.canceled_at || new Date().toISOString(),
         cancel_at_period_end: true,
       })
-      .eq("id", event.id);
+      .eq("subscription_id", event.id);
 
     if (error) throw error;
     console.log(`Subscription ${event.id} canceled successfully`);

@@ -7,7 +7,8 @@ export function initPaddle() {
 
   try {
     return initializePaddle({
-      environment: "production",
+      environment:
+        process.env.NODE_ENV === "production" ? "production" : "sandbox",
       token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN || "",
     });
   } catch (error) {

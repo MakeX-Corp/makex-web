@@ -8,7 +8,6 @@ import {
   useEffect,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { getPlanName } from "@/utils/client/auth";
 import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
 import posthog from "posthog-js";
@@ -38,24 +37,15 @@ export interface SessionData {
 
 // Define subscription data interface based on the API response
 export interface SubscriptionData {
-  subscription: {
-    id: string;
-    user_id: string;
-    status: string;
-    price_id: string;
-    customer_id: string;
-    current_period_end: string;
-    cancel_at_period_end: boolean;
-    created_at: string;
-  } | null;
   hasActiveSubscription: boolean;
-  pendingCancellation: boolean;
-  expiresAt: string | null;
-  planId: string | null;
-  customerId: string | null;
-  userId: string;
-  email: string;
+  messagesLimit: number;
   planName: string;
+  messagesUsed: number;
+  nextBillingDate: string | null;
+  subscriptionType: string;
+  canSendMessage: boolean;
+  userId: string;
+  customerId: string | null;
 }
 
 // Define the context shape
@@ -211,10 +201,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await subscriptionResponse.json();
-
-      // Get email from token using the provided utility function
-      const planName = getPlanName(data.subscription?.planId || "");
-      data.planName = planName;
 
       setSubscription(data);
     } catch (error) {

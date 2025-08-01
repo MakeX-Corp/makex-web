@@ -58,37 +58,6 @@ export const fetchChatMessages = async (
 };
 
 /**
- * Save an AI message
- */
-export const saveAIMessage = async (
-  sessionId: string,
-  appId: string,
-  apiUrl: string,
-  message: any,
-): Promise<any> => {
-  try {
-    const response = await fetch("/api/chat/ai-message-save", {
-      method: "POST",
-      body: JSON.stringify({
-        sessionId,
-        appId,
-        apiUrl,
-        message,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to save AI message");
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Error saving AI message:", error);
-    throw error;
-  }
-};
-
-/**
  * Restore a checkpoint
  */
 export const restoreCheckpoint = async (
@@ -117,21 +86,20 @@ export const restoreCheckpoint = async (
   }
 };
 
-export const checkMessageLimit = async (subscription: any) => {
+export const checkMessageLimit = async () => {
   try {
-    const response = await fetch("/api/chat/limits", {
-      method: "POST",
-      body: JSON.stringify({
-        subscription,
-      }),
+    const response = await fetch("/api/subscription", {
+      method: "GET",
     });
-
-    if (response.ok) {
-      const data = await response.json();
-      const reachedLimit = data.remaining <= 0;
-      const remainingMessages = data.remaining;
-      return { reachedLimit, remainingMessages };
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to fetch subscription data");
     }
+
+    const data = await response.json();
+    const remainingMessages = data.messagesLimit - data.messagesUsed;
+    const reachedLimit = remainingMessages <= 0;
+    return { remainingMessages, reachedLimit };
   } catch (error) {
     console.error("Error checking message limit:", error);
   }

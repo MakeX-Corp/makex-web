@@ -5,22 +5,74 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, LogOut, Globe } from "lucide-react";
+import { Loader2, LogOut, Globe, Check, CreditCard } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/utils/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+
+// Get plan features from environment variables
+const getPlanFeatures = (planName: string): string[] => {
+  switch (planName) {
+    case "Free":
+      return (
+        process.env.NEXT_PUBLIC_FREE_PLAN_FEATURES ||
+        "20 messages a month, Slower app start times, Discord support"
+      )
+        .split(",")
+        .map((feature) => feature.trim());
+    case "Starter":
+      return (
+        process.env.NEXT_PUBLIC_STARTER_PLAN_FEATURES ||
+        "250 messages a month,Basic AI editing,Faster app start times,Priority support,Publish to App Store and Google Play (coming soon)"
+      )
+        .split(",")
+        .map((feature) => feature.trim());
+    default:
+      return [];
+  }
+};
+
+// Get plan price from environment variables
+const getPlanPrice = (planName: string): string => {
+  switch (planName) {
+    case "Free":
+      return process.env.NEXT_PUBLIC_FREE_PLAN_PRICE || "0";
+    case "Starter":
+      return process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || "9.99";
+    default:
+      return "0";
+  }
+};
+
 export default function ProfileSettings() {
   const router = useRouter();
   const { subscription, isLoading: subscriptionLoading, user } = useApp();
+  const { toast } = useToast();
 
   // Derive values from the subscription data
-  const pendingCancellation = subscription?.pendingCancellation || false;
-  const planName = subscription?.planName || "";
+  const planName = subscription?.planName || "Free";
   const customerId = subscription?.customerId || null;
   const email = user?.email || "";
   const initials = email ? email.substring(0, 2).toUpperCase() : "US";
   const [isManagingSubscription, setIsManagingSubscription] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  // Get plan features and price from environment variables
+  const planFeatures = getPlanFeatures(planName);
+  const planPrice = getPlanPrice(planName);
+
+  // Check if user has active subscription
+  const hasActiveSubscription = () => {
+    return subscription?.hasActiveSubscription;
+  };
+
+  // Check if user is on free plan
+  const isOnFreePlan = () => {
+    return (
+      !subscription?.hasActiveSubscription || subscription?.planName === "Free"
+    );
+  };
 
   const handleSignOut = async () => {
     try {
@@ -34,7 +86,6 @@ export default function ProfileSettings() {
       }
       setTimeout(() => {
         console.log("Redirecting to homepage...");
-        //router.push("/");
         window.location.href = "/";
       }, 500);
     } catch (error) {
@@ -47,12 +98,13 @@ export default function ProfileSettings() {
     try {
       setIsManagingSubscription(true);
 
-      // If we don't have a customer ID, redirect to pricing
-      if (!customerId || planName === "Free") {
+      // If we don't have a customer ID or on free plan, redirect to pricing
+      if (!customerId || isOnFreePlan()) {
         router.push("/dashboard/pricing");
         return;
       }
-      // Fetch customer session with customer ID
+
+      // Get customer portal URL from our API
       const response = await fetch("/api/customer-session", {
         method: "POST",
         headers: {
@@ -63,22 +115,24 @@ export default function ProfileSettings() {
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to manage subscription");
-      }
-
-      const data = await response.json();
-
-      // Redirect to the subscription portal URL returned from the API
-      if (data.url) {
+      if (response.ok) {
+        const data = await response.json();
+        // Open the customer portal URL
         window.open(data.url, "_blank");
       } else {
-        router.push("/dashboard/pricing");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to open customer portal",
+        });
       }
     } catch (error) {
       console.error("Error managing subscription:", error);
-      router.push("/dashboard/pricing");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to open customer portal",
+      });
     } finally {
       setIsManagingSubscription(false);
     }
@@ -130,18 +184,15 @@ export default function ProfileSettings() {
             </Avatar>
             <div>
               <h2 className="text-xl font-semibold mb-1">{email}</h2>
-              <div className="flex items-center">
+              <div className="flex items-center gap-2">
                 <span
                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    planName === "Free"
+                    isOnFreePlan()
                       ? "bg-muted text-muted-foreground"
-                      : pendingCancellation
-                        ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
-                        : "bg-primary/10 text-primary"
+                      : "bg-primary/10 text-primary"
                   }`}
                 >
                   {planName} Plan
-                  {pendingCancellation && " (Cancelling)"}
                 </span>
               </div>
             </div>
@@ -199,7 +250,7 @@ export default function ProfileSettings() {
             size="sm"
             onClick={() => router.push("/dashboard/pricing")}
           >
-            {planName === "Free" ? "Upgrade" : "Change Plan"}
+            {isOnFreePlan() ? "Upgrade" : "Change Plan"}
           </Button>
         </div>
 
@@ -209,156 +260,87 @@ export default function ProfileSettings() {
               <div className="space-y-1">
                 <h3 className="font-medium">{planName} Plan</h3>
                 <p className="text-sm text-muted-foreground">
-                  {pendingCancellation
-                    ? "Your subscription will be cancelled at the end of the current billing period."
-                    : planName === "Free"
-                      ? "Upgrade to access premium features."
-                      : planName === "Starter"
-                        ? "Access to some premium features."
-                        : "Full access to all premium features."}
+                  {isOnFreePlan()
+                    ? "Upgrade to access premium features."
+                    : planName === "Starter"
+                    ? "Access to some premium features."
+                    : "Full access to all premium features."}
                 </p>
               </div>
               <div className="text-right">
                 <p className="font-medium">
-                  {planName === "Free"
-                    ? "Free"
-                    : planName === "Starter"
-                      ? "$19/month"
-                      : "$49/month"}
+                  {planName === "Free" ? "Free" : `$${planPrice}/month`}
                 </p>
+                {hasActiveSubscription() && subscription?.nextBillingDate && (
+                  <p className="text-xs text-muted-foreground">
+                    {isOnFreePlan()
+                      ? `Message count resets: ${new Date(
+                          subscription.nextBillingDate,
+                        ).toLocaleDateString()}`
+                      : `Next billing: ${new Date(
+                          subscription.nextBillingDate,
+                        ).toLocaleDateString()}`}
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Subscription Features */}
-            {planName !== "Free" && (
+            {!isOnFreePlan() && planFeatures.length > 0 && (
               <div className="mb-6">
                 <div className="bg-muted/50 rounded-md p-4">
+                  <h4 className="font-medium mb-3">Plan Features</h4>
                   <ul className="space-y-2">
-                    {planName === "Starter" ? (
-                      <>
-                        <li className="flex items-center gap-2 text-sm">
-                          <svg
-                            className="h-5 w-5 text-primary"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                          250 messages per month
-                        </li>
-                        <li className="flex items-center gap-2 text-sm">
-                          <svg
-                            className="h-5 w-5 text-primary"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                          Publish to App Store and Google Play (coming soon)
-                        </li>
-                        <li className="flex items-center gap-2 text-sm">
-                          <svg
-                            className="h-5 w-5 text-primary"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                          Priority support
-                        </li>
-                      </>
-                    ) : (
-                      <>
-                        <li className="flex items-center gap-2 text-sm">
-                          <svg
-                            className="h-5 w-5 text-primary"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                          500 messages per month
-                        </li>
-                        <li className="flex items-center gap-2 text-sm">
-                          <svg
-                            className="h-5 w-5 text-primary"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                          Advanced AI editing
-                        </li>
-                        <li className="flex items-center gap-2 text-sm">
-                          <svg
-                            className="h-5 w-5 text-primary"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                          1-1 support
-                        </li>
-                      </>
-                    )}
+                    {planFeatures.map((feature) => (
+                      <li
+                        key={feature}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <Check className="h-4 w-4 text-primary" />
+                        {feature}
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>
             )}
 
-            <Button
-              variant={planName === "Free" ? "default" : "outline"}
-              className="w-full"
-              onClick={handleManageSubscription}
-              disabled={isManagingSubscription}
-            >
-              {isManagingSubscription ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : planName === "Free" ? (
-                "Upgrade Now"
-              ) : (
-                "Manage Subscription"
+            <div className="space-y-3">
+              <Button
+                variant={isOnFreePlan() ? "default" : "outline"}
+                className="w-full"
+                onClick={handleManageSubscription}
+                disabled={isManagingSubscription}
+              >
+                {isManagingSubscription ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : isOnFreePlan() ? (
+                  "Upgrade Now"
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Manage Subscription
+                  </>
+                )}
+              </Button>
+
+              {hasActiveSubscription() && (
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">
+                    Need help? Contact us at{" "}
+                    <a
+                      href="mailto:contact@makex.app"
+                      className="text-primary hover:underline"
+                    >
+                      contact@makex.app
+                    </a>
+                  </p>
+                </div>
               )}
-            </Button>
+            </div>
           </CardContent>
         </Card>
       </section>
