@@ -495,7 +495,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-lg md:text-2xl text-muted-foreground max-w-[600px] mb-4 md:mb-8 animate-fade-in-delay">
-            Make anything with MakeX
+            Turn ideas into apps. Instantly.
           </p>
 
           <div className="w-full max-w-md mb-4 md:mb-8 animate-fade-in-delay-2">
