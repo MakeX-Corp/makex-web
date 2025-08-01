@@ -54,6 +54,9 @@ export async function updateSession(request: NextRequest) {
     "/api/share",
     "/api/newsletter-signup",
     "/newsletter",
+    "/api/revenue-cat",
+    "/api/webhooks/paddle",
+    "/api/apple",
   ];
 
   // Check if user is new (created after May 21, 2025)

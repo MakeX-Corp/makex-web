@@ -30,7 +30,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import { checkMessageLimit } from "@/lib/chat-service";
 import {
   Dialog,
   DialogContent,
@@ -418,8 +417,8 @@ export default function DashboardPage() {
                       index === currentStep
                         ? "bg-primary text-primary-foreground animate-pulse"
                         : index < currentStep
-                          ? "bg-primary/20 text-primary"
-                          : "bg-muted text-muted-foreground"
+                        ? "bg-primary/20 text-primary"
+                        : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {index + 1}

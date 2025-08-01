@@ -8,7 +8,7 @@ import {
 } from "@/utils/server/app-name-generator";
 import { createE2BContainer } from "@/utils/server/e2b";
 import { redisUrlSetter } from "@/utils/server/redis-client";
-import { checkSubscription } from "@/utils/server/check-subscription";
+import { checkSubscription } from "@/utils/server/subscription-manager";
 import { setupContainer } from "@/trigger/setup-container";
 
 export async function POST(request: NextRequest) {

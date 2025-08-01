@@ -2,7 +2,7 @@ import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
-import { checkMessageLimit } from "@/utils/server/check-daily-limit";
+import { incrementMessageUsage } from "@/utils/server/subscription-manager";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
@@ -139,14 +139,19 @@ export async function POST(req: Request) {
     }
 
     try {
-      // Check daily message limit using the new utility function
-      const limitCheck = await checkMessageLimit(supabase, user, subscription);
-      if (limitCheck.error) {
+      // Check subscription using existing data and increment usage
+      const canSendMessage = subscription?.canSendMessage;
+      if (!canSendMessage) {
         return NextResponse.json(
-          { error: limitCheck.error },
-          { status: limitCheck.status },
+          {
+            error:
+              "Message limit reached. Please upgrade your plan to continue chatting.",
+            limitReached: true,
+          },
+          { status: 429 },
         );
       }
+      await incrementMessageUsage(user.id);
 
       // Get app details from the database
       const { data: app, error: appError } = await supabase

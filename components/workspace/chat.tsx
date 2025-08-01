@@ -179,11 +179,14 @@ export function Chat({
     const checkLimit = async () => {
       if (!subscription) return;
 
-      const result = await checkMessageLimit(subscription);
-      if (isMounted && result) {
-        setRemainingMessages(result.remainingMessages);
-        setLimitReached(result.reachedLimit);
-      }
+      setRemainingMessages(
+        (subscription?.messagesLimit || 0) - (subscription?.messagesUsed || 0),
+      );
+      setLimitReached(
+        (subscription?.messagesLimit || 0) -
+          (subscription?.messagesUsed || 0) <=
+          0,
+      );
     };
 
     checkLimit();
@@ -229,10 +232,11 @@ export function Chat({
         });
       }
 
-      // Check message limits
-      checkMessageLimit(subscription).then((result) => {
+      // Check message limits, might not need this could just decrement and see maybe
+      checkMessageLimit().then((result) => {
         if (result) {
           const { remainingMessages, reachedLimit } = result;
+
           setRemainingMessages(remainingMessages);
           setLimitReached(reachedLimit);
         }
@@ -641,7 +645,6 @@ export function Chat({
               <span>
                 {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
                 remaining{" "}
-                {subscription?.planName === "Free" ? "today" : "in this cycle"}
               </span>
             </div>
           )}
