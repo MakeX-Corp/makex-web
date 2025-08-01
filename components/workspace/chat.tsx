@@ -75,7 +75,6 @@ export function Chat({
 }: ChatProps) {
   const {
     appId,
-    apiUrl,
     getCurrentSessionTitle,
     updateSessionTitle: contextUpdateSessionTitle,
     justCreatedSessionId,
@@ -268,7 +267,6 @@ export function Chat({
         { text: storedPrompt },
         {
           body: {
-            apiUrl,
             appId,
             sessionId,
             subscription,
@@ -282,7 +280,6 @@ export function Chat({
     booted,
     sendMessage,
     setIsAIResponding,
-    apiUrl,
     appId,
     sessionId,
     subscription,
@@ -328,7 +325,6 @@ export function Chat({
         { role: "user", parts },
         {
           body: {
-            apiUrl,
             appId,
             sessionId,
             subscription,

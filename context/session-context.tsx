@@ -24,7 +24,6 @@ interface SessionContextType {
   appId: string;
   appName: string;
   appUrl: string;
-  apiUrl: string;
   supabaseProject: any;
   setSupabaseProject: (project: any) => void;
   isAppReady: boolean;
@@ -78,8 +77,7 @@ export function SessionProvider({
 
   // App data
   const [appId, setAppId] = useState<string>(initialAppId);
-  const [appName, setAppName] = useState<string>("");
-  const [apiUrl, setApiUrl] = useState<string>("");
+  const [appName, setAppName] = useState<string>("")
   const [appUrl, setAppUrl] = useState<string>("");
   const [supabaseProject, setSupabaseProject] = useState<any>(null);
   const [isAppReady, setIsAppReady] = useState<boolean>(false);
@@ -167,7 +165,6 @@ export function SessionProvider({
       }
 
       // Set the configuration values from database
-      setApiUrl(data.api_url || "");
       setAppUrl(data.app_url || "");
       setGithubSyncRepo(data.github_sync_repo || null);
 
@@ -416,7 +413,6 @@ export function SessionProvider({
       }
 
       // Update app data
-      setApiUrl(data.api_url || "");
       setAppUrl(data.app_url || "");
       setGithubSyncRepo(data.github_sync_repo || null);
 
@@ -439,7 +435,6 @@ export function SessionProvider({
     appId,
     appName,
     appUrl,
-    apiUrl,
     convexConfig,
     supabaseProject,
     setSupabaseProject,

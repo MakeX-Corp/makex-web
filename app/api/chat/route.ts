@@ -201,7 +201,6 @@ export async function POST(req: Request) {
       const modelName = model || "claude-4-sonnet-latest";
 
       const tools = createTools({
-        apiUrl: app.api_url,
         sandboxId: sandbox.sandbox_id,
       });
 

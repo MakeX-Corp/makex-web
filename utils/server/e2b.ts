@@ -59,10 +59,8 @@ export async function startExpoInContainer(sandboxId: string) {
   console.log("Connected to sandbox:", sbx.sandboxId);
 
   const appUrl = `https://${sbx.getHost(8000)}`;
-  const apiUrl = `https://${sbx.getHost(8001)}`;
 
   console.log("App URL:", appUrl);
-  console.log("API URL:", apiUrl);
   // Escape the appUrl to handle special characters
   const escapedAppUrl = appUrl.replace(/"/g, '\\"');
 
@@ -79,7 +77,6 @@ export async function startExpoInContainer(sandboxId: string) {
 
   return {
     appUrl,
-    apiUrl,
   };
 }
 
@@ -583,7 +580,7 @@ echo "COMPLETE: Searched $files_searched files, found $match_count matches" >&2
 export async function runCommand(sandboxId: string, command: string) {
   const allowedCommands = [
     'ls', 'pwd', 'cat', 'grep', 'find', 'echo', 'mkdir', 'rm', 'cp', 'mv',
-    'yarn', 'npm', 'npx', 'sudo'
+    'yarn', 'npm', 'npx', 'sudo', 'eslint'
   ];
 
   try {
@@ -607,23 +604,44 @@ export async function runCommand(sandboxId: string, command: string) {
 
     // For yarn/npm commands, automatically add sudo if not present
     let finalCommand = command;
-    if ((baseCommand === 'yarn' || baseCommand === 'npm') && !command.includes('sudo')) {
+    if ((baseCommand === 'yarn' || baseCommand === 'npm' || baseCommand === 'npx' || baseCommand === 'eslint') && !command.includes('sudo')) {
       finalCommand = `sudo ${command}`;
     }
 
     console.log("command being run ", finalCommand)
-    // Execute the command with timeout
-    const result = await sbx.commands.run(finalCommand, {
-      timeoutMs: 450000, // 45 second timeout
-      cwd: APP_DIR
-    });
+    
+    try {
+      // Execute the command with timeout
+      const result = await sbx.commands.run(finalCommand, {
+        timeoutMs: 450000, // 45 second timeout
+        cwd: APP_DIR
+      });
 
-    return {
-      stdout: result.stdout,
-      stderr: result.stderr,
-      returnCode: result.exitCode,
-      error: null
-    };
+      return {
+        stdout: result.stdout,
+        stderr: result.stderr,
+        returnCode: result.exitCode,
+        error: null
+      };
+    } catch (cmdError: any) {
+      // If the command failed but we have result data, return it
+      if (cmdError.result) {
+        return {
+          stdout: cmdError.result.stdout || "",
+          stderr: cmdError.result.stderr || "",
+          returnCode: cmdError.result.exitCode || 1,
+          error: `Command failed with exit code ${cmdError.result.exitCode || 1}`
+        };
+      }
+      
+      // If no result data, return the error message
+      return {
+        stdout: "",
+        stderr: "",
+        returnCode: 1,
+        error: cmdError.message || "Command execution failed"
+      };
+    }
 
   } catch (error) {
     // Handle timeout specifically

@@ -1,10 +1,9 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { tasks } from "@trigger.dev/sdk/v3";
-import { deployEAS } from "@/trigger/deploy-eas";
 
 export async function POST(req: Request) {
-  const { apiUrl, appId, type = "web" } = await req.json();
+  const { appId, type = "web" } = await req.json();
   const result = await getSupabaseWithUser(req as NextRequest);
   if (result instanceof NextResponse) return result;
   if ("error" in result) return result.error;

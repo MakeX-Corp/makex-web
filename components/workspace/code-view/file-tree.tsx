@@ -29,14 +29,14 @@ export default function FileTree({
   selectedPath?: string | null;
   onFileTreeChange?: () => void;
 }) {
-  const { apiUrl } = useSession();
+  const { appId } = useSession();
   const { toast } = useToast();
   const {
     data: root,
     error,
     isLoading,
     mutate,
-  } = useSWR<Node[]>(`/api/code/directory?path=/&api_url=${apiUrl}`, fetchJSON);
+  } = useSWR<Node[]>(`/api/code/directory?path=/&appId=${appId}`, fetchJSON);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createType, setCreateType] = useState<"file" | "folder">("file");
@@ -55,7 +55,7 @@ export default function FileTree({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          apiUrl,
+          appId,
           path: fullPath,
           content: "",
         }),
@@ -99,7 +99,7 @@ export default function FileTree({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          apiUrl,
+          appId,
           path: fullPath,
         }),
       });
@@ -138,7 +138,7 @@ export default function FileTree({
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            apiUrl,
+            appId,
             path: filePath,
           }),
         });
@@ -147,7 +147,7 @@ export default function FileTree({
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            apiUrl,
+            appId,
             path: filePath,
           }),
         });
@@ -315,7 +315,7 @@ export default function FileTree({
                 onCreateFile={handleCreateFile}
                 onCreateFolder={handleCreateFolder}
                 onDelete={loading ? () => {} : handleDeleteFile}
-                apiUrl={apiUrl}
+                appId={appId}
                 loading={loading}
               />
             ),
