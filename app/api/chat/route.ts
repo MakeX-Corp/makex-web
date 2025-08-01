@@ -144,6 +144,7 @@ export async function POST(req: Request) {
         process.env.NODE_ENV === "development"
           ? true
           : subscription?.canSendMessage;
+
       if (!canSendMessage) {
         return NextResponse.json(
           {
@@ -154,7 +155,9 @@ export async function POST(req: Request) {
           { status: 429 },
         );
       }
-      await incrementMessageUsage(user.id);
+      if (process.env.NODE_ENV !== "development") {
+        await incrementMessageUsage(user.id);
+      }
 
       // Get app details from the database
       const { data: app, error: appError } = await supabase
