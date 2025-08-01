@@ -1,6 +1,8 @@
 // create a new e2b container
 
 import { Sandbox } from "@e2b/code-interpreter";
+import { cwd } from "process";
+import { string } from "zod/v4";
 
 const APP_DIR = "/app/expo-app";
 
@@ -49,6 +51,7 @@ export async function killE2BContainer(sandboxId: string) {
   return sbx;
 }
 
+// Expo 
 export async function startExpoInContainer(sandboxId: string) {
   const sbx = await Sandbox.connect(sandboxId);
 
@@ -110,6 +113,8 @@ export async function killDefaultExpo(sandboxId: string) {
     throw error;
   }
 }
+
+// Convex
 
 export async function writeConvexConfigInContainer(
   sandboxId: string,
@@ -295,3 +300,341 @@ export async function setupFreestyleGitInContainer(
     pushResult,
   };
 }
+
+
+// Filesystem
+export async function readFile(sandboxId: string, filePath: string) {
+  console.log(
+    "[readFile] Reading file:", filePath, "from sandbox:", sandboxId
+  );
+  const sbx = await Sandbox.connect(sandboxId);
+  const fileRead = await sbx.files.read(filePath);
+  return fileRead;
+}
+
+export async function writeFile(sandboxId: string, filePath: string, content: string) {
+  const sbx = await Sandbox.connect(sandboxId);
+  const fileWritten = await sbx.files.write(filePath, content);
+  return fileWritten;
+}
+
+export async function deleteFile(sandboxId: string, filePath: string) {
+  const sbx = await Sandbox.connect(sandboxId);
+  // Use rm command instead of files.delete method
+  const result = await sbx.commands.run(`rm -f "${filePath}"`);
+  return result;
+}
+
+export async function createDirectory(sandboxId: string, dirPath: string) {
+  const sbx = await Sandbox.connect(sandboxId);
+  const result = await sbx.commands.run(`mkdir -p "${dirPath}"`);
+  return result;
+}
+
+export async function deleteDirectory(sandboxId: string, dirPath: string) {
+  const sbx = await Sandbox.connect(sandboxId);
+  const result = await sbx.commands.run(`rm -rf "${dirPath}"`);
+  return result;
+}
+
+export async function listDirectory(sandboxId: string, dirPath: string) {
+  const sbx = await Sandbox.connect(sandboxId);
+  const result = await sbx.commands.run(`ls -la "${dirPath}"`);
+  return result;
+}
+
+// Directory tree management
+export async function getDirectoryTree(sandboxId: string, path: string = ".") {
+  const sbx = await Sandbox.connect(sandboxId);
+  
+  try {
+    // Get the absolute path
+    const absPathResult = await sbx.commands.run(`realpath "${path}"`);
+    const fullPath = absPathResult.stdout.trim();
+    
+    // Check if the path exists
+    const existsResult = await sbx.commands.run(`test -e "${fullPath}" && echo "exists" || echo "not_exists"`);
+    if (existsResult.stdout.trim() === "not_exists") {
+      throw new Error("Path does not exist");
+    }
+    
+    // Check if it's a file
+    const isFileResult = await sbx.commands.run(`test -f "${fullPath}" && echo "is_file" || echo "is_dir"`);
+    if (isFileResult.stdout.trim() === "is_file") {
+      throw new Error("Path must be a directory, not a file");
+    }
+    
+    // Use find command to get directory structure, excluding hidden folders and node_modules
+    let treeResult;
+    try {
+      treeResult = await sbx.commands.run(`find "${fullPath}" -type f -o -type d | grep -v "/\\." | grep -v "/node_modules" | sort`);
+    } catch (error) {
+      // Fallback to simple ls -R if find fails, but still exclude hidden and node_modules
+      treeResult = await sbx.commands.run(`ls -laR "${fullPath}" | grep -v "^\\." | grep -v "node_modules"`);
+    }
+    
+    return {
+      path: fullPath,
+      tree: treeResult.stdout,
+      error: null
+    };
+  } catch (error) {
+    return {
+      path: path,
+      tree: null,
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+
+// Grep search functionality
+export async function grepSearch(
+  sandboxId: string,
+  {
+    pattern,
+    include_pattern = "*",
+    case_sensitive = false
+  }: {
+    pattern: string;
+    include_pattern?: string;
+    case_sensitive?: boolean;
+  }
+) {
+  const sbx = await Sandbox.connect(sandboxId);
+  
+  try {
+    // Internal defaults (not configurable from input)
+    const maxFiles = 1000;
+    const maxMatches = 1000;
+    const baseDir = ".";
+    
+    // Build grep command with proper flags
+    const grepFlags = case_sensitive ? "" : "-i";
+    const escapedPattern = pattern.replace(/"/g, '\\"');
+    
+    // Create a shell script to handle the search with proper limits and exclusions
+    const shellScript = `
+#!/bin/bash
+
+BASE_DIR="${baseDir}"
+PATTERN="${escapedPattern}"
+INCLUDE_PATTERN="${include_pattern}"
+CASE_SENSITIVE=${case_sensitive}
+MAX_FILES=${maxFiles}
+MAX_MATCHES=${maxMatches}
+
+# Initialize counters
+files_searched=0
+match_count=0
+
+# Function to check if file matches include pattern using bash pattern matching
+matches_pattern() {
+    local file="$1"
+    local pattern="$2"
+    
+    # Handle common patterns
+    case "$pattern" in
+        "*") return 0 ;;  # All files
+        "*.ts") [[ "$file" == *.ts ]] && return 0 ;;
+        "*.js") [[ "$file" == *.js ]] && return 0 ;;
+        "*.tsx") [[ "$file" == *.tsx ]] && return 0 ;;
+        "*.jsx") [[ "$file" == *.jsx ]] && return 0 ;;
+        "*.py") [[ "$file" == *.py ]] && return 0 ;;
+        "*.json") [[ "$file" == *.json ]] && return 0 ;;
+        "*.md") [[ "$file" == *.md ]] && return 0 ;;
+        "*.txt") [[ "$file" == *.txt ]] && return 0 ;;
+        *) [[ "$file" == $pattern ]] && return 0 ;;
+    esac
+    return 1
+}
+
+# Process files using a more reliable approach
+while IFS= read -r -d '' file; do
+    # Skip hidden files
+    filename=$(basename "$file")
+    if [[ "$filename" == .* ]]; then
+        continue
+    fi
+    
+    # Check if file matches include pattern
+    if ! matches_pattern "$filename" "$INCLUDE_PATTERN"; then
+        continue
+    fi
+    
+    ((files_searched++))
+    
+    # Check file limit
+    if [ $files_searched -gt $MAX_FILES ]; then
+        echo "LIMIT_EXCEEDED: Searched $MAX_FILES files" >&2
+        break
+    fi
+    
+    # Use grep to search the file
+    if [ "$CASE_SENSITIVE" = "true" ]; then
+        grep_result=$(grep -n -E "$PATTERN" "$file" 2>/dev/null || true)
+    else
+        grep_result=$(grep -n -i -E "$PATTERN" "$file" 2>/dev/null || true)
+    fi
+    
+    if [ -n "$grep_result" ]; then
+        # Get relative path
+        rel_path=$(realpath --relative-to="$BASE_DIR" "$file")
+        
+        # Process each line
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                # Extract line number and content
+                line_num=$(echo "$line" | cut -d: -f1)
+                content=$(echo "$line" | cut -d: -f2-)
+                
+                echo "MATCH:$rel_path:$line_num:$content"
+                ((match_count++))
+                
+                # Check match limit
+                if [ $match_count -ge $MAX_MATCHES ]; then
+                    echo "MATCH_LIMIT: Found $MAX_MATCHES matches" >&2
+                    break 2
+                fi
+            fi
+        done <<< "$grep_result"
+    fi
+done < <(find "$BASE_DIR" -type f \\( -path "*/node_modules/*" -o -path "*/.git/*" -o -name ".*" \\) -prune -o -type f -print0)
+
+echo "COMPLETE: Searched $files_searched files, found $match_count matches" >&2
+`;
+
+    // Write the shell script to a temporary file
+    const scriptPath = "/tmp/grep_search.sh";
+    await sbx.files.write(scriptPath, shellScript);
+    
+    // Make the script executable
+    await sbx.commands.run(`chmod +x ${scriptPath}`);
+    
+    // Execute the shell script
+    const result = await sbx.commands.run(`bash ${scriptPath}`, {
+      cwd: baseDir
+    });
+    
+    // Clean up the temporary script
+    await sbx.commands.run(`rm -f ${scriptPath}`);
+    
+    // Parse the results
+    const results = [];
+    let totalMatches = 0;
+    let filesSearched = 0;
+    let error = null;
+    let warning = null;
+    
+    // Process stdout for matches
+    const lines = result.stdout.split('\n').filter(line => line.trim());
+    for (const line of lines) {
+      if (line.startsWith('MATCH:')) {
+        const parts = line.substring(6).split(':');
+        if (parts.length >= 3) {
+          const file = parts[0];
+          const lineNum = parseInt(parts[1]);
+          const content = parts.slice(2).join(':');
+          
+          results.push({
+            file,
+            line: lineNum,
+            content
+          });
+          totalMatches++;
+        }
+      }
+    }
+    
+    // Process stderr for status messages
+    const stderrLines = result.stderr.split('\n').filter(line => line.trim());
+    for (const line of stderrLines) {
+      if (line.startsWith('LIMIT_EXCEEDED:')) {
+        error = line.substring(15);
+      } else if (line.startsWith('MATCH_LIMIT:')) {
+        warning = line.substring(13);
+      } else if (line.startsWith('COMPLETE:')) {
+        const match = line.match(/Searched (\d+) files, found (\d+) matches/);
+        if (match) {
+          filesSearched = parseInt(match[1]);
+          totalMatches = parseInt(match[2]);
+        }
+      }
+    }
+    
+    return {
+      results,
+      totalMatches,
+      filesSearched,
+      error,
+      warning
+    };
+    
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Unknown error during search",
+      results: [],
+      totalMatches: 0,
+      filesSearched: 0
+    };
+  }
+}
+
+// Generalised run command 
+export async function runCommand(sandboxId: string, command: string) {
+  const allowedCommands = [
+    'ls', 'pwd', 'cat', 'grep', 'find', 'echo', 'mkdir', 'rm', 'cp', 'mv',
+    'yarn', 'npm', 'npx', 'sudo'
+  ];
+
+  try {
+    // Split the command into parts
+    const commandParts = command.trim().split(/\s+/);
+    const baseCommand = commandParts[0];
+
+    // Check if the base command is allowed
+    if (!allowedCommands.includes(baseCommand)) {
+      return {
+        error: `Command '${baseCommand}' is not allowed`,
+        allowedCommands: allowedCommands,
+        stdout: null,
+        stderr: null,
+        returnCode: null
+      };
+    }
+
+    // Connect to the sandbox
+    const sbx = await Sandbox.connect(sandboxId);
+
+    // Execute the command with timeout
+    const result = await sbx.commands.run(command, {
+      timeoutMs: 45000 // 45 second timeout
+    });
+
+    return {
+      stdout: result.stdout,
+      stderr: result.stderr,
+      returnCode: result.exitCode,
+      error: null
+    };
+
+  } catch (error) {
+    // Handle timeout specifically
+    if (error instanceof Error && error.message.includes('timeout')) {
+      return {
+        error: "Command execution timed out after 45 seconds",
+        stdout: null,
+        stderr: null,
+        returnCode: null
+      };
+    }
+
+    // Handle other errors
+    return {
+      error: error instanceof Error ? error.message : "Unknown error during command execution",
+      stdout: null,
+      stderr: null,
+      returnCode: null
+    };
+  }
+}
+

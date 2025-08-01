@@ -140,7 +140,10 @@ export async function POST(req: Request) {
 
     try {
       // Check subscription using existing data and increment usage
-      const canSendMessage = subscription?.canSendMessage;
+      const canSendMessage =
+        process.env.NODE_ENV === "development"
+          ? true
+          : subscription?.canSendMessage;
       if (!canSendMessage) {
         return NextResponse.json(
           {
@@ -167,6 +170,27 @@ export async function POST(req: Request) {
         );
       }
 
+      // get sandbox from the database 
+      const { data: sandbox, error: sandboxError } = await supabase
+        .from("user_sandboxes")
+        .select("sandbox_id, api_url")
+        .eq("app_id", trimmedAppId)
+        .single();
+
+      if (sandboxError) {
+        return NextResponse.json(
+          { error: "Failed to fetch sandbox details" },
+          { status: 500 },
+        );
+      }
+
+      if (!sandbox?.sandbox_id) {
+        return NextResponse.json(
+          { error: "No sandbox found for this app" },
+          { status: 404 },
+        );
+      }
+
       const apiClient = createFileBackendApiClient(app.api_url);
 
       // Get the file tree
@@ -177,6 +201,7 @@ export async function POST(req: Request) {
 
       const tools = createTools({
         apiUrl: app.api_url,
+        sandboxId: sandbox.sandbox_id,
       });
 
       const plainText = extractPlainText(lastUserMessage.parts);

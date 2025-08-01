@@ -5,16 +5,41 @@ import { createFileBackendApiClient } from "./file-backend-api-client";
 import { getRelevantContext } from "./getRelevantContext";
 import FirecrawlApp, { ScrapeResponse, Action } from "@mendable/firecrawl-js";
 import { CONVEX_AUTH_DOCS } from "../docs/convex-auth-docs";
+import { 
+  readFile as e2bReadFile, 
+  writeFile as e2bWriteFile,
+  deleteFile as e2bDeleteFile,
+  createDirectory as e2bCreateDirectory,
+  deleteDirectory as e2bDeleteDirectory,
+  listDirectory as e2bListDirectory,
+  getDirectoryTree as e2bGetDirectoryTree,
+  grepSearch as e2bGrepSearch,
+  runCommand as e2bRunCommand
+} from "./e2b";
 
 type ToolConfig = {
   apiUrl?: string;
+  sandboxId: string;
 };
 
-export function createTools(config: ToolConfig = {}) {
+export function createTools(config: ToolConfig) {
   const apiClient = createFileBackendApiClient(config.apiUrl || "");
   const firecrawl = process.env.FIRECRAWL_API_KEY
     ? new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY })
     : null;
+
+  // Helper function to ensure absolute paths with /app/expo-app prefix
+  const getAbsolutePath = (path: string): string => {
+    // Handle special cases like "." or "./"
+    if (path === "." || path === "./" || path === "") {
+      return "/app/expo-app";
+    }
+    
+    if (path.startsWith('/')) {
+      return path.startsWith('/app/expo-app') ? path : `/app/expo-app${path}`;
+    }
+    return `/app/expo-app/${path}`;
+  };
 
   const tools: Record<string, any> = {
     readFile: tool({
@@ -24,7 +49,8 @@ export function createTools(config: ToolConfig = {}) {
       }),
       execute: async ({ path }) => {
         try {
-          const data = await apiClient.get("/file", { path });
+          const absolutePath = getAbsolutePath(path);
+          const data = await e2bReadFile(config.sandboxId, absolutePath);
           return { success: true, data };
         } catch (error: any) {
           return {
@@ -45,7 +71,8 @@ export function createTools(config: ToolConfig = {}) {
       }),
       execute: async ({ path }) => {
         try {
-          const data = await apiClient.get("/directory", { path });
+          const absolutePath = getAbsolutePath(path || ".");
+          const data = await e2bListDirectory(config.sandboxId, absolutePath);
           return { success: true, data };
         } catch (error: any) {
           return {
@@ -63,7 +90,8 @@ export function createTools(config: ToolConfig = {}) {
       }),
       execute: async ({ path }) => {
         try {
-          const data = await apiClient.post("/directory", { path });
+          const absolutePath = getAbsolutePath(path);
+          const data = await e2bCreateDirectory(config.sandboxId, absolutePath);
           return { success: true, data };
         } catch (error: any) {
           return {
@@ -81,7 +109,8 @@ export function createTools(config: ToolConfig = {}) {
       }),
       execute: async ({ path }) => {
         try {
-          const data = await apiClient.delete("/directory", { path });
+          const absolutePath = getAbsolutePath(path);
+          const data = await e2bDeleteDirectory(config.sandboxId, absolutePath);
           return { success: true, data };
         } catch (error: any) {
           return {
@@ -101,9 +130,8 @@ export function createTools(config: ToolConfig = {}) {
       }),
       execute: async ({ packages }) => {
         try {
-          const data = await apiClient.post("/install/packages", {
-            packages,
-          });
+          const command = `cd /app/expo-app && yarn add ${packages.join(' ')}`;
+          const data = await e2bRunCommand(config.sandboxId, command);
           return { success: true, data };
         } catch (error: any) {
           return {
@@ -125,10 +153,8 @@ export function createTools(config: ToolConfig = {}) {
       }),
       execute: async ({ path, content }) => {
         try {
-          const data = await apiClient.post("/file", {
-            path,
-            content: content || "",
-          });
+          const absolutePath = getAbsolutePath(path);
+          const data = await e2bWriteFile(config.sandboxId, absolutePath, content || "");
           return { success: true, data };
         } catch (error: any) {
           return {
@@ -146,7 +172,8 @@ export function createTools(config: ToolConfig = {}) {
       }),
       execute: async ({ path }) => {
         try {
-          const data = await apiClient.delete("/file", { path });
+          const absolutePath = getAbsolutePath(path);
+          const data = await e2bDeleteFile(config.sandboxId, absolutePath);
           return { success: true, data };
         } catch (error: any) {
           return {
@@ -167,7 +194,8 @@ export function createTools(config: ToolConfig = {}) {
       execute: async ({ target_file, instructions, code_edit }) => {
         try {
           // First, read the current file content
-          const currentFileData = await apiClient.get("/file", { path: target_file });
+          const absoluteTargetFile = getAbsolutePath(target_file);
+          const currentFileData = await e2bReadFile(config.sandboxId, absoluteTargetFile);
           const initialCode = currentFileData;
 
           // Use Morph's Fast Apply API to merge the edit
@@ -196,13 +224,12 @@ export function createTools(config: ToolConfig = {}) {
           });
 
           const data = response.choices[0].message.content;
-
+          if (!data) {
+            throw new Error("No content received from Morph API");
+          }
 
           // Write the merged code back to the file
-          const fileWriteRes = await apiClient.post("/file", {
-            path: target_file,
-            content: data,
-          });
+          const fileWriteRes = await e2bWriteFile(config.sandboxId, absoluteTargetFile, data);
 
           return { success: true, data };
         } catch (error: any) {
@@ -224,8 +251,9 @@ export function createTools(config: ToolConfig = {}) {
       }),
       execute: async ({ path }) => {
         try {
-          const response = await apiClient.get("/file-tree", { path });
-          return { success: true, data: response };
+          const absolutePath = getAbsolutePath(path || ".");
+          const data = await e2bGetDirectoryTree(config.sandboxId, absolutePath);
+          return { success: true, data };
         } catch (error: any) {
           return {
             success: false,
@@ -250,7 +278,7 @@ export function createTools(config: ToolConfig = {}) {
       }),
       execute: async ({ pattern, include_pattern, case_sensitive }) => {
         try {
-          const data = await apiClient.post("/grep", {
+          const data = await e2bGrepSearch(config.sandboxId, {
             pattern,
             include_pattern,
             case_sensitive,
@@ -319,7 +347,7 @@ export function createTools(config: ToolConfig = {}) {
       execute: async () => {
         try {
           const command = "npx @convex-dev/auth --allow-dirty-git-state";
-          const data = await apiClient.post("/command", { command });
+          const data = await e2bRunCommand(config.sandboxId, command);
           return { success: true, data };
         } catch (error: any) {
           return {
@@ -341,11 +369,10 @@ export function createTools(config: ToolConfig = {}) {
       execute: async ({ path }) => {
         try {
           console.log("Running linter on", path);
-          path = ".";
-          const command = path
-            ? `npx eslint ${path} --fix --quiet`
-            : "npx eslint . --fix --quiet";
-          const data = await apiClient.post("/command", { command });
+          const targetPath = path || ".";
+          const absolutePath = getAbsolutePath(targetPath);
+          const command = `npx eslint ${absolutePath} --fix --quiet`;
+          const data = await e2bRunCommand(config.sandboxId, command);
           return { success: true, data };
         } catch (error: any) {
           return {
@@ -449,7 +476,20 @@ export function createTools(config: ToolConfig = {}) {
       execute: async ({ log_type }) => {
         console.log("[Tool Execution] Reading logs for", log_type);
         try {
-          const data = await apiClient.get("/read_logs", { log_type });
+          const log_paths = {
+            "expo": "/home/user/expo_logs.txt",
+            "convex": "/home/user/convex_logs.txt"
+          };
+          
+          const logPath = log_paths[log_type];
+          if (!logPath) {
+            return {
+              success: false,
+              error: `Invalid log_type: ${log_type}. Must be 'expo' or 'convex'`,
+            };
+          }
+          
+          const data = await e2bReadFile(config.sandboxId, logPath);
           return { success: true, data };
         } catch (error: any) {
           return {
