@@ -1,7 +1,6 @@
 import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { incrementMessageUsage } from "@/utils/server/subscription-manager";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
@@ -9,6 +8,7 @@ import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { gateway, getModelAndOrder } from "@/utils/server/gateway";
 import { extractPlainText } from "@/utils/server/message-helpers";
 import { generateCheckpointInfo } from "@/utils/server/checkpoint-generator";
+import { saveCheckpoint, getDirectoryTree } from "@/utils/server/e2b";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
@@ -173,16 +173,36 @@ export async function POST(req: Request) {
         );
       }
 
-      const apiClient = createFileBackendApiClient(app.api_url);
+      // get sandbox from the database 
+      const { data: sandbox, error: sandboxError } = await supabase
+        .from("user_sandboxes")
+        .select("sandbox_id, api_url")
+        .eq("app_id", trimmedAppId)
+        .single();
 
-      // Get the file tree
-      const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
-      const fileTree = fileTreeResponse;
+      if (sandboxError) {
+        return NextResponse.json(
+          { error: "Failed to fetch sandbox details" },
+          { status: 500 },
+        );
+      }
+
+      if (!sandbox?.sandbox_id) {
+        return NextResponse.json(
+          { error: "No sandbox found for this app" },
+          { status: 404 },
+        );
+      }
+
+      // Get the file tree using E2B
+      const fileTreeResponse = await getDirectoryTree(sandbox.sandbox_id);
+      const fileTree = fileTreeResponse.tree || "";
 
       const modelName = model || "claude-4-sonnet-latest";
 
       const tools = createTools({
         apiUrl: app.api_url,
+        sandboxId: sandbox.sandbox_id,
       });
 
       const plainText = extractPlainText(lastUserMessage.parts);
@@ -228,17 +248,13 @@ export async function POST(req: Request) {
             let commitHash = null;
             try {
               const checkpointInfo = await generateCheckpointInfo(plainText);
-              const checkpointResponse = await apiClient.post(
-                "/checkpoint/save",
-                {
-                  name: checkpointInfo.name,
-                  message: checkpointInfo.message,
-                },
-              );
+              const checkpointResponse = await saveCheckpoint(sandbox.sandbox_id, {
+                branch: "master",
+                message: checkpointInfo.message,
+              });
               console.log("checkpointResponse", checkpointResponse);
               // Store the commit hash from the response
-              commitHash =
-                checkpointResponse.commit || checkpointResponse.current_commit;
+              commitHash = checkpointResponse.commit || checkpointResponse.current_commit;
             } catch (error) {
               console.error("Failed to save checkpoint:", error);
               // Don't throw here, continue with message saving
