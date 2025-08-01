@@ -19,94 +19,317 @@ export default function LandingPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingCode, setGeneratingCode] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  const demoPrompt = "A tic-tac-toe game";
+  const demoPrompt = "A calorie tracker app like Cal AI";
   const [isLooping, setIsLooping] = useState(true);
 
   const codeSnippets = [
-    "function TicTacToe() {",
-    "  const [board, setBoard] = useState(Array(9).fill(null));",
-    "  const [isXNext, setIsXNext] = useState(true);",
+    "function CalorieTracker() {",
+    "  const [meals, setMeals] = useState([]);",
+    "  const [isAnalyzing, setIsAnalyzing] = useState(false);",
+    "  const [dailyGoal, setDailyGoal] = useState(2000);",
+    "  const [totalCalories, setTotalCalories] = useState(0);",
+    "  const [currentPhoto, setCurrentPhoto] = useState(null);",
     "",
-    "  const handleClick = (index) => {",
-    "    if (board[index] || calculateWinner(board)) return;",
-    "    const newBoard = [...board];",
-    '    newBoard[index] = isXNext ? "X" : "O";',
-    "    setBoard(newBoard);",
-    "    setIsXNext(!isXNext);",
+    "  const takePhoto = async () => {",
+    "    const result = await ImagePicker.launchCameraAsync({",
+    "      mediaTypes: ImagePicker.MediaTypeOptions.Images,",
+    "      allowsEditing: true,",
+    "      aspect: [4, 3],",
+    "      quality: 0.8,",
+    "    });",
+    "",
+    "    if (!result.canceled) {",
+    "      setCurrentPhoto(result.assets[0].uri);",
+    "      await analyzeFoodImage(result.assets[0].uri);",
+    "    }",
     "  };",
     "",
-    "  const renderSquare = (index) => {",
-    "    return (",
-    '      <button className="square" onClick={() => handleClick(index)}>',
-    "        {board[index]}",
-    "      </button>",
-    "    );",
+    "  const analyzeFoodImage = async (imageUri) => {",
+    "    setIsAnalyzing(true);",
+    "    try {",
+    "      const formData = new FormData();",
+    "      formData.append('image', {",
+    "        uri: imageUri,",
+    "        type: 'image/jpeg',",
+    "        name: 'food.jpg'",
+    "      });",
+    "",
+    "      const response = await fetch('/api/analyze-food', {",
+    "        method: 'POST',",
+    "        body: formData",
+    "      });",
+    "",
+    "      const result = await response.json();",
+    "      const newMeal = {",
+    "        id: Date.now(),",
+    "        name: result.foodName,",
+    "        calories: result.calories,",
+    "        image: imageUri,",
+    "        timestamp: new Date().toISOString(),",
+    "        nutrients: result.nutrients",
+    "      };",
+    "",
+    "      setMeals([newMeal, ...meals]);",
+    "      setTotalCalories(prev => prev + result.calories);",
+    "      setCurrentPhoto(null);",
+    "    } catch (error) {",
+    "      console.error('Error analyzing food:', error);",
+    "    } finally {",
+    "      setIsAnalyzing(false);",
+    "    }",
     "  };",
     "",
     "  return (",
-    '    <div className="game-board">',
-    '      <div className="board-row">',
-    "        {renderSquare(0)}",
-    "        {renderSquare(1)}",
-    "        {renderSquare(2)}",
-    "      </div>",
-    '      <div className="board-row">',
-    "        {renderSquare(3)}",
-    "        {renderSquare(4)}",
-    "        {renderSquare(5)}",
-    '      <div className="board-row">',
-    "        {renderSquare(6)}",
-    "        {renderSquare(7)}",
-    "        {renderSquare(8)}",
-    "      </div>",
-    "    </div>",
+    "    <View style={styles.container}>",
+    "      <View style={styles.header}>",
+    "        <Text style={styles.title}>CalorieTracker</Text>",
+    "        <Text style={styles.subtitle}>{totalCalories} / {dailyGoal} cal</Text>",
+    "      </View>",
+    "      <View style={styles.progressBar}>",
+    "        <View style={[styles.progress, { width: `${(totalCalories / dailyGoal) * 100}%` }]} />",
+    "      </View>",
+    "      {currentPhoto && (",
+    "        <View style={styles.photoPreview}>",
+    "          <Image source={{ uri: currentPhoto }} style={styles.previewImage} />",
+    "          <Text style={styles.analyzingText}>Analyzing food...</Text>",
+    "        </View>",
+    "      )}",
+    "      <FlatList",
+    "        data={meals}",
+    "        renderItem={({ item }) => (",
+    "          <View style={styles.mealCard}>",
+    "            <Image source={{ uri: item.image }} style={styles.foodImage} />",
+    "            <View style={styles.mealInfo}>",
+    "              <Text style={styles.foodName}>{item.name}</Text>",
+    "              <Text style={styles.calories}>{item.calories} cal</Text>",
+    "            </View>",
+    "          </View>",
+    "        )}",
+    "        keyExtractor={item => item.id.toString()}",
+    "      />",
+    "      <TouchableOpacity style={styles.cameraButton} onPress={takePhoto}>",
+    '        <Ionicons name="camera" size={30} color="white" />',
+    "      </TouchableOpacity>",
+    "    </View>",
     "  );",
     "}",
   ];
 
   // Add these realistic React code snippets
   const realisticCode = [
-    'import React, { useState } from "react"',
-    'import { View, Text, TouchableOpacity } from "react-native"',
+    'import React, { useState, useEffect } from "react"',
+    'import { View, Text, TouchableOpacity, FlatList, Image, Alert } from "react-native"',
+    'import { Ionicons } from "@expo/vector-icons"',
+    'import * as ImagePicker from "expo-image-picker"',
+    'import { Camera } from "expo-camera"',
     "",
-    "export default function TicTacToe() {",
-    "  const [board, setBoard] = useState(Array(9).fill(null))",
-    "  const [isXNext, setIsXNext] = useState(true)",
+    "export default function CalorieTracker() {",
+    "  const [meals, setMeals] = useState([])",
+    "  const [isAnalyzing, setIsAnalyzing] = useState(false)",
+    "  const [dailyGoal, setDailyGoal] = useState(2000)",
+    "  const [totalCalories, setTotalCalories] = useState(0)",
+    "  const [hasPermission, setHasPermission] = useState(null)",
+    "  const [currentPhoto, setCurrentPhoto] = useState(null)",
     "",
-    "  const handlePress = (index) => {",
-    "    const newBoard = [...board]",
-    '    newBoard[index] = isXNext ? "X" : "O"',
-    "    setBoard(newBoard)",
-    "    setIsXNext(!isXNext)",
+    "  useEffect(() => {",
+    "    (async () => {",
+    "      const { status } = await Camera.requestCameraPermissionsAsync()",
+    "      setHasPermission(status === 'granted')",
+    "    })()",
+    "  }, [])",
+    "",
+    "  const takePhoto = async () => {",
+    "    if (hasPermission !== 'granted') {",
+    "      Alert.alert('Permission needed', 'Camera permission is required')",
+    "      return",
+    "    }",
+    "",
+    "    const result = await ImagePicker.launchCameraAsync({",
+    "      mediaTypes: ImagePicker.MediaTypeOptions.Images,",
+    "      allowsEditing: true,",
+    "      aspect: [4, 3],",
+    "      quality: 0.8,",
+    "    })",
+    "",
+    "    if (!result.canceled) {",
+    "      setCurrentPhoto(result.assets[0].uri)",
+    "      await analyzeFoodImage(result.assets[0].uri)",
+    "    }",
     "  }",
     "",
-    "  const renderSquare = (index) => (",
-    "    <TouchableOpacity",
-    "      style={styles.square}",
-    "      onPress={() => handlePress(index)}>",
-    "      <Text style={styles.text}>{board[index]}</Text>",
-    "    </TouchableOpacity>",
+    "  const analyzeFoodImage = async (imageUri) => {",
+    "    setIsAnalyzing(true)",
+    "    try {",
+    "      const formData = new FormData()",
+    "      formData.append('image', {",
+    "        uri: imageUri,",
+    "        type: 'image/jpeg',",
+    "        name: 'food.jpg'",
+    "      })",
+    "",
+    "      const response = await fetch('https://api.calorietracker.com/analyze', {",
+    "        method: 'POST',",
+    "        headers: {",
+    "          'Content-Type': 'multipart/form-data',",
+    "        },",
+    "        body: formData",
+    "      })",
+    "",
+    "      const result = await response.json()",
+    "      const newMeal = {",
+    "        id: Date.now(),",
+    "        name: result.foodName,",
+    "        calories: result.calories,",
+    "        image: imageUri,",
+    "        timestamp: new Date().toISOString(),",
+    "        nutrients: {",
+    "          protein: result.nutrients.protein,",
+    "          carbs: result.nutrients.carbs,",
+    "          fat: result.nutrients.fat,",
+    "        }",
+    "      }",
+    "",
+    "      setMeals([newMeal, ...meals])",
+    "      setTotalCalories(prev => prev + result.calories)",
+    "      setCurrentPhoto(null)",
+    "    } catch (error) {",
+    "      Alert.alert('Error', 'Failed to analyze food image')",
+    "    } finally {",
+    "      setIsAnalyzing(false)",
+    "    }",
+    "  }",
+    "",
+    "  const renderMeal = ({ item }) => (",
+    "    <View style={styles.mealCard}>",
+    "      <Image source={{ uri: item.image }} style={styles.foodImage} />",
+    "      <View style={styles.mealInfo}>",
+    "        <Text style={styles.foodName}>{item.name}</Text>",
+    "        <Text style={styles.calories}>{item.calories} cal</Text>",
+    "        <View style={styles.nutrients}>",
+    "          <Text style={styles.nutrient}>P: {item.nutrients.protein}g</Text>",
+    "          <Text style={styles.nutrient}>C: {item.nutrients.carbs}g</Text>",
+    "          <Text style={styles.nutrient}>F: {item.nutrients.fat}g</Text>",
+    "        </View>",
+    "      </View>",
+    "    </View>",
     "  )",
     "",
     "  return (",
     "    <View style={styles.container}>",
-    "      <Text style={styles.title}>Tic Tac Toe</Text>",
-    "      <View style={styles.board}>",
-    "        <View style={styles.row}>",
-    "          {renderSquare(0)}",
-    "          {renderSquare(1)}",
-    "          {renderSquare(2)}",
-    "        </View>",
+    "      <View style={styles.header}>",
+    "        <Text style={styles.title}>CalorieTracker</Text>",
+    "        <Text style={styles.subtitle}>{totalCalories} / {dailyGoal} cal</Text>",
     "      </View>",
+    "      <View style={styles.progressBar}>",
+    "        <View style={[styles.progress, { width: `${(totalCalories / dailyGoal) * 100}%` }]} />",
+    "      </View>",
+    "      {currentPhoto && (",
+    "        <View style={styles.photoPreview}>",
+    "          <Image source={{ uri: currentPhoto }} style={styles.previewImage} />",
+    "          <Text style={styles.analyzingText}>Analyzing food...</Text>",
+    "        </View>",
+    "      )}",
+    "      <FlatList",
+    "        data={meals}",
+    "        renderItem={renderMeal}",
+    "        keyExtractor={item => item.id.toString()}",
+    "        refreshing={isAnalyzing}",
+    "      />",
+    "      <TouchableOpacity style={styles.cameraButton} onPress={takePhoto}>",
+    '        <Ionicons name="camera" size={30} color="white" />',
+    "      </TouchableOpacity>",
     "    </View>",
     "  )",
     "}",
     "",
     "const styles = StyleSheet.create({",
-    "  container: { flex: 1, padding: 20 },",
-    "  board: { aspectRatio: 1 },",
-    "  square: { flex: 1, borderWidth: 1 },",
-    '  text: { fontSize: 24, textAlign: "center" }',
+    "  container: { flex: 1, backgroundColor: '#f8f9fa' },",
+    "  header: {",
+    "    padding: 20,",
+    "    backgroundColor: '#fff',",
+    "    borderBottomWidth: 1,",
+    "    borderBottomColor: '#e9ecef'",
+    "  },",
+    "  title: { fontSize: 24, fontWeight: 'bold', color: '#2c3e50' },",
+    "  subtitle: { fontSize: 16, color: '#7f8c8d', marginTop: 5 },",
+    "  progressBar: {",
+    "    height: 8,",
+    "    backgroundColor: '#ecf0f1',",
+    "    marginHorizontal: 20,",
+    "    marginTop: 10,",
+    "    borderRadius: 4",
+    "  },",
+    "  progress: {",
+    "    height: '100%',",
+    "    backgroundColor: '#27ae60',",
+    "    borderRadius: 4",
+    "  },",
+    "  photoPreview: {",
+    "    alignItems: 'center',",
+    "    padding: 20,",
+    "    backgroundColor: '#fff',",
+    "    margin: 10,",
+    "    borderRadius: 12,",
+    "    shadowColor: '#000',",
+    "    shadowOffset: { width: 0, height: 2 },",
+    "    shadowOpacity: 0.1,",
+    "    shadowRadius: 4,",
+    "    elevation: 3",
+    "  },",
+    "  previewImage: {",
+    "    width: 200,",
+    "    height: 150,",
+    "    borderRadius: 8,",
+    "    marginBottom: 10",
+    "  },",
+    "  analyzingText: {",
+    "    fontSize: 16,",
+    "    color: '#7f8c8d',",
+    "    fontWeight: '500'",
+    "  },",
+    "  mealCard: {",
+    "    backgroundColor: '#fff',",
+    "    margin: 10,",
+    "    padding: 15,",
+    "    borderRadius: 12,",
+    "    flexDirection: 'row',",
+    "    shadowColor: '#000',",
+    "    shadowOffset: { width: 0, height: 2 },",
+    "    shadowOpacity: 0.1,",
+    "    shadowRadius: 4,",
+    "    elevation: 3",
+    "  },",
+    "  foodImage: {",
+    "    width: 60,",
+    "    height: 60,",
+    "    borderRadius: 8,",
+    "    marginRight: 15",
+    "  },",
+    "  mealInfo: { flex: 1 },",
+    "  foodName: { fontSize: 16, fontWeight: '600', color: '#2c3e50' },",
+    "  calories: { fontSize: 14, color: '#e74c3c', fontWeight: '500', marginTop: 2 },",
+    "  nutrients: {",
+    "    flexDirection: 'row',",
+    "    marginTop: 5,",
+    "    gap: 10",
+    "  },",
+    "  nutrient: { fontSize: 12, color: '#7f8c8d' },",
+    "  cameraButton: {",
+    "    position: 'absolute',",
+    "    bottom: 30,",
+    "    right: 30,",
+    "    width: 60,",
+    "    height: 60,",
+    "    borderRadius: 30,",
+    "    backgroundColor: '#e74c3c',",
+    "    justifyContent: 'center',",
+    "    alignItems: 'center',",
+    "    shadowColor: '#000',",
+    "    shadowOffset: { width: 0, height: 4 },",
+    "    shadowOpacity: 0.3,",
+    "    shadowRadius: 8,",
+    "    elevation: 8",
+    "  }",
     "})",
   ];
 
@@ -272,7 +495,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-lg md:text-2xl text-muted-foreground max-w-[600px] mb-4 md:mb-8 animate-fade-in-delay">
-            An app that builds apps
+            Make anything with MakeX
           </p>
 
           <div className="w-full max-w-md mb-4 md:mb-8 animate-fade-in-delay-2">
@@ -314,7 +537,7 @@ export default function LandingPage() {
                           type="text"
                           value={userPrompt}
                           readOnly
-                          placeholder="e.g. A tic-tac-toe game"
+                          placeholder="e.g. AI podcast summariser"
                           className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm"
                         />
                         <button
@@ -352,23 +575,74 @@ export default function LandingPage() {
                       <div className="h-full w-full bg-white flex items-center justify-center p-2 sm:p-4">
                         <div className="w-full max-w-xs">
                           <div className="text-sm sm:text-lg text-center text-gray-900 mb-3 sm:mb-6 font-semibold">
-                            Tic Tac Toe
+                            CalorieTracker
                           </div>
-                          <div className="grid grid-cols-3 gap-1.5 sm:gap-3 aspect-square w-full">
-                            {gameState.map((cell, index) => (
-                              <div
-                                key={index}
-                                className={`
-                                  flex items-center justify-center rounded-md sm:rounded-xl text-lg sm:text-2xl font-bold bg-gray-50 border border-gray-100
-                                  ${cell === "X" ? "text-primary animate-pop-in" : cell === "O" ? "text-purple-500 animate-pop-in" : ""}
-                                `}
-                                style={{
-                                  aspectRatio: "1/1",
-                                }}
-                              >
-                                {cell}
+                          <div className="space-y-2 sm:space-y-3">
+                            {/* Camera Preview */}
+                            <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border">
+                              <div className="flex items-center justify-center mb-3">
+                                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                                  <span className="text-gray-400 text-2xl">
+                                    📷
+                                  </span>
+                                </div>
                               </div>
-                            ))}
+                              <div className="text-center">
+                                <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                                  Take a photo of your food
+                                </p>
+                                <div className="flex items-center justify-center space-x-2">
+                                  <span className="text-xs text-blue-500">
+                                    Analyzing...
+                                  </span>
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="bg-gray-200 rounded-full h-2 mb-4">
+                              <div
+                                className="bg-green-500 h-2 rounded-full"
+                                style={{ width: "45%" }}
+                              ></div>
+                            </div>
+                            <div className="text-center mb-4">
+                              <span className="text-xs sm:text-sm text-gray-600">
+                                900 / 2,000 cal
+                              </span>
+                            </div>
+
+                            {/* Meal 1 */}
+                            <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-12 h-12 bg-orange-200 rounded-lg flex items-center justify-center">
+                                  <span className="text-orange-600 text-lg">
+                                    🍕
+                                  </span>
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex justify-between items-start">
+                                    <span className="text-xs sm:text-sm font-medium text-gray-900">
+                                      Pizza Margherita
+                                    </span>
+                                    <span className="text-xs text-gray-400">
+                                      Just now
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-4 mt-1">
+                                    <span className="text-xs text-red-500 font-medium">
+                                      285 cal
+                                    </span>
+                                    <div className="flex space-x-2 text-xs text-gray-500">
+                                      <span>P: 12g</span>
+                                      <span>C: 35g</span>
+                                      <span>F: 8g</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
