@@ -17,9 +17,18 @@ export async function GET(request: Request) {
 
   try {
     // Use the subscription manager to get or create subscription
-    const subscriptionInfo: SubscriptionInfo = await getOrCreateSubscription(
+    let subscriptionInfo: SubscriptionInfo = await getOrCreateSubscription(
       user.id,
     );
+
+    // Override with unlimited access in development
+    if (process.env.NODE_ENV === "development") {
+      subscriptionInfo = {
+        ...subscriptionInfo,
+        messagesUsed: 0,
+        canSendMessage: true,
+      };
+    }
 
     return NextResponse.json({ ...subscriptionInfo, userId: user.id });
   } catch (error) {
