@@ -62,15 +62,15 @@ export const fetchChatMessages = async (
  */
 export const restoreCheckpoint = async (
   messageId: string,
-  apiUrl: string,
+  appId: string,
   sessionId: string,
 ): Promise<any> => {
   try {
-    const response = await fetch("/api/code", {
+    const response = await fetch("/api/code/restore", {
       method: "POST",
       body: JSON.stringify({
         messageId,
-        apiUrl,
+        appId,
         sessionId,
       }),
     });

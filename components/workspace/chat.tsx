@@ -400,7 +400,7 @@ export function Chat({
   const handleRestore = async (messageId: string) => {
     try {
       setRestoringMessageId(messageId);
-      await restoreCheckpoint(messageId, apiUrl, sessionId);
+      await restoreCheckpoint(messageId, appId, sessionId);
     } catch (error) {
       console.error("Error restoring checkpoint:", error);
     } finally {
