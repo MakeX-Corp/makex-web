@@ -36,7 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import CodeRedemption from "@/components/code-redemption";
+import { CodeRedemption } from "@/components/code-redemption";
 
 // Expanded app suggestion chips for multiple rows
 const APP_SUGGESTIONS = [

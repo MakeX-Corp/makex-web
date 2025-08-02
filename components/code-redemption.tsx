@@ -7,31 +7,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Gift, CheckCircle, XCircle } from "lucide-react";
+import { Gift, CheckCircle, XCircle, Loader2 } from "lucide-react";
 
-// Valid codes
-const VALID_CODES = [
-  "UNLIMITED2024",
-  "FREEMESSAGES",
-  "BETAUSER",
-  "MAKEX2024",
-  "UNLIMITED",
-];
+const VALID_CODE = "KATYHACKS25";
 
 interface CodeRedemptionProps {
   onUnlimitedChange?: (isUnlimited: boolean) => void;
 }
 
-export default function CodeRedemption({
-  onUnlimitedChange,
-}: CodeRedemptionProps) {
+export function CodeRedemption({ onUnlimitedChange }: CodeRedemptionProps) {
   const [showCodeDialog, setShowCodeDialog] = useState(false);
   const [code, setCode] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [codeMessage, setCodeMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
   const [isUnlimited, setIsUnlimited] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Check if unlimited messages are already activated
   useEffect(() => {
@@ -42,23 +35,33 @@ export default function CodeRedemption({
     }
   }, [onUnlimitedChange]);
 
-  const handleCodeSubmit = (e: React.FormEvent) => {
+  const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim()) return;
 
+    setIsLoading(true);
+    setCodeMessage(null);
+
+    // Simulate API call delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     const upperCode = code.trim().toUpperCase();
-    const isValidCode = VALID_CODES.includes(upperCode);
+    const isValidCode = upperCode === VALID_CODE;
 
     if (isValidCode) {
       localStorage.setItem("unlimited_messages_activated", "true");
       setIsUnlimited(true);
       onUnlimitedChange?.(true);
       setCode("");
+      setShowSuccess(true);
       setCodeMessage({
         type: "success",
         text: "Code redeemed successfully! You now have unlimited messages.",
       });
+
+      // Show success state for 2 seconds then close
       setTimeout(() => {
+        setShowSuccess(false);
         setShowCodeDialog(false);
         setCodeMessage(null);
       }, 2000);
@@ -68,6 +71,8 @@ export default function CodeRedemption({
         text: "Invalid code. Please try again.",
       });
     }
+
+    setIsLoading(false);
   };
 
   const handleResetUnlimited = () => {
@@ -81,12 +86,13 @@ export default function CodeRedemption({
     if (!open) {
       setCode("");
       setCodeMessage(null);
+      setShowSuccess(false);
     }
   };
 
   return (
     <>
-      <div className="flex justify-center mt-4">
+      <div className="flex flex-col items-center gap-4 mt-4">
         {isUnlimited ? (
           <div className="flex items-center gap-2">
             <span className="text-sm text-green-600 bg-green-100 px-3 py-1 rounded-full">
@@ -111,6 +117,15 @@ export default function CodeRedemption({
             <Gift className="w-4 h-4" />
             Redeem Code
           </Button>
+        )}
+
+        {/* Show unlimited status if already activated */}
+        {isUnlimited && (
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">
+              You have unlimited messages activated via code redemption
+            </p>
+          </div>
         )}
       </div>
 
@@ -142,6 +157,7 @@ export default function CodeRedemption({
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 className="text-center text-lg font-mono"
+                disabled={isLoading}
               />
 
               {codeMessage && (
@@ -161,8 +177,24 @@ export default function CodeRedemption({
                 </div>
               )}
 
-              <Button type="submit" className="w-full" disabled={!code.trim()}>
-                Redeem Code
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!code.trim() || isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Validating...
+                  </>
+                ) : showSuccess ? (
+                  <>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Success!
+                  </>
+                ) : (
+                  "Redeem Code"
+                )}
               </Button>
             </form>
 
@@ -176,3 +208,5 @@ export default function CodeRedemption({
     </>
   );
 }
+
+export default CodeRedemption;
