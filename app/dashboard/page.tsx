@@ -36,6 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import CodeRedemption from "@/components/code-redemption";
 
 // Expanded app suggestion chips for multiple rows
 const APP_SUGGESTIONS = [
@@ -110,6 +111,8 @@ export default function DashboardPage() {
   const [initialPromptLoaded, setInitialPromptLoaded] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [isUnlimited, setIsUnlimited] = useState(false);
+
   // Create refs with explicit typing
   const row1Ref = useRef<HTMLDivElement>(null);
   const row2Ref = useRef<HTMLDivElement>(null);
@@ -232,6 +235,10 @@ export default function DashboardPage() {
     setPrompt(suggestion);
   };
 
+  const handleUnlimitedChange = (unlimited: boolean) => {
+    setIsUnlimited(unlimited);
+  };
+
   // Function to duplicate items for continuous scrolling effect
   const duplicateItemsForScrolling = (items: typeof APP_SUGGESTIONS) => {
     return [...items, ...items];
@@ -256,7 +263,11 @@ export default function DashboardPage() {
             <h1 className="text-4xl font-bold tracking-tight mb-3">
               What do you want to build?
             </h1>
+
+            {/* Code redemption component */}
+            <CodeRedemption onUnlimitedChange={handleUnlimitedChange} />
           </div>
+
           {/* Moving suggestion pills in three rows */}
           <div className="mb-8">
             {/* Row 1 - scrolling left */}
@@ -319,6 +330,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+
           {/* Main prompt input */}
           <div className="mb-8">
             <div className="relative border rounded-xl shadow-lg overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
