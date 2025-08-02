@@ -128,3 +128,15 @@ export async function removeGitHubSync({ repoId }: { repoId: string }) {
     repoId,
   });
 }
+
+// Generate authenticated Freestyle Git URL with credentials
+export function generateFreestyleGitUrl(repoId: string): string {
+  const identityId = process.env.FREESTYLE_IDENTITY_ID;
+  const identityToken = process.env.FREESTYLE_IDENTITY_TOKEN;
+  
+  if (!identityId || !identityToken) {
+    throw new Error("Freestyle identity credentials not configured");
+  }
+  
+  return `https://${identityId}:${identityToken}@git.freestyle.sh/${repoId}`;
+}

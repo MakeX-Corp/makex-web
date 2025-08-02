@@ -3,6 +3,7 @@
 import { Sandbox } from "@e2b/code-interpreter";
 import { cwd } from "process";
 import { string } from "zod/v4";
+import { generateFreestyleGitUrl } from "./freestyle";
 
 const APP_DIR = "/app/expo-app";
 
@@ -151,7 +152,7 @@ export async function deployConvexProdInContainer(
   const sbx = await Sandbox.connect(sandboxId);
   const gitRepoDir = `/app/deploy-app`;
 
-  const gitRepoUrl = `https://${process.env.FREESTYLE_IDENTITY_ID}:${process.env.FREESTYLE_IDENTITY_TOKEN}@git.freestyle.sh/${gitRepoId}`;
+  const gitRepoUrl = generateFreestyleGitUrl(gitRepoId);
 
   console.log("[ConvexDeploy] Starting deployment in container:", sandboxId);
 
@@ -277,7 +278,7 @@ export async function setupFreestyleGitInContainer(
 
   // Add freestyle remote
   const remoteAddResult = await sbx.commands.run(
-    `sudo git remote add freestyle https://${process.env.FREESTYLE_IDENTITY_ID}:${process.env.FREESTYLE_IDENTITY_TOKEN}@git.freestyle.sh/${repoId}`,
+    `sudo git remote add freestyle ${generateFreestyleGitUrl(repoId)}`,
     {
       cwd: APP_DIR,
     },

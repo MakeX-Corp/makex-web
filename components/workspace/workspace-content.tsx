@@ -12,6 +12,7 @@ import {
   Loader2,
   UploadCloud,
   Globe,
+  Shuffle,
 } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ export default function WorkspaceContent({
   // State for UI elements
   const [activeView, setActiveView] = useState<"chat" | "preview">("chat");
   const [isResetting, setIsResetting] = useState(false);
+  const [isRemixing, setIsRemixing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
 
@@ -228,6 +230,30 @@ export default function WorkspaceContent({
     }
   };
 
+  const remixApp = async () => {
+    try {
+      setIsRemixing(true);
+      const response = await fetch("/api/app/remix", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          appId,
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to remix app");
+      
+      const data = await response.json();
+      return data.appId || appId;
+    } catch (error) {
+      console.error("Error remixing app:", error);
+      return appId;
+    } finally {
+      setIsRemixing(false);
+    }
+  };
+
   // Function to refresh the iframe
   const refreshPreview = async () => {
     setIsRefreshing(true);
@@ -341,6 +367,27 @@ export default function WorkspaceContent({
               )}
             </Button>
 
+            <Button
+              variant="outline"
+              onClick={() => {
+                remixApp();
+              }}
+              disabled={isRemixing}
+              className="flex items-center gap-2"
+            >
+              {isRemixing ? (
+                <>
+                  <Shuffle className="h-4 w-4 animate-spin" />
+                  <span>Remixing...</span>
+                </>
+              ) : (
+                <>
+                  <Shuffle className="h-4 w-4" />
+                  <span>Remix App</span>
+                </>
+              )}
+            </Button>
+
             <DeployButton appId={appId} />
           </div>
         </div>
@@ -375,6 +422,15 @@ export default function WorkspaceContent({
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Reset App
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => {
+                  remixApp();
+                }}
+              >
+                <Shuffle className="h-4 w-4 mr-2" />
+                Remix App
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer"
@@ -492,6 +548,15 @@ export default function WorkspaceContent({
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Reset App
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => {
+                    remixApp();
+                  }}
+                >
+                  <Shuffle className="h-4 w-4 mr-2" />
+                  Remix App
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="cursor-pointer"
