@@ -96,6 +96,14 @@ export const checkMessageLimit = async () => {
       throw new Error(error.error || "Failed to fetch subscription data");
     }
 
+    const hasUnlimitedMessages =
+      typeof window !== "undefined" &&
+      localStorage.getItem("unlimited_messages_activated") === "true";
+
+    if (hasUnlimitedMessages) {
+      return { remainingMessages: 500, reachedLimit: false };
+    }
+
     const data = await response.json();
     const remainingMessages = data.messagesLimit - data.messagesUsed;
     const reachedLimit = remainingMessages <= 0;
