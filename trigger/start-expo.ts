@@ -1,7 +1,5 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { startExpoInContainer } from "@/utils/server/daytona";
-import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { startExpoInContainer as startExpoInContainerE2B } from "@/utils/server/e2b";
 
@@ -37,12 +35,10 @@ export const startExpo = task({
         );
       }
 
-      const { appUrl, apiUrl } = await startExpoInContainerE2B(containerId);
+      const { appUrl} = await startExpoInContainerE2B(containerId);
       console.log(
         "[startExpo] Expo started successfully. App URL:",
         appUrl,
-        "API URL:",
-        apiUrl,
       );
 
       // Set status to 'bundling' after Expo is started
@@ -92,7 +88,7 @@ export const startExpo = task({
           "App preview never became available after multiple attempts.",
         );
       }
-      await redisUrlSetter(appName, appUrl, apiUrl);
+      await redisUrlSetter(appName, appUrl);
 
       // Set status to 'ready' at the end
       console.log(
@@ -101,7 +97,6 @@ export const startExpo = task({
       const { error: updateError } = await adminSupabase
         .from("user_sandboxes")
         .update({
-          api_url: apiUrl,
           app_url: appUrl,
           expo_status: "bundled",
         })
