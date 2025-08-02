@@ -30,7 +30,7 @@ export default function FolderItem({
   onCreateFile,
   onCreateFolder,
   onDelete,
-  apiUrl,
+  appId,
   loading = false,
 }: {
   node: Extract<Node, { type: "folder" }>;
@@ -39,7 +39,7 @@ export default function FolderItem({
   onCreateFile: (parentPath: string, fileName: string) => void;
   onCreateFolder: (parentPath: string, folderName: string) => void;
   onDelete: (path: string) => void;
-  apiUrl: string;
+  appId: string;
   loading?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -53,7 +53,7 @@ export default function FolderItem({
     mutate,
   } = useSWR<Node[]>(
     open
-      ? `/api/code/directory?path=${encodeURIComponent(node.path)}&api_url=${apiUrl}`
+      ? `/api/code/directory?path=${encodeURIComponent(node.path)}&appId=${appId}`
       : null,
     fetchJSON,
     { refreshInterval: 5000 },
@@ -102,39 +102,78 @@ export default function FolderItem({
             onOpenChange={setContextMenuOpen}
           >
             <DropdownMenuTrigger asChild>
-              <div className="w-0 h-0 overflow-hidden">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  disabled={loading}
-                >
-                  <MoreHorizontal className="h-3 w-3" />
-                </Button>
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="right">
-              <DropdownMenuItem
-                onClick={loading ? () => {} : handleCreate}
-                disabled={loading}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleContextMenu(e);
+                }}
               >
-                <Plus className="mr-2 h-4 w-4" />
-                Create
+                <MoreHorizontal className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleCreate}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New
               </DropdownMenuItem>
-              <DeleteConfirmationDialog
-                fileName={node.name}
-                onConfirm={loading ? () => {} : () => onDelete(node.path)}
-              />
+              <DropdownMenuItem
+                onClick={() => {
+                  setContextMenuOpen(false);
+                  onDelete(node.path);
+                }}
+                className="text-destructive"
+              >
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      {/* Unified Create Dialog */}
+      {open && (
+        <ul className="pl-4 mt-1">
+          {isLoading ? (
+            <li className="py-1">
+              <div className="flex items-center gap-2 px-2">
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </li>
+          ) : (
+            children.map((child) =>
+              child.type === "file" ? (
+                <FileItem
+                  key={child.path}
+                  node={child}
+                  active={activePath === child.path}
+                  onSelect={onSelect}
+                  onDelete={onDelete}
+                />
+              ) : (
+                <FolderItem
+                  key={child.path}
+                  node={child}
+                  activePath={activePath}
+                  onSelect={onSelect}
+                  onCreateFile={onCreateFile}
+                  onCreateFolder={onCreateFolder}
+                  onDelete={onDelete}
+                  appId={appId}
+                  loading={loading}
+                />
+              ),
+            )
+          )}
+        </ul>
+      )}
+
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New</DialogTitle>
+            <DialogTitle>Create New in {node.name}</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
@@ -210,44 +249,6 @@ export default function FolderItem({
           </form>
         </DialogContent>
       </Dialog>
-
-      {open && (
-        <ul className="ml-5 mt-1 space-y-0.5">
-          {isLoading ? (
-            <>
-              <Skeleton className="h-5 w-4/5 my-1" />
-              <Skeleton className="h-5 w-3/4 my-1" />
-            </>
-          ) : children.length ? (
-            children.map((n) =>
-              n.type === "file" ? (
-                <FileItem
-                  key={n.path}
-                  node={n}
-                  active={activePath === n.path}
-                  onSelect={onSelect}
-                  onDelete={onDelete}
-                />
-              ) : (
-                <FolderItem
-                  key={n.path}
-                  node={n}
-                  activePath={activePath}
-                  onSelect={onSelect}
-                  onCreateFile={onCreateFile}
-                  onCreateFolder={onCreateFolder}
-                  onDelete={onDelete}
-                  apiUrl={apiUrl}
-                />
-              ),
-            )
-          ) : (
-            <div className="px-2 py-1 text-xs text-muted-foreground italic">
-              Empty folder
-            </div>
-          )}
-        </ul>
-      )}
     </li>
   );
 }

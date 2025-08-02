@@ -7,7 +7,7 @@ import {
 } from "ai";
 import { createTools } from "@/utils/server/tool-factory";
 import { getPrompt } from "@/utils/server/prompt";
-import { createFileBackendApiClient } from "@/utils/server/file-backend-api-client";
+import { getDirectoryTree, saveCheckpoint } from "@/utils/server/e2b";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { resumeContainer } from "./resume-container";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
@@ -150,16 +150,13 @@ export const aiAgent = task({
         throw new Error("Failed to fetch app details");
       }
 
-      // Initialize API client
-      const apiClient = createFileBackendApiClient(app.api_url);
-
-      // Get file tree
-      const fileTreeResponse = await apiClient.get("/file-tree", { path: "." });
+      // Get file tree using e2b
+      const fileTreeResponse = await getDirectoryTree(sandbox.sandbox_id, "/app/expo-app");
       const fileTree = fileTreeResponse;
 
       // Initialize tools
       const tools = createTools({
-        apiUrl: app.api_url,
+        sandboxId: sandbox.sandbox_id,
       });
 
       // Create message with user prompt
@@ -252,14 +249,13 @@ export const aiAgent = task({
       const totalCost = inputCost + outputCost;
       let commitHash = null;
       try {
-        const checkpointResponse = await apiClient.post("/checkpoint/save", {
-          name: "ai-assistant-checkpoint",
+        const checkpointResponse = await saveCheckpoint(sandbox.sandbox_id, {
+          branch: "master",
           message: "Checkpoint after AI assistant changes",
         });
 
         // Store the commit hash from the response
-        commitHash =
-          checkpointResponse.commit || checkpointResponse.current_commit;
+        commitHash = checkpointResponse.commit;
       } catch (error) {
         console.error("Failed to save checkpoint:", error);
         throw error;
