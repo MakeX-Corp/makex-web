@@ -76,8 +76,14 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { messages, appId, sessionId, subscription, model } =
-      await req.json();
+    const {
+      messages,
+      appId,
+      sessionId,
+      subscription,
+      model,
+      hasUnlimitedMessages,
+    } = await req.json();
 
     // Get the last user message
     const lastUserMessage = messages[messages.length - 1];
@@ -141,7 +147,7 @@ export async function POST(req: Request) {
     try {
       // Check subscription using existing data and increment usage
       const canSendMessage =
-        process.env.NODE_ENV === "development"
+        process.env.NODE_ENV === "development" || hasUnlimitedMessages
           ? true
           : subscription?.canSendMessage;
 
@@ -155,7 +161,7 @@ export async function POST(req: Request) {
           { status: 429 },
         );
       }
-      if (process.env.NODE_ENV !== "development") {
+      if (process.env.NODE_ENV !== "development" && !hasUnlimitedMessages) {
         await incrementMessageUsage(user.id);
       }
 
