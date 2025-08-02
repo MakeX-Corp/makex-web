@@ -271,6 +271,9 @@ export function Chat({
             sessionId,
             subscription,
             model: selectedModel,
+            hasUnlimitedMessages:
+              typeof window !== "undefined" &&
+              localStorage.getItem("unlimited_messages_activated") === "true",
           },
         },
       );
@@ -329,6 +332,9 @@ export function Chat({
             sessionId,
             subscription,
             model: selectedModel,
+            hasUnlimitedMessages:
+              typeof window !== "undefined" &&
+              localStorage.getItem("unlimited_messages_activated") === "true",
           },
         },
       );
@@ -636,14 +642,29 @@ export function Chat({
             {AI_MODELS.find((model) => model.id === selectedModel)?.name ||
               selectedModel}
           </div>
-          {remainingMessages !== null && !limitReached && (
-            <div className="text-xs text-muted-foreground">
-              <span>
-                {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
-                remaining{" "}
-              </span>
-            </div>
-          )}
+          {(() => {
+            const hasUnlimitedMessages =
+              typeof window !== "undefined" &&
+              localStorage.getItem("unlimited_messages_activated") === "true";
+            if (hasUnlimitedMessages) {
+              return (
+                <div className="text-xs text-muted-foreground">
+                  <span>Unlimited messages</span>
+                </div>
+              );
+            }
+            if (remainingMessages !== null && !limitReached) {
+              return (
+                <div className="text-xs text-muted-foreground">
+                  <span>
+                    {remainingMessages} message
+                    {remainingMessages === 1 ? "" : "s"} remaining{" "}
+                  </span>
+                </div>
+              );
+            }
+            return null;
+          })()}
         </div>
 
         {error && (
