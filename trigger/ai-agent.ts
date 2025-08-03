@@ -151,7 +151,10 @@ export const aiAgent = task({
       }
 
       // Get file tree using e2b
-      const fileTreeResponse = await getDirectoryTree(sandbox.sandbox_id, "/app/expo-app");
+      const fileTreeResponse = await getDirectoryTree(
+        sandbox.sandbox_id,
+        "/app/expo-app",
+      );
       const fileTree = fileTreeResponse;
 
       // Initialize tools
@@ -206,7 +209,6 @@ export const aiAgent = task({
       await supabase.from("app_chat_history").insert({
         app_id: appId,
         user_id: latestSession.user_id,
-        content: userPrompt,
         metadata: {
           fromApp: true,
         },
@@ -264,7 +266,6 @@ export const aiAgent = task({
       await supabase.from("app_chat_history").insert({
         app_id: appId,
         user_id: latestSession.user_id,
-        content: result.text,
         role: "assistant",
         model_used: modelName,
         plain_text: result.text,

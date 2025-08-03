@@ -217,7 +217,6 @@ export async function POST(req: Request) {
         .insert({
           app_id: trimmedAppId,
           user_id: user.id,
-          content: plainText, //will be removed later, cannot be removed now because it has non null constraint
           plain_text: plainText,
           parts: lastUserMessage.parts,
           role: "user",
@@ -271,7 +270,6 @@ export async function POST(req: Request) {
             await supabase.from("app_chat_history").insert({
               app_id: trimmedAppId,
               user_id: user.id,
-              content: plainText,
               plain_text: plainText,
               role: "assistant",
               model_used: modelName,
