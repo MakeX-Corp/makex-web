@@ -31,3 +31,5 @@ next-env.d.ts
 
 python/venv
 
+.vscode/*
+

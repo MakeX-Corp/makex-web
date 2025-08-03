@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const { data: sandboxes, error } = await supabase
       .from("user_sandboxes")
       .select(
-        "app_id, sandbox_status, app_status, api_url, sandbox_updated_at, expo_status",
+        "app_id, sandbox_status, app_status, sandbox_updated_at, expo_status",
       )
       .in("app_id", appIds)
       .eq("user_id", user.id);
