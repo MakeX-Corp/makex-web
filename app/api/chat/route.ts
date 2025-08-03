@@ -182,7 +182,7 @@ export async function POST(req: Request) {
       // get sandbox from the database
       const { data: sandbox, error: sandboxError } = await supabase
         .from("user_sandboxes")
-        .select("sandbox_id, api_url")
+        .select("sandbox_id")
         .eq("app_id", trimmedAppId)
         .single();
 

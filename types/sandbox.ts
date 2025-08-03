@@ -5,7 +5,6 @@ type UserSandbox = {
   sandbox_status: string;
   created_at: string;
   updated_at: string;
-  api_url: string;
   app_url: string;
   sandbox_id: string;
   app_status: string;

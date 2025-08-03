@@ -25,7 +25,7 @@ export async function GET(
     const { data: sandbox, error } = await supabase
       .from("user_sandboxes")
       .select(
-        "sandbox_status, app_status, api_url, sandbox_updated_at, expo_status",
+        "sandbox_status, app_status, sandbox_updated_at, expo_status",
       )
       .eq("app_id", appId)
       .eq("user_id", user.id)

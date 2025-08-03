@@ -292,7 +292,7 @@ export const deployWeb = task({
       const { data: appRecord } = await supabase
         .from("user_apps")
         .select(
-          "api_url,user_id,app_name,display_name,git_repo_id,convex_project_id,convex_dev_url",
+          "user_id,app_name,display_name,git_repo_id,convex_project_id,convex_dev_url",
         )
         .eq("id", appId)
         .single();
