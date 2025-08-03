@@ -95,20 +95,10 @@ export async function POST(request: NextRequest) {
         .update({
           sandbox_status: "active",
           sandbox_id: container.containerId,
-          api_url: container.apiHost,
         })
         .eq("id", sandboxId);
 
       if (updateError) throw new Error("Failed to update sandbox");
-
-      const { error: updateAppError } = await supabase
-        .from("user_apps")
-        .update({
-          api_url: container.apiHost,
-        })
-        .eq("id", finalAppId);
-
-      if (updateAppError) throw new Error("Failed to update app");
 
       const { data: session, error: sessionError } = await supabase
         .from("chat_sessions")

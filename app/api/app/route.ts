@@ -117,19 +117,12 @@ export async function POST(request: Request) {
       .update({
         sandbox_status: "active",
         sandbox_id: containerId,
-        api_url: apiHost,
       })
       .eq("id", sandboxDbId);
 
-    await redisUrlSetter(appName, appHost, apiHost);
+    await redisUrlSetter(appName, appHost);
 
-    // update the app_url and api_url in the user_apps table
-    const { error: updateAppError } = await supabase
-      .from("user_apps")
-      .update({
-        api_url: apiHost,
-      })
-      .eq("id", insertedApp.id);
+    // update the app_url in the user_apps table
     if (updateError) {
       throw new Error(
         `Failed updating sandbox with container info: ${updateError.message}`,
