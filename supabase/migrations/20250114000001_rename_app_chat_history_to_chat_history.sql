@@ -1,2 +1,2 @@
--- Rename app_chat_history table to chat_history
-ALTER TABLE public.app_chat_history RENAME TO chat_history; 
+-- Remove content column from chat_history table (after rename)
+ALTER TABLE public.chat_history DROP COLUMN IF EXISTS content; 

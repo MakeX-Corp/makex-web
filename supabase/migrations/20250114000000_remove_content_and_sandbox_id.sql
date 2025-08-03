@@ -1,5 +1,10 @@
--- Remove content column from app_chat_history table
-ALTER TABLE public.app_chat_history DROP COLUMN IF EXISTS content;
+-- Rename app_chat_history table to chat_history (if it exists and hasn't been renamed yet)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'app_chat_history' AND table_schema = 'public') THEN
+    ALTER TABLE public.app_chat_history RENAME TO chat_history;
+  END IF;
+END $$;
 
 -- Remove sandbox_id column from user_apps table  
 ALTER TABLE public.user_apps DROP COLUMN IF EXISTS sandbox_id; 

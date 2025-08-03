@@ -1,14 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   const result = await getSupabaseWithUser(request);
-  if (result instanceof NextResponse) return result;
+  if ("error" in result) return result.error;
 
   const { user } = result;
 
   const SUPABASE_PROJECT_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_KEY!;
   try {
     const res = await fetch(
       `${SUPABASE_PROJECT_URL}/auth/v1/admin/users/${user.id}`,

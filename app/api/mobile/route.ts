@@ -14,7 +14,6 @@ import { setupContainer } from "@/trigger/setup-container";
 export async function POST(request: NextRequest) {
   try {
     const userResult = await getSupabaseWithUser(request);
-    if (userResult instanceof NextResponse) return userResult;
     if ("error" in userResult) return userResult.error;
     const { supabase, user } = userResult;
 
@@ -100,8 +99,6 @@ export async function POST(request: NextRequest) {
 
       if (updateError) throw new Error("Failed to update sandbox");
 
-
-      if (updateAppError) throw new Error("Failed to update app");
 
       const { data: session, error: sessionError } = await supabase
         .from("chat_sessions")
