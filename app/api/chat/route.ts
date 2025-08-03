@@ -51,7 +51,7 @@ export async function GET(req: Request) {
 
     // Get all messages for this session
     const { data: messages, error: messagesError } = await supabase
-      .from("app_chat_history")
+      .from("chat_history")
       .select("*")
       .eq("user_id", user.id)
       .eq("app_id", appId)
@@ -182,7 +182,7 @@ export async function POST(req: Request) {
       // get sandbox from the database
       const { data: sandbox, error: sandboxError } = await supabase
         .from("user_sandboxes")
-        .select("sandbox_id, api_url")
+        .select("sandbox_id")
         .eq("app_id", trimmedAppId)
         .single();
 
@@ -213,7 +213,7 @@ export async function POST(req: Request) {
       const plainText = extractPlainText(lastUserMessage.parts);
 
       const { data: chatHistoryData, error: chatHistoryError } = await supabase
-        .from("app_chat_history")
+        .from("chat_history")
         .insert({
           app_id: trimmedAppId,
           user_id: user.id,
@@ -268,7 +268,7 @@ export async function POST(req: Request) {
               console.error("Failed to save checkpoint:", error);
             }
 
-            await supabase.from("app_chat_history").insert({
+            await supabase.from("chat_history").insert({
               app_id: trimmedAppId,
               user_id: user.id,
               content: plainText,

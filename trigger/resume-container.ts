@@ -62,7 +62,7 @@ export const resumeContainer = task({
           break;
         case "e2b":
           const { appHost, apiHost } = await resumeE2BContainer(sandboxId);
-          await redisUrlSetter(appName, `${appHost}`, `${apiHost}`);
+          await redisUrlSetter(appName, `${appHost}`);
           break;
       }
 

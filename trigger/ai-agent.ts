@@ -59,7 +59,7 @@ export const aiAgent = task({
 
       // Get chat history for this session
       const { data: chatHistory, error: historyError } = await supabase
-        .from("app_chat_history")
+        .from("chat_history")
         .select("*")
         .eq("session_id", sessionId)
         .order("created_at", { ascending: true });
@@ -203,7 +203,7 @@ export const aiAgent = task({
 
       // Insert user message into chat history AFTER building messages array
       const currentUserMessageId = messages[messages.length - 1].id;
-      await supabase.from("app_chat_history").insert({
+      await supabase.from("chat_history").insert({
         app_id: appId,
         user_id: latestSession.user_id,
         content: userPrompt,
@@ -261,7 +261,7 @@ export const aiAgent = task({
         throw error;
       }
       // Insert assistant's message into chat history
-      await supabase.from("app_chat_history").insert({
+      await supabase.from("chat_history").insert({
         app_id: appId,
         user_id: latestSession.user_id,
         content: result.text,

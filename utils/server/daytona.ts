@@ -8,7 +8,6 @@ const resources: SandboxResources = {
 
 const daytona = new Daytona({
   apiKey: process.env.DAYTON_API_KEY,
-  apiUrl: process.env.DAYTON_API_URL,
   target: "us",
 });
 

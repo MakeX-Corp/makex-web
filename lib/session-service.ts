@@ -230,7 +230,6 @@ export async function getAppInfo(appId: string): Promise<{
         id: data.id,
         app_name: data.app_name,
         display_name: data.display_name,
-        api_url: data.api_url,
         app_url: data.app_url,
         convex_dev_url: data.convex_dev_url,
         convex_project_id: data.convex_project_id,
