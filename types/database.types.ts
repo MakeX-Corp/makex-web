@@ -14,7 +14,7 @@ export type Database = {
   };
   public: {
     Tables: {
-      app_chat_history: {
+      chat_history: {
         Row: {
           app_id: string;
           commit_hash: string | null;
@@ -65,14 +65,14 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "app_chat_history_app_id_fkey";
+            foreignKeyName: "chat_history_app_id_fkey";
             columns: ["app_id"];
             isOneToOne: false;
             referencedRelation: "user_apps";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "app_chat_history_session_id_fkey";
+            foreignKeyName: "chat_history_session_id_fkey";
             columns: ["session_id"];
             isOneToOne: false;
             referencedRelation: "chat_sessions";

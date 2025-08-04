@@ -41,7 +41,7 @@ export const firstScheduledTask = schedules.task({
         try {
           // Get the latest message for this app
           const { data: latestMessage, error: messageError } = await supabase
-            .from("app_chat_history")
+            .from("chat_history")
             .select("created_at")
             .eq("app_id", sandbox.app_id)
             .order("created_at", { ascending: false })
