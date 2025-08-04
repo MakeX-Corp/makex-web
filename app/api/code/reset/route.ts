@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   const { appId } = await request.json();
   const userResult = await getSupabaseWithUser(request as NextRequest);
   if ("error" in userResult) return userResult.error;
-  // query supabase app_chat_history to get the commit hash
+  // query supabase chat_history to get the commit hash
   if (userResult instanceof NextResponse) return userResult;
   const { supabase, user } = userResult;
   const { data, error } = await supabase
