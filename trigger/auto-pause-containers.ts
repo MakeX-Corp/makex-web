@@ -17,7 +17,7 @@ export const firstScheduledTask = schedules.task({
           current_sandbox_id,
           updated_at
         `)
-        .eq("status", "finished")
+        .eq("coding_status", "finished")
         .not("current_sandbox_id", "is", null);
 
       if (appsError) {
