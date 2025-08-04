@@ -62,7 +62,6 @@ export async function POST(request: Request) {
         sandbox_created_at: new Date().toISOString(),
         sandbox_updated_at: new Date().toISOString(),
         sandbox_provider: "e2b",
-        app_status: "starting",
       })
       .select()
       .limit(1);
@@ -120,14 +119,27 @@ export async function POST(request: Request) {
       })
       .eq("id", sandboxDbId);
 
-    await redisUrlSetter(appName, appHost);
-
-    // update the app_url in the user_apps table
     if (updateError) {
       throw new Error(
         `Failed updating sandbox with container info: ${updateError.message}`,
       );
     }
+
+    // Update the user_apps table to set the current_sandbox_id
+    const { error: appUpdateError } = await adminSupabase
+      .from("user_apps")
+      .update({
+        current_sandbox_id: sandboxDbId,
+      })
+      .eq("id", insertedApp.id);
+
+    if (appUpdateError) {
+      throw new Error(
+        `Failed updating app with current sandbox info: ${appUpdateError.message}`,
+      );
+    }
+
+    await redisUrlSetter(appName, appHost);
 
     // Create the session in the same transaction
     const sessionStartTime = performance.now();

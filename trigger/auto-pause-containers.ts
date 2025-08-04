@@ -7,48 +7,48 @@ export const firstScheduledTask = schedules.task({
   cron: "* * * * *",
   run: async (payload) => {
     try {
-      // Get all active sandbox containers with app names
+      // Get all finished apps with their current sandbox
       const supabase = await getSupabaseAdmin();
-      const { data: activeSandbox, error: activeSandboxError } = await supabase
-        .from("user_sandboxes")
-        .select(
-          `
-                    *,
-                    user_apps!inner(app_name)
-                `,
-        )
-        .in("sandbox_status", ["active"])
-        .eq("app_status", "active");
+      const { data: finishedApps, error: appsError } = await supabase
+        .from("user_apps")
+        .select(`
+          id,
+          app_name,
+          current_sandbox_id,
+          updated_at
+        `)
+        .eq("status", "finished")
+        .not("current_sandbox_id", "is", null);
 
-      if (activeSandboxError) {
-        console.error("Error fetching active apps:", activeSandboxError);
-        console.error("Failed to fetch active apps");
+      if (appsError) {
+        console.error("Error fetching finished apps:", appsError);
+        console.error("Failed to fetch finished apps");
         return;
       }
 
-      console.log("Active sandboxes:", activeSandbox);
+      console.log("Finished apps:", finishedApps);
 
-      if (!activeSandbox || activeSandbox.length === 0) {
-        console.log("No active apps found");
+      if (!finishedApps || finishedApps.length === 0) {
+        console.log("No finished apps found");
         return;
       }
 
       // Current time
-      const stoppedApps = [];
+      const stoppedContainers = [];
 
-      // Process each active app
-      for (const sandbox of activeSandbox) {
+      // Process each finished app
+      for (const app of finishedApps) {
         try {
           // Get the latest message for this app
           const { data: latestMessage, error: messageError } = await supabase
             .from("chat_history")
             .select("created_at")
-            .eq("app_id", sandbox.app_id)
+            .eq("app_id", app.id)
             .order("created_at", { ascending: false })
             .limit(1)
             .single();
 
-          let mostRecentActivity = new Date(sandbox.sandbox_updated_at);
+          let mostRecentActivity = new Date(app.updated_at);
           if (latestMessage) {
             const lastMessageTime = new Date(latestMessage.created_at + "Z");
             if (lastMessageTime > mostRecentActivity) {
@@ -64,12 +64,12 @@ export const firstScheduledTask = schedules.task({
           console.log("Diff minutes:", diffMinutes);
 
           if (diffMinutes > 4) {
-            stoppedApps.push(sandbox.id);
-            console.log("Pausing sandbox:", sandbox.id);
+            stoppedContainers.push(app.current_sandbox_id);
+            console.log("Pausing container:", app.current_sandbox_id);
             await pauseContainer.trigger(
               {
-                appId: sandbox.app_id,
-                appName: sandbox.user_apps.app_name,
+                sandboxId: app.current_sandbox_id,
+                appName: app.app_name,
               },
               {
                 queue: { name: "auto-pause-containers" },
@@ -77,16 +77,16 @@ export const firstScheduledTask = schedules.task({
             );
           }
         } catch (appError) {
-          console.error(`Error processing app ${sandbox.id}:`, appError);
+          console.error(`Error processing app ${app.id}:`, appError);
         }
       }
 
       console.log(
-        `Auto-stop completed. Stopped ${stoppedApps.length} inactive apps.`,
+        `Auto-pause completed. Paused ${stoppedContainers.length} inactive containers.`,
       );
     } catch (error) {
-      console.error("Error in auto-stop routine:", error);
-      console.error("Internal server error during auto-stop");
+      console.error("Error in auto-pause routine:", error);
+      console.error("Internal server error during auto-pause");
     }
   },
 });

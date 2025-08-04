@@ -24,27 +24,37 @@ export async function GET(req: Request) {
 
     const adminSupabase = await getSupabaseAdmin();
 
-    const { data, error } = await supabase
-      .from("user_sandboxes")
-      .select("sandbox_status, app_status, expo_status")
-      .eq("app_id", appId)
-      .order("sandbox_updated_at", { ascending: false })
-      .limit(1);
-
-    console.log("Sandbox data:", data);
+    // Get app and its current sandbox in one query
+    const { data: app, error } = await supabase
+      .from("user_apps")
+      .select(`
+        current_sandbox_id,
+        coding_status,
+        user_sandboxes!current_sandbox_id(sandbox_status, expo_status)
+      `)
+      .eq("id", appId)
+      .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    if (!data || data.length === 0) {
+    if (!app || !app.current_sandbox_id || !app.user_sandboxes) {
       return NextResponse.json(
-        { message: "No active sandbox found" },
+        { message: "No current sandbox found for this app" },
         { status: 404 },
       );
     }
 
-    return NextResponse.json(data[0]);
+    // Flatten the data to send just the statuses
+    const sandbox = app.user_sandboxes as any;
+    const flattenedData = {
+      coding_status: app.coding_status,
+      sandbox_status: sandbox.sandbox_status,
+      expo_status: sandbox.expo_status,
+    };
+    
+    return NextResponse.json(flattenedData);
   } catch (err: any) {
     console.error("Error fetching sandbox:", err);
     return NextResponse.json(
@@ -131,7 +141,7 @@ export async function PATCH(req: Request) {
 
     if (targetState == "pause") {
       await pauseContainer.trigger({
-        appId,
+        sandboxId: sandbox.id,
         appName: app.app_name,
       });
     }

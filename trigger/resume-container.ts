@@ -62,7 +62,7 @@ export const resumeContainer = task({
           break;
         case "e2b":
           const { appHost, apiHost } = await resumeE2BContainer(sandboxId);
-          await redisUrlSetter(appName, `${appHost}`, `${apiHost}`);
+          await redisUrlSetter(appName, `${appHost}`);
           break;
       }
 
@@ -72,7 +72,7 @@ export const resumeContainer = task({
         .update({
           sandbox_status: "active",
           ...(activeSandbox[0]?.sandbox_provider === "e2b"
-            ? { app_status: "active" }
+            ? { expo_status: "active" }
             : {}),
         })
         .eq("id", sandboxDbId);
