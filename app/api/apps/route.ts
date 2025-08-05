@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { Tables } from "@/types/database.types";
 
 interface AppListingInfo {
   id: number;
@@ -81,9 +80,7 @@ export async function GET(request: NextRequest) {
       .select(
         `
         *,
-        user_apps!url_mappings_app_id_fkey (
-          display_name,
-        )
+        user_apps!url_mappings_app_id_fkey(display_name)
       `,
         { count: "exact" },
       )
