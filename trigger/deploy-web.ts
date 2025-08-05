@@ -39,7 +39,7 @@ async function shareIdGenerator(appId: string, supabase: any): Promise<string> {
 
     // Check if this ID already exists
     const { data: existingMapping } = await supabase
-      .from("url_mappings")
+      .from("app_listing_info")
       .select("share_id")
       .eq("share_id", shareId)
       .single();
@@ -66,7 +66,7 @@ async function handleUrlMapping(
 ) {
   try {
     const { data: existingMapping } = await supabase
-      .from("url_mappings")
+      .from("app_listing_info")
       .select("dub_id,dub_key")
       .eq("app_id", appId)
       .single();
@@ -86,7 +86,7 @@ async function handleUrlMapping(
       });
 
       const result = await supabase
-        .from("url_mappings")
+        .from("app_listing_info")
         .update({
           web_url: deploymentUrl,
           app_url: easUrl,
@@ -110,7 +110,7 @@ async function handleUrlMapping(
       description,
     });
 
-    const result = await supabase.from("url_mappings").insert({
+    const result = await supabase.from("app_listing_info").insert({
       app_id: appId,
       share_url: dubLink.shortLink || dubLink.url,
       web_url: deploymentUrl,
