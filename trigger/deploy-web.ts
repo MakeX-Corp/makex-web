@@ -12,6 +12,7 @@ import {
   deployConvexProdInContainer,
   killE2BContainer,
 } from "@/utils/server/e2b";
+import { generateAppInfo } from "@/utils/server/generate-app-info";
 
 async function shareIdGenerator(appId: string, supabase: any): Promise<string> {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -71,11 +72,52 @@ async function handleUrlMapping(
       .eq("app_id", appId)
       .single();
 
+    // Get app information and all chat messages in one query
+    const { data: appRecord } = await supabase
+      .from("user_apps")
+      .select(
+        `
+        app_name,
+        display_name,
+        chat_sessions!user_apps_id_fkey(
+          id,
+          app_chat_history!chat_sessions_id_fkey(
+            plain_text,
+            role
+          )
+        )
+      `,
+      )
+      .eq("id", appId)
+      .single();
+
+    console.log(`[DeployWeb] App record:`, appRecord);
+    // Combine all chat messages into context
+    const allMessages = appRecord?.chat_sessions?.[0]?.app_chat_history || [];
+    console.log(`[DeployWeb] All messages:`, allMessages);
+    const userMessages = allMessages
+      .filter((msg: any) => msg.role === "user")
+      .map((msg: any) => msg.plain_text)
+      .join("\n");
+
+    console.log(`[DeployWeb] User messages:`, userMessages);
+    const userPrompt = userMessages || `A ${displayName} app`;
+
+    // Generate app info using the same pattern as generateDisplayName
+    const appInfo = await generateAppInfo({
+      appName: appRecord?.app_name || displayName,
+      displayName: displayName,
+      userPrompt: userPrompt,
+      appUrl: deploymentUrl,
+    });
+
+    console.log(`[DeployWeb] App info:`, appInfo);
     const title = `Check out my ${displayName} app`;
-    const description = `I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!`;
+    const description = appInfo.description;
 
     console.log(`[DeployWeb] Generated title: ${title}`);
     console.log(`[DeployWeb] Generated description: ${description}`);
+    console.log(`[DeployWeb] Generated category: ${appInfo.category}`);
 
     // If mapping exists, update web_url but keep the existing Dub link
     if (existingMapping?.dub_id) {
@@ -90,6 +132,11 @@ async function handleUrlMapping(
         .update({
           web_url: deploymentUrl,
           app_url: easUrl,
+          description: appInfo.description,
+          //category: appInfo.category,
+          image: appInfo.imageBase64
+            ? `data:image/png;base64,${appInfo.imageBase64}`
+            : null,
         })
         .eq("app_id", appId);
       return {
@@ -118,6 +165,11 @@ async function handleUrlMapping(
       dub_id: dubLink.id,
       dub_key: dubLink.key,
       share_id: shareId,
+      description: appInfo.description,
+      // category: appInfo.category,
+      image: appInfo.imageBase64
+        ? `data:image/png;base64,${appInfo.imageBase64}`
+        : null,
     });
 
     return { dubLink, result };
