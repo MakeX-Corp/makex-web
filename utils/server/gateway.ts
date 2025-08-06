@@ -29,6 +29,11 @@ export const getModelAndOrder = (modelName: string) => {
         model: "google/gemini-2.5-pro",
         order: ["vertex"]
       };
+    case "claude-4.1-opus":
+      return {
+        model: "anthropic/claude-4.1-opus",
+        order: ["bedrock", "vertex", "anthropic"]
+      };
     case "claude-4-sonnet-latest":
     default:
       return {

@@ -90,7 +90,7 @@ export default function WorkspaceContent({
           console.error("Initial fetch error:", data.error);
         } else {
           setState(data);
-          console.log(data);
+          console.log("TK Full state",data);
           if (data?.sandbox_status === "paused") {
             await resumeSandbox();
           }
@@ -99,8 +99,8 @@ export default function WorkspaceContent({
 
       fetchInitialState();
 
-      // Realtime subscription
-      const channel = supabase
+      // Realtime subscriptions
+      const sandboxChannel = supabase
         .channel(`realtime:user_sandboxes:${appId}`)
         .on(
           "postgres_changes",
@@ -111,19 +111,39 @@ export default function WorkspaceContent({
             filter: `app_id=eq.${appId}`,
           },
           (payload) => {
-            console.log("🔁 Realtime update:", payload);
-            const newState = {
+            console.log("🔁 Sandbox realtime update:", payload);
+            setState((prevState: any) => ({
+              ...prevState,
               sandbox_status: payload.new.sandbox_status,
               expo_status: payload.new.expo_status,
-              app_status: payload.new.app_status,
-            };
-            setState(newState);
+            }));
+          },
+        )
+        .subscribe();
+
+      const appsChannel = supabase
+        .channel(`realtime:user_apps:${appId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "user_apps",
+            filter: `id=eq.${appId}`,
+          },
+          (payload) => {
+            console.log("🔁 Apps realtime update:", payload);
+            setState((prevState: any) => ({
+              ...prevState,
+              coding_status: payload.new.coding_status,
+            }));
           },
         )
         .subscribe();
 
       return () => {
-        supabase.removeChannel(channel);
+        supabase.removeChannel(sandboxChannel);
+        supabase.removeChannel(appsChannel);
       };
     }
   }, [appId]);

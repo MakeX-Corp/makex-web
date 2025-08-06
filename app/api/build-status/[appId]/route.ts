@@ -25,7 +25,7 @@ export async function GET(
     const { data: sandbox, error } = await supabase
       .from("user_sandboxes")
       .select(
-        "sandbox_status, app_status, sandbox_updated_at, expo_status",
+        "sandbox_status, sandbox_updated_at, expo_status",
       )
       .eq("app_id", appId)
       .eq("user_id", user.id)
@@ -42,25 +42,41 @@ export async function GET(
       );
     }
 
-    // Simple status mapping based on both sandbox_status and app_status
+    // Query the user_apps table for coding status
+    const { data: app, error: appError } = await supabase
+      .from("user_apps")
+      .select("coding_status")
+      .eq("app_id", appId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (appError) {
+      console.error("Supabase app query error:", appError);
+      if (appError.code === "PGRST116") {
+        return NextResponse.json({ error: "App not found" }, { status: 404 });
+      }
+      return NextResponse.json(
+        { error: "Failed to fetch app coding status" },
+        { status: 500 },
+      );
+    }
+
+    // Simple status mapping based on sandbox_status and coding_status
     let status = "in_progress";
     let message = "Building your app...";
 
     // 🔍 Check both conditions explicitly
     const sandboxIsActive = sandbox.sandbox_status === "active";
-    const appIsActive = sandbox.app_status === "active";
+    const codingIsFinished = app.coding_status === "finished";
     const expoIsActive = sandbox.expo_status === "bundled";
 
-    if (sandboxIsActive && appIsActive && expoIsActive) {
+    if (sandboxIsActive && codingIsFinished && expoIsActive) {
       status = "complete";
       message = "Your app is ready!";
-    } else if (
-      sandbox.sandbox_status === "error" ||
-      sandbox.app_status === "error"
-    ) {
+    } else if (sandbox.sandbox_status === "error") {
       status = "failed";
       message = "Build failed";
-    } else if (sandbox.app_status === "changing") {
+    } else if (app.coding_status === "changing") {
       status = "in_progress";
       message = "Changing app...";
     } else if (sandbox.sandbox_status === "starting") {
@@ -75,7 +91,7 @@ export async function GET(
       status,
       message,
       sandbox_status: sandbox.sandbox_status,
-      app_status: sandbox.app_status,
+      coding_status: app.coding_status,
       updated_at: sandbox.sandbox_updated_at,
     };
 

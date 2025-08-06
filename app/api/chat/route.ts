@@ -96,9 +96,9 @@ export async function POST(req: Request) {
 
     // Check if app is already being changed
     const { data: appStatus, error: statusError } = await supabase
-      .from("user_sandboxes")
-      .select("app_status")
-      .eq("app_id", appId)
+      .from("user_apps")
+      .select("coding_status")
+      .eq("id", appId)
       .single();
 
     if (statusError) {
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (appStatus?.app_status === "changing") {
+    if (appStatus?.coding_status === "changing") {
       return NextResponse.json(
         { error: "App is currently being modified. Please try again later." },
         { status: 409 },
@@ -122,14 +122,13 @@ export async function POST(req: Request) {
     const {
       error: lockError,
       data: lockData,
-      count,
     } = await supabaseAdmin
-      .from("user_sandboxes")
+      .from("user_apps")
       .update({
-        app_status: "changing",
-        sandbox_updated_at: new Date().toISOString(),
+        coding_status: "changing",
+        updated_at: new Date().toISOString(),
       })
-      .eq("app_id", trimmedAppId)
+      .eq("id", trimmedAppId)
       .select();
 
     // Check if we actually found and updated a record
@@ -280,12 +279,12 @@ export async function POST(req: Request) {
             });
 
             await supabaseAdmin
-              .from("user_sandboxes")
-              .update({ app_status: "active" })
-              .eq("app_id", appId);
+              .from("user_apps")
+              .update({ coding_status: "finished" })
+              .eq("id", appId);
           } catch (err) {
             console.error(
-              "Exception while updating app_status to active:",
+              "Exception while updating coding_status to active:",
               err,
             );
           }
