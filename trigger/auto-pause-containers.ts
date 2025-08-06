@@ -14,8 +14,7 @@ export const firstScheduledTask = schedules.task({
         .select(`
           id,
           app_name,
-          current_sandbox_id,
-          updated_at
+          current_sandbox_id
         `)
         .eq("coding_status", "finished")
         .not("current_sandbox_id", "is", null);
@@ -48,7 +47,19 @@ export const firstScheduledTask = schedules.task({
             .limit(1)
             .single();
 
-          let mostRecentActivity = new Date(app.updated_at);
+          // Get sandbox updated time
+          const { data: sandbox, error: sandboxError } = await supabase
+            .from("user_sandboxes")
+            .select("sandbox_updated_at")
+            .eq("id", app.current_sandbox_id)
+            .single();
+
+          if (sandboxError) {
+            console.error(`Error fetching sandbox ${app.current_sandbox_id}:`, sandboxError);
+            continue;
+          }
+
+          let mostRecentActivity = new Date(sandbox.sandbox_updated_at);
           if (latestMessage) {
             const lastMessageTime = new Date(latestMessage.created_at + "Z");
             if (lastMessageTime > mostRecentActivity) {
