@@ -47,9 +47,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
-    const category = searchParams.get("category"); // For future use
+    const category = searchParams.get("category");
 
-    // Validate pagination parameters
     if (page < 1) {
       return NextResponse.json(
         { error: "Page must be greater than 0" },
@@ -70,47 +69,34 @@ export async function GET(request: NextRequest) {
     // Get admin Supabase client for server-side operations
     const supabase = await getSupabaseAdmin();
 
-    /*
-    // Build the query to join app_listing_info with user_apps
-    let query = supabase
-      .from("app_listing_info")
-      .select(
-        `
-        *,
-        user_apps(display_name)
-      `,
-        { count: "exact" },
-      )
-      .neq("user_apps.user_id", user.id)
-      .order("created_at", { ascending: false });
+    const rel = "user_apps!app_id"; // join via app_listing_info.app_id -> user_apps.id
 
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1);
+    let query = supabase.from("app_listing_info").select(
+      `
+      *,
+      ${rel} ( display_name )
+    `,
+      { count: "exact" },
+    );
 
-    // Execute the query
-    const { data: apps, error, count } = await query;
-*/
-    const { data: listings, count: count } = await supabase
-      .from("app_listing_info")
-      .select("*")
+    // 🔎 optional category filter
+    if (category) {
+      query = query.eq("category", category);
+    }
+
+    // (optional) hide the requester’s own apps
+    //if (user?.id) query = query.neq(`${rel}.user_id`, user.id);
+
+    const {
+      data: apps,
+      error: appsError,
+      count,
+    } = await query
+      .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
-    const appIds = listings?.map((app) => app.app_id) || [];
-
-    const { data: users, error: usersError } = await supabase
-      .from("user_apps")
-      .select("id, display_name")
-      .in("id", appIds);
-
-    const apps = listings?.map((app) => ({
-      ...app,
-      display_name:
-        users?.find((u) => u.id === app.app_id)?.display_name || null,
-    }));
-
-    console.log("usersError", usersError);
-    if (usersError) {
-      console.error("Error fetching apps:", usersError);
+    if (appsError) {
+      console.error("Error fetching apps:", appsError);
       return NextResponse.json(
         { error: "Failed to fetch apps" },
         { status: 500 },
@@ -133,8 +119,10 @@ export async function GET(request: NextRequest) {
       description: app.description,
       rating: app.rating,
       downloads: app.downloads,
-      display_name: app.display_name,
+      display_name: app.user_apps.display_name,
       author: app.author,
+      tags: app.tags,
+      category: app.category,
     }));
 
     // Calculate pagination metadata

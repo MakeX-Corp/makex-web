@@ -75,8 +75,30 @@ async function handleUrlMapping(
       .single();
 
     console.log(`[DeployWeb] Existing mapping: ${existingMapping}`);
-    //get app info
 
+    // If mapping exists, update web_url but keep the existing Dub link
+    if (existingMapping?.dub_id) {
+      // Update the Dub link with new title and description
+      await dub.links.update(existingMapping.dub_id, {
+        title: `Check out my ${displayName} app`,
+        description: "Check out this amazing app built with MakeX!",
+      });
+
+      const result = await supabase
+        .from("app_listing_info")
+        .update({
+          web_url: deploymentUrl,
+          app_url: easUrl,
+        })
+        .eq("app_id", appId);
+      return {
+        dubLink: { id: existingMapping.dub_id, key: existingMapping.dub_key },
+        result,
+      };
+    }
+
+    // Only generate app info and image if there's no existing mapping
+    //get app info
     const { data: promptInfo, error } = await supabase
       .from("chat_history")
       .select("plain_text")
@@ -110,27 +132,6 @@ async function handleUrlMapping(
 
     console.log(`[DeployWeb] Generated title: ${title}`);
     console.log(`[DeployWeb] Generated description: ${description}`);
-
-    // If mapping exists, update web_url but keep the existing Dub link
-    if (existingMapping?.dub_id) {
-      // Update the Dub link with new title and description
-      await dub.links.update(existingMapping.dub_id, {
-        title,
-        description,
-      });
-
-      const result = await supabase
-        .from("app_listing_info")
-        .update({
-          web_url: deploymentUrl,
-          app_url: easUrl,
-        })
-        .eq("app_id", appId);
-      return {
-        dubLink: { id: existingMapping.dub_id, key: existingMapping.dub_key },
-        result,
-      };
-    }
 
     // Create new Dub link only if it doesn't exist
     const shareId = await shareIdGenerator(appId, supabase);
