@@ -71,6 +71,18 @@ export async function GET(request: NextRequest) {
 
     const rel = "user_apps!app_id"; // join via app_listing_info.app_id -> user_apps.id
 
+    // Get saved app IDs for the current user
+    let savedAppIds: number[] = [];
+    if (user?.id) {
+      const { data: savedApps } = await supabase
+        .from("user_saved_apps")
+        .select("app_listing_info_id")
+        .eq("user_id", user.id);
+
+      savedAppIds =
+        savedApps?.map((saved: any) => saved.app_listing_info_id) || [];
+    }
+
     let query = supabase.from("app_listing_info").select(
       `
       *,
@@ -84,7 +96,12 @@ export async function GET(request: NextRequest) {
       query = query.eq("category", category);
     }
 
-    // (optional) hide the requester’s own apps
+    // Exclude apps that the user has already saved
+    if (user?.id && savedAppIds.length > 0) {
+      query = query.not("id", "in", `(${savedAppIds.join(",")})`);
+    }
+
+    // (optional) hide the requester's own apps
     //if (user?.id) query = query.neq(`${rel}.user_id`, user.id);
 
     const {
