@@ -12,7 +12,8 @@ import {
   deployConvexProdInContainer,
   killE2BContainer,
 } from "@/utils/server/e2b";
-
+import { generateAppInfo } from "@/utils/server/generate-app-info";
+import { generateAppImageBase64 } from "@/utils/server/generate-app-image";
 async function shareIdGenerator(appId: string, supabase: any): Promise<string> {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   const maxAttempts = 3; // Maximum number of attempts to generate a unique ID
@@ -63,16 +64,49 @@ async function handleUrlMapping(
   displayName: string,
   deploymentUrl: string,
   easUrl?: string,
+  userEmail?: string,
 ) {
   try {
+    console.log(`[DeployWeb] Handling URL mapping for appId: ${appId}`);
     const { data: existingMapping } = await supabase
       .from("app_listing_info")
       .select("dub_id,dub_key")
       .eq("app_id", appId)
       .single();
 
+    console.log(`[DeployWeb] Existing mapping: ${existingMapping}`);
+    //get app info
+
+    const { data: promptInfo, error } = await supabase
+      .from("chat_history")
+      .select("plain_text")
+      .eq("app_id", appId)
+      .eq("role", "user")
+      .order("created_at", { ascending: true })
+      .limit(5);
+
+    if (error) throw error;
+
+    const userPrompt = promptInfo
+      ?.map((row: any) => row.plain_text?.trim())
+      .filter(Boolean)
+      .join(" ");
+
+    console.log(`[DeployWeb] Generating app info for appId: ${appId}`);
+    const appInfo = await generateAppInfo({
+      appName: appId,
+      displayName: displayName,
+      userPrompt:
+        "These are the first 5 user prompts for this app: " + userPrompt,
+    });
+    console.log(`[DeployWeb] App info generated: ${appInfo}`);
+    console.log(appInfo);
+
+    const appImage = await generateAppImageBase64(appInfo.imagePrompt);
+    console.log(`[DeployWeb] App image generated: ${appImage}`);
+
     const title = `Check out my ${displayName} app`;
-    const description = `I created this app using MakeX - a powerful platform for building and deploying applications. Try it out!`;
+    const description = appInfo.description;
 
     console.log(`[DeployWeb] Generated title: ${title}`);
     console.log(`[DeployWeb] Generated description: ${description}`);
@@ -118,6 +152,11 @@ async function handleUrlMapping(
       dub_id: dubLink.id,
       dub_key: dubLink.key,
       share_id: shareId,
+      image: appImage,
+      description: appInfo.description,
+      category: appInfo.category,
+      tags: appInfo.tags,
+      author: userEmail,
     });
 
     return { dubLink, result };
@@ -280,7 +319,7 @@ export const deployWeb = task({
   retry: {
     maxAttempts: 0,
   },
-  run: async (payload: { appId: string }) => {
+  run: async (payload: { appId: string; userEmail: string }) => {
     console.log(`[DeployWeb] Starting deployment for appId: ${payload.appId}`);
     const { appId } = payload;
     const supabase = await getSupabaseAdmin();
@@ -466,6 +505,7 @@ export const deployWeb = task({
           display_name,
           deploymentUrl,
           easUrl,
+          payload.userEmail,
         );
         console.log(`[DeployWeb] URL mapping completed`);
 
@@ -473,7 +513,7 @@ export const deployWeb = task({
         return {
           deploymentUrl,
           easUrl,
-          convexProdUrl,
+          //convexProdUrl,
           dubLink,
         };
       } catch (error) {

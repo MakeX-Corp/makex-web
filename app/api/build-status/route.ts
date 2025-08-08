@@ -22,9 +22,7 @@ export async function POST(request: NextRequest) {
     // Fetch all matching sandboxes in one query
     const { data: sandboxes, error } = await supabase
       .from("user_sandboxes")
-      .select(
-        "app_id, sandbox_status, sandbox_updated_at, expo_status",
-      )
+      .select("app_id, sandbox_status, sandbox_updated_at, expo_status")
       .in("app_id", appIds)
       .eq("user_id", user.id);
 
@@ -39,8 +37,8 @@ export async function POST(request: NextRequest) {
     // Fetch coding status from user_apps table
     const { data: apps, error: appsError } = await supabase
       .from("user_apps")
-      .select("app_id, coding_status")
-      .in("app_id", appIds)
+      .select("id, coding_status")
+      .in("id", appIds)
       .eq("user_id", user.id);
 
     if (appsError) {
@@ -55,7 +53,7 @@ export async function POST(request: NextRequest) {
     const statusMap: Record<string, any> = {};
     for (const appId of appIds) {
       const sandbox = sandboxes.find((s) => s.app_id === appId);
-      const app = apps.find((a) => a.app_id === appId);
+      const app = apps.find((a) => a.id === appId);
 
       if (!sandbox || !app) {
         statusMap[appId] = {

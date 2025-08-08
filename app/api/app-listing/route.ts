@@ -17,8 +17,8 @@ interface AppListingInfo {
   description: string | null;
   rating: number | null;
   downloads: number;
-
   display_name: string;
+  author: string;
 }
 
 interface AppsResponse {
@@ -49,10 +49,6 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "20", 10);
     const category = searchParams.get("category"); // For future use
 
-    console.log("Page:", page);
-    console.log("Limit:", limit);
-    console.log("Category:", category);
-
     // Validate pagination parameters
     if (page < 1) {
       return NextResponse.json(
@@ -74,13 +70,14 @@ export async function GET(request: NextRequest) {
     // Get admin Supabase client for server-side operations
     const supabase = await getSupabaseAdmin();
 
+    /*
     // Build the query to join app_listing_info with user_apps
     let query = supabase
       .from("app_listing_info")
       .select(
         `
         *,
-        user_apps!url_mappings_app_id_fkey(display_name)
+        user_apps(display_name)
       `,
         { count: "exact" },
       )
@@ -92,11 +89,28 @@ export async function GET(request: NextRequest) {
 
     // Execute the query
     const { data: apps, error, count } = await query;
+*/
+    const { data: listings, count: count } = await supabase
+      .from("app_listing_info")
+      .select("*")
+      .range(offset, offset + limit - 1);
 
-    console.log("apps", apps);
+    const appIds = listings?.map((app) => app.app_id) || [];
 
-    if (error) {
-      console.error("Error fetching apps:", error);
+    const { data: users, error: usersError } = await supabase
+      .from("user_apps")
+      .select("id, display_name")
+      .in("id", appIds);
+
+    const apps = listings?.map((app) => ({
+      ...app,
+      display_name:
+        users?.find((u) => u.id === app.app_id)?.display_name || null,
+    }));
+
+    console.log("usersError", usersError);
+    if (usersError) {
+      console.error("Error fetching apps:", usersError);
       return NextResponse.json(
         { error: "Failed to fetch apps" },
         { status: 500 },
@@ -119,8 +133,8 @@ export async function GET(request: NextRequest) {
       description: app.description,
       rating: app.rating,
       downloads: app.downloads,
-      // Flatten the joined user_apps data
-      display_name: app.user_apps?.display_name || null,
+      display_name: app.display_name,
+      author: app.author,
     }));
 
     // Calculate pagination metadata
