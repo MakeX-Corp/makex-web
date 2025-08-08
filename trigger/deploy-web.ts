@@ -513,7 +513,7 @@ export const deployWeb = task({
         return {
           deploymentUrl,
           easUrl,
-          //convexProdUrl,
+          convexProdUrl,
           dubLink,
         };
       } catch (error) {
