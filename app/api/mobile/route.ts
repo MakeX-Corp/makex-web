@@ -19,7 +19,14 @@ export async function POST(request: NextRequest) {
     const { supabase, user } = userResult;
 
     const body = await request.json();
-    const { appId, userPrompt, isNewApp, images, model } = body;
+    const {
+      appId,
+      userPrompt,
+      isNewApp,
+      images,
+      model,
+      sessionId: providedSessionId,
+    } = body;
 
     if (!userPrompt) {
       return NextResponse.json(
@@ -38,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     let finalAppId = appId;
     let appName = "";
-    let sessionId: string | undefined;
+    let currentSessionId: string | undefined;
     let apiHost = "";
     let appUrl = "";
     let displayName = "";
@@ -112,7 +119,7 @@ export async function POST(request: NextRequest) {
 
       if (sessionError) throw new Error("Failed to create session");
 
-      sessionId = session.id;
+      currentSessionId = session.id;
       apiHost = container.apiHost;
 
       await setupContainer.trigger({
@@ -140,12 +147,13 @@ export async function POST(request: NextRequest) {
       userPrompt,
       images,
       model: modelName,
+      sessionId: providedSessionId || currentSessionId,
     });
 
     return NextResponse.json({
       success: true,
       appId: finalAppId,
-      sessionId,
+      sessionId: currentSessionId,
       appName,
       appUrl,
     });
