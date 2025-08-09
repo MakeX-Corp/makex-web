@@ -114,6 +114,7 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "20", 10);
   const category = searchParams.get("category");
+  const search = searchParams.get("search");
 
   if (page < 1) {
     return NextResponse.json(
@@ -198,10 +199,21 @@ export async function GET(request: NextRequest) {
   }
 
   // Transform the data to flatten the joined structure
-  const apps: SavedAppInfo[] = savedApps.map((saved: any) => ({
+  let apps: SavedAppInfo[] = savedApps.map((saved: any) => ({
     ...saved.app_listing_info,
     display_name: saved.app_listing_info.user_apps.display_name,
   }));
+
+  // Simple search filtering
+  if (search) {
+    const searchLower = search.toLowerCase();
+    apps = apps.filter(
+      (app) =>
+        app.display_name?.toLowerCase().includes(searchLower) ||
+        app.description?.toLowerCase().includes(searchLower) ||
+        app.author?.toLowerCase().includes(searchLower),
+    );
+  }
 
   // Calculate pagination metadata
   const total = count || 0;
