@@ -34,8 +34,8 @@ export async function POST(request: NextRequest) {
   if (result instanceof NextResponse) return result;
   if ("error" in result) return result.error;
 
-  const { supabase, user } = result;
-
+  const { user } = result;
+  const supabase = await getSupabaseAdmin();
   try {
     const { appId } = await request.json();
 

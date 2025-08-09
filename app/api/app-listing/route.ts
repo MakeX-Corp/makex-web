@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
     const category = searchParams.get("category");
+    const search = searchParams.get("search");
 
     if (page < 1) {
       return NextResponse.json(
@@ -101,9 +102,6 @@ export async function GET(request: NextRequest) {
       query = query.not("id", "in", `(${savedAppIds.join(",")})`);
     }
 
-    // (optional) hide the requester's own apps
-    //if (user?.id) query = query.neq(`${rel}.user_id`, user.id);
-
     const {
       data: apps,
       error: appsError,
@@ -121,7 +119,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform the data to flatten the joined structure
-    const transformedApps: AppListingInfo[] = (apps || []).map((app: any) => ({
+    let transformedApps: AppListingInfo[] = (apps || []).map((app: any) => ({
       id: app.id,
       created_at: app.created_at,
       app_id: app.app_id,
@@ -136,11 +134,22 @@ export async function GET(request: NextRequest) {
       description: app.description,
       rating: app.rating,
       downloads: app.downloads,
-      display_name: app.user_apps.display_name,
+      display_name: app.user_apps?.display_name || "",
       author: app.author,
       tags: app.tags,
       category: app.category,
     }));
+
+    // Simple search filtering
+    if (search) {
+      const searchLower = search.toLowerCase();
+      transformedApps = transformedApps.filter(
+        (app) =>
+          app.display_name?.toLowerCase().includes(searchLower) ||
+          app.description?.toLowerCase().includes(searchLower) ||
+          app.author?.toLowerCase().includes(searchLower),
+      );
+    }
 
     // Calculate pagination metadata
     const total = count || 0;
