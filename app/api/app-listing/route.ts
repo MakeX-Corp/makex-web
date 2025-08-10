@@ -17,8 +17,8 @@ interface AppListingInfo {
   description: string | null;
   rating: number | null;
   downloads: number;
-
   display_name: string;
+  author: string;
 }
 
 interface AppsResponse {
@@ -47,13 +47,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
-    const category = searchParams.get("category"); // For future use
+    const category = searchParams.get("category");
+    const search = searchParams.get("search");
 
-    console.log("Page:", page);
-    console.log("Limit:", limit);
-    console.log("Category:", category);
-
-    // Validate pagination parameters
     if (page < 1) {
       return NextResponse.json(
         { error: "Page must be greater than 0" },
@@ -74,29 +70,48 @@ export async function GET(request: NextRequest) {
     // Get admin Supabase client for server-side operations
     const supabase = await getSupabaseAdmin();
 
-    // Build the query to join app_listing_info with user_apps
-    let query = supabase
-      .from("app_listing_info")
-      .select(
-        `
-        *,
-        user_apps!url_mappings_app_id_fkey(display_name)
-      `,
-        { count: "exact" },
-      )
-      .neq("user_apps.user_id", user.id)
-      .order("created_at", { ascending: false });
+    const rel = "user_apps!app_id"; // join via app_listing_info.app_id -> user_apps.id
 
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1);
+    // Get saved app IDs for the current user
+    let savedAppIds: number[] = [];
+    if (user?.id) {
+      const { data: savedApps } = await supabase
+        .from("user_saved_apps")
+        .select("app_listing_info_id")
+        .eq("user_id", user.id);
 
-    // Execute the query
-    const { data: apps, error, count } = await query;
+      savedAppIds =
+        savedApps?.map((saved: any) => saved.app_listing_info_id) || [];
+    }
 
-    console.log("apps", apps);
+    let query = supabase.from("app_listing_info").select(
+      `
+      *,
+      ${rel} ( display_name )
+    `,
+      { count: "exact" },
+    );
 
-    if (error) {
-      console.error("Error fetching apps:", error);
+    // 🔎 optional category filter
+    if (category) {
+      query = query.eq("category", category);
+    }
+
+    // Exclude apps that the user has already saved
+    if (user?.id && savedAppIds.length > 0) {
+      query = query.not("id", "in", `(${savedAppIds.join(",")})`);
+    }
+
+    const {
+      data: apps,
+      error: appsError,
+      count,
+    } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (appsError) {
+      console.error("Error fetching apps:", appsError);
       return NextResponse.json(
         { error: "Failed to fetch apps" },
         { status: 500 },
@@ -104,7 +119,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform the data to flatten the joined structure
-    const transformedApps: AppListingInfo[] = (apps || []).map((app: any) => ({
+    let transformedApps: AppListingInfo[] = (apps || []).map((app: any) => ({
       id: app.id,
       created_at: app.created_at,
       app_id: app.app_id,
@@ -119,9 +134,22 @@ export async function GET(request: NextRequest) {
       description: app.description,
       rating: app.rating,
       downloads: app.downloads,
-      // Flatten the joined user_apps data
-      display_name: app.user_apps?.display_name || null,
+      display_name: app.user_apps?.display_name || "",
+      author: app.author,
+      tags: app.tags,
+      category: app.category,
     }));
+
+    // Simple search filtering
+    if (search) {
+      const searchLower = search.toLowerCase();
+      transformedApps = transformedApps.filter(
+        (app) =>
+          app.display_name?.toLowerCase().includes(searchLower) ||
+          app.description?.toLowerCase().includes(searchLower) ||
+          app.author?.toLowerCase().includes(searchLower),
+      );
+    }
 
     // Calculate pagination metadata
     const total = count || 0;

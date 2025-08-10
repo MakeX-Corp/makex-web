@@ -24,9 +24,7 @@ export async function GET(
     // Query the user_sandboxes table for the current status
     const { data: sandbox, error } = await supabase
       .from("user_sandboxes")
-      .select(
-        "sandbox_status, sandbox_updated_at, expo_status",
-      )
+      .select("sandbox_status, sandbox_updated_at, expo_status")
       .eq("app_id", appId)
       .eq("user_id", user.id)
       .single();
@@ -46,7 +44,7 @@ export async function GET(
     const { data: app, error: appError } = await supabase
       .from("user_apps")
       .select("coding_status")
-      .eq("app_id", appId)
+      .eq("id", appId)
       .eq("user_id", user.id)
       .single();
 
