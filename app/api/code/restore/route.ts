@@ -10,13 +10,13 @@ export async function POST(request: Request) {
   console.log("appId", appId);
   console.log("sessionId", sessionId);
 
-  // query supabase app_chat_history to get the commit hash
+  // query supabase chat_history to get the commit hash
   const userResult = await getSupabaseWithUser(request as NextRequest);
   if (userResult instanceof NextResponse) return userResult;
   if ("error" in userResult) return userResult.error;
   const { supabase, user } = userResult;
   const { data, error } = await supabase
-    .from("app_chat_history")
+    .from("chat_history")
     .select("commit_hash")
     .eq("message_id", messageId)
     .eq("user_id", user.id)

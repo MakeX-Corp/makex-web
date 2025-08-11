@@ -57,7 +57,7 @@ export default function MobileMockup({
   const getDisplayContent = () => {
     const sandboxStatus = state?.sandbox_status;
     const expoStatus = state?.expo_status;
-    const appStatus = state?.app_status;
+    const codingStatus = state?.coding_status;
 
     // Highest precedence: Container state
     if (sandboxStatus === "paused") {
@@ -84,10 +84,10 @@ export default function MobileMockup({
         };
       }
 
-      // If expo_status is bundled, show app_status
+      // If expo_status is bundled, show coding_status
       if (expoStatus === "bundled") {
         return {
-          message: `App: ${appStatus || "loading"}...`,
+          message: `App: ${codingStatus || "loading"}...`,
           showSpinner: true,
         };
       }
@@ -110,16 +110,16 @@ export default function MobileMockup({
         contentHeight={contentHeight}
         padding={padding}
       >
-        {/* Show the app if container is active, expo_status is bundled, and app_status is active */}
+        {/* Show the app if container is active, expo_status is bundled, and coding_status is active */}
         {state?.sandbox_status === "active" &&
         state?.expo_status === "bundled" &&
-        state?.app_status === "active" &&
+        state?.coding_status === "finished" &&
         appUrl ? (
           <iframe
             key={[
               iframeKey,
               state?.sandbox_status,
-              state?.app_status,
+              state?.coding_status,
             ].toString()}
             src={appUrl}
             style={{

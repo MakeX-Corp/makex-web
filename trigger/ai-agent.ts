@@ -59,7 +59,7 @@ export const aiAgent = task({
 
       // Get chat history for this session
       const { data: chatHistory, error: historyError } = await supabase
-        .from("app_chat_history")
+        .from("chat_history")
         .select("*")
         .eq("session_id", sessionId)
         .order("created_at", { ascending: true });
@@ -206,7 +206,7 @@ export const aiAgent = task({
 
       // Insert user message into chat history AFTER building messages array
       const currentUserMessageId = messages[messages.length - 1].id;
-      await supabase.from("app_chat_history").insert({
+      await supabase.from("chat_history").insert({
         app_id: appId,
         user_id: latestSession.user_id,
         metadata: {
@@ -263,7 +263,7 @@ export const aiAgent = task({
         throw error;
       }
       // Insert assistant's message into chat history
-      await supabase.from("app_chat_history").insert({
+      await supabase.from("chat_history").insert({
         app_id: appId,
         user_id: latestSession.user_id,
         role: "assistant",
@@ -317,11 +317,11 @@ export const aiAgent = task({
         totalCost,
       });
 
-      // Set sandbox status back to active
+      // Set coding status to finished
       const { error: finalUpdateError } = await supabase
-        .from("user_sandboxes")
-        .update({ app_status: "active" })
-        .eq("app_id", appId);
+        .from("user_apps")
+        .update({ coding_status: "finished" })
+        .eq("id", appId);
 
       if (finalUpdateError) {
         console.error(
@@ -350,7 +350,7 @@ export const aiAgent = task({
         try {
           const { data: sandboxData, error: statusCheckError } = await supabase
             .from("user_sandboxes")
-            .select("app_status, sandbox_status, expo_status")
+            .select("sandbox_status, expo_status")
             .eq("app_id", appId)
             .order("sandbox_updated_at", { ascending: false })
             .limit(1)
@@ -370,12 +370,10 @@ export const aiAgent = task({
 
           currentSandbox = sandboxData;
           isAppReady =
-            currentSandbox.app_status === "active" &&
             currentSandbox.sandbox_status === "active" &&
             currentSandbox.expo_status === "bundled";
 
           console.log(`${LOG_PREFIX} Status check ${pollingAttempt}:`, {
-            app_status: currentSandbox.app_status,
             sandbox_status: currentSandbox.sandbox_status,
             expo_status: currentSandbox.expo_status,
             isReady: isAppReady,
@@ -442,13 +440,13 @@ export const aiAgent = task({
         sessionId,
       };
     } catch (error) {
-      // Ensure we set the status back to active even if there's an error
+      // Ensure we set the coding status to finished even if there's an error
       try {
         const supabase = await getSupabaseAdmin();
         await supabase
-          .from("user_sandboxes")
-          .update({ app_status: "active" })
-          .eq("app_id", payload.appId);
+          .from("user_apps")
+          .update({ coding_status: "finished" })
+          .eq("id", payload.appId);
       } catch (recoveryError) {
         console.error(
           `${LOG_PREFIX} Failed to recover sandbox status:`,

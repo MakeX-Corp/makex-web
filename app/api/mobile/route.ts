@@ -72,7 +72,6 @@ export async function POST(request: NextRequest) {
           sandbox_created_at: new Date().toISOString(),
           sandbox_updated_at: new Date().toISOString(),
           sandbox_provider: "e2b",
-          app_status: "starting",
         })
         .select()
         .limit(1);
@@ -124,9 +123,9 @@ export async function POST(request: NextRequest) {
       });
 
       await admin
-        .from("user_sandboxes")
-        .update({ app_status: "changing" })
-        .eq("app_id", finalAppId);
+        .from("user_apps")
+        .update({ coding_status: "changing" })
+        .eq("id", finalAppId);
     } else {
       if (!finalAppId) {
         return NextResponse.json(
@@ -134,13 +133,6 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         );
       }
-
-      const { error } = await admin
-        .from("user_sandboxes")
-        .update({ app_status: "changing" })
-        .eq("app_id", finalAppId);
-
-      if (error) throw new Error("Failed to update sandbox status");
     }
 
     await aiAgent.trigger({

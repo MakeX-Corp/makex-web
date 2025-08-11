@@ -5,6 +5,10 @@ import { tasks } from "@trigger.dev/sdk/v3";
 export async function POST(req: Request) {
   const { appId, type = "web" } = await req.json();
   const result = await getSupabaseWithUser(req as NextRequest);
+  //need to get the user email from the result
+  //@ts-ignore
+  const userEmail = result?.user?.email;
+
   if (result instanceof NextResponse) return result;
   if ("error" in result) return result.error;
 
@@ -19,6 +23,7 @@ export async function POST(req: Request) {
   } else {
     tasks.trigger("deploy-web", {
       appId,
+      userEmail,
     });
 
     return NextResponse.json({

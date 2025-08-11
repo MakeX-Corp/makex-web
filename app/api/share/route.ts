@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = await getSupabaseAdmin();
 
-    let query = supabase.from("url_mappings").select("*");
+    let query = supabase.from("app_listing_info").select("*");
 
     if (shareId) {
       query = query.eq("share_id", shareId);

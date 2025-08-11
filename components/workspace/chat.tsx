@@ -47,8 +47,13 @@ interface ChatProps {
 const AI_MODELS = [
   {
     id: "claude-4-sonnet-latest",
-    name: "Claude 4",
+    name: "Claude 4 Sonnet",
     description: "Fast and capable",
+  },
+  {
+    id: "claude-4.1-opus",
+    name: "Claude 4.1 Opus",
+    description: "Most advanced reasoning",
   },
   {
     id: "claude-3-7-sonnet-latest",

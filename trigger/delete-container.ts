@@ -38,17 +38,26 @@ export const deleteContainer = task({
     // update status to deleted
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
-      .update({ sandbox_status: "deleted", app_status: "deleted" })
+      .update({ sandbox_status: "deleted" })
       .eq("id", sandbox.id);
-
-    await redisUrlSetter(
-      appName,
-      "https://makex.app/app-not-found",
-      "https://makex.app/app-not-found",
-    );
 
     if (updateError) {
       throw new Error(`Failed updating sandbox status: ${updateError.message}`);
     }
+
+    // update user_apps to set current_sandbox_id to null
+    const { error: appUpdateError } = await adminSupabase
+      .from("user_apps")
+      .update({ current_sandbox_id: null })
+      .eq("id", appId);
+
+    if (appUpdateError) {
+      throw new Error(`Failed updating app sandbox id: ${appUpdateError.message}`);
+    }
+
+    await redisUrlSetter(
+      appName,
+      "https://makex.app/app-not-found",
+    );
   },
 });
