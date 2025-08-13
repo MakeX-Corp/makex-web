@@ -26,9 +26,16 @@ export const aiAgent = task({
     userPrompt: string;
     images?: string[];
     model?: string;
+    sessionId?: string;
   }) => {
     try {
-      const { appId, userPrompt, images = [], model } = payload;
+      const {
+        appId,
+        userPrompt,
+        images = [],
+        model,
+        sessionId: providedSessionId,
+      } = payload;
 
       // Use provided model or fall back to default
       const modelName = model || CLAUDE_SONNET_4_MODEL;
@@ -36,26 +43,53 @@ export const aiAgent = task({
       // Get Supabase admin client
       const supabase = await getSupabaseAdmin();
 
-      // Get the latest session for this app
-      const { data: latestSession, error: sessionError } = await supabase
-        .from("chat_sessions")
-        .select("*")
-        .eq("app_id", appId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
+      let sessionId: string;
+      let currentSession: any;
 
-      if (sessionError) {
-        throw new Error(
-          `Failed to fetch latest session: ${sessionError.message}`,
-        );
+      if (providedSessionId) {
+        // Use the provided sessionId
+        sessionId = providedSessionId;
+
+        // Verify the session exists and belongs to the app
+        const { data: session, error: sessionError } = await supabase
+          .from("chat_sessions")
+          .select("*")
+          .eq("id", sessionId)
+          .eq("app_id", appId)
+          .single();
+
+        if (sessionError || !session) {
+          throw new Error(
+            `Invalid session ID or session doesn't belong to app: ${
+              sessionError?.message || "Session not found"
+            }`,
+          );
+        }
+
+        currentSession = session;
+      } else {
+        // Get the latest session for this app (existing behavior)
+        const { data: latestSession, error: sessionError } = await supabase
+          .from("chat_sessions")
+          .select("*")
+          .eq("app_id", appId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (sessionError) {
+          throw new Error(
+            `Failed to fetch latest session: ${sessionError.message}`,
+          );
+        }
+
+        if (!latestSession) {
+          throw new Error("No session found for this app");
+        }
+
+        sessionId = latestSession.id;
+        currentSession = latestSession;
       }
-
-      if (!latestSession) {
-        throw new Error("No session found for this app");
-      }
-
-      const sessionId = latestSession.id;
 
       // Get chat history for this session
       const { data: chatHistory, error: historyError } = await supabase
@@ -208,7 +242,7 @@ export const aiAgent = task({
       const currentUserMessageId = messages[messages.length - 1].id;
       await supabase.from("chat_history").insert({
         app_id: appId,
-        user_id: latestSession.user_id,
+        user_id: currentSession.user_id,
         metadata: {
           fromApp: true,
         },
@@ -265,7 +299,7 @@ export const aiAgent = task({
       // Insert assistant's message into chat history
       await supabase.from("chat_history").insert({
         app_id: appId,
-        user_id: latestSession.user_id,
+        user_id: currentSession.user_id,
         role: "assistant",
         model_used: modelName,
         plain_text: result.text,
@@ -411,7 +445,7 @@ export const aiAgent = task({
       if (isAppReady) {
         console.log("Sending push notification to the user");
         console.log("this is payload", {
-          userId: latestSession.user_id,
+          userId: currentSession.user_id,
           title: "MakeX",
           body: "Your App is ready to use.",
           payload: {
@@ -423,7 +457,7 @@ export const aiAgent = task({
         //send push notification to the user
         await sendPushNotifications({
           supabase,
-          userId: latestSession.user_id,
+          userId: currentSession.user_id,
           title: "MakeX",
           body: "Your App is ready to use.",
           payload: {
