@@ -24,6 +24,7 @@ import {
 import { useTheme } from "next-themes";
 import { format } from "date-fns";
 import { createClient } from "@/utils/supabase/client";
+import { DeploySteps } from "./deploy-steps";
 
 interface Deployment {
   url: string;
@@ -41,11 +42,7 @@ interface ShareInfo {
   created_at: string;
 }
 
-export function DeployButton({
-  appId,
-}: {
-  appId: string | null;
-}) {
+export function DeployButton({ appId }: { appId: string | null }) {
   const { theme } = useTheme();
   const [isDeploying, setIsDeploying] = useState(false);
   const [lastDeployment, setLastDeployment] = useState<Deployment | null>(null);
@@ -54,6 +51,9 @@ export function DeployButton({
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Simple step state
+  const [currentStep, setCurrentStep] = useState(1);
 
   // Initialize Supabase client
   const supabase = createClient();
@@ -242,6 +242,27 @@ export function DeployButton({
     }
   };
 
+  if (currentStep > 1) {
+    return (
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="flex items-center gap-2">
+            <UploadCloud className="h-4 w-4" />
+            <span>Deploy</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-80">
+          <DeploySteps
+            currentStep={currentStep}
+            setCurrentStep={setCurrentStep}
+            onDeploy={deployWeb}
+            isDeploying={isDeploying}
+          />
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
@@ -283,19 +304,15 @@ export function DeployButton({
         )}
 
         <DropdownMenuItem
-          onClick={deployWeb}
-          disabled={isDeploying}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setCurrentStep(2);
+          }}
           className="cursor-pointer"
         >
           <Globe className="h-4 w-4 mr-2" />
-          {isDeploying ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Deploying to web...
-            </>
-          ) : (
-            <>Web</>
-          )}
+          Deploy
         </DropdownMenuItem>
 
         <DropdownMenuItem
