@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sparkles, Globe, Lock, Check, Edit, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 interface DeployStepsProps {
   currentStep: number;
@@ -36,6 +36,9 @@ export function DeploySteps({
   const [selectedVisibility, setSelectedVisibility] = useState<
     "public" | "private"
   >("public");
+  const [customIcon, setCustomIcon] = useState<string>("");
+  const [iconError, setIconError] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categories = [
     "Productivity",
@@ -75,12 +78,80 @@ export function DeploySteps({
   };
 
   const handleAIIconGeneration = () => {
+    setCustomIcon(""); // Clear custom icon
+    setAiGenerated(true); // Set AI as selected
     setCurrentStep(4);
   };
 
   const handleAIDetailsGeneration = () => {
     // Don't fill in the form fields, just mark as AI selected
     setAiGenerated(true);
+  };
+
+  const handleCustomIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset error
+    setIconError("");
+
+    // Check file type
+    if (!file.type.startsWith("image/")) {
+      setIconError("Please select a valid image file");
+      return;
+    }
+
+    // Check file size (max 1MB)
+    if (file.size > 1024 * 1024) {
+      setIconError("Image size must be less than 1MB");
+      return;
+    }
+
+    // Create a FileReader to convert to base64
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const img = new Image();
+
+      img.onload = () => {
+        // Check dimensions
+        if (img.width > 256 || img.height > 256) {
+          setIconError("Image dimensions must be 256x256 or smaller");
+          return;
+        }
+
+        // Convert to base64
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx?.drawImage(img, 0, 0);
+
+        try {
+          const base64 = canvas.toDataURL("image/png", 0.8);
+          setCustomIcon(base64);
+          setAiGenerated(false); // Clear AI selection
+          setIconError(""); // Clear any previous errors
+        } catch (error) {
+          setIconError("Failed to process image");
+        }
+      };
+
+      img.onerror = () => {
+        setIconError("Failed to load image");
+      };
+
+      if (event.target?.result) {
+        img.src = event.target.result as string;
+      }
+    };
+
+    reader.onerror = () => {
+      setIconError("Failed to read file");
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const handleTagInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -369,8 +440,16 @@ export function DeploySteps({
               </Card>
 
               <Card
-                className="cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => setCurrentStep(4)}
+                className={`cursor-pointer transition-colors ${
+                  customIcon
+                    ? "border-primary bg-primary/5 hover:border-primary/70"
+                    : "hover:border-primary/50"
+                }`}
+                onClick={() => {
+                  if (!customIcon) {
+                    fileInputRef.current?.click();
+                  }
+                }}
               >
                 <CardContent className="p-4 text-center space-y-2">
                   <svg
@@ -386,9 +465,48 @@ export function DeploySteps({
                       d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                     />
                   </svg>
-                  <div className="text-sm font-medium">Upload Custom Icon</div>
+                  <div className="text-sm font-medium">
+                    {customIcon ? "Custom Icon Selected" : "Upload Custom Icon"}
+                  </div>
+
+                  {!customIcon && (
+                    <>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCustomIconUpload}
+                        className="hidden"
+                        ref={fileInputRef}
+                      />
+                    </>
+                  )}
+
+                  {/* Show icon preview */}
+                  {customIcon && (
+                    <div className="pt-2">
+                      <img
+                        src={customIcon}
+                        alt="Custom icon"
+                        className="h-16 w-16 mx-auto rounded-lg object-cover border-2 border-primary/20"
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
+            </div>
+
+            {/* Error message */}
+            {iconError && (
+              <div className="text-sm text-red-500 text-center">
+                {iconError}
+              </div>
+            )}
+
+            {/* Requirements info */}
+            <div className="text-xs text-muted-foreground text-center">
+              <p>Max dimensions: 256x256 pixels</p>
+              <p>Max file size: 1MB</p>
+              <p>Supported formats: PNG, JPG, GIF</p>
             </div>
 
             <div className="flex gap-2">
@@ -402,7 +520,7 @@ export function DeploySteps({
               <Button
                 onClick={() => setCurrentStep(4)}
                 className="flex-1"
-                disabled={!aiGenerated}
+                disabled={!aiGenerated && !customIcon}
               >
                 Next
               </Button>
