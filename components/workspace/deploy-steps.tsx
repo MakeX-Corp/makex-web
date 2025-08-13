@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, Globe, Lock, Check, Edit } from "lucide-react";
+import { Sparkles, Globe, Lock, Check, Edit, X } from "lucide-react";
 import { useState } from "react";
 
 interface DeployStepsProps {
@@ -33,6 +33,9 @@ export function DeploySteps({
     description: "",
     tags: "",
   });
+  const [selectedVisibility, setSelectedVisibility] = useState<
+    "public" | "private"
+  >("public");
 
   const categories = [
     "Productivity",
@@ -73,6 +76,62 @@ export function DeploySteps({
 
   const handleAIIconGeneration = () => {
     setCurrentStep(4);
+  };
+
+  const handleAIDetailsGeneration = () => {
+    // Don't fill in the form fields, just mark as AI selected
+    setAiGenerated(true);
+  };
+
+  const handleTagInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setAppData((prev) => ({ ...prev, tags: value }));
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const currentTags = appData.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag);
+      if (currentTags.length < 5 && appData.tags.trim()) {
+        const newTag = appData.tags.trim();
+        if (newTag && !currentTags.includes(newTag)) {
+          const updatedTags = [...currentTags, newTag].join(", ");
+          setAppData((prev) => ({ ...prev, tags: updatedTags }));
+        }
+      }
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    const currentTags = appData.tags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag);
+    const updatedTags = currentTags
+      .filter((tag) => tag !== tagToRemove)
+      .join(", ");
+    setAppData((prev) => ({ ...prev, tags: updatedTags }));
+  };
+
+  const getTagsArray = () => {
+    return appData.tags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag);
+  };
+
+  const isFormValid = () => {
+    const tagsArray = getTagsArray();
+    return (
+      appData.category &&
+      appData.description.trim() &&
+      appData.description.length <= 100 &&
+      tagsArray.length > 0 &&
+      tagsArray.length <= 5
+    );
   };
 
   const renderStep = () => {
@@ -128,6 +187,35 @@ export function DeploySteps({
               )}
             </div>
 
+            {/* AI Generation Option */}
+            <Button
+              onClick={handleAIDetailsGeneration}
+              className={`w-full ${
+                aiGenerated ? "bg-primary text-primary-foreground" : ""
+              }`}
+              variant={aiGenerated ? "default" : "outline"}
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              {aiGenerated
+                ? "AI Generation Selected"
+                : "Generate Details with AI"}
+            </Button>
+
+            <div className="text-center text-sm text-muted-foreground">
+              AI will generate category, description, and tags
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or fill manually
+                </span>
+              </div>
+            </div>
+
             {/* Category Dropdown */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Category</label>
@@ -136,8 +224,11 @@ export function DeploySteps({
                 onValueChange={(value) =>
                   setAppData((prev) => ({ ...prev, category: value }))
                 }
+                disabled={aiGenerated}
               >
-                <SelectTrigger>
+                <SelectTrigger
+                  className={aiGenerated ? "opacity-50 cursor-not-allowed" : ""}
+                >
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -163,22 +254,53 @@ export function DeploySteps({
                   }))
                 }
                 rows={3}
+                maxLength={100}
+                disabled={aiGenerated}
+                className={aiGenerated ? "opacity-50 cursor-not-allowed" : ""}
               />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Max 100 characters</span>
+                <span>{appData.description.length}/100</span>
+              </div>
             </div>
 
             {/* Tags Input */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Tags</label>
               <Input
-                placeholder="Enter tags separated by commas"
+                placeholder="Enter tags separated by commas (max 5)"
                 value={appData.tags}
-                onChange={(e) =>
-                  setAppData((prev) => ({ ...prev, tags: e.target.value }))
-                }
+                onChange={handleTagInput}
+                onKeyDown={handleTagKeyDown}
+                disabled={aiGenerated}
+                className={aiGenerated ? "opacity-50 cursor-not-allowed" : ""}
               />
-              <p className="text-xs text-muted-foreground">
-                Example: productivity, task-management, ai
-              </p>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Press Enter or comma to add tags</span>
+                <span>{getTagsArray().length}/5</span>
+              </div>
+
+              {/* Display Tags */}
+              {getTagsArray().length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {getTagsArray().map((tag, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      {tag}
+                      <button
+                        onClick={() => removeTag(tag)}
+                        className="ml-1 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                        disabled={aiGenerated}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Show generated data if AI was used */}
@@ -186,8 +308,9 @@ export function DeploySteps({
               <Card className="bg-muted/50">
                 <CardContent className="p-3">
                   <div className="text-xs text-muted-foreground">
-                    <strong>AI Generated:</strong> You can edit any of the
-                    fields above to customize the AI suggestions.
+                    <strong>AI Generation Selected:</strong> The form fields
+                    above will be filled automatically when you proceed to the
+                    next step.
                   </div>
                 </CardContent>
               </Card>
@@ -204,7 +327,7 @@ export function DeploySteps({
               <Button
                 onClick={() => setCurrentStep(3)}
                 className="flex-1"
-                disabled={!appData.category}
+                disabled={!isFormValid() && !aiGenerated}
               >
                 Next
               </Button>
@@ -225,13 +348,23 @@ export function DeploySteps({
 
             <div className="grid grid-cols-2 gap-3">
               <Card
-                className="cursor-pointer hover:border-primary/50 transition-colors"
+                className={`cursor-pointer transition-colors ${
+                  aiGenerated
+                    ? "border-primary bg-primary/5 hover:border-primary/70"
+                    : "hover:border-primary/50"
+                }`}
                 onClick={handleAIIconGeneration}
               >
                 <CardContent className="p-4 text-center space-y-2">
-                  <Sparkles className="h-6 w-6 mx-auto text-primary" />
+                  <Sparkles
+                    className={`h-6 w-6 mx-auto ${
+                      aiGenerated ? "text-primary" : "text-primary"
+                    }`}
+                  />
                   <div className="text-sm font-medium">
-                    Generate Icon with AI
+                    {aiGenerated
+                      ? "AI Icon Generation Selected"
+                      : "Generate Icon with AI"}
                   </div>
                 </CardContent>
               </Card>
@@ -241,7 +374,19 @@ export function DeploySteps({
                 onClick={() => setCurrentStep(4)}
               >
                 <CardContent className="p-4 text-center space-y-2">
-                  <span className="text-2xl">📤</span>
+                  <svg
+                    className="h-6 w-6 mx-auto text-muted-foreground"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
                   <div className="text-sm font-medium">Upload Custom Icon</div>
                 </CardContent>
               </Card>
@@ -255,8 +400,12 @@ export function DeploySteps({
               >
                 Back
               </Button>
-              <Button onClick={() => setCurrentStep(4)} className="flex-1">
-                Skip Icon
+              <Button
+                onClick={() => setCurrentStep(4)}
+                className="flex-1"
+                disabled={!aiGenerated}
+              >
+                Next
               </Button>
             </div>
           </div>
@@ -273,7 +422,14 @@ export function DeploySteps({
             </div>
 
             <div className="space-y-2">
-              <Card className="cursor-pointer hover:border-primary/50 transition-colors">
+              <Card
+                className={`cursor-pointer transition-colors ${
+                  selectedVisibility === "public"
+                    ? "border-primary bg-primary/5"
+                    : "hover:border-primary/50"
+                }`}
+                onClick={() => setSelectedVisibility("public")}
+              >
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
                     <Globe className="h-4 w-4 text-primary" />
@@ -287,7 +443,14 @@ export function DeploySteps({
                 </CardContent>
               </Card>
 
-              <Card className="cursor-pointer hover:border-primary/50 transition-colors">
+              <Card
+                className={`cursor-pointer transition-colors ${
+                  selectedVisibility === "private"
+                    ? "border-primary bg-primary/5"
+                    : "hover:border-primary/50"
+                }`}
+                onClick={() => setSelectedVisibility("private")}
+              >
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
                     <Lock className="h-4 w-4 text-muted-foreground" />
