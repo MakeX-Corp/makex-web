@@ -89,7 +89,7 @@ export function DeploySteps({
   };
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
+    if (e.key === "Enter") {
       e.preventDefault();
       const currentTags = appData.tags
         .split(",")
@@ -276,7 +276,7 @@ export function DeploySteps({
                 className={aiGenerated ? "opacity-50 cursor-not-allowed" : ""}
               />
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Press Enter or comma to add tags</span>
+                <span>Separate tags with commas</span>
                 <span>{getTagsArray().length}/5</span>
               </div>
 
@@ -309,8 +309,7 @@ export function DeploySteps({
                 <CardContent className="p-3">
                   <div className="text-xs text-muted-foreground">
                     <strong>AI Generation Selected:</strong> The form fields
-                    above will be filled automatically when you proceed to the
-                    next step.
+                    above will be filled automatically when you deploy.
                   </div>
                 </CardContent>
               </Card>
@@ -436,7 +435,7 @@ export function DeploySteps({
                     <div>
                       <div className="text-sm font-medium">Public</div>
                       <div className="text-xs text-muted-foreground">
-                        Available on app store
+                        Available on our app store
                       </div>
                     </div>
                   </div>
@@ -457,7 +456,7 @@ export function DeploySteps({
                     <div>
                       <div className="text-sm font-medium">Private</div>
                       <div className="text-xs text-muted-foreground">
-                        Only you can access
+                        Only people with the link can access
                       </div>
                     </div>
                   </div>
