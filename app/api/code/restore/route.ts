@@ -60,8 +60,6 @@ export async function POST(request: Request) {
       name: data.commit_hash,
     });
 
-    console.log("responseData", responseData);
-
     return NextResponse.json(responseData);
   } catch (error) {
     console.error("Error restoring checkpoint:", error);
