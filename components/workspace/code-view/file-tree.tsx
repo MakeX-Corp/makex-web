@@ -297,7 +297,7 @@ export default function FileTree({
           </DialogContent>
         </Dialog>
         <ul className="pl-2 text-muted-foreground text-sm font-mono">
-          {root!.map((n) =>
+          {root?.map((n) =>
             n.type === "file" ? (
               <FileItem
                 key={n.path}
@@ -319,6 +319,10 @@ export default function FileTree({
                 loading={loading}
               />
             ),
+          ) || (
+            <li className="px-4 py-2 text-muted-foreground text-xs">
+              No files found
+            </li>
           )}
         </ul>
       </div>
