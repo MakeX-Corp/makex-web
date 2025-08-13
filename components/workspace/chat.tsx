@@ -66,6 +66,11 @@ const AI_MODELS = [
     description: "OpenAI's latest model",
   },
   {
+    id: "gpt-5",
+    name: "GPT-5",
+    description: "OpenAI's most advanced model",
+  },
+  {
     id: "gemini-2-5-pro",
     name: "Gemini 2.5 Pro",
     description: "Google's advanced model",

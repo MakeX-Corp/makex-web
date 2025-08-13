@@ -24,6 +24,11 @@ export const getModelAndOrder = (modelName: string) => {
         model: "openai/gpt-4o",
         order: ["openai"]
       };
+    case "gpt-5":
+      return {
+        model: "openai/gpt-5",
+        order: ["openai"]
+      };
     case "gemini-2-5-pro":
       return {
         model: "google/gemini-2.5-pro",
