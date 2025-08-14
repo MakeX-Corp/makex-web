@@ -40,6 +40,11 @@ interface ShareInfo {
   web_url: string;
   app_url: string;
   created_at: string;
+  category?: string;
+  description?: string;
+  tags?: string[];
+  image?: string;
+  is_public?: boolean;
 }
 
 interface DeployData {
@@ -68,7 +73,7 @@ export function DeployButton({ appId }: { appId: string | null }) {
   // Initialize Supabase client
   const supabase = createClient();
 
-  // Reusable function to fetch share URL
+  // Reusable function to fetch share URL and app listing info
   const fetchShareUrl = async (appId: string) => {
     try {
       const response = await fetch(`/api/share?app_id=${appId}`);
@@ -272,6 +277,17 @@ export function DeployButton({ appId }: { appId: string | null }) {
             setCurrentStep={setCurrentStep}
             onDeploy={deployWeb}
             isDeploying={isDeploying}
+            initialData={
+              shareInfo
+                ? {
+                    category: shareInfo.category,
+                    description: shareInfo.description,
+                    tags: shareInfo.tags,
+                    icon: shareInfo.image,
+                    isPublic: shareInfo.is_public,
+                  }
+                : undefined
+            }
           />
         </DropdownMenuContent>
       </DropdownMenu>

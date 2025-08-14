@@ -20,6 +20,13 @@ interface DeployStepsProps {
   setCurrentStep: (step: number) => void;
   onDeploy: (deployData: DeployData) => void;
   isDeploying: boolean;
+  initialData?: {
+    category?: string;
+    description?: string;
+    tags?: string[];
+    icon?: string;
+    isPublic?: boolean;
+  };
 }
 
 interface DeployData {
@@ -37,16 +44,21 @@ export function DeploySteps({
   setCurrentStep,
   onDeploy,
   isDeploying,
+  initialData,
 }: DeployStepsProps) {
   const [aiGeneratedDetails, setAiGeneratedDetails] = useState(false);
-  const [aiGeneratedIcon, setAiGeneratedIcon] = useState(false);
+  const [aiGeneratedIcon, setAiGeneratedIcon] = useState(
+    initialData?.icon ? false : false,
+  );
   const [appData, setAppData] = useState({
-    category: "",
-    description: "",
-    tags: "",
+    category: initialData?.category || "",
+    description: initialData?.description || "",
+    tags: initialData?.tags?.join(", ") || "",
   });
-  const [isPublic, setIsPublic] = useState<boolean>(true);
-  const [customIcon, setCustomIcon] = useState<string>("");
+  const [isPublic, setIsPublic] = useState<boolean>(
+    initialData?.isPublic ?? true,
+  );
+  const [customIcon, setCustomIcon] = useState<string>(initialData?.icon || "");
   const [iconError, setIconError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,7 +70,15 @@ export function DeploySteps({
   ];
 
   const handleAIGeneration = () => {
-    // Simulate AI generation
+    // If we have existing data, preserve it instead of generating new data
+    if (initialData?.category && initialData?.description) {
+      setAiGeneratedDetails(false); // Use existing data
+      setAiGeneratedIcon(initialData.icon ? false : true); // Use existing icon if available
+      setCurrentStep(2);
+      return;
+    }
+
+    // Simulate AI generation only if no existing data
     const generatedData = {
       category: APP_CATEGORIES[0],
       description:
@@ -228,9 +248,13 @@ export function DeploySteps({
         return (
           <div className="space-y-4">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold">Create Your App</h3>
+              <h3 className="text-lg font-semibold">
+                {initialData?.category ? "Update Your App" : "Create Your App"}
+              </h3>
               <p className="text-sm text-muted-foreground">
-                Choose how to set up your app
+                {initialData?.category
+                  ? "Update your app's deployment settings"
+                  : "Choose how to set up your app"}
               </p>
             </div>
 
@@ -240,11 +264,15 @@ export function DeploySteps({
               size="lg"
             >
               <Sparkles className="h-4 w-4 mr-2" />
-              Generate Everything with AI
+              {initialData?.category
+                ? "Use Existing Settings"
+                : "Generate Everything with AI"}
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              AI will generate category, description, and tags
+              {initialData?.category
+                ? "Use your current app settings"
+                : "AI will generate category, description, and tags"}
             </div>
 
             <div className="text-center">
@@ -258,7 +286,7 @@ export function DeploySteps({
               variant="outline"
               className="w-full"
             >
-              Set Up Manually
+              {initialData?.category ? "Edit Settings" : "Set Up Manually"}
             </Button>
           </div>
         );
@@ -271,6 +299,11 @@ export function DeploySteps({
               {aiGeneratedDetails && (
                 <Badge variant="secondary" className="text-xs">
                   AI Generated
+                </Badge>
+              )}
+              {initialData?.category && !aiGeneratedDetails && (
+                <Badge variant="secondary" className="text-xs">
+                  Existing Data
                 </Badge>
               )}
             </div>
@@ -286,11 +319,15 @@ export function DeploySteps({
               <Sparkles className="h-4 w-4 mr-2" />
               {aiGeneratedDetails
                 ? "AI Generation Selected"
+                : initialData?.category
+                ? "Regenerate with AI"
                 : "Generate Details with AI"}
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              AI will generate category, description, and tags
+              {initialData?.category
+                ? "AI will regenerate category, description, and tags"
+                : "AI will generate category, description, and tags"}
             </div>
 
             <div className="relative">
@@ -437,6 +474,11 @@ export function DeploySteps({
                 <span className="font-medium">Category:</span>{" "}
                 {appData.category}
               </div>
+              {initialData?.icon && customIcon && (
+                <Badge variant="secondary" className="text-xs">
+                  Existing Icon
+                </Badge>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -457,6 +499,8 @@ export function DeploySteps({
                   <div className="text-sm font-medium">
                     {aiGeneratedIcon
                       ? "AI Icon Generation Selected"
+                      : initialData?.icon
+                      ? "Regenerate Icon with AI"
                       : "Generate Icon with AI"}
                   </div>
                 </CardContent>
@@ -489,7 +533,11 @@ export function DeploySteps({
                     />
                   </svg>
                   <div className="text-sm font-medium">
-                    {customIcon ? "Custom Icon Selected" : "Upload Custom Icon"}
+                    {customIcon
+                      ? initialData?.icon
+                        ? "Current Icon Selected"
+                        : "Custom Icon Selected"
+                      : "Upload Custom Icon"}
                   </div>
 
                   {!customIcon && (
@@ -559,6 +607,11 @@ export function DeploySteps({
               <p className="text-sm text-muted-foreground">
                 Choose who can access your app
               </p>
+              {initialData?.isPublic !== undefined && (
+                <Badge variant="secondary" className="text-xs">
+                  Current Setting: {isPublic ? "Public" : "Private"}
+                </Badge>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -618,7 +671,11 @@ export function DeploySteps({
                 disabled={isDeploying}
                 className="flex-1"
               >
-                {isDeploying ? "Deploying..." : "Deploy App"}
+                {isDeploying
+                  ? "Deploying..."
+                  : initialData?.category
+                  ? "Update App"
+                  : "Deploy App"}
               </Button>
             </div>
           </div>
