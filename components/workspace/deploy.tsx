@@ -42,6 +42,16 @@ interface ShareInfo {
   created_at: string;
 }
 
+interface DeployData {
+  category: string;
+  description: string;
+  tags: string[];
+  icon: string;
+  visibility: "public" | "private";
+  aiGeneratedDetails: boolean;
+  aiGeneratedIcon: boolean;
+}
+
 export function DeployButton({ appId }: { appId: string | null }) {
   const { theme } = useTheme();
   const [isDeploying, setIsDeploying] = useState(false);
@@ -158,21 +168,22 @@ export function DeployButton({ appId }: { appId: string | null }) {
     }
   };
 
-  // Deploy web function with improved error handling
+  // Deploy web function with improved error handling and form data integration
   const deployWeb = useCallback(
-    async (e: React.MouseEvent) => {
-      // Prevent the dropdown from closing
-      e.preventDefault();
-      e.stopPropagation();
-
+    async (deployData: DeployData) => {
       setIsDeploying(true);
       setError(null);
 
       try {
+        // Then trigger the deployment
         const response = await fetch("/api/code/deploy", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ appId, type: "web" }),
+          body: JSON.stringify({
+            appId,
+            type: "web",
+            deployData, // Pass the deploy data to the backend
+          }),
         });
 
         if (!response.ok) {
@@ -190,13 +201,17 @@ export function DeployButton({ appId }: { appId: string | null }) {
 
         // Update local state for immediate feedback
         const newDeployment = {
-          id: data.deploymentId,
+          id: data.deploymentId || "pending",
           url: data.url || "",
           status: "uploading" as const,
           created_at: new Date().toISOString(),
         };
 
         setLastDeployment(newDeployment);
+
+        // Close the dropdown and reset to first step
+        setIsOpen(false);
+        setCurrentStep(1);
       } catch (error: any) {
         console.error("Error deploying app:", error);
         setError(error.message || "Failed to deploy app");

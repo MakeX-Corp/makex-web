@@ -17,8 +17,18 @@ import { useState, useRef } from "react";
 interface DeployStepsProps {
   currentStep: number;
   setCurrentStep: (step: number) => void;
-  onDeploy: (e: React.MouseEvent) => void;
+  onDeploy: (deployData: DeployData) => void;
   isDeploying: boolean;
+}
+
+interface DeployData {
+  category: string;
+  description: string;
+  tags: string[];
+  icon: string;
+  visibility: "public" | "private";
+  aiGeneratedDetails: boolean;
+  aiGeneratedIcon: boolean;
 }
 
 export function DeploySteps({
@@ -27,7 +37,8 @@ export function DeploySteps({
   onDeploy,
   isDeploying,
 }: DeployStepsProps) {
-  const [aiGenerated, setAiGenerated] = useState(false);
+  const [aiGeneratedDetails, setAiGeneratedDetails] = useState(false);
+  const [aiGeneratedIcon, setAiGeneratedIcon] = useState(false);
   const [appData, setAppData] = useState({
     category: "",
     description: "",
@@ -68,24 +79,26 @@ export function DeploySteps({
     };
 
     setAppData(generatedData);
-    setAiGenerated(true);
+    setAiGeneratedDetails(true);
+    setAiGeneratedIcon(true);
     setCurrentStep(2);
   };
 
   const handleManualSetup = () => {
-    setAiGenerated(false);
+    setAiGeneratedDetails(false);
+    setAiGeneratedIcon(false);
     setCurrentStep(2);
   };
 
   const handleAIIconGeneration = () => {
     setCustomIcon(""); // Clear custom icon
-    setAiGenerated(true); // Set AI as selected
+    setAiGeneratedIcon(true); // Set AI icon generation as selected
     setCurrentStep(4);
   };
 
   const handleAIDetailsGeneration = () => {
     // Don't fill in the form fields, just mark as AI selected
-    setAiGenerated(true);
+    setAiGeneratedDetails(true);
   };
 
   const handleCustomIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,7 +144,7 @@ export function DeploySteps({
         try {
           const base64 = canvas.toDataURL("image/png", 0.8);
           setCustomIcon(base64);
-          setAiGenerated(false); // Clear AI selection
+          setAiGeneratedIcon(false); // Clear AI icon selection
           setIconError(""); // Clear any previous errors
         } catch (error) {
           setIconError("Failed to process image");
@@ -205,6 +218,22 @@ export function DeploySteps({
     );
   };
 
+  const handleDeploy = () => {
+    // Prepare deployment data
+    const deployData: DeployData = {
+      category: appData.category,
+      description: appData.description,
+      tags: getTagsArray(),
+      icon: customIcon || "ai-generated", // Use custom icon or mark as AI-generated
+      visibility: selectedVisibility,
+      aiGeneratedDetails: aiGeneratedDetails,
+      aiGeneratedIcon: aiGeneratedIcon,
+    };
+
+    // Call the onDeploy function with the collected data
+    onDeploy(deployData);
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -251,7 +280,7 @@ export function DeploySteps({
           <div className="space-y-4">
             <div className="text-center space-y-2">
               <h3 className="text-lg font-semibold">App Details</h3>
-              {aiGenerated && (
+              {aiGeneratedDetails && (
                 <Badge variant="secondary" className="text-xs">
                   AI Generated
                 </Badge>
@@ -262,12 +291,12 @@ export function DeploySteps({
             <Button
               onClick={handleAIDetailsGeneration}
               className={`w-full ${
-                aiGenerated ? "bg-primary text-primary-foreground" : ""
+                aiGeneratedDetails ? "bg-primary text-primary-foreground" : ""
               }`}
-              variant={aiGenerated ? "default" : "outline"}
+              variant={aiGeneratedDetails ? "default" : "outline"}
             >
               <Sparkles className="h-4 w-4 mr-2" />
-              {aiGenerated
+              {aiGeneratedDetails
                 ? "AI Generation Selected"
                 : "Generate Details with AI"}
             </Button>
@@ -295,10 +324,12 @@ export function DeploySteps({
                 onValueChange={(value) =>
                   setAppData((prev) => ({ ...prev, category: value }))
                 }
-                disabled={aiGenerated}
+                disabled={aiGeneratedDetails}
               >
                 <SelectTrigger
-                  className={aiGenerated ? "opacity-50 cursor-not-allowed" : ""}
+                  className={
+                    aiGeneratedDetails ? "opacity-50 cursor-not-allowed" : ""
+                  }
                 >
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
@@ -326,8 +357,10 @@ export function DeploySteps({
                 }
                 rows={3}
                 maxLength={100}
-                disabled={aiGenerated}
-                className={aiGenerated ? "opacity-50 cursor-not-allowed" : ""}
+                disabled={aiGeneratedDetails}
+                className={
+                  aiGeneratedDetails ? "opacity-50 cursor-not-allowed" : ""
+                }
               />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Max 100 characters</span>
@@ -343,8 +376,10 @@ export function DeploySteps({
                 value={appData.tags}
                 onChange={handleTagInput}
                 onKeyDown={handleTagKeyDown}
-                disabled={aiGenerated}
-                className={aiGenerated ? "opacity-50 cursor-not-allowed" : ""}
+                disabled={aiGeneratedDetails}
+                className={
+                  aiGeneratedDetails ? "opacity-50 cursor-not-allowed" : ""
+                }
               />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Separate tags with commas</span>
@@ -364,7 +399,7 @@ export function DeploySteps({
                       <button
                         onClick={() => removeTag(tag)}
                         className="ml-1 hover:bg-muted-foreground/20 rounded-full p-0.5"
-                        disabled={aiGenerated}
+                        disabled={aiGeneratedDetails}
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -375,7 +410,7 @@ export function DeploySteps({
             </div>
 
             {/* Show generated data if AI was used */}
-            {aiGenerated && (
+            {aiGeneratedDetails && (
               <Card className="bg-muted/50">
                 <CardContent className="p-3">
                   <div className="text-xs text-muted-foreground">
@@ -397,7 +432,7 @@ export function DeploySteps({
               <Button
                 onClick={() => setCurrentStep(3)}
                 className="flex-1"
-                disabled={!isFormValid() && !aiGenerated}
+                disabled={!isFormValid() && !aiGeneratedDetails}
               >
                 Next
               </Button>
@@ -419,7 +454,7 @@ export function DeploySteps({
             <div className="grid grid-cols-2 gap-3">
               <Card
                 className={`cursor-pointer transition-colors ${
-                  aiGenerated
+                  aiGeneratedIcon
                     ? "border-primary bg-primary/5 hover:border-primary/70"
                     : "hover:border-primary/50"
                 }`}
@@ -428,11 +463,11 @@ export function DeploySteps({
                 <CardContent className="p-4 text-center space-y-2">
                   <Sparkles
                     className={`h-6 w-6 mx-auto ${
-                      aiGenerated ? "text-primary" : "text-primary"
+                      aiGeneratedIcon ? "text-primary" : "text-primary"
                     }`}
                   />
                   <div className="text-sm font-medium">
-                    {aiGenerated
+                    {aiGeneratedIcon
                       ? "AI Icon Generation Selected"
                       : "Generate Icon with AI"}
                   </div>
@@ -520,7 +555,7 @@ export function DeploySteps({
               <Button
                 onClick={() => setCurrentStep(4)}
                 className="flex-1"
-                disabled={!aiGenerated && !customIcon}
+                disabled={!aiGeneratedIcon && !customIcon}
               >
                 Next
               </Button>
@@ -591,7 +626,7 @@ export function DeploySteps({
                 Back
               </Button>
               <Button
-                onClick={onDeploy}
+                onClick={handleDeploy}
                 disabled={isDeploying}
                 className="flex-1"
               >

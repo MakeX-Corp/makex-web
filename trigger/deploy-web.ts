@@ -65,6 +65,15 @@ async function handleUrlMapping(
   deploymentUrl: string,
   easUrl?: string,
   userEmail?: string,
+  deployData?: {
+    category: string;
+    description: string;
+    tags: string[];
+    icon: string;
+    visibility: "public" | "private";
+    aiGeneratedDetails: boolean;
+    aiGeneratedIcon: boolean;
+  },
 ) {
   try {
     console.log(`[DeployWeb] Handling URL mapping for appId: ${appId}`);
@@ -97,41 +106,138 @@ async function handleUrlMapping(
       };
     }
 
-    // Only generate app info and image if there's no existing mapping
-    //get app info
-    const { data: promptInfo, error } = await supabase
-      .from("chat_history")
-      .select("plain_text")
-      .eq("app_id", appId)
-      .eq("role", "user")
-      .order("created_at", { ascending: true })
-      .limit(5);
+    let appInfo: any;
+    let appImage: string;
+    let category: string = "";
+    let description: string = "";
+    let tags: string[] = [];
+    let icon: string = "";
 
-    if (error) throw error;
+    // Fetch prompt info once - we'll need it for either details generation or icon generation
+    let promptInfo: any[] = [];
+    let userPrompt: string = "";
 
-    const userPrompt = promptInfo
-      ?.map((row: any) => row.plain_text?.trim())
-      .filter(Boolean)
-      .join(" ");
+    if (
+      deployData &&
+      (deployData.aiGeneratedDetails || deployData.aiGeneratedIcon)
+    ) {
+      // We need prompt info for AI generation, so fetch it once
+      console.log(`[DeployWeb] Fetching prompt info for AI generation`);
+      const { data: promptData, error } = await supabase
+        .from("chat_history")
+        .select("plain_text")
+        .eq("app_id", appId)
+        .eq("role", "user")
+        .order("created_at", { ascending: true })
+        .limit(5);
 
-    console.log(`[DeployWeb] Generating app info for appId: ${appId}`);
-    const appInfo = await generateAppInfo({
-      appName: appId,
-      displayName: displayName,
-      userPrompt:
-        "These are the first 5 user prompts for this app: " + userPrompt,
-    });
-    console.log(`[DeployWeb] App info generated: ${appInfo}`);
-    console.log(appInfo);
+      if (error) throw error;
 
-    const appImage = await generateAppImageBase64(appInfo.imagePrompt);
-    console.log(`[DeployWeb] App image generated: ${appImage}`);
+      promptInfo = promptData || [];
+      userPrompt = promptInfo
+        .map((row: any) => row.plain_text?.trim())
+        .filter(Boolean)
+        .join(" ");
+    }
+
+    // Handle app details generation
+    if (deployData && !deployData.aiGeneratedDetails) {
+      // Use manually provided data
+      category = deployData.category || "";
+      description = deployData.description || "";
+      tags = deployData.tags || [];
+      console.log(
+        `[DeployWeb] Using manually provided app details for appId: ${appId}`,
+      );
+    } else if (deployData && deployData.aiGeneratedDetails) {
+      // Generate app info with AI using the prompt info we already fetched
+      console.log(
+        `[DeployWeb] Generating app details with AI for appId: ${appId}`,
+      );
+
+      appInfo = await generateAppInfo({
+        appName: appId,
+        displayName: displayName,
+        userPrompt:
+          "These are the first 5 user prompts for this app: " + userPrompt,
+      });
+      console.log(`[DeployWeb] App info generated: ${appInfo}`);
+
+      category = appInfo.category || "";
+      description = appInfo.description || "";
+      tags = appInfo.tags || [];
+    }
+
+    // Handle icon generation
+    if (deployData && !deployData.aiGeneratedIcon) {
+      // Use manually provided icon
+      icon = deployData.icon !== "ai-generated" ? deployData.icon : "";
+      console.log(
+        `[DeployWeb] Using manually provided icon for appId: ${appId}`,
+      );
+    } else {
+      // Generate icon with AI
+      console.log(
+        `[DeployWeb] Generating app icon with AI for appId: ${appId}`,
+      );
+
+      let imagePrompt: string = "";
+
+      if (appInfo && appInfo.imagePrompt) {
+        // CASE 1: We already generated app info with AI, so it has a specific image prompt
+        imagePrompt = appInfo.imagePrompt;
+        console.log(
+          `[DeployWeb] Using image prompt from AI-generated app info: ${imagePrompt}`,
+        );
+      } else if (description) {
+        // CASE 2: We have a description (either manual or from AI), use it to create an image prompt
+        imagePrompt = `Create an app icon for: ${description}`;
+        console.log(
+          `[DeployWeb] Using description as image prompt: ${description}`,
+        );
+      } else {
+        // CASE 3: We have NO description at all, so we need to generate minimal app info just for the icon
+        // This is the fallback case - we don't want to call generateAppInfo twice if we already have it
+        console.log(
+          `[DeployWeb] No description available, generating minimal app info for icon`,
+        );
+
+        // We already have the prompt info from the beginning, so reuse it
+        const tempAppInfo = await generateAppInfo({
+          appName: appId,
+          displayName: displayName,
+          userPrompt:
+            "These are the first 5 user prompts for this app: " + userPrompt,
+        });
+
+        // Use the generated image prompt, or fallback to description, or fallback to display name
+        imagePrompt =
+          tempAppInfo.imagePrompt ||
+          `Create an app icon for: ${tempAppInfo.description || displayName}`;
+        console.log(
+          `[DeployWeb] Generated fallback image prompt: ${imagePrompt}`,
+        );
+      }
+
+      // Generate the icon using the determined image prompt
+      if (imagePrompt) {
+        appImage = (await generateAppImageBase64(imagePrompt)) || "";
+        console.log(
+          `[DeployWeb] App image generated using prompt: ${imagePrompt}`,
+        );
+        icon = appImage || "";
+      } else {
+        console.log(
+          `[DeployWeb] No image prompt available, skipping icon generation`,
+        );
+        icon = "";
+      }
+    }
 
     const title = `Check out my ${displayName} app`;
-    const description = appInfo.description;
 
-    console.log(`[DeployWeb] Generated title: ${title}`);
-    console.log(`[DeployWeb] Generated description: ${description}`);
+    console.log(`[DeployWeb] Using title: ${title}`);
+    console.log(`[DeployWeb] Using description: ${description}`);
 
     // Create new Dub link only if it doesn't exist
     const shareId = await shareIdGenerator(appId, supabase);
@@ -153,10 +259,10 @@ async function handleUrlMapping(
       dub_id: dubLink.id,
       dub_key: dubLink.key,
       share_id: shareId,
-      image: appImage,
-      description: appInfo.description,
-      category: appInfo.category,
-      tags: appInfo.tags,
+      image: icon,
+      description: description,
+      category: category,
+      tags: tags,
       author: userEmail,
     });
 
@@ -320,9 +426,21 @@ export const deployWeb = task({
   retry: {
     maxAttempts: 0,
   },
-  run: async (payload: { appId: string; userEmail: string }) => {
+  run: async (payload: {
+    appId: string;
+    userEmail: string;
+    deployData?: {
+      category: string;
+      description: string;
+      tags: string[];
+      icon: string;
+      visibility: "public" | "private";
+      aiGeneratedDetails: boolean;
+      aiGeneratedIcon: boolean;
+    };
+  }) => {
     console.log(`[DeployWeb] Starting deployment for appId: ${payload.appId}`);
-    const { appId } = payload;
+    const { appId, deployData } = payload;
     const supabase = await getSupabaseAdmin();
     let deploymentId: string | undefined;
 
@@ -507,6 +625,7 @@ export const deployWeb = task({
           deploymentUrl,
           easUrl,
           payload.userEmail,
+          deployData,
         );
         console.log(`[DeployWeb] URL mapping completed`);
 

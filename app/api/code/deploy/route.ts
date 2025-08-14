@@ -2,8 +2,22 @@ import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { tasks } from "@trigger.dev/sdk/v3";
 
+interface DeployRequest {
+  appId: string;
+  type?: "web" | "mobile";
+  deployData?: {
+    category: string;
+    description: string;
+    tags: string[];
+    icon: string;
+    visibility: "public" | "private";
+    aiGeneratedDetails: boolean;
+    aiGeneratedIcon: boolean;
+  };
+}
+
 export async function POST(req: Request) {
-  const { appId, type = "web" } = await req.json();
+  const { appId, type = "web", deployData }: DeployRequest = await req.json();
   const result = await getSupabaseWithUser(req as NextRequest);
   //need to get the user email from the result
   //@ts-ignore
@@ -15,6 +29,7 @@ export async function POST(req: Request) {
   if (type === "mobile") {
     tasks.trigger("deploy-eas", {
       appId,
+      deployData,
     });
     return NextResponse.json({
       success: true,
@@ -24,6 +39,7 @@ export async function POST(req: Request) {
     tasks.trigger("deploy-web", {
       appId,
       userEmail,
+      deployData,
     });
 
     return NextResponse.json({
