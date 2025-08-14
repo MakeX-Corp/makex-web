@@ -10,7 +10,7 @@ interface DeployRequest {
     description: string;
     tags: string[];
     icon: string;
-    visibility: "public" | "private";
+    isPublic: boolean;
     aiGeneratedDetails: boolean;
     aiGeneratedIcon: boolean;
   };

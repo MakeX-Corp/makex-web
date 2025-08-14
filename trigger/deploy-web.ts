@@ -70,7 +70,7 @@ async function handleUrlMapping(
     description: string;
     tags: string[];
     icon: string;
-    visibility: "public" | "private";
+    isPublic: boolean;
     aiGeneratedDetails: boolean;
     aiGeneratedIcon: boolean;
   },
@@ -263,6 +263,7 @@ async function handleUrlMapping(
       description: description,
       category: category,
       tags: tags,
+      //is_public: isPublic,
       author: userEmail,
     });
 
@@ -434,7 +435,7 @@ export const deployWeb = task({
       description: string;
       tags: string[];
       icon: string;
-      visibility: "public" | "private";
+      isPublic: boolean;
       aiGeneratedDetails: boolean;
       aiGeneratedIcon: boolean;
     };

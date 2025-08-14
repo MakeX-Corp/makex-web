@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Sparkles, Globe, Lock, Check, Edit, X } from "lucide-react";
 import { useState, useRef } from "react";
+import { APP_CATEGORIES } from "@/const/app-categories";
 
 interface DeployStepsProps {
   currentStep: number;
@@ -26,7 +27,7 @@ interface DeployData {
   description: string;
   tags: string[];
   icon: string;
-  visibility: "public" | "private";
+  isPublic: boolean;
   aiGeneratedDetails: boolean;
   aiGeneratedIcon: boolean;
 }
@@ -44,23 +45,10 @@ export function DeploySteps({
     description: "",
     tags: "",
   });
-  const [selectedVisibility, setSelectedVisibility] = useState<
-    "public" | "private"
-  >("public");
+  const [isPublic, setIsPublic] = useState<boolean>(true);
   const [customIcon, setCustomIcon] = useState<string>("");
   const [iconError, setIconError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const categories = [
-    "Productivity",
-    "Entertainment",
-    "Education",
-    "Social",
-    "Business",
-    "Health",
-    "Finance",
-    "Travel",
-  ];
 
   const steps = [
     { id: 1, title: "Choose", description: "Setup method" },
@@ -72,7 +60,7 @@ export function DeploySteps({
   const handleAIGeneration = () => {
     // Simulate AI generation
     const generatedData = {
-      category: "Productivity",
+      category: APP_CATEGORIES[0],
       description:
         "An AI-powered task management app that helps you organize your work and boost productivity with intelligent suggestions and automated workflows.",
       tags: "productivity, task-management, ai, automation, workflow",
@@ -225,7 +213,7 @@ export function DeploySteps({
       description: appData.description,
       tags: getTagsArray(),
       icon: customIcon || "ai-generated", // Use custom icon or mark as AI-generated
-      visibility: selectedVisibility,
+      isPublic: isPublic,
       aiGeneratedDetails: aiGeneratedDetails,
       aiGeneratedIcon: aiGeneratedIcon,
     };
@@ -334,7 +322,7 @@ export function DeploySteps({
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => (
+                  {APP_CATEGORIES.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
                     </SelectItem>
@@ -576,11 +564,11 @@ export function DeploySteps({
             <div className="space-y-2">
               <Card
                 className={`cursor-pointer transition-colors ${
-                  selectedVisibility === "public"
+                  isPublic
                     ? "border-primary bg-primary/5"
                     : "hover:border-primary/50"
                 }`}
-                onClick={() => setSelectedVisibility("public")}
+                onClick={() => setIsPublic(true)}
               >
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
@@ -597,11 +585,11 @@ export function DeploySteps({
 
               <Card
                 className={`cursor-pointer transition-colors ${
-                  selectedVisibility === "private"
+                  !isPublic
                     ? "border-primary bg-primary/5"
                     : "hover:border-primary/50"
                 }`}
-                onClick={() => setSelectedVisibility("private")}
+                onClick={() => setIsPublic(false)}
               >
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
