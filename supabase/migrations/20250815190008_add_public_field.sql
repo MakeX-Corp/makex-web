@@ -1,0 +1,2 @@
+ALTER TABLE app_listing_info
+ADD COLUMN is_public BOOLEAN DEFAULT TRUE;
