@@ -263,7 +263,7 @@ async function handleUrlMapping(
       description: description,
       category: category,
       tags: tags,
-      is_public: deployData?.isPublic || true,
+      is_public: deployData?.isPublic,
       author: userEmail,
     });
 
