@@ -1,4 +1,9 @@
-import { convertToModelMessages, stepCountIs, streamText } from "ai";
+import {
+  convertToModelMessages,
+  createIdGenerator,
+  stepCountIs,
+  streamText,
+} from "ai";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { incrementMessageUsage } from "@/utils/server/subscription-manager";
@@ -119,10 +124,7 @@ export async function POST(req: Request) {
     const trimmedAppId = appId.trim();
 
     const supabaseAdmin = await getSupabaseAdmin();
-    const {
-      error: lockError,
-      data: lockData,
-    } = await supabaseAdmin
+    const { error: lockError, data: lockData } = await supabaseAdmin
       .from("user_apps")
       .update({
         coding_status: "changing",
@@ -245,6 +247,9 @@ export async function POST(req: Request) {
 
       return result.toUIMessageStreamResponse({
         originalMessages: messages,
+        generateMessageId: createIdGenerator({
+          size: 16,
+        }),
         onFinish: async ({ responseMessage }) => {
           try {
             const plainText = extractPlainText(responseMessage.parts);
