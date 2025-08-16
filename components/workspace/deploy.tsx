@@ -24,6 +24,7 @@ import {
 import { useTheme } from "next-themes";
 import { format } from "date-fns";
 import { createClient } from "@/utils/supabase/client";
+import { DeploySteps } from "./deploy-steps";
 
 interface Deployment {
   url: string;
@@ -39,13 +40,24 @@ interface ShareInfo {
   web_url: string;
   app_url: string;
   created_at: string;
+  category?: string;
+  description?: string;
+  tags?: string[];
+  image?: string;
+  is_public?: boolean;
 }
 
-export function DeployButton({
-  appId,
-}: {
-  appId: string | null;
-}) {
+interface DeployData {
+  category: string;
+  description: string;
+  tags: string[];
+  icon: string;
+  isPublic: boolean;
+  aiGeneratedDetails: boolean;
+  aiGeneratedIcon: boolean;
+}
+
+export function DeployButton({ appId }: { appId: string | null }) {
   const { theme } = useTheme();
   const [isDeploying, setIsDeploying] = useState(false);
   const [lastDeployment, setLastDeployment] = useState<Deployment | null>(null);
@@ -55,10 +67,13 @@ export function DeployButton({
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Simple step state
+  const [currentStep, setCurrentStep] = useState(1);
+
   // Initialize Supabase client
   const supabase = createClient();
 
-  // Reusable function to fetch share URL
+  // Reusable function to fetch share URL and app listing info
   const fetchShareUrl = async (appId: string) => {
     try {
       const response = await fetch(`/api/share?app_id=${appId}`);
@@ -158,21 +173,22 @@ export function DeployButton({
     }
   };
 
-  // Deploy web function with improved error handling
+  // Deploy web function with improved error handling and form data integration
   const deployWeb = useCallback(
-    async (e: React.MouseEvent) => {
-      // Prevent the dropdown from closing
-      e.preventDefault();
-      e.stopPropagation();
-
+    async (deployData: DeployData) => {
       setIsDeploying(true);
       setError(null);
 
       try {
+        // Then trigger the deployment
         const response = await fetch("/api/code/deploy", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ appId, type: "web" }),
+          body: JSON.stringify({
+            appId,
+            type: "web",
+            deployData, // Pass the deploy data to the backend
+          }),
         });
 
         if (!response.ok) {
@@ -190,13 +206,17 @@ export function DeployButton({
 
         // Update local state for immediate feedback
         const newDeployment = {
-          id: data.deploymentId,
+          id: data.deploymentId || "pending",
           url: data.url || "",
           status: "uploading" as const,
           created_at: new Date().toISOString(),
         };
 
         setLastDeployment(newDeployment);
+
+        // Close the dropdown and reset to first step
+        setIsOpen(false);
+        setCurrentStep(1);
       } catch (error: any) {
         console.error("Error deploying app:", error);
         setError(error.message || "Failed to deploy app");
@@ -242,6 +262,38 @@ export function DeployButton({
     }
   };
 
+  if (currentStep > 1) {
+    return (
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="flex items-center gap-2">
+            <UploadCloud className="h-4 w-4" />
+            <span>Deploy</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-80">
+          <DeploySteps
+            currentStep={currentStep}
+            setCurrentStep={setCurrentStep}
+            onDeploy={deployWeb}
+            isDeploying={isDeploying}
+            initialData={
+              shareInfo
+                ? {
+                    category: shareInfo.category,
+                    description: shareInfo.description,
+                    tags: shareInfo.tags,
+                    icon: shareInfo.image,
+                    isPublic: shareInfo.is_public,
+                  }
+                : undefined
+            }
+          />
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
@@ -283,19 +335,15 @@ export function DeployButton({
         )}
 
         <DropdownMenuItem
-          onClick={deployWeb}
-          disabled={isDeploying}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setCurrentStep(2);
+          }}
           className="cursor-pointer"
         >
           <Globe className="h-4 w-4 mr-2" />
-          {isDeploying ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Deploying to web...
-            </>
-          ) : (
-            <>Web</>
-          )}
+          Deploy
         </DropdownMenuItem>
 
         <DropdownMenuItem
