@@ -4,31 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowRight,
-  Code,
-  Database,
-  Layout,
-  ShoppingCart,
-  MessageSquare,
-  Calendar,
-  Music,
-  PenTool,
-  Book,
-  Users,
-  Map,
-  CreditCard,
-  Mail,
-  FileText,
-  Video,
-  BarChart,
-  Globe,
-  Search,
-  Briefcase,
-  Image as ImageIcon,
-  Sparkles,
-  Loader2,
-} from "lucide-react";
+import { ArrowRight, Search, Sparkles, Loader2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import {
   Dialog,
@@ -37,135 +13,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CodeRedemption } from "@/components/code-redemption";
-
-// Expanded app suggestion chips for multiple rows with detailed prompts
-const APP_SUGGESTIONS = [
-  {
-    icon: <Layout size={14} />,
-    label: "Landing page",
-    prompt:
-      "Create a modern, responsive landing page with hero section, features overview, pricing plans, testimonials, and contact form. Include smooth animations, mobile-first design, and SEO optimization. The page should convert visitors into customers with clear call-to-action buttons and compelling copy.",
-  },
-  {
-    icon: <ShoppingCart size={14} />,
-    label: "E-commerce",
-    prompt:
-      "Build a full-featured e-commerce platform with product catalog, shopping cart, user authentication, payment processing, order management, and admin dashboard. Include product search, filtering, reviews, wishlist functionality, and responsive design for mobile and desktop users.",
-  },
-  {
-    icon: <Database size={14} />,
-    label: "Dashboard",
-    prompt:
-      "Create a comprehensive admin dashboard with data visualization charts, user management, analytics overview, settings panel, and real-time updates. Include dark/light mode toggle, responsive grid layout, and interactive widgets for monitoring key metrics and system performance.",
-  },
-  {
-    icon: <MessageSquare size={14} />,
-    label: "Chat app",
-    prompt:
-      "Develop a real-time chat application with user authentication, private messaging, group chats, file sharing, and message history. Include typing indicators, online status, push notifications, and a clean interface that works seamlessly across web and mobile devices.",
-  },
-  {
-    icon: <Calendar size={14} />,
-    label: "Calendar",
-    prompt:
-      "Build a feature-rich calendar application with event scheduling, recurring appointments, calendar views (day/week/month), reminder notifications, and calendar sharing. Include drag-and-drop functionality, color coding, and integration with external calendar services.",
-  },
-  {
-    icon: <Code size={14} />,
-    label: "Portfolio",
-    prompt:
-      "Create a professional portfolio website showcasing projects, skills, and experience. Include animated project galleries, skill progress bars, contact forms, blog section, and smooth scrolling navigation. Design should be modern, minimalist, and highlight the developer's work effectively.",
-  },
-  {
-    icon: <ImageIcon size={14} />,
-    label: "Photo gallery",
-    prompt:
-      "Develop an image gallery application with photo upload, album organization, image editing tools, sharing capabilities, and responsive grid layout. Include lightbox viewing, search functionality, tagging system, and social media integration for easy sharing.",
-  },
-  {
-    icon: <Music size={14} />,
-    label: "Music player",
-    prompt:
-      "Build a music streaming application with playlist creation, audio controls, music library management, and user accounts. Include features like shuffle, repeat, equalizer, lyrics display, and recommendations based on listening history. Support multiple audio formats and cross-device synchronization.",
-  },
-  {
-    icon: <PenTool size={14} />,
-    label: "Blog",
-    prompt:
-      "Create a modern blog platform with rich text editor, article management, categories and tags, comment system, and user authentication. Include SEO optimization, social sharing, reading time estimates, related posts, and a clean, readable design that prioritizes content consumption.",
-  },
-  {
-    icon: <Book size={14} />,
-    label: "Knowledge base",
-    prompt:
-      "Develop a comprehensive knowledge base system with article organization, search functionality, user contributions, version control, and interactive tutorials. Include FAQ sections, video content support, user feedback system, and analytics to track popular topics and user engagement.",
-  },
-  {
-    icon: <Users size={14} />,
-    label: "Social network",
-    prompt:
-      "Build a social networking platform with user profiles, friend connections, news feed, post creation, likes and comments, and messaging system. Include privacy settings, content moderation, notification system, and mobile-responsive design for community building and user engagement.",
-  },
-  {
-    icon: <Map size={14} />,
-    label: "Travel planner",
-    prompt:
-      "Create a travel planning application with destination research, itinerary creation, booking management, expense tracking, and travel maps. Include weather information, local recommendations, photo sharing, travel journal, and collaboration features for group trips.",
-  },
-  {
-    icon: <CreditCard size={14} />,
-    label: "Finance tracker",
-    prompt:
-      "Develop a personal finance management app with expense tracking, budget planning, income management, financial goals, and detailed reporting. Include charts and graphs, bill reminders, investment tracking, and secure data storage with encryption for financial privacy.",
-  },
-  {
-    icon: <Mail size={14} />,
-    label: "Email client",
-    prompt:
-      "Build a modern email client with inbox management, email composition, folder organization, search functionality, and contact management. Include email templates, scheduling, read receipts, and integration with popular email services. Focus on clean interface and efficient email workflow.",
-  },
-  {
-    icon: <FileText size={14} />,
-    label: "Note taking",
-    prompt:
-      "Create a comprehensive note-taking application with rich text editing, note organization, search capabilities, collaboration features, and cross-device synchronization. Include markdown support, file attachments, note sharing, and offline access for productivity and knowledge management.",
-  },
-  {
-    icon: <Video size={14} />,
-    label: "Video streaming",
-    prompt:
-      "Develop a video streaming platform with video upload, playback controls, user channels, subscription system, and content discovery. Include video quality options, playlist creation, comments and ratings, and responsive design for watching videos on any device with smooth playback experience.",
-  },
-  {
-    icon: <BarChart size={14} />,
-    label: "Analytics",
-    prompt:
-      "Build a data analytics dashboard with customizable charts, data visualization tools, report generation, and real-time monitoring. Include data import/export, filtering options, user permissions, and interactive dashboards for business intelligence and data-driven decision making.",
-  },
-  {
-    icon: <Globe size={14} />,
-    label: "News aggregator",
-    prompt:
-      "Create a news aggregation application that collects articles from multiple sources, categorizes content, and provides personalized news feeds. Include search functionality, bookmarking, sharing options, and customizable categories. Focus on clean reading experience and efficient content discovery.",
-  },
-  {
-    icon: <Search size={14} />,
-    label: "Search engine",
-    prompt:
-      "Develop a search engine application with web crawling, indexing, and intelligent search algorithms. Include search suggestions, filters, result ranking, and search history. Focus on fast, relevant results with clean interface and advanced search options for comprehensive web search experience.",
-  },
-  {
-    icon: <Briefcase size={14} />,
-    label: "Job board",
-    prompt:
-      "Build a job board platform with job posting, application management, candidate profiles, and employer dashboard. Include job search filters, application tracking, resume uploads, and communication tools. Focus on connecting job seekers with employers efficiently.",
-  },
-];
-
-// Create three rows of suggestions for animation
-const ROW_1 = APP_SUGGESTIONS.slice(0, 7);
-const ROW_2 = APP_SUGGESTIONS.slice(7, 14);
-const ROW_3 = APP_SUGGESTIONS.slice(14);
+import { APP_SUGGESTIONS, ROW_1, ROW_2, ROW_3 } from "@/lib/constants";
+import { getIconComponent } from "@/lib/iconMap";
 
 // Add these styles to your global CSS file
 const GlobalStyles = () => (
@@ -383,7 +232,7 @@ export default function DashboardPage() {
                     onClick={() => handleSuggestionClick(suggestion)}
                     className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
                   >
-                    {suggestion.icon}
+                    {getIconComponent(suggestion.iconName)}
                     {suggestion.label}
                   </button>
                 ))}
@@ -403,7 +252,7 @@ export default function DashboardPage() {
                     onClick={() => handleSuggestionClick(suggestion)}
                     className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
                   >
-                    {suggestion.icon}
+                    {getIconComponent(suggestion.iconName)}
                     {suggestion.label}
                   </button>
                 ))}
@@ -423,7 +272,7 @@ export default function DashboardPage() {
                     onClick={() => handleSuggestionClick(suggestion)}
                     className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
                   >
-                    {suggestion.icon}
+                    {getIconComponent(suggestion.iconName)}
                     {suggestion.label}
                   </button>
                 ))}
