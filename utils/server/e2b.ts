@@ -318,7 +318,8 @@ export async function writeFile(sandboxId: string, filePath: string, content: st
 export async function deleteFile(sandboxId: string, filePath: string) {
   const sbx = await Sandbox.connect(sandboxId);
   // Use rm command instead of files.delete method
-  const result = await sbx.commands.run(`rm -f "${filePath}"`);
+  console.log("Deleting file:", filePath);
+  const result = await sbx.commands.run(`sudo rm -f "${filePath}"`);
   return result;
 }
 
@@ -403,7 +404,6 @@ export async function grepSearch(
     // Internal defaults (not configurable from input)
     const maxFiles = 1000;
     const maxMatches = 1000;
-    const baseDir = ".";
     
     // Build grep command with proper flags
     const grepFlags = case_sensitive ? "" : "-i";
@@ -413,7 +413,7 @@ export async function grepSearch(
     const shellScript = `
 #!/bin/bash
 
-BASE_DIR="${baseDir}"
+BASE_DIR="${APP_DIR}"
 PATTERN="${escapedPattern}"
 INCLUDE_PATTERN="${include_pattern}"
 CASE_SENSITIVE=${case_sensitive}
@@ -509,7 +509,7 @@ echo "COMPLETE: Searched $files_searched files, found $match_count matches" >&2
     
     // Execute the shell script
     const result = await sbx.commands.run(`bash ${scriptPath}`, {
-      cwd: baseDir
+      cwd: APP_DIR
     });
     
     // Clean up the temporary script
