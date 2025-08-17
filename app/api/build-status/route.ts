@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       let message = "Building your app...";
 
       // Simple status mapping based only on coding_status
-      if (app.coding_status === "finished") {
+      if (app.coding_status === "finished" || app.coding_status === null) {
         status = "complete";
       } else if (app.coding_status === "changing") {
         status = "in_progress";
