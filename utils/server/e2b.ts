@@ -167,7 +167,9 @@ export async function deployConvexProdInContainer(
   console.log("[ConvexDeploy] Convex config written");
 
   console.log("[ConvexDeploy] Cloning git repo...");
-  await sbx.commands.run(`sudo git clone ${gitRepoUrl} ${gitRepoDir}`);
+  await sbx.commands.run(`sudo git clone ${gitRepoUrl} ${gitRepoDir}`, {
+    timeoutMs: 300000, // 5 minutes timeout for git clone
+  });
   console.log("[ConvexDeploy] Git repo cloned");
 
   const convexDeployment = `dev:${new URL(convexUrl).hostname.split(".")[0]}`;
@@ -184,13 +186,16 @@ export async function deployConvexProdInContainer(
 
   // install convex
   const installConvexCommand = `sudo npm install -g convex`;
-  await sbx.commands.run(installConvexCommand);
+  await sbx.commands.run(installConvexCommand, {
+    timeoutMs: 300000, // 5 minutes timeout for npm install
+  });
   console.log("[ConvexDeploy] Convex installed");
 
   // run yarn install
   const installPackagesCommand = `sudo yarn install`;
   await sbx.commands.run(installPackagesCommand, {
     cwd: gitRepoDir,
+    timeoutMs: 600000, // 10 minutes timeout for yarn install
   });
   console.log("[ConvexDeploy] Yarn installed");
 
@@ -198,6 +203,7 @@ export async function deployConvexProdInContainer(
   const deployConvexCommand = `sudo npx convex deploy --yes > ~/convex_prod_logs.txt 2>&1`;
   await sbx.commands.run(deployConvexCommand, {
     cwd: gitRepoDir,
+    timeoutMs: 600000, // 10 minutes timeout for convex deploy
   });
 
   // cat the logs
