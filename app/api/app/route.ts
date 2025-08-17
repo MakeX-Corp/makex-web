@@ -288,6 +288,21 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "App not found" }, { status: 404 });
     }
 
+    // Delete the corresponding listing from app_listing_info if it exists
+    const { error: listingDeleteError } = await supabase
+      .from("app_listing_info")
+      .delete()
+      .eq("app_id", appId);
+
+    if (listingDeleteError) {
+      console.warn(
+        "Warning: Could not delete app listing:",
+        listingDeleteError.message,
+      );
+      // Continue with app deletion even if listing deletion fails
+    }
+
+    // Update the app status to "deleted"
     const { error: updateError } = await supabase
       .from("user_apps")
       .update({ status: "deleted" })

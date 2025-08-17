@@ -92,6 +92,9 @@ export async function GET(request: NextRequest) {
       { count: "exact" },
     );
 
+    // Filter out incomplete listings - only return listings with essential information
+    query = query.not("description", "is", null).not("author", "is", null);
+
     // 🔎 optional category filter
     if (category) {
       query = query.eq("category", category);

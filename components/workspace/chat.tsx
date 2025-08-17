@@ -188,6 +188,16 @@ export function Chat({
     const checkLimit = async () => {
       if (!subscription) return;
 
+      const hasUnlimitedMessages =
+        typeof window !== "undefined" &&
+        localStorage.getItem("unlimited_messages_activated") === "true";
+
+      if (hasUnlimitedMessages) {
+        setRemainingMessages(500);
+        setLimitReached(false);
+        return;
+      }
+
       setRemainingMessages(
         (subscription?.messagesLimit || 0) - (subscription?.messagesUsed || 0),
       );
@@ -242,6 +252,7 @@ export function Chat({
       }
 
       // Check message limits, might not need this could just decrement and see maybe
+
       checkMessageLimit().then((result) => {
         if (result) {
           const { remainingMessages, reachedLimit } = result;
