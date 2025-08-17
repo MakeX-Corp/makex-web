@@ -173,6 +173,7 @@ export function createTools(config: ToolConfig) {
           const data = await e2bDeleteFile(config.sandboxId, absolutePath);
           return { success: true, data };
         } catch (error: any) {
+          console.log("Error deleting file:", error);
           return {
             success: false,
             error: error.message || "Unknown error occurred",
