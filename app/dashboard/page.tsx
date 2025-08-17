@@ -4,31 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowRight,
-  Code,
-  Database,
-  Layout,
-  ShoppingCart,
-  MessageSquare,
-  Calendar,
-  Music,
-  PenTool,
-  Book,
-  Users,
-  Map,
-  CreditCard,
-  Mail,
-  FileText,
-  Video,
-  BarChart,
-  Globe,
-  Search,
-  Briefcase,
-  Image as ImageIcon,
-  Sparkles,
-  Loader2,
-} from "lucide-react";
+import { ArrowRight, Search, Sparkles, Loader2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import {
   Dialog,
@@ -37,35 +13,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CodeRedemption } from "@/components/code-redemption";
-
-// Expanded app suggestion chips for multiple rows
-const APP_SUGGESTIONS = [
-  { icon: <Layout size={14} />, label: "Landing page" },
-  { icon: <ShoppingCart size={14} />, label: "E-commerce" },
-  { icon: <Database size={14} />, label: "Dashboard" },
-  { icon: <MessageSquare size={14} />, label: "Chat app" },
-  { icon: <Calendar size={14} />, label: "Calendar" },
-  { icon: <Code size={14} />, label: "Portfolio" },
-  { icon: <ImageIcon size={14} />, label: "Photo gallery" },
-  { icon: <Music size={14} />, label: "Music player" },
-  { icon: <PenTool size={14} />, label: "Blog" },
-  { icon: <Book size={14} />, label: "Knowledge base" },
-  { icon: <Users size={14} />, label: "Social network" },
-  { icon: <Map size={14} />, label: "Travel planner" },
-  { icon: <CreditCard size={14} />, label: "Finance tracker" },
-  { icon: <Mail size={14} />, label: "Email client" },
-  { icon: <FileText size={14} />, label: "Note taking" },
-  { icon: <Video size={14} />, label: "Video streaming" },
-  { icon: <BarChart size={14} />, label: "Analytics" },
-  { icon: <Globe size={14} />, label: "News aggregator" },
-  { icon: <Search size={14} />, label: "Search engine" },
-  { icon: <Briefcase size={14} />, label: "Job board" },
-];
-
-// Create three rows of suggestions for animation
-const ROW_1 = APP_SUGGESTIONS.slice(0, 7);
-const ROW_2 = APP_SUGGESTIONS.slice(7, 14);
-const ROW_3 = APP_SUGGESTIONS.slice(14);
+import { APP_SUGGESTIONS, ROW_1, ROW_2, ROW_3 } from "@/lib/constants";
+import { getIconComponent } from "@/lib/iconMap";
 
 // Add these styles to your global CSS file
 const GlobalStyles = () => (
@@ -231,8 +180,8 @@ export default function DashboardPage() {
     }
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setPrompt(suggestion);
+  const handleSuggestionClick = (suggestion: (typeof APP_SUGGESTIONS)[0]) => {
+    setPrompt(suggestion.prompt);
   };
 
   const handleUnlimitedChange = (unlimited: boolean) => {
@@ -280,10 +229,10 @@ export default function DashboardPage() {
                 {duplicateItemsForScrolling(ROW_1).map((suggestion, index) => (
                   <button
                     key={index}
-                    onClick={() => handleSuggestionClick(suggestion.label)}
+                    onClick={() => handleSuggestionClick(suggestion)}
                     className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
                   >
-                    {suggestion.icon}
+                    {getIconComponent(suggestion.iconName)}
                     {suggestion.label}
                   </button>
                 ))}
@@ -300,10 +249,10 @@ export default function DashboardPage() {
                 {duplicateItemsForScrolling(ROW_2).map((suggestion, index) => (
                   <button
                     key={index}
-                    onClick={() => handleSuggestionClick(suggestion.label)}
+                    onClick={() => handleSuggestionClick(suggestion)}
                     className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
                   >
-                    {suggestion.icon}
+                    {getIconComponent(suggestion.iconName)}
                     {suggestion.label}
                   </button>
                 ))}
@@ -320,10 +269,10 @@ export default function DashboardPage() {
                 {duplicateItemsForScrolling(ROW_3).map((suggestion, index) => (
                   <button
                     key={index}
-                    onClick={() => handleSuggestionClick(suggestion.label)}
+                    onClick={() => handleSuggestionClick(suggestion)}
                     className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
                   >
-                    {suggestion.icon}
+                    {getIconComponent(suggestion.iconName)}
                     {suggestion.label}
                   </button>
                 ))}

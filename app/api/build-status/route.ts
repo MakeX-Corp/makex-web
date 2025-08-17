@@ -19,21 +19,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch all matching sandboxes in one query
-    const { data: sandboxes, error } = await supabase
-      .from("user_sandboxes")
-      .select("app_id, sandbox_status, sandbox_updated_at, expo_status")
-      .in("app_id", appIds)
-      .eq("user_id", user.id);
-
-    if (error) {
-      console.error("Supabase batch query error:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch app statuses" },
-        { status: 500 },
-      );
-    }
-
     // Fetch coding status from user_apps table
     const { data: apps, error: appsError } = await supabase
       .from("user_apps")
@@ -49,13 +34,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Map results by app ID
+    // Map results by app ID based only on coding_status
     const statusMap: Record<string, any> = {};
     for (const appId of appIds) {
-      const sandbox = sandboxes.find((s) => s.app_id === appId);
       const app = apps.find((a) => a.id === appId);
 
-      if (!sandbox || !app) {
+      if (!app) {
         statusMap[appId] = {
           status: "not_found",
           message: "App not found",
@@ -66,36 +50,16 @@ export async function POST(request: NextRequest) {
       let status = "in_progress";
       let message = "Building your app...";
 
-      const sandboxIsActive =
-        sandbox.sandbox_status === "active" ||
-        sandbox.sandbox_status === "paused";
-      const codingIsFinished = app.coding_status === "finished";
-
-      const expoIsActive =
-        sandbox.expo_status === "bundled" || sandbox.expo_status === null;
-      if (sandboxIsActive && codingIsFinished && expoIsActive) {
+      // Simple status mapping based only on coding_status
+      if (app.coding_status === "finished") {
         status = "complete";
-        message = "Your app is ready!";
-      } else if (sandbox.sandbox_status === "error") {
-        status = "failed";
-        message = "Build failed";
       } else if (app.coding_status === "changing") {
         status = "in_progress";
         message = "Changing app...";
-      } else if (sandbox.sandbox_status === "starting") {
-        status = "in_progress";
-        message = "Starting app...";
-      } else if (sandbox.sandbox_status === "paused") {
-        status = "in_progress";
-        message = "Resuming app...";
       }
 
       statusMap[appId] = {
         status,
-        message,
-        sandbox_status: sandbox.sandbox_status,
-        coding_status: app.coding_status,
-        updated_at: sandbox.sandbox_updated_at,
       };
     }
 
