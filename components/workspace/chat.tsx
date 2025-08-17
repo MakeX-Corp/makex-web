@@ -463,49 +463,63 @@ export function Chat({
               No messages yet. Start a conversation!
             </div>
           ) : (
-            messages.map((message, index) => (
-              <div
-                key={message.id || `message-${index}`}
-                className={`flex flex-col ${
-                  message.role === "user" ? "items-end" : "items-start"
-                }`}
-              >
-                <Card
-                  className={`max-w-[80%] ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-card-foreground"
+            messages.map((message, index) => {
+              // Check if message has any visible content
+              const hasVisibleContent = message.parts?.some((part: any) => {
+                if (part.type === "step-start" || part.type === "step-end")
+                  return false;
+                if (part.type === "text")
+                  return part.text && part.text.trim() !== "";
+                return true; // Show other part types
+              });
+
+              // Don't render empty messages
+              if (!hasVisibleContent) return null;
+
+              return (
+                <div
+                  key={message.id || `message-${index}`}
+                  className={`flex flex-col ${
+                    message.role === "user" ? "items-end" : "items-start"
                   }`}
                 >
-                  <CardContent className="p-4 overflow-hidden">
-                    {message.parts?.length ? (
-                      message.parts.map((part: any, i: number) => (
-                        <div key={i}>{renderMessagePart(part)}</div>
-                      ))
-                    ) : (
-                      <div className="text-sm whitespace-pre-wrap break-words">
-                        {message.parts?.find((part) => part.type === "text")
-                          ?.text || ""}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Restore checkpoint button */}
-                {message.role === "assistant" && (
-                  <button
-                    className="text-[10px] text-muted-foreground hover:text-foreground mt-0.5 flex items-center gap-1"
-                    onClick={() => handleRestore(message.id)}
-                    disabled={restoringMessageId !== null}
+                  <Card
+                    className={`max-w-[80%] ${
+                      message.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card text-card-foreground"
+                    }`}
                   >
-                    {restoringMessageId === message.id && (
-                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                    )}
-                    Restore Checkpoint
-                  </button>
-                )}
-              </div>
-            ))
+                    <CardContent className="p-4 overflow-hidden">
+                      {message.parts?.length ? (
+                        message.parts.map((part: any, i: number) => (
+                          <div key={i}>{renderMessagePart(part)}</div>
+                        ))
+                      ) : (
+                        <div className="text-sm whitespace-pre-wrap break-words">
+                          {message.parts?.find((part) => part.type === "text")
+                            ?.text || ""}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Restore checkpoint button */}
+                  {message.role === "assistant" && (
+                    <button
+                      className="text-[10px] text-muted-foreground hover:text-foreground mt-0.5 flex items-center gap-1"
+                      onClick={() => handleRestore(message.id)}
+                      disabled={restoringMessageId !== null}
+                    >
+                      {restoringMessageId === message.id && (
+                        <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                      )}
+                      Restore Checkpoint
+                    </button>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </div>

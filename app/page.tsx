@@ -410,7 +410,6 @@ export default function LandingPage() {
     }
 
     // Store the prompt in localStorage for the dashboard to use
-    localStorage.setItem("makeX_prompt", prompt);
 
     // Redirect to dashboard instead of creating the app
     router.push("/dashboard");
