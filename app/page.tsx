@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Sparkles, Code } from "lucide-react";
+import { Sparkles, Code, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import WaitlistContainer from "@/components/waitlist-container";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { APP_SUGGESTIONS, ROW_1, ROW_2, ROW_3 } from "@/lib/constants";
+import { getIconComponent } from "@/lib/iconMap";
 
 const TYPING_SPEED = 200; // Slower typing speed
 const TYPING_INITIAL_DELAY = 2000; // Longer initial delay
@@ -21,6 +25,17 @@ export default function LandingPage() {
   const [isTyping, setIsTyping] = useState(false);
   const demoPrompt = "A calorie tracker app like Cal AI";
   const [isLooping, setIsLooping] = useState(true);
+
+  // App creation state
+  const router = useRouter();
+
+  const [prompt, setPrompt] = useState("");
+
+  // Create refs for animation
+  const row1Ref = useRef<HTMLDivElement>(null);
+  const row2Ref = useRef<HTMLDivElement>(null);
+  const row3Ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const codeSnippets = [
     "function CalorieTracker() {",
@@ -387,40 +402,83 @@ export default function LandingPage() {
     }
   }, [mounted]); // Remove other dependencies
 
-  const generateRandomCode = () => {
-    const elements = [
-      "import React",
-      "const App",
-      "function",
-      "export default",
-      "useState",
-      "useEffect",
-      "StyleSheet",
-      "View",
-      "Text",
-      "TouchableOpacity",
-      "const styles",
-      "return",
-      "render",
-      "props",
-      "navigation",
-    ];
-    const snippets = [
-      'from "react-native"',
-      "createStackNavigator()",
-      "flex: 1,",
-      'backgroundColor: "#fff",',
-      "padding: 20,",
-      "onPress={() => {}}",
-      "<View style={styles.container}>",
-      "<Text style={styles.text}>",
-      'justifyContent: "center",',
-      'alignItems: "center",',
-    ];
-    const randomElement = elements[Math.floor(Math.random() * elements.length)];
-    const randomSnippet = snippets[Math.floor(Math.random() * snippets.length)];
-    return `${randomElement} ${randomSnippet}`;
+  // App creation functions
+  const handleCreateApp = async () => {
+    if (!prompt.trim()) {
+      alert("Please enter a prompt");
+      return;
+    }
+
+    // Store the prompt in localStorage for the dashboard to use
+
+    // Redirect to dashboard instead of creating the app
+    router.push("/dashboard");
   };
+
+  const handleSuggestionClick = (suggestion: (typeof APP_SUGGESTIONS)[0]) => {
+    setPrompt(suggestion.prompt);
+  };
+
+  // Function to duplicate items for continuous scrolling effect
+  const duplicateItemsForScrolling = (items: typeof APP_SUGGESTIONS) => {
+    return [...items, ...items];
+  };
+
+  // Animation for moving suggestion pills
+  useEffect(() => {
+    const animateRow = (
+      rowRef: { current: HTMLDivElement | null },
+      direction: "left" | "right",
+      speed: number,
+    ) => {
+      if (!rowRef.current) return;
+
+      let position = 0;
+      const row = rowRef.current;
+      const rowWidth = row.scrollWidth;
+      const viewWidth = row.offsetWidth;
+
+      // Set initial position based on direction
+      if (direction === "right") {
+        position = -rowWidth / 2;
+      }
+
+      const animate = () => {
+        if (!row) return;
+
+        // Update position
+        if (direction === "left") {
+          position -= speed;
+          // Reset when enough content has scrolled by
+          if (position <= -rowWidth / 2) {
+            position = 0;
+          }
+        } else {
+          position += speed;
+          // Reset when enough content has scrolled by
+          if (position >= 0) {
+            position = -rowWidth / 2;
+          }
+        }
+
+        // Apply the transformation
+        row.style.transform = `translateX(${position}px)`;
+        requestAnimationFrame(animate);
+      };
+
+      requestAnimationFrame(animate);
+    };
+
+    // Start animations for each row with different speeds and directions
+    animateRow(row1Ref, "left", 0.3);
+    animateRow(row2Ref, "right", 0.2);
+    animateRow(row3Ref, "left", 0.3);
+
+    // Cleanup
+    return () => {
+      // Animation cleanup will happen automatically when component unmounts
+    };
+  }, []);
 
   const startGeneration = () => {
     setStep(1);
@@ -500,6 +558,110 @@ export default function LandingPage() {
 
           <div className="w-full max-w-md mb-4 md:mb-8 animate-fade-in-delay-2">
             <WaitlistContainer />
+          </div>
+
+          {/* App Creation Section */}
+          <div className="w-full max-w-4xl mx-auto mb-8 animate-fade-in-delay-3">
+            {/* Moving suggestion pills in three rows */}
+            <div className="mb-8">
+              {/* Row 1 - scrolling left */}
+              <div className="overflow-hidden mb-2">
+                <div
+                  ref={row1Ref}
+                  className="flex whitespace-nowrap"
+                  style={{ willChange: "transform" }}
+                >
+                  {duplicateItemsForScrolling(ROW_1).map(
+                    (suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
+                      >
+                        {getIconComponent(suggestion.iconName)}
+                        {suggestion.label}
+                      </button>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              {/* Row 2 - scrolling right */}
+              <div className="overflow-hidden mb-2">
+                <div
+                  ref={row2Ref}
+                  className="flex whitespace-nowrap"
+                  style={{ willChange: "transform" }}
+                >
+                  {duplicateItemsForScrolling(ROW_2).map(
+                    (suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
+                      >
+                        {getIconComponent(suggestion.iconName)}
+                        {suggestion.label}
+                      </button>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              {/* Row 3 - scrolling left */}
+              <div className="overflow-hidden">
+                <div
+                  ref={row3Ref}
+                  className="flex whitespace-nowrap"
+                  style={{ willChange: "transform" }}
+                >
+                  {duplicateItemsForScrolling(ROW_3).map(
+                    (suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
+                      >
+                        {getIconComponent(suggestion.iconName)}
+                        {suggestion.label}
+                      </button>
+                    ),
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Main prompt input */}
+            <div className="mb-8">
+              <div className="relative border rounded-xl shadow-lg overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+                <textarea
+                  ref={inputRef}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Describe your app idea in detail..."
+                  className="w-full px-6 pt-5 pb-16 resize-none focus:outline-none text-base bg-transparent transition-colors"
+                  rows={3}
+                  style={{ minHeight: "120px" }}
+                />
+
+                {/* Button area with clean design */}
+                <div className="absolute bottom-0 left-0 right-0 py-3 px-4 border-t flex items-center justify-end">
+                  <div className="flex items-center mr-2">
+                    <Sparkles className="h-5 w-5 text-gray-400" />
+                  </div>
+
+                  <Button
+                    onClick={handleCreateApp}
+                    disabled={!prompt.trim()}
+                    variant="default"
+                    className="font-medium rounded-md flex items-center disabled:opacity-50"
+                  >
+                    Create App
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Updated iPhone Mockup with better mobile responsiveness */}

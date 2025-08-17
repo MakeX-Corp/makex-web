@@ -92,6 +92,12 @@ export async function GET(request: NextRequest) {
       { count: "exact" },
     );
 
+    // Filter out incomplete listings or listings that are not public
+    query = query
+      .not("description", "is", null)
+      .not("author", "is", null)
+      .not("is_public", "is", false);
+
     // 🔎 optional category filter
     if (category) {
       query = query.eq("category", category);
