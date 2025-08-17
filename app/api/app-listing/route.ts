@@ -92,11 +92,10 @@ export async function GET(request: NextRequest) {
       { count: "exact" },
     );
 
-    // Filter out incomplete listings or listings that are not public
+    // Filter listings that are not public and have basic info
     query = query
-      .not("description", "is", null)
-      .not("author", "is", null)
-      .not("is_public", "is", false);
+      .eq("is_public", true)
+      .or("author.not.is.null,description.not.is.null");
 
     // 🔎 optional category filter
     if (category) {
