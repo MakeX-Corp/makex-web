@@ -56,8 +56,8 @@
     "@sentry/nextjs": "^9.12.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.4",
-    "@trigger.dev/python": "^3.3.17",
-    "@trigger.dev/sdk": "^3.3.17",
+    "@trigger.dev/python": "4.0.0",
+    "@trigger.dev/sdk": "4.0.0",
     "@types/pg": "^8.10.9",
     "@types/qrcode": "^1.5.5",
     "@vercel/analytics": "^1.5.0",
@@ -105,7 +105,7 @@
     "zod": "^3.24.4"
   },
   "devDependencies": {
-    "@trigger.dev/build": "^3.3.17",
+    "@trigger.dev/build": "4.0.0",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
