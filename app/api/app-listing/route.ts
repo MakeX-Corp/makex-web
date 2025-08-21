@@ -92,6 +92,9 @@ export async function GET(request: NextRequest) {
       { count: "exact" },
     );
 
+    // Filter listings that are public
+    query = query.eq("is_public", true);
+
     // 🔎 optional category filter
     if (category) {
       query = query.eq("category", category);
@@ -139,6 +142,11 @@ export async function GET(request: NextRequest) {
       tags: app.tags,
       category: app.category,
     }));
+
+    // Filter out apps with no author and no description
+    transformedApps = transformedApps.filter(
+      (app) => app.author || app.description,
+    );
 
     // Simple search filtering
     if (search) {

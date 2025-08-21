@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
 import { useState, useEffect, useRef } from "react";
-import { XIcon, DiscordIcon, renderIcon } from "@/components/icon-utils";
+import { XIcon } from "@/components/icon-utils";
 import { useTheme } from "next-themes";
 import { updateAppName } from "@/lib/app-service";
 // Import dialog components for confirmation modal
@@ -192,12 +192,6 @@ export function AppSidebar() {
       href: twitterUrl,
       label: "X",
       icon: XIcon,
-      external: true,
-    },
-    {
-      href: discordUrl,
-      label: "Discord",
-      icon: DiscordIcon,
       external: true,
     },
     {
