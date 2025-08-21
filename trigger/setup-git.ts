@@ -1,5 +1,5 @@
 import { task } from "@trigger.dev/sdk/v3";
-import { setupQueue } from "./setup-container";
+import { setupQueue } from "./setup-queue";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import {
   createGitRepository,

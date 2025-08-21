@@ -35,6 +35,7 @@ export const pauseContainer = task({
         })
         .eq("id", sandbox.id)
         .select()
+        .single();
 
     if (updatedSandboxError) {
       console.error("Error updating sandbox:", updatedSandboxError.message);

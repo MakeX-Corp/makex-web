@@ -1,12 +1,7 @@
-import { task, queue } from "@trigger.dev/sdk/v3";
+import { task } from "@trigger.dev/sdk/v3";
 import { configureConvex } from "./configure-convex";
 import { startExpo } from "./start-expo";
 import { setupGit } from "./setup-git";
-
-export const setupQueue = queue({
-  name: "setup-queue",
-  concurrencyLimit: 1,
-});
 
 export const setupContainer = task({
   id: "setup-container",
