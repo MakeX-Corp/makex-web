@@ -2,8 +2,9 @@ import { task } from "@trigger.dev/sdk/v3";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { initiateResumeDaytonaContainer } from "@/utils/server/daytona";
 import { redisUrlSetter } from "@/utils/server/redis-client";
-import { resumeE2BContainer } from "@/utils/server/e2b";
+import { resumeE2BContainer, createE2BContainer } from "@/utils/server/e2b";
 import { startExpo } from "./start-expo";
+import { setupContainer } from "./setup-container";
 
 export const resumeContainer = task({
   id: "resume-container",
@@ -51,7 +52,6 @@ export const resumeContainer = task({
       const sandboxDbId = newSandbox.id;
 
       // Step 2: Create E2B container
-      const { createE2BContainer } = await import("@/utils/server/e2b");
       const { appHost, containerId } = await createE2BContainer({
         userId,
         appId,
@@ -79,12 +79,13 @@ export const resumeContainer = task({
       await redisUrlSetter(appName, appHost);
 
       // Step 6: Setup the container (Convex, Git, and Expo)
-      const { setupContainer } = await import("./setup-container");
       await setupContainer.trigger({
         appId,
         appName,
         containerId,
         sandboxId: sandboxDbId,
+      }, {
+        queue: { name: "critical-container-setup" }, // High-priority queue for user-facing operations
       });
 
       return;
@@ -119,6 +120,8 @@ export const resumeContainer = task({
           appName: appName,
           containerId: sandboxId,
           sandboxId: sandboxDbId,
+        }, {
+          queue: { name: "critical-container-setup" }, // High-priority queue for user-facing operations
         });
         break;
       case "e2b":

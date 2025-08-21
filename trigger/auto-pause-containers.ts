@@ -5,6 +5,10 @@ import { pauseContainer } from "./pause-container";
 export const firstScheduledTask = schedules.task({
   id: "auto-pause-containers",
   cron: "* * * * *",
+  queue: {
+    name: "auto-pause-containers-queue",
+    concurrencyLimit: 1,
+  },
   run: async (payload) => {
     try {
       // Get all finished apps with their current sandbox
@@ -83,7 +87,7 @@ export const firstScheduledTask = schedules.task({
                 appName: app.app_name,
               },
               {
-                queue: { name: "auto-pause-containers" },
+                queue: { name: "pause-container-queue" },
               },
             );
           }

@@ -6,6 +6,10 @@ import { pauseE2BContainer } from "@/utils/server/e2b";
 
 export const pauseContainer = task({
   id: "pause-container",
+  queue: {
+    name: "pause-container-queue",
+    concurrencyLimit: 1,
+  },
   retry: {
     maxAttempts: 1,
   },
@@ -31,6 +35,7 @@ export const pauseContainer = task({
         })
         .eq("id", sandbox.id)
         .select()
+        .single();
 
     if (updatedSandboxError) {
       console.error("Error updating sandbox:", updatedSandboxError.message);
