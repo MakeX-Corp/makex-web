@@ -6,6 +6,10 @@ import { pauseE2BContainer } from "@/utils/server/e2b";
 
 export const pauseContainer = task({
   id: "pause-container",
+  queue: {
+    name: "pause-container-queue",
+    concurrencyLimit: 1,
+  },
   retry: {
     maxAttempts: 1,
   },
