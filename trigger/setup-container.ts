@@ -1,7 +1,12 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { task, queue } from "@trigger.dev/sdk/v3";
 import { configureConvex } from "./configure-convex";
 import { startExpo } from "./start-expo";
 import { setupGit } from "./setup-git";
+
+export const setupQueue = queue({
+  name: "setup-queue",
+  concurrencyLimit: 1,
+});
 
 export const setupContainer = task({
   id: "setup-container",
@@ -21,17 +26,16 @@ export const setupContainer = task({
     const { appId, appName, containerId, sandboxId } = payload;
 
     try {
-
       // Step 1: Setup Git repository
       console.log("[setupContainer] Step 1: Setting up Git repository");
-      await setupGit.triggerAndWait({
+      await setupGit.trigger({
         appId,
         containerId,
       });
 
       // Step 2: Configure Convex
       console.log("[setupContainer] Step 2: Configuring Convex");
-      await configureConvex.triggerAndWait({
+      await configureConvex.trigger({
         appId,
         containerId,
       });

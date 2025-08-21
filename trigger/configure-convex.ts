@@ -1,4 +1,5 @@
 import { task } from "@trigger.dev/sdk/v3";
+import { setupQueue } from "./setup-container";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { createConvexProject } from "@/utils/server/convex";
 import {
@@ -8,6 +9,7 @@ import {
 
 export const configureConvex = task({
   id: "configure-convex",
+  queue: setupQueue,
   retry: {
     maxAttempts: 1,
   },
