@@ -1,4 +1,5 @@
 import { task } from "@trigger.dev/sdk/v3";
+import { setupQueue } from "./setup-queue";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import {
   createGitRepository,
@@ -9,6 +10,7 @@ import { setupFreestyleGitInContainer } from "@/utils/server/e2b";
 
 export const setupGit = task({
   id: "setup-git",
+  queue: setupQueue,
   retry: {
     maxAttempts: 0,
   },

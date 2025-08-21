@@ -172,8 +172,11 @@ export async function POST(request: Request) {
       appName: appName,
       containerId: containerId,
       sandboxId: sandboxDbId,
+    }, {
+      queue: { name: "critical-container-setup" }, // High-priority queue for user-facing operations
     });
 
+    
     // Return the app data along with session ID, redirect URL, and timings
     return NextResponse.json({
       ...insertedApp,

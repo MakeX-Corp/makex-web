@@ -21,17 +21,16 @@ export const setupContainer = task({
     const { appId, appName, containerId, sandboxId } = payload;
 
     try {
-
       // Step 1: Setup Git repository
       console.log("[setupContainer] Step 1: Setting up Git repository");
-      await setupGit.triggerAndWait({
+      await setupGit.trigger({
         appId,
         containerId,
       });
 
       // Step 2: Configure Convex
       console.log("[setupContainer] Step 2: Configuring Convex");
-      await configureConvex.triggerAndWait({
+      await configureConvex.trigger({
         appId,
         containerId,
       });

@@ -1,10 +1,12 @@
 import { task } from "@trigger.dev/sdk/v3";
+import { setupQueue } from "./setup-queue";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { startExpoInContainer as startExpoInContainerE2B } from "@/utils/server/e2b";
 
 export const startExpo = task({
   id: "start-expo",
+  queue: setupQueue,
   retry: {
     maxAttempts: 1,
   },
