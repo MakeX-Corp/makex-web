@@ -1,4 +1,4 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { task } from "@trigger.dev/sdk";
 import { setupQueue } from "./setup-queue";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { redisUrlSetter } from "@/utils/server/redis-client";
@@ -37,11 +37,8 @@ export const startExpo = task({
         );
       }
 
-      const { appUrl} = await startExpoInContainerE2B(containerId);
-      console.log(
-        "[startExpo] Expo started successfully. App URL:",
-        appUrl,
-      );
+      const { appUrl } = await startExpoInContainerE2B(containerId);
+      console.log("[startExpo] Expo started successfully. App URL:", appUrl);
 
       // Set status to 'bundling' after Expo is started
       const { error: bundlingError } = await adminSupabase

@@ -1,15 +1,13 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { task } from "@trigger.dev/sdk";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { pauseDaytonaContainer } from "@/utils/server/daytona";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { pauseE2BContainer } from "@/utils/server/e2b";
+import { pauseContainerQueue } from "./queues";
 
 export const pauseContainer = task({
   id: "pause-container",
-  queue: {
-    name: "pause-container-queue",
-    concurrencyLimit: 1,
-  },
+  queue: pauseContainerQueue,
   retry: {
     maxAttempts: 1,
   },
@@ -62,10 +60,7 @@ export const pauseContainer = task({
       .update({ sandbox_status: "paused" })
       .eq("id", sandbox.id);
 
-    await redisUrlSetter(
-      appName,
-      "https://makex.app/app-not-found",
-    );
+    await redisUrlSetter(appName, "https://makex.app/app-not-found");
 
     if (updateError) {
       throw new Error(`Failed updating sandbox status: ${updateError.message}`);

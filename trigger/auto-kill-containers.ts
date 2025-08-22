@@ -1,4 +1,4 @@
-import { schedules } from "@trigger.dev/sdk/v3";
+import { schedules } from "@trigger.dev/sdk";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { deleteContainer } from "./delete-container";
 
@@ -11,14 +11,16 @@ export const autoKillContainers = schedules.task({
       const supabase = await getSupabaseAdmin();
       const { data: finishedApps, error: appsError } = await supabase
         .from("user_apps")
-        .select(`
+        .select(
+          `
           id,
           app_name,
           current_sandbox_id,
           updated_at,
           user_id,
           user_sandboxes!current_sandbox_id(sandbox_status)
-        `)
+        `,
+        )
         .eq("coding_status", "finished")
         .not("current_sandbox_id", "is", null);
 
@@ -36,7 +38,7 @@ export const autoKillContainers = schedules.task({
       }
 
       // Filter to only include apps with paused sandbox status
-      const pausedFinishedApps = finishedApps.filter(app => {
+      const pausedFinishedApps = finishedApps.filter((app) => {
         const sandbox = app.user_sandboxes as any;
         return sandbox && sandbox.sandbox_status === "paused";
       });
@@ -88,12 +90,15 @@ export const autoKillContainers = schedules.task({
                 appName: app.app_name,
               },
               {
-                queue: { name: "auto-kill-containers" },
+                queue: "auto-kill-containers",
               },
             );
           }
         } catch (appError) {
-          console.error(`Error processing app ${app.id} for auto-kill:`, appError);
+          console.error(
+            `Error processing app ${app.id} for auto-kill:`,
+            appError,
+          );
         }
       }
 

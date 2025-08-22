@@ -1,4 +1,4 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { task } from "@trigger.dev/sdk";
 import { deleteConvexProject } from "@/utils/server/convex";
 export const deleteConvex = task({
   id: "delete-convex",

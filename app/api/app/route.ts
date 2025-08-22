@@ -167,16 +167,18 @@ export async function POST(request: Request) {
 
     console.log("Timings:", timings);
 
-    await setupContainer.trigger({
-      appId: insertedApp.id,
-      appName: appName,
-      containerId: containerId,
-      sandboxId: sandboxDbId,
-    }, {
-      queue: { name: "critical-container-setup" }, // High-priority queue for user-facing operations
-    });
+    await setupContainer.trigger(
+      {
+        appId: insertedApp.id,
+        appName: appName,
+        containerId: containerId,
+        sandboxId: sandboxDbId,
+      },
+      {
+        queue: "critical-container-setup", // High-priority queue for user-facing operations
+      },
+    );
 
-    
     // Return the app data along with session ID, redirect URL, and timings
     return NextResponse.json({
       ...insertedApp,
