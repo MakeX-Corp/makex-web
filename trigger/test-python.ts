@@ -1,4 +1,4 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { task } from "@trigger.dev/sdk";
 import { python } from "@trigger.dev/python";
 
 export const myScript = task({

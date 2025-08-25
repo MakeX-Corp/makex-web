@@ -1,4 +1,4 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { task } from "@trigger.dev/sdk";
 import {
   createE2BContainer,
   deployConvexProdInContainer,
@@ -104,7 +104,9 @@ export const deployConvex = task({
       }
 
       throw new Error(
-        `Failed to deploy Convex in container: ${error.message || "Unknown error"}`,
+        `Failed to deploy Convex in container: ${
+          error.message || "Unknown error"
+        }`,
       );
     }
   },

@@ -1,10 +1,11 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { task } from "@trigger.dev/sdk";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { initiateResumeDaytonaContainer } from "@/utils/server/daytona";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { resumeE2BContainer, createE2BContainer } from "@/utils/server/e2b";
 import { startExpo } from "./start-expo";
 import { setupContainer } from "./setup-container";
+import { criticalContainerSetupQueue } from "./queues";
 
 export const resumeContainer = task({
   id: "resume-container",
@@ -30,7 +31,7 @@ export const resumeContainer = task({
     if (!app?.current_sandbox_id) {
       // Create a new sandbox since the app doesn't have one
       console.log("[resumeContainer] No current sandbox, creating new one");
-      
+
       // Step 1: Create a new user_sandboxes record
       const { data: newSandbox, error: newSandboxError } = await adminSupabase
         .from("user_sandboxes")
@@ -46,7 +47,9 @@ export const resumeContainer = task({
         .single();
 
       if (newSandboxError) {
-        throw new Error(`Failed creating new sandbox: ${newSandboxError.message}`);
+        throw new Error(
+          `Failed creating new sandbox: ${newSandboxError.message}`,
+        );
       }
 
       const sandboxDbId = newSandbox.id;
@@ -79,14 +82,17 @@ export const resumeContainer = task({
       await redisUrlSetter(appName, appHost);
 
       // Step 6: Setup the container (Convex, Git, and Expo)
-      await setupContainer.trigger({
-        appId,
-        appName,
-        containerId,
-        sandboxId: sandboxDbId,
-      }, {
-        queue: { name: "critical-container-setup" }, // High-priority queue for user-facing operations
-      });
+      await setupContainer.trigger(
+        {
+          appId,
+          appName,
+          containerId,
+          sandboxId: sandboxDbId,
+        },
+        {
+          queue: "critical-container-setup",
+        },
+      );
 
       return;
     }
@@ -115,14 +121,17 @@ export const resumeContainer = task({
     switch (sandbox.sandbox_provider) {
       case "daytona":
         await initiateResumeDaytonaContainer(sandboxId);
-        await startExpo.trigger({
-          appId: appId,
-          appName: appName,
-          containerId: sandboxId,
-          sandboxId: sandboxDbId,
-        }, {
-          queue: { name: "critical-container-setup" }, // High-priority queue for user-facing operations
-        });
+        await startExpo.trigger(
+          {
+            appId: appId,
+            appName: appName,
+            containerId: sandboxId,
+            sandboxId: sandboxDbId,
+          },
+          {
+            queue: "critical-container-setup",
+          },
+        );
         break;
       case "e2b":
         const { appHost } = await resumeE2BContainer(sandboxId);
@@ -130,7 +139,6 @@ export const resumeContainer = task({
         break;
     }
 
-  
     // Update status to active
     const { data: updatedSandbox, error: updateError } = await adminSupabase
       .from("user_sandboxes")
@@ -142,7 +150,9 @@ export const resumeContainer = task({
       .single();
 
     if (updateError) {
-      throw new Error(`Failed to update sandbox status: ${updateError.message}`);
+      throw new Error(
+        `Failed to update sandbox status: ${updateError.message}`,
+      );
     }
 
     console.log("Updated sandbox:", updatedSandbox);

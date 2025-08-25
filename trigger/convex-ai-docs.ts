@@ -1,4 +1,4 @@
-import { schedules } from "@trigger.dev/sdk/v3";
+import { schedules } from "@trigger.dev/sdk";
 import axios from "axios";
 import { embedMany } from "ai";
 import { openai } from "@ai-sdk/openai";
@@ -62,28 +62,38 @@ export const fetchConvexDocs = schedules.task({
     const rawUrl = "https://www.convex.dev/llms.txt";
     try {
       // Use Python script for contextual chunking
-      const result = await python.runScript("./python/chunk-runner.py", [rawUrl]);
+      const result = await python.runScript("./python/chunk-runner.py", [
+        rawUrl,
+      ]);
       const chunks = JSON.parse(result.stdout);
-      console.log(`[ConvexDocs] Python chunker produced ${chunks.length} chunks`);
+      console.log(
+        `[ConvexDocs] Python chunker produced ${chunks.length} chunks`,
+      );
       chunks.forEach((chunk: string, idx: number) => {
         console.log(`[ConvexDocs] Chunk ${idx + 1}:`, JSON.stringify(chunk));
       });
-      
+
       // Process embeddings in batches to avoid token limit
       const batchSize = 50; // Process 50 chunks at a time
       let totalChunks = 0;
 
       for (let i = 0; i < chunks.length; i += batchSize) {
         const batch = chunks.slice(i, i + batchSize);
-        console.log(`[ConvexDocs] Processing batch ${i / batchSize + 1}: ${batch.length} chunks`);
-        
+        console.log(
+          `[ConvexDocs] Processing batch ${i / batchSize + 1}: ${
+            batch.length
+          } chunks`,
+        );
+
         const texts = batch.map((chunk: { text: string }) => chunk.text);
         const { embeddings } = await embedMany({
           model: embeddingModel,
           values: texts,
         });
         console.log(
-          `[ConvexDocs] Got ${embeddings.length} embeddings for batch ${i / batchSize + 1}`,
+          `[ConvexDocs] Got ${embeddings.length} embeddings for batch ${
+            i / batchSize + 1
+          }`,
         );
 
         const rows = batch.map((chunk: { text: string }, j: number) => ({
@@ -93,7 +103,9 @@ export const fetchConvexDocs = schedules.task({
           category: "convex",
         }));
         console.log(
-          `[ConvexDocs] Inserting ${rows.length} rows into DB for batch ${i / batchSize + 1}`,
+          `[ConvexDocs] Inserting ${rows.length} rows into DB for batch ${
+            i / batchSize + 1
+          }`,
         );
 
         const { data, error } = await supabase.from("embeddings").insert(rows);
@@ -108,7 +120,9 @@ export const fetchConvexDocs = schedules.task({
 
         totalChunks += rows.length;
         console.log(
-          `[ConvexDocs] Inserted batch ${i / batchSize + 1}, total inserted: ${totalChunks}`,
+          `[ConvexDocs] Inserted batch ${
+            i / batchSize + 1
+          }, total inserted: ${totalChunks}`,
         );
 
         // Add small delay between batches to avoid rate limits

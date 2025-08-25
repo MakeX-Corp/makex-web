@@ -1,4 +1,4 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { task } from "@trigger.dev/sdk";
 import { configureConvex } from "./configure-convex";
 import { startExpo } from "./start-expo";
 import { setupGit } from "./setup-git";

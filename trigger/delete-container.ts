@@ -1,4 +1,4 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { task } from "@trigger.dev/sdk";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { redisUrlSetter } from "@/utils/server/redis-client";
 import { killDaytonaContainer } from "@/utils/server/daytona";
@@ -52,12 +52,11 @@ export const deleteContainer = task({
       .eq("id", appId);
 
     if (appUpdateError) {
-      throw new Error(`Failed updating app sandbox id: ${appUpdateError.message}`);
+      throw new Error(
+        `Failed updating app sandbox id: ${appUpdateError.message}`,
+      );
     }
 
-    await redisUrlSetter(
-      appName,
-      "https://makex.app/app-not-found",
-    );
+    await redisUrlSetter(appName, "https://makex.app/app-not-found");
   },
 });
