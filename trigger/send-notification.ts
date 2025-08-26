@@ -1,4 +1,4 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { task } from "@trigger.dev/sdk";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
 

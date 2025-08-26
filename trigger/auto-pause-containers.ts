@@ -1,4 +1,4 @@
-import { schedules } from "@trigger.dev/sdk/v3";
+import { schedules } from "@trigger.dev/sdk";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { pauseContainer } from "./pause-container";
 
@@ -15,11 +15,13 @@ export const firstScheduledTask = schedules.task({
       const supabase = await getSupabaseAdmin();
       const { data: finishedApps, error: appsError } = await supabase
         .from("user_apps")
-        .select(`
+        .select(
+          `
           id,
           app_name,
           current_sandbox_id
-        `)
+        `,
+        )
         .eq("coding_status", "finished")
         .not("current_sandbox_id", "is", null);
 
@@ -59,7 +61,10 @@ export const firstScheduledTask = schedules.task({
             .single();
 
           if (sandboxError) {
-            console.error(`Error fetching sandbox ${app.current_sandbox_id}:`, sandboxError);
+            console.error(
+              `Error fetching sandbox ${app.current_sandbox_id}:`,
+              sandboxError,
+            );
             continue;
           }
 
@@ -87,7 +92,7 @@ export const firstScheduledTask = schedules.task({
                 appName: app.app_name,
               },
               {
-                queue: { name: "pause-container-queue" },
+                queue: "pause-container-queue",
               },
             );
           }

@@ -1,4 +1,4 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { task } from "@trigger.dev/sdk";
 import { setupQueue } from "./setup-queue";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { createConvexProject } from "@/utils/server/convex";

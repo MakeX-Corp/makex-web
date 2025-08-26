@@ -1,4 +1,4 @@
-import { schedules } from "@trigger.dev/sdk/v3";
+import { schedules } from "@trigger.dev/sdk";
 import axios from "axios";
 import { embedMany } from "ai";
 import { openai } from "@ai-sdk/openai";
@@ -58,9 +58,15 @@ export const fetchOpenAIDocs = schedules.task({
       "https://raw.githubusercontent.com/openai/openai-openapi/manual_spec/openapi.yaml";
     try {
       // Use Python script for contextual chunking
-      const result = await python.runScript("./python/chunk-runner.py", [rawUrl,'code','yaml']);
+      const result = await python.runScript("./python/chunk-runner.py", [
+        rawUrl,
+        "code",
+        "yaml",
+      ]);
       const chunks = JSON.parse(result.stdout);
-      console.log(`[OpenAIDocs] Python chunker produced ${chunks.length} chunks`);
+      console.log(
+        `[OpenAIDocs] Python chunker produced ${chunks.length} chunks`,
+      );
       chunks.forEach((chunk: string, idx: number) => {
         console.log(`[OpenAIDocs] Chunk ${idx + 1}:`, JSON.stringify(chunk));
       });
@@ -68,17 +74,27 @@ export const fetchOpenAIDocs = schedules.task({
       // Process embeddings in batches
       const batchSize = 50; // Process 50 chunks at a time
       let totalChunks = 0;
-      
+
       for (let i = 0; i < chunks.length; i += batchSize) {
         const batch = chunks.slice(i, i + batchSize);
-        console.log(`[OpenAIDocs] Processing batch ${i / batchSize + 1}: ${batch.length} chunks`);
-        
-        const texts = batch.map((chunk: { text: string }) => sanitizeText(chunk.text));
+        console.log(
+          `[OpenAIDocs] Processing batch ${i / batchSize + 1}: ${
+            batch.length
+          } chunks`,
+        );
+
+        const texts = batch.map((chunk: { text: string }) =>
+          sanitizeText(chunk.text),
+        );
         const { embeddings } = await embedMany({
           model: embeddingModel,
           values: texts,
         });
-        console.log(`[OpenAIDocs] Got ${embeddings.length} embeddings for batch ${i / batchSize + 1}`);
+        console.log(
+          `[OpenAIDocs] Got ${embeddings.length} embeddings for batch ${
+            i / batchSize + 1
+          }`,
+        );
 
         const rows = batch.map((chunk: { text: string }, j: number) => ({
           content: sanitizeText(chunk.text),
@@ -86,25 +102,38 @@ export const fetchOpenAIDocs = schedules.task({
           source: "openapi.yaml",
           category: "openai",
         }));
-        console.log(`[OpenAIDocs] Inserting ${rows.length} rows into DB for batch ${i / batchSize + 1}`);
+        console.log(
+          `[OpenAIDocs] Inserting ${rows.length} rows into DB for batch ${
+            i / batchSize + 1
+          }`,
+        );
 
         const { data, error } = await supabase.from("embeddings").insert(rows);
-        console.log('[OpenAIDocs] Inserted rows:', data);
+        console.log("[OpenAIDocs] Inserted rows:", data);
         if (error) {
-          console.error(`[OpenAIDocs] Error inserting batch ${i / batchSize + 1}:`, error);
+          console.error(
+            `[OpenAIDocs] Error inserting batch ${i / batchSize + 1}:`,
+            error,
+          );
           throw error;
         }
-        
+
         totalChunks += rows.length;
-        console.log(`[OpenAIDocs] Inserted batch ${i / batchSize + 1}, total inserted: ${totalChunks}`);
-        
+        console.log(
+          `[OpenAIDocs] Inserted batch ${
+            i / batchSize + 1
+          }, total inserted: ${totalChunks}`,
+        );
+
         // Add small delay between batches to avoid rate limits
         if (i + batchSize < chunks.length) {
           await delay(1000);
         }
       }
 
-      console.log(`[OpenAIDocs] All batches complete. Total chunks inserted: ${totalChunks}`);
+      console.log(
+        `[OpenAIDocs] All batches complete. Total chunks inserted: ${totalChunks}`,
+      );
       return {
         status: "success",
         totalChunks: totalChunks,
