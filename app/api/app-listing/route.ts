@@ -100,11 +100,6 @@ export async function GET(request: NextRequest) {
       query = query.eq("category", category);
     }
 
-    // Exclude apps that the user has already saved
-    if (user?.id && savedAppIds.length > 0) {
-      query = query.not("id", "in", `(${savedAppIds.join(",")})`);
-    }
-
     const {
       data: apps,
       error: appsError,
