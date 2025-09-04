@@ -1,5 +1,3 @@
-// lib/session-service.ts
-// Type definitions
 export interface SessionListItem {
   id: string;
   title: string;
@@ -173,9 +171,6 @@ export async function deleteSession(sessionId: string): Promise<boolean> {
   }
 }
 
-// Add this function to lib/session-service.ts
-
-// Update session title
 export async function updateSessionTitle(
   sessionId: string,
   title: string,

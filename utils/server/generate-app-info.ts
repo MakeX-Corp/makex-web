@@ -2,7 +2,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
 import { gateway } from "@/utils/server/gateway";
-import { APP_CATEGORIES } from "@/const/app-categories";
+import { APP_CATEGORIES } from "@/const/const";
 
 export interface AppInfoInput {
   appName: string;
@@ -53,7 +53,7 @@ Return only valid JSON in this format:
       prompt,
       schema: z.object({
         description: z.string().max(30),
-        category: z.enum(APP_CATEGORIES),
+        category: z.enum(APP_CATEGORIES as [string, ...string[]]),
         imagePrompt: z.string().max(300),
         tags: z.array(z.string().max(20)).min(3).max(5),
       }),
