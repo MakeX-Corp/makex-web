@@ -6,7 +6,7 @@ import Image from "next/image";
 import WaitlistContainer from "@/components/waitlist-container";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { APP_SUGGESTIONS, ROW_1, ROW_2, ROW_3 } from "@/lib/constants";
+import { APP_SUGGESTIONS, ROW_1, ROW_2, ROW_3 } from "@/const/const";
 import { getIconComponent } from "@/lib/iconMap";
 
 const TYPING_SPEED = 200; // Slower typing speed

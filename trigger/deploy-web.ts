@@ -1,7 +1,7 @@
 import { task } from "@trigger.dev/sdk";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { dub } from "@/utils/server/dub";
-import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
+import { sendPushNotifications } from "@/utils/server/send-push-notifications";
 import { deployWebFromGit } from "@/utils/server/freestyle";
 import {
   deployConvexProject,

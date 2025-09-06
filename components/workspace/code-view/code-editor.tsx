@@ -4,13 +4,7 @@ import dynamic from "next/dynamic";
 import useSWR from "swr";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  AlertCircle,
-  FileCode,
-  CodeXml,
-  Image as ImageIcon,
-  X,
-} from "lucide-react";
+import { AlertCircle, FileCode, CodeXml, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
@@ -136,8 +130,8 @@ export default function CodeEditor({
   const editorTheme = !mounted
     ? "vs-dark"
     : theme === "dark"
-      ? "vs-dark"
-      : "vs-light";
+    ? "vs-dark"
+    : "vs-light";
 
   // Ensure we have access to the theme after hydration
   useEffect(() => {
@@ -271,8 +265,8 @@ export default function CodeEditor({
           {saveStatus === "saving"
             ? "Saving..."
             : saveStatus === "success"
-              ? "Saved!"
-              : "Save"}
+            ? "Saved!"
+            : "Save"}
         </Button>
       </div>
 
