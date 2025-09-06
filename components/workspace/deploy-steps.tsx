@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, Globe, Lock, Check, Edit, X } from "lucide-react";
+import { Sparkles, Globe, Lock, Check, X } from "lucide-react";
 import { useState, useRef } from "react";
 import { APP_CATEGORIES } from "@/const/const";
 
