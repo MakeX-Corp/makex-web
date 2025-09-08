@@ -18,20 +18,18 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const appId = searchParams.get("appId");
 
-    console.log("GET SANDBOX ROUTE HIT");
-    console.log("User ID:", user.id);
-    console.log("App ID:", appId);
-
     const adminSupabase = await getSupabaseAdmin();
 
     // Get app and its current sandbox in one query
     const { data: app, error } = await supabase
       .from("user_apps")
-      .select(`
+      .select(
+        `
         current_sandbox_id,
         coding_status,
         user_sandboxes!current_sandbox_id(sandbox_status, expo_status)
-      `)
+      `,
+      )
       .eq("id", appId)
       .single();
 
@@ -53,7 +51,7 @@ export async function GET(req: Request) {
       sandbox_status: sandbox.sandbox_status,
       expo_status: sandbox.expo_status,
     };
-    
+
     return NextResponse.json(flattenedData);
   } catch (err: any) {
     console.error("Error fetching sandbox:", err);

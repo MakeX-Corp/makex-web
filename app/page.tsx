@@ -521,7 +521,7 @@ export default function LandingPage() {
         }
       }, TYPING_SPEED);
 
-      // Cleanup functionoptimise this for phone
+      // Cleanup function
       return () => clearInterval(typingInterval);
     }, TYPING_INITIAL_DELAY);
   };

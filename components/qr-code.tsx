@@ -45,8 +45,6 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
     if (url) {
       generateQR();
     }
-
-    console.log("the url is", url);
   }, [url, theme, isIOS]);
 
   // Generate QR code for app download when modal opens

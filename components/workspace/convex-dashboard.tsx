@@ -73,13 +73,11 @@ export function ConvexDashboardEmbed() {
 
   useEffect(() => {
     if (!appId) {
-      console.log("🚨 No appId, bailing out");
       return;
     }
 
     // If context config is already complete, skip fetch
     if (isConfigComplete(contextConvexConfig)) {
-      console.log("✅ Using context config");
       setConvexConfig(contextConvexConfig);
       setCredentialsReady(true);
       return;
@@ -108,10 +106,8 @@ export function ConvexDashboardEmbed() {
         setConvexConfig(config);
 
         if (isConfigComplete(config)) {
-          console.log("Config complete, setting credentialsReady");
           setCredentialsReady(true);
         } else {
-          console.warn("Incomplete config:");
         }
       } catch (err: any) {
         console.error("❌ Fetch failed:", err.message);

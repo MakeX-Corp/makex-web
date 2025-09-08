@@ -85,7 +85,6 @@ export default function ProfileSettings() {
         throw error;
       }
       setTimeout(() => {
-        console.log("Redirecting to homepage...");
         window.location.href = "/";
       }, 500);
     } catch (error) {

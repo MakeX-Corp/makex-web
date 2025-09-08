@@ -116,15 +116,6 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-                {/* <Button
-                  type="button"
-                  variant="link"
-                  onClick={handleForgotPassword}
-                  disabled={loading}
-                  className="px-0 h-auto"
-                >
-                  Forgot password?
-                </Button> */}
               </div>
 
               {resetSent && (

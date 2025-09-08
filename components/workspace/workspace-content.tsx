@@ -90,7 +90,6 @@ export default function WorkspaceContent({
           console.error("Initial fetch error:", data.error);
         } else {
           setState(data);
-          console.log("TK Full state",data);
           if (data?.sandbox_status === "paused") {
             await resumeSandbox();
           }
@@ -111,7 +110,6 @@ export default function WorkspaceContent({
             filter: `app_id=eq.${appId}`,
           },
           (payload) => {
-            console.log("🔁 Sandbox realtime update:", payload);
             setState((prevState: any) => ({
               ...prevState,
               sandbox_status: payload.new.sandbox_status,
@@ -132,7 +130,6 @@ export default function WorkspaceContent({
             filter: `id=eq.${appId}`,
           },
           (payload) => {
-            console.log("🔁 Apps realtime update:", payload);
             setState((prevState: any) => ({
               ...prevState,
               coding_status: payload.new.coding_status,
@@ -252,7 +249,7 @@ export default function WorkspaceContent({
   const refreshPreview = async () => {
     setIsRefreshing(true);
     setIframeKey(Math.random().toString(36).substring(2, 15));
-    if(state?.sandbox_status === 'paused'){
+    if (state?.sandbox_status === "paused") {
       await resumeSandbox();
     }
     setTimeout(() => {
@@ -292,7 +289,6 @@ export default function WorkspaceContent({
           </div>
 
           <div className="flex items-center space-x-2">
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -699,7 +695,9 @@ export default function WorkspaceContent({
                     <div className="flex-1 relative">
                       {/* Both components are always rendered, but we control visibility with CSS */}
                       <div
-                        className={`absolute inset-0 ${activeView === "chat" ? "block" : "hidden"}`}
+                        className={`absolute inset-0 ${
+                          activeView === "chat" ? "block" : "hidden"
+                        }`}
                       >
                         <Chat
                           sessionId={currentSessionId || initialSessionId || ""}
@@ -710,7 +708,9 @@ export default function WorkspaceContent({
                       </div>
 
                       <div
-                        className={`absolute inset-0 ${activeView === "preview" ? "block" : "hidden"}`}
+                        className={`absolute inset-0 ${
+                          activeView === "preview" ? "block" : "hidden"
+                        }`}
                       >
                         <Preview
                           iframeKey={iframeKey}
