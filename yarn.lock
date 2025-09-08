@@ -2575,20 +2575,20 @@
   resolved "https://registry.yarnpkg.com/@tootallnate/quickjs-emscripten/-/quickjs-emscripten-0.23.0.tgz#db4ecfd499a9765ab24002c3b696d02e6d32a12c"
   integrity sha512-C5Mc6rdnsaJDjO3UpGW/CQTHtCKaYlScZTly4JIu97Jxo/odCiH0ITnDXSJPTOrEKk/ycSZ0AOgTmkDtkOsvIA==
 
-"@trigger.dev/build@4.0.1":
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/@trigger.dev/build/-/build-4.0.1.tgz#40fc01620568aeaa56d9cd59ede7f0851af8bfce"
-  integrity sha512-PGOnCPjVSKkj72xmJb6mdRbzDSP3Ti/C5/tfaBFdSZ7qcoVctSzDfS5iwEGsSoSWSIv+MVy12c4v7Ji/r7MO1A==
+"@trigger.dev/build@4.0.2":
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/@trigger.dev/build/-/build-4.0.2.tgz#5be63944b3f2e44d7796772d6e3087361b40b81a"
+  integrity sha512-GOqjGIUXWEEIfWqY2o+xr//4KTHYoRQIML8cCoP/L8x1wPb45qFJWTwNaECgYp9i+9vPMI4/G3Jm/jvWp9xznQ==
   dependencies:
-    "@trigger.dev/core" "4.0.1"
+    "@trigger.dev/core" "4.0.2"
     pkg-types "^1.1.3"
     tinyglobby "^0.2.2"
     tsconfck "3.1.3"
 
-"@trigger.dev/core@4.0.1":
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/@trigger.dev/core/-/core-4.0.1.tgz#a01eb7ba486e7ec68de4766198a08014bd70474b"
-  integrity sha512-NTffiVPy/zFopujdptGGoy3lj3/CKV16JA8CobCfsEpDfu+K+wEys+9p8PFY8j5I0UI86aqlFpJu9/VRqUQ/yQ==
+"@trigger.dev/core@4.0.2":
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/@trigger.dev/core/-/core-4.0.2.tgz#de8b3d1b4aaad2521b69ced4711614f518f3c92e"
+  integrity sha512-hc/alfT7iVdJNZ5YSMbGR9FirLjURqdZ7tCBX4btKas0GDg6M5onwcQsJ3oom5TDp/Nrt+dHaviNMhFxhKCu3g==
   dependencies:
     "@bugsnag/cuid" "^3.1.1"
     "@electric-sql/client" "1.0.0-beta.1"
@@ -2623,22 +2623,22 @@
     zod-error "1.5.0"
     zod-validation-error "^1.5.0"
 
-"@trigger.dev/python@4.0.1":
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/@trigger.dev/python/-/python-4.0.1.tgz#bb31d8c925d68812b6ed43c10b87ad233c3f7a22"
-  integrity sha512-CRjqGCWx3W9gMBg2x7l9f47bEfF64wYSTh6d1DVB54aH/ObQ9stc5H/nQPVMv4c0rYFICQUKGvka5kpcWci6iQ==
+"@trigger.dev/python@4.0.2":
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/@trigger.dev/python/-/python-4.0.2.tgz#ea68056d7ca9eb9771cbb16565f93f2b662e5fb9"
+  integrity sha512-gCPhmp/aH/rMYDHUHz2DV07/i5rZkatYmByBcl75cKqrQlGzeqXGN/JS1qqfmiPzjhThwIOf6Khninrlr00z7g==
   dependencies:
-    "@trigger.dev/core" "4.0.1"
+    "@trigger.dev/core" "4.0.2"
     tinyexec "^0.3.2"
 
-"@trigger.dev/sdk@4.0.1":
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/@trigger.dev/sdk/-/sdk-4.0.1.tgz#d343a808ef92f50eae752fd9c8d8afbe55c0f6d1"
-  integrity sha512-cdEgrwIl2Kg2jd85dA4tdePPPe+iMjAGX0Q8QrO2CNo/iBcjl7jB7uzvmSjDKYmJoC+8a30fCWviYy6ljOs1oQ==
+"@trigger.dev/sdk@4.0.2":
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/@trigger.dev/sdk/-/sdk-4.0.2.tgz#96210300478b6936bad5ad11e0291cda80dcc09a"
+  integrity sha512-ulhWJRSHPXOHz0bMvkhAKThkW63x7lnjAb87LPi6dUps1YwwoOL8Nkr15xLXa73UrldPFT+9Y/GvQ9qpzU478w==
   dependencies:
     "@opentelemetry/api" "1.9.0"
     "@opentelemetry/semantic-conventions" "1.36.0"
-    "@trigger.dev/core" "4.0.1"
+    "@trigger.dev/core" "4.0.2"
     chalk "^5.2.0"
     cronstrue "^2.21.0"
     debug "^4.3.4"
