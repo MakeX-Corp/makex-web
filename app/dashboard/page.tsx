@@ -53,7 +53,7 @@ const GlobalStyles = () => (
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { createApp, subscription } = useApp();
+  const { createApp } = useApp();
   const [isCreating, setIsCreating] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [initialPromptLoaded, setInitialPromptLoaded] = useState(false);

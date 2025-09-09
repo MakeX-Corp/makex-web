@@ -6,22 +6,19 @@ import {
 } from "@/utils/server/subscription-manager";
 
 export async function GET(request: Request) {
-  // Get authenticated user and Supabase client
   const result = await getSupabaseWithUser(request as NextRequest);
 
   if (result instanceof NextResponse || "error" in result) {
-    return result; // This handles auth errors automatically
+    return result;
   }
 
   const { user } = result;
 
   try {
-    // Use the subscription manager to get or create subscription
     let subscriptionInfo: SubscriptionInfo = await getOrCreateSubscription(
       user.id,
     );
 
-    // Override with unlimited access in development
     if (process.env.NODE_ENV === "development") {
       subscriptionInfo = {
         ...subscriptionInfo,
@@ -34,7 +31,6 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Error fetching subscription:", error);
 
-    // Return detailed error for debugging
     return NextResponse.json(
       {
         error: "Failed to fetch subscription",

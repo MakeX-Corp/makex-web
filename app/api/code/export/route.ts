@@ -6,13 +6,11 @@ export async function POST(req: Request) {
   try {
     const { appId } = await req.json();
 
-    // Get user info and validate authentication
     const userResult = await getSupabaseWithUser(req as NextRequest);
     if (userResult instanceof NextResponse || "error" in userResult)
       return userResult;
     const { user, supabase } = userResult;
 
-    // Get the app details to find the git repository ID
     const { data: app, error: appError } = await supabase
       .from("user_apps")
       .select("git_repo_id, app_name")
@@ -34,10 +32,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Download the zip from Freestyle Git API
     const zipBuffer = await downloadGitRepositoryZip(app.git_repo_id);
 
-    // Set response headers for file download
     const responseHeaders = new Headers();
     responseHeaders.set("Content-Type", "application/zip");
     responseHeaders.set(
