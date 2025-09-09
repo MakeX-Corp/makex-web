@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { AlertTriangle, CheckCircle, Trash2 } from "lucide-react";
+import { CheckCircle, Trash2 } from "lucide-react";
 
 interface GitHubSyncModalProps {
   open: boolean;
@@ -189,8 +189,8 @@ export function GitHubSyncModal({
             {currentSyncRepo
               ? "Manage your GitHub sync configuration"
               : isChangingRepo
-                ? "Change your GitHub repository"
-                : "Set up automatic syncing of your app code to GitHub"}
+              ? "Change your GitHub repository"
+              : "Set up automatic syncing of your app code to GitHub"}
           </DialogDescription>
         </DialogHeader>
 

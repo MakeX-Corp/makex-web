@@ -9,8 +9,6 @@ import {
   ChevronRight,
   Search,
   HomeIcon,
-  Sun,
-  Moon,
   Trash,
   Loader2,
   Plus,
@@ -19,15 +17,13 @@ import {
   X,
   MessageSquare,
 } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useApp } from "@/context/AppContext";
+import { useApp } from "@/context/app-context";
 import { useState, useEffect, useRef } from "react";
-import { XIcon } from "@/components/icon-utils";
 import { useTheme } from "next-themes";
 import { updateAppName } from "@/lib/app-service";
-// Import dialog components for confirmation modal
+import { ThemeToggle } from "../common/theme-toggle";
 import {
   Dialog,
   DialogContent,
@@ -38,24 +34,18 @@ import {
 } from "@/components/ui/dialog";
 import { FeedbackFish } from "@feedback-fish/react";
 
-// Theme toggle component
-function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-
+export const XIcon = () => {
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      className="h-10 w-10"
+    <svg
+      className="w-5 h-5"
+      fill="currentColor"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
     >
-      <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-      <span className="sr-only">Toggle theme</span>
-    </Button>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
   );
-}
-
+};
 export function AppSidebar() {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);

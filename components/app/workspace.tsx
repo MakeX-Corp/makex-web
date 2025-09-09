@@ -16,8 +16,8 @@ import {
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Preview } from "@/components/workspace/preview";
-import { Chat } from "@/components/workspace/chat";
+import { Preview } from "@/components/app/preview/preview";
+import { Chat } from "@/components/app/chat/chat";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,14 +27,12 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SessionSelector } from "@/components/workspace/session-selector";
-import { SessionsError } from "@/components/workspace/sessions-error";
+import { SessionSelector } from "@/components/app/session/session-selector";
+import { SessionsError } from "@/components/app/session/sessions-error";
 import { createClient } from "@/utils/supabase/client";
-import { dataURLToBlob } from "@/lib/screenshot-service";
-import { DeployButton } from "@/components/workspace/deploy";
-import { GitHubSyncModal } from "./github-sync-modal";
-import { useToast } from "@/components/ui/use-toast";
-import { useApp } from "@/context/AppContext";
+import { DeployButton } from "@/components/app/deploy/deploy-button";
+import { GitHubSyncModal } from "@/components/app/github-sync-modal";
+
 interface WorkspaceContentProps {
   initialSessionId: string | null;
 }

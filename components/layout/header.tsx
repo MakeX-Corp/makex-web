@@ -4,11 +4,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { FOOTER_AND_HEADER_PATHS } from "@/const";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeToggle } from "../common/theme-toggle";
 
 export function Header() {
   const pathname = usePathname();
-  const isFooterAndHeaderPath = FOOTER_AND_HEADER_PATHS.includes(pathname);
+  const isFooterAndHeaderPath = (
+    FOOTER_AND_HEADER_PATHS as readonly string[]
+  ).includes(pathname);
 
   if (!isFooterAndHeaderPath) return null;
   return (

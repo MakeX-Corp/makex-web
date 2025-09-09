@@ -4,14 +4,12 @@ import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { Folder, MoreHorizontal, Plus } from "lucide-react";
-import DeleteConfirmationDialog from "./delete-file-dialog";
 import { FolderOpen } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import { ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import useSWR from "swr";
-import CreateFileDialog from "./create-file-dialog";
 import { Button } from "@/components/ui/button";
 import { Node, fetchJSON } from "./utils";
 import FileItem from "./file-item";
@@ -53,7 +51,9 @@ export default function FolderItem({
     mutate,
   } = useSWR<Node[]>(
     open
-      ? `/api/code/directory?path=${encodeURIComponent(node.path)}&appId=${appId}`
+      ? `/api/code/directory?path=${encodeURIComponent(
+          node.path,
+        )}&appId=${appId}`
       : null,
     fetchJSON,
     { refreshInterval: 5000 },

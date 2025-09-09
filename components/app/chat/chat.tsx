@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, UIMessage } from "ai";
+import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,9 @@ import {
   X,
   MoreVertical,
 } from "lucide-react";
-import ToolInvocation from "@/components/tool-render";
+import ToolInvocation from "@/components/app/chat/tool-render";
 import { useSession } from "@/context/session-context";
-import { useApp } from "@/context/AppContext";
+import { useApp } from "@/context/app-context";
 import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import {
@@ -23,15 +23,14 @@ import {
   restoreCheckpoint,
 } from "@/lib/chat-service";
 import { updateSessionTitle } from "@/utils/client/session-utils";
-import { ThreeDotsLoader } from "@/components/workspace/three-dots-loader";
+import { ThreeDotsLoader } from "@/components/app/chat/three-dots-loader";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
-import { PausedAppModal } from "@/components/workspace/paused-app-modal";
+import { PausedAppModal } from "@/components/app/paused-app-modal";
 import { AI_MODELS, DEFAULT_MODEL } from "@/const";
 import type { UIMessagePart } from "ai";
 
