@@ -2,10 +2,10 @@ import { tool } from "ai";
 import { z } from "zod";
 import OpenAI from "openai";
 import { getRelevantContext } from "./getRelevantContext";
-import FirecrawlApp, { ScrapeResponse, Action } from "@mendable/firecrawl-js";
+import FirecrawlApp, { Action } from "@mendable/firecrawl-js";
 import { CONVEX_AUTH_DOCS } from "../docs/convex-auth-docs";
-import { 
-  readFile as e2bReadFile, 
+import {
+  readFile as e2bReadFile,
   writeFile as e2bWriteFile,
   deleteFile as e2bDeleteFile,
   createDirectory as e2bCreateDirectory,
@@ -13,7 +13,7 @@ import {
   listDirectory as e2bListDirectory,
   getDirectoryTree as e2bGetDirectoryTree,
   grepSearch as e2bGrepSearch,
-  runCommand as e2bRunCommand
+  runCommand as e2bRunCommand,
 } from "./e2b";
 
 type ToolConfig = {
@@ -31,9 +31,9 @@ export function createTools(config: ToolConfig) {
     if (path === "." || path === "./" || path === "") {
       return "/app/expo-app";
     }
-    
-    if (path.startsWith('/')) {
-      return path.startsWith('/app/expo-app') ? path : `/app/expo-app${path}`;
+
+    if (path.startsWith("/")) {
+      return path.startsWith("/app/expo-app") ? path : `/app/expo-app${path}`;
     }
     return `/app/expo-app/${path}`;
   };
@@ -127,7 +127,7 @@ export function createTools(config: ToolConfig) {
       }),
       execute: async ({ packages }) => {
         try {
-          const command = `yarn add ${packages.join(' ')}`;
+          const command = `yarn add ${packages.join(" ")}`;
           const data = await e2bRunCommand(config.sandboxId, command);
           return { success: true, data };
         } catch (error: any) {
@@ -151,7 +151,11 @@ export function createTools(config: ToolConfig) {
       execute: async ({ path, content }) => {
         try {
           const absolutePath = getAbsolutePath(path);
-          const data = await e2bWriteFile(config.sandboxId, absolutePath, content || "");
+          const data = await e2bWriteFile(
+            config.sandboxId,
+            absolutePath,
+            content || "",
+          );
           return { success: true, data };
         } catch (error: any) {
           return {
@@ -183,17 +187,29 @@ export function createTools(config: ToolConfig) {
     }),
 
     editFile: tool({
-      description: "Use Morph's Fast Apply API to make accurate code edits to an existing file",
+      description:
+        "Use Morph's Fast Apply API to make accurate code edits to an existing file",
       inputSchema: z.object({
         target_file: z.string().describe("The target file to modify"),
-        instructions: z.string().describe("A single sentence instruction describing what you are going to do for the sketched edit. This is used to assist the less intelligent model in applying the edit. Use the first person to describe what you are going to do. Use it to disambiguate uncertainty in the edit."),
-        code_edit: z.string().describe("Specify ONLY the precise lines of code that you wish to edit. NEVER specify or write out unchanged code. Instead, represent all unchanged code using the comment of the language you're editing in - example: // ... existing code ..."),
+        instructions: z
+          .string()
+          .describe(
+            "A single sentence instruction describing what you are going to do for the sketched edit. This is used to assist the less intelligent model in applying the edit. Use the first person to describe what you are going to do. Use it to disambiguate uncertainty in the edit.",
+          ),
+        code_edit: z
+          .string()
+          .describe(
+            "Specify ONLY the precise lines of code that you wish to edit. NEVER specify or write out unchanged code. Instead, represent all unchanged code using the comment of the language you're editing in - example: // ... existing code ...",
+          ),
       }),
       execute: async ({ target_file, instructions, code_edit }) => {
         try {
           // First, read the current file content
           const absoluteTargetFile = getAbsolutePath(target_file);
-          const currentFileData = await e2bReadFile(config.sandboxId, absoluteTargetFile);
+          const currentFileData = await e2bReadFile(
+            config.sandboxId,
+            absoluteTargetFile,
+          );
           const initialCode = currentFileData;
 
           // Use Morph's Fast Apply API to merge the edit
@@ -201,7 +217,8 @@ export function createTools(config: ToolConfig) {
           if (!morphApiKey) {
             return {
               success: false,
-              error: "Morph API key not configured. Please set MORPH_API_KEY environment variable.",
+              error:
+                "Morph API key not configured. Please set MORPH_API_KEY environment variable.",
             };
           }
 
@@ -227,7 +244,11 @@ export function createTools(config: ToolConfig) {
           }
 
           // Write the merged code back to the file
-          const fileWriteRes = await e2bWriteFile(config.sandboxId, absoluteTargetFile, data);
+          const fileWriteRes = await e2bWriteFile(
+            config.sandboxId,
+            absoluteTargetFile,
+            data,
+          );
 
           return { success: true, data };
         } catch (error: any) {
@@ -250,7 +271,10 @@ export function createTools(config: ToolConfig) {
       execute: async ({ path }) => {
         try {
           const absolutePath = getAbsolutePath(path || ".");
-          const data = await e2bGetDirectoryTree(config.sandboxId, absolutePath);
+          const data = await e2bGetDirectoryTree(
+            config.sandboxId,
+            absolutePath,
+          );
           return { success: true, data };
         } catch (error: any) {
           return {
@@ -369,33 +393,40 @@ export function createTools(config: ToolConfig) {
           console.log("Running linter on", path);
           const targetPath = path || ".";
           const absolutePath = getAbsolutePath(targetPath);
-          
+
           // First check if eslint is available
-          const checkEslint = await e2bRunCommand(config.sandboxId, "npx eslint --version");
+          const checkEslint = await e2bRunCommand(
+            config.sandboxId,
+            "npx eslint --version",
+          );
           if (checkEslint.error || checkEslint.returnCode !== 0) {
             console.log("ESLint not found, attempting to install...");
-            
+
             // Try to install eslint
-            const installEslint = await e2bRunCommand(config.sandboxId, "yarn add -D eslint");
+            const installEslint = await e2bRunCommand(
+              config.sandboxId,
+              "yarn add -D eslint",
+            );
             if (installEslint.error || installEslint.returnCode !== 0) {
               return {
                 success: false,
-                error: "Failed to install ESLint. Please install it manually with: yarn add -D eslint",
+                error:
+                  "Failed to install ESLint. Please install it manually with: yarn add -D eslint",
                 stdout: installEslint.stdout,
                 stderr: installEslint.stderr,
-                returnCode: installEslint.returnCode
+                returnCode: installEslint.returnCode,
               };
             }
-            
+
             console.log("ESLint installed successfully");
           }
-          
-                    const command = `npx eslint ${absolutePath} --fix --quiet`;
+
+          const command = `npx eslint ${absolutePath} --fix --quiet`;
           console.log("Running ESLint command:", command);
           const result = await e2bRunCommand(config.sandboxId, command);
-          
+
           console.log("ESLint result:", JSON.stringify(result, null, 2));
-          
+
           // Check if the command failed
           if (result.error) {
             return {
@@ -403,10 +434,10 @@ export function createTools(config: ToolConfig) {
               error: result.error,
               stdout: result.stdout,
               stderr: result.stderr,
-              returnCode: result.returnCode
+              returnCode: result.returnCode,
             };
           }
-          
+
           // Check if eslint returned a non-zero exit code (indicating linting errors)
           if (result.returnCode !== 0) {
             return {
@@ -414,18 +445,18 @@ export function createTools(config: ToolConfig) {
               error: `ESLint found linting issues (exit code: ${result.returnCode})`,
               stdout: result.stdout,
               stderr: result.stderr,
-              returnCode: result.returnCode
+              returnCode: result.returnCode,
             };
           }
-          
-          return { 
-            success: true, 
+
+          return {
+            success: true,
             data: {
               stdout: result.stdout,
               stderr: result.stderr,
               returnCode: result.returnCode,
-              message: "Linting completed successfully"
-            }
+              message: "Linting completed successfully",
+            },
           };
         } catch (error: any) {
           return {
@@ -530,10 +561,10 @@ export function createTools(config: ToolConfig) {
         console.log("[Tool Execution] Reading logs for", log_type);
         try {
           const log_paths = {
-            "expo": "/home/user/expo_logs.txt",
-            "convex": "/home/user/convex_logs.txt"
+            expo: "/home/user/expo_logs.txt",
+            convex: "/home/user/convex_logs.txt",
           };
-          
+
           const logPath = log_paths[log_type];
           if (!logPath) {
             return {
@@ -541,7 +572,7 @@ export function createTools(config: ToolConfig) {
               error: `Invalid log_type: ${log_type}. Must be 'expo' or 'convex'`,
             };
           }
-          
+
           const data = await e2bReadFile(config.sandboxId, logPath);
           return { success: true, data };
         } catch (error: any) {
