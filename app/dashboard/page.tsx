@@ -4,15 +4,15 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Search, Sparkles, Loader2 } from "lucide-react";
-import { useApp } from "@/context/AppContext";
+import { ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import { useApp } from "@/context/app-context";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CodeRedemption } from "@/components/code-redemption";
+import { CodeRedemption } from "@/components/features/code-redemption";
 import { APP_SUGGESTIONS, ROW_1, ROW_2, ROW_3 } from "@/const";
 import { getIconComponent } from "@/lib/iconMap";
 

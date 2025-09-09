@@ -1,6 +1,6 @@
 import { AlertCircle } from "lucide-react";
-import { Button } from "../ui/button";
-import { Alert, AlertTitle, AlertDescription } from "../ui/alert";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
 
 export const SessionsError = ({ sessionsError }: { sessionsError: string }) => {

@@ -7,7 +7,7 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import { useApp } from "@/context/AppContext";
+import { useApp } from "@/context/app-context";
 import {
   getSessionsForApp,
   createNewSession,
@@ -77,7 +77,7 @@ export function SessionProvider({
 
   // App data
   const [appId, setAppId] = useState<string>(initialAppId);
-  const [appName, setAppName] = useState<string>("")
+  const [appName, setAppName] = useState<string>("");
   const [appUrl, setAppUrl] = useState<string>("");
   const [supabaseProject, setSupabaseProject] = useState<any>(null);
   const [isAppReady, setIsAppReady] = useState<boolean>(false);

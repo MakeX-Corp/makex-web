@@ -1,4 +1,3 @@
-// ThreeDotsLoader component for indicating loading
 export const ThreeDotsLoader = () => (
   <div className="flex justify-center items-center space-x-1 py-2">
     <div

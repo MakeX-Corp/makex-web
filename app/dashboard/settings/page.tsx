@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, LogOut, Globe, Check, CreditCard } from "lucide-react";
-import { useApp } from "@/context/AppContext";
+import { useApp } from "@/context/app-context";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/utils/supabase/client";
 import { useToast } from "@/components/ui/use-toast";

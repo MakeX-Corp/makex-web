@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Sparkles, Code, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import WaitlistContainer from "@/components/waitlist-container";
 import { Button } from "@/components/ui/button";

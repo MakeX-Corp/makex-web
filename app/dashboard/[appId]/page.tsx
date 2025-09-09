@@ -1,13 +1,9 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, use } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { use } from "react";
 import { SessionProvider } from "@/context/session-context";
-import WorkspaceContent from "@/components/workspace/workspace-content";
+import Workspace from "@/components/app/workspace";
 
 interface PageProps {
   params: any;
@@ -25,7 +21,7 @@ export default function WorkspacePage({ params }: PageProps) {
 
   return (
     <SessionProvider initialAppId={appId}>
-      <WorkspaceContent initialSessionId={sessionId} />
+      <Workspace initialSessionId={sessionId} />
     </SessionProvider>
   );
 }

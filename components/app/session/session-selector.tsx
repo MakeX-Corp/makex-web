@@ -16,9 +16,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { useRef, useState } from "react";
 import { useSession } from "@/context/session-context";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useApp } from "@/context/AppContext";
+import { useApp } from "@/context/app-context";
 
 export function SessionSelector() {
   const {
