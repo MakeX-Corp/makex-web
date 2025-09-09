@@ -6,8 +6,3 @@ export const ANIMATION_TIMINGS = {
   CONVEX_LOAD_DELAY: 8000, // Convex dashboard load delay
   EXPO_START_DELAY: 12000, // Expo start delay
 } as const;
-
-// API timeouts
-export const API_TIMEOUTS = {
-  CODE_VALIDATION_DELAY: 1000, // Code redemption validation delay
-} as const;

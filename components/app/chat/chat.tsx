@@ -154,16 +154,6 @@ export function Chat({
     const checkLimit = async () => {
       if (!subscription) return;
 
-      const hasUnlimitedMessages =
-        typeof window !== "undefined" &&
-        localStorage.getItem("unlimited_messages_activated") === "true";
-
-      if (hasUnlimitedMessages) {
-        setRemainingMessages(500);
-        setLimitReached(false);
-        return;
-      }
-
       setRemainingMessages(
         (subscription?.messagesLimit || 0) - (subscription?.messagesUsed || 0),
       );
@@ -258,9 +248,6 @@ export function Chat({
             sessionId,
             subscription,
             model: selectedModel,
-            hasUnlimitedMessages:
-              typeof window !== "undefined" &&
-              localStorage.getItem("unlimited_messages_activated") === "true",
           },
         },
       );
@@ -319,9 +306,6 @@ export function Chat({
             sessionId,
             subscription,
             model: selectedModel,
-            hasUnlimitedMessages:
-              typeof window !== "undefined" &&
-              localStorage.getItem("unlimited_messages_activated") === "true",
           },
         },
       );
@@ -644,16 +628,6 @@ export function Chat({
               selectedModel}
           </div>
           {(() => {
-            const hasUnlimitedMessages =
-              typeof window !== "undefined" &&
-              localStorage.getItem("unlimited_messages_activated") === "true";
-            if (hasUnlimitedMessages) {
-              return (
-                <div className="text-xs text-muted-foreground">
-                  <span>Unlimited messages</span>
-                </div>
-              );
-            }
             if (remainingMessages !== null && !limitReached) {
               return (
                 <div className="text-xs text-muted-foreground">
