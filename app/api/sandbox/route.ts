@@ -3,9 +3,6 @@ import { pauseContainer } from "@/trigger/pause-container";
 import { deleteContainer } from "@/trigger/delete-container";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse, NextRequest } from "next/server";
-import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-
-export async function POST(req: Request) {}
 
 export async function GET(req: Request) {
   try {
@@ -17,8 +14,6 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const appId = searchParams.get("appId");
-
-    const adminSupabase = await getSupabaseAdmin();
 
     // Get app and its current sandbox in one query
     const { data: app, error } = await supabase

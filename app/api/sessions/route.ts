@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 
 // GET /api/sessions - Get chat sessions for a specific app or session
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const result = await getSupabaseWithUser(request);
-    if (result instanceof NextResponse) return result;
+    if ("error" in result) return result.error;
 
     const { supabase, user } = result;
     const { searchParams } = new URL(request.url);
@@ -86,10 +86,10 @@ export async function GET(request: Request) {
 }
 
 // POST /api/sessions - Create a new chat session
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const result = await getSupabaseWithUser(request);
-    if (result instanceof NextResponse) return result;
+    if ("error" in result) return result.error;
 
     const { supabase, user } = result;
 
@@ -148,10 +148,10 @@ export async function POST(request: Request) {
 }
 
 // DELETE /api/sessions - Soft delete a chat session by setting visible to false
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     const result = await getSupabaseWithUser(request);
-    if (result instanceof NextResponse) return result;
+    if ("error" in result) return result.error;
 
     const { supabase, user } = result;
 
