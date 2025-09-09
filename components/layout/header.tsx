@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { FOOTER_AND_HEADER_PATHS } from "@/const";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeToggle } from "../common/theme-toggle";
 
 export function Header() {
   const pathname = usePathname();
