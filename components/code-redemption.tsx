@@ -8,8 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Gift, CheckCircle, XCircle, Loader2 } from "lucide-react";
-
-const VALID_CODE = "KATYHACKS25";
+import { PROMO_CODES, API_TIMEOUTS } from "@/const";
 
 interface CodeRedemptionProps {
   onUnlimitedChange?: (isUnlimited: boolean) => void;
@@ -43,10 +42,12 @@ export function CodeRedemption({ onUnlimitedChange }: CodeRedemptionProps) {
     setCodeMessage(null);
 
     // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) =>
+      setTimeout(resolve, API_TIMEOUTS.CODE_VALIDATION_DELAY),
+    );
 
     const upperCode = code.trim().toUpperCase();
-    const isValidCode = upperCode === VALID_CODE;
+    const isValidCode = upperCode === PROMO_CODES.HACKATHON;
 
     if (isValidCode) {
       localStorage.setItem("unlimited_messages_activated", "true");

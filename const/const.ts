@@ -1,9 +1,11 @@
+// User subscription limits
 export const DEFAULT_LIMITS = {
   free: process.env.NODE_ENV === "development" ? 5000 : 5, // 5 messages per day
   starter: 250, // 250 messages per month
   pro: 500, // 500 messages per month
-};
+} as const;
 
+// Routes that should show header and footer
 export const FOOTER_AND_HEADER_PATHS = [
   "/",
   "/about",
@@ -13,7 +15,9 @@ export const FOOTER_AND_HEADER_PATHS = [
   "/refund",
   "/privacy",
   "/terms",
-];
+] as const;
+
+// App categories for classification
 export const APP_CATEGORIES = [
   "Productivity",
   "Social",
@@ -25,10 +29,7 @@ export const APP_CATEGORIES = [
   "Developer Tools",
   "Business",
   "Lifestyle",
-];
-
-export const CLAUDE_SONNET_4_MODEL = "anthropic/claude-4-sonnet";
-export const CLAUDE_3_5_SONNET_LATEST = "claude-3-5-sonnet-latest";
+] as const;
 
 export const APP_SUGGESTIONS = [
   {

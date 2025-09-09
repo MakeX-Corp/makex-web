@@ -6,11 +6,14 @@ import Image from "next/image";
 import WaitlistContainer from "@/components/waitlist-container";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { APP_SUGGESTIONS, ROW_1, ROW_2, ROW_3 } from "@/const/const";
+import {
+  APP_SUGGESTIONS,
+  ROW_1,
+  ROW_2,
+  ROW_3,
+  ANIMATION_TIMINGS,
+} from "@/const";
 import { getIconComponent } from "@/lib/iconMap";
-
-const TYPING_SPEED = 200; // Slower typing speed
-const TYPING_INITIAL_DELAY = 2000; // Longer initial delay
 
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false);
@@ -519,11 +522,11 @@ export default function LandingPage() {
             startGeneration();
           }, 500);
         }
-      }, TYPING_SPEED);
+      }, ANIMATION_TIMINGS.TYPING_SPEED);
 
       // Cleanup function
       return () => clearInterval(typingInterval);
-    }, TYPING_INITIAL_DELAY);
+    }, ANIMATION_TIMINGS.TYPING_INITIAL_DELAY);
   };
 
   return (
