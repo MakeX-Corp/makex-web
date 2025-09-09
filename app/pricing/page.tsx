@@ -11,16 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  PRICING_PLANS,
-  PRICING_COMPARISON_FEATURES,
-  PlanProps,
-  ComparisonFeature,
-} from "@/const";
+import { PRICING_PLANS, PRICING_COMPARISON_FEATURES } from "@/const";
 
-// Using PlanProps interface from constants
-
-// Using pricing plans from constants
 const plans = PRICING_PLANS;
 
 // Using comparison features from constants

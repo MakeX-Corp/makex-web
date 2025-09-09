@@ -8,7 +8,9 @@ import { ThemeToggle } from "../common/theme-toggle";
 
 export function Header() {
   const pathname = usePathname();
-  const isFooterAndHeaderPath = FOOTER_AND_HEADER_PATHS.includes(pathname);
+  const isFooterAndHeaderPath = (
+    FOOTER_AND_HEADER_PATHS as readonly string[]
+  ).includes(pathname);
 
   if (!isFooterAndHeaderPath) return null;
   return (
