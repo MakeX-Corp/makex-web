@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 
-// GET /api/sessions - Get chat sessions for a specific app or session
 export async function GET(request: NextRequest) {
   try {
     const result = await getSupabaseWithUser(request);
@@ -31,11 +30,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(data);
     }
 
-    // Determine app identifier: appId or appName
     let resolvedAppId = appId;
 
     if (!resolvedAppId && appName) {
-      //Means there is no id and need to fetch by name
       const { data: app, error } = await supabase
         .from("user_apps")
         .select("id")
@@ -54,7 +51,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (resolvedAppId) {
-      //there is an app id and can just filter by that
       const { data: sessions, error } = await supabase
         .from("chat_sessions")
         .select("*")
@@ -85,7 +81,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/sessions - Create a new chat session
 export async function POST(request: NextRequest) {
   try {
     const result = await getSupabaseWithUser(request);
@@ -93,7 +88,6 @@ export async function POST(request: NextRequest) {
 
     const { supabase, user } = result;
 
-    // Get the app ID from the request body
     const body = await request.json();
     const { appId, title, metadata } = body;
 
@@ -104,7 +98,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify the app belongs to the user
     const { data: app, error: appError } = await supabase
       .from("user_apps")
       .select("id")
@@ -119,7 +112,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new chat session
     const { data: session, error: createError } = await supabase
       .from("chat_sessions")
       .insert({
@@ -147,7 +139,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE /api/sessions - Soft delete a chat session by setting visible to false
 export async function DELETE(request: NextRequest) {
   try {
     const result = await getSupabaseWithUser(request);
@@ -155,7 +146,6 @@ export async function DELETE(request: NextRequest) {
 
     const { supabase, user } = result;
 
-    // Get the session ID from the URL
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get("sessionId");
 
@@ -166,7 +156,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Verify the session belongs to the user
     const { data: session, error: sessionError } = await supabase
       .from("chat_sessions")
       .select("id")
@@ -181,7 +170,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Soft delete the session by setting visible to false
     const { error: updateError } = await supabase
       .from("chat_sessions")
       .update({ visible: false })

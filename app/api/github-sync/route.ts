@@ -9,7 +9,6 @@ export async function POST(request: NextRequest) {
   try {
     const { appId, repoName } = await request.json();
 
-    // Validate required fields
     if (!appId || !repoName) {
       return NextResponse.json(
         { error: "Missing required fields: appId, or repoName" },
@@ -17,7 +16,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate repoName format (should be username/repo)
     const repoNameRegex = /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/;
     if (!repoNameRegex.test(repoName)) {
       return NextResponse.json(
@@ -26,14 +24,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get authenticated Supabase client and user
     const result = await getSupabaseWithUser(request);
     if (result instanceof NextResponse) return result;
     if ("error" in result) return result.error;
 
     const { supabase, user } = result;
 
-    // Get the app to find the Freestyle repository ID
     const { data: app, error: appError } = await supabase
       .from("user_apps")
       .select("git_repo_id, github_sync_repo")
@@ -148,7 +144,6 @@ export async function DELETE(request: NextRequest) {
   try {
     const { appId } = await request.json();
 
-    // Validate required fields
     if (!appId) {
       return NextResponse.json(
         { error: "Missing required field: appId" },
@@ -156,14 +151,12 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Get authenticated Supabase client and user
     const result = await getSupabaseWithUser(request);
     if (result instanceof NextResponse) return result;
     if ("error" in result) return result.error;
 
     const { supabase, user } = result;
 
-    // Get the app to find the Freestyle repository ID
     const { data: app, error: appError } = await supabase
       .from("user_apps")
       .select("git_repo_id, github_sync_repo")
@@ -228,7 +221,6 @@ export async function PUT(request: NextRequest) {
   try {
     const { appId, repoName } = await request.json();
 
-    // Validate required fields
     if (!appId || !repoName) {
       return NextResponse.json(
         { error: "Missing required fields: appId, or repoName" },
@@ -236,7 +228,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Validate repoName format (should be username/repo)
     const repoNameRegex = /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/;
     if (!repoNameRegex.test(repoName)) {
       return NextResponse.json(
@@ -245,14 +236,12 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Get authenticated Supabase client and user
     const result = await getSupabaseWithUser(request);
     if (result instanceof NextResponse) return result;
     if ("error" in result) return result.error;
 
     const { supabase, user } = result;
 
-    // Get the app to find the Freestyle repository ID
     const { data: app, error: appError } = await supabase
       .from("user_apps")
       .select("git_repo_id, github_sync_repo")
@@ -275,7 +264,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // If there's an existing sync, remove it first
     if (app.github_sync_repo) {
       try {
         const res = await removeGitHubSync({
@@ -291,13 +279,11 @@ export async function PUT(request: NextRequest) {
     }
 
     try {
-      // Configure new GitHub sync using Freestyle API
       await configureGitHubSync({
         repoId: app.git_repo_id,
         githubRepoName: repoName,
       });
 
-      // Update the GitHub sync repository name in the database
       const { error: updateError } = await supabase
         .from("user_apps")
         .update({ github_sync_repo: repoName })

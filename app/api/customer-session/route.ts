@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    // Parse the request body properly
     const body = await request.json();
     const customerId = body.customerId;
     let url = "";

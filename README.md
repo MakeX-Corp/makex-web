@@ -1,120 +1,214 @@
-# makex-landing
+# MakeX
 
-## Local Development Setup
+An open-source AI-powered app builder that lets you create full-stack applications through natural language conversations.
 
-### Prerequisites
+## Features
 
-1. **Docker Desktop** - Required for running Supabase locally
-   - Download and install from: https://docs.docker.com/desktop
-   - Make sure Docker Desktop is running before proceeding
+- 🤖 **AI-Powered Development**: Build apps using natural language with multiple AI models
+- 🔧 **Full-Stack Support**: Frontend, backend, and database integration
+- 📱 **Expo/React Native**: Mobile app development support
+- 🌐 **Web Applications**: Modern React/Next.js web apps
+- 🔄 **Real-time Collaboration**: Live preview and editing
+- 🚀 **One-Click Deployment**: Deploy your apps instantly
+- 📦 **Export & Sync**: GitHub integration and code export
+- 💳 **Built-in Payments**: Paddle integration for monetization
 
-2. **Supabase CLI** - Install if not already available
-   ```bash
-   # macOS
-   brew install supabase/tap/supabase
-   
-   # Other platforms: https://supabase.com/docs/guides/cli/getting-started
-   ```
+## Tech Stack
 
-### 🚀 Quick Start - Local Supabase
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, Supabase
+- **Database**: PostgreSQL (via Supabase)
+- **AI/LLM**: OpenAI, Anthropic Claude
+- **Code Execution**: E2B Sandboxes
+- **Background Jobs**: Trigger.dev
+- **Payments**: Paddle
+- **Analytics**: PostHog
+- **Error Monitoring**: Sentry
+- **Deployment**: Vercel
 
-#### 1. Start Local Supabase Instance
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** 18+ and npm/yarn
+- **Docker Desktop** (for local Supabase)
+- **Git**
+
+## Quick Start
+
+### 1. Clone the Repository
+
 ```bash
-# Make sure Docker Desktop is running first!
+git clone https://github.com/your-org/makex.git
+cd makex
+npm install
+```
+
+### 2. Environment Setup
+
+Copy the example environment file and configure your variables:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your actual API keys and configuration values.
+
+### 3. Database Setup
+
+#### Option A: Local Development with Supabase
+
+```bash
+# Install Supabase CLI
+brew install supabase/tap/supabase
+
+# Start local Supabase (requires Docker)
 supabase start
-```
 
-This will:
-- Pull necessary Docker images (first time takes a few minutes)
-- Start all Supabase services locally
-- Display connection details and access URLs
-
-#### 2. Pull Production Schema
-Sync your local database with the production schema:
-
-```bash
-# Pull the current production schema
-supabase db pull
-
-# Apply the schema to your local database
+# Apply database migrations
 supabase db reset
 ```
 
-#### 3. Update Environment Variables
-Update your `.env.local` file to point to local Supabase:
+This will start Supabase locally and provide you with:
 
-**Replace these 3 lines:**
+- **Database URL**: `http://127.0.0.1:54321`
+- **Studio UI**: `http://127.0.0.1:54323`
+- **Anon Key**: Check terminal output
+
+#### Option B: Supabase Cloud
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Get your project URL and anon key from Settings > API
+3. Run the migrations in your Supabase dashboard
+
+### 4. Required Services
+
+You'll need to set up the following services:
+
+#### E2B (Code Execution)
+
+1. Sign up at [e2b.dev](https://e2b.dev)
+2. Get your API key from the dashboard
+3. Add to `E2B_API_KEY` in your `.env.local`
+
+#### AI Models
+
+- **OpenAI**: Get API key from [platform.openai.com](https://platform.openai.com)
+- **Anthropic**: Get API key from [console.anthropic.com](https://console.anthropic.com)
+
+#### Trigger.dev (Background Jobs)
+
+1. Sign up at [trigger.dev](https://trigger.dev)
+2. Create a new project
+3. Add API key to `TRIGGER_API_KEY`
+
+### 5. Start Development
+
 ```bash
-# Change from production URLs to local:
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
-SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+npm run dev
 ```
 
-#### 4. Access Local Services
+Open [http://localhost:3000](http://localhost:3000) to see your application.
 
-Once running, you'll have access to:
+## Configuration
 
-- **🎨 Supabase Studio (Database UI)**: http://127.0.0.1:54323
-- **🔌 API Endpoint**: http://127.0.0.1:54321
-- **📊 GraphQL**: http://127.0.0.1:54321/graphql/v1
-- **💾 S3 Storage**: http://127.0.0.1:54321/storage/v1/s3
-- **📧 Email Testing (Inbucket)**: http://127.0.0.1:54324
-- **🗄️ Direct Database**: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`
+### Database Schema
 
-### 🛠️ Useful Commands
+The application uses the following main tables:
+
+- `user_apps` - User applications
+- `chat_sessions` - Chat conversation sessions
+- `chat_history` - Message history
+- `user_sandboxes` - Code execution environments
+- `app_listing_info` - Public app listings
+
+### API Routes
+
+- `/api/app` - App management (CRUD)
+- `/api/chat` - AI chat functionality
+- `/api/code/*` - Code file operations
+- `/api/sandbox` - Sandbox management
+- `/api/sessions` - Chat session management
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Connect your GitHub repository to Vercel
+2. Add environment variables in Vercel dashboard
+3. Deploy automatically on push to main
+
+### Docker
 
 ```bash
-# Check service status
-supabase status
+# Build the Docker image
+docker build -t makex .
 
-# Stop all services
-supabase stop
-
-# Reset database to initial state
-supabase db reset
-
-# View service logs
-supabase logs
-
-# Check for schema differences
-supabase db diff --schema public
-
-# Pull latest schema changes from production
-supabase db pull && supabase db reset
+# Run the container
+docker run -p 3000:3000 makex
 ```
 
-### 🔄 Keeping Local Updated
+## Development
 
-When production schema changes:
+### Project Structure
+
+```
+├── app/                    # Next.js app router
+│   ├── api/               # API routes
+│   └── (pages)/           # App pages
+├── components/            # React components
+│   ├── app/              # App-specific components
+│   ├── layout/           # Layout components
+│   └── ui/               # Reusable UI components
+├── lib/                  # Utility libraries
+├── utils/                # Helper functions
+│   ├── client/           # Client-side utilities
+│   └── server/           # Server-side utilities
+├── trigger/              # Background job definitions
+└── supabase/            # Database migrations
+```
+
+### Adding New Features
+
+1. **API Routes**: Add new endpoints in `app/api/`
+2. **Components**: Create reusable components in `components/`
+3. **Database**: Add migrations in `supabase/migrations/`
+4. **Background Jobs**: Define jobs in `trigger/`
+
+### Running Tests
+
 ```bash
-supabase db pull    # Pull new schema changes
-supabase db reset   # Apply them locally
+npm run test
 ```
 
-### 🚨 Troubleshooting
+## Contributing
 
-**Docker not running:**
-```
-Error: Cannot connect to the Docker daemon
-```
-→ Start Docker Desktop and wait for it to fully initialize
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-**Port conflicts:**
-```
-Error: Port 54321 already in use
-```
-→ Stop other services or change ports in `supabase/config.toml`
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-**Schema out of sync:**
-```bash
-# Reset everything and pull fresh schema
-supabase stop
-supabase start
-supabase db pull
-supabase db reset
-```
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+- 📧 **Email**: support@makex.app
+- 💬 **Discord**: [Join our community](https://discord.gg/makex)
+- 📖 **Documentation**: [docs.makex.app](https://docs.makex.app)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/your-org/makex/issues)
+
+## Acknowledgments
+
+- [Vercel](https://vercel.com) for hosting and deployment
+- [Supabase](https://supabase.com) for database and authentication
+- [E2B](https://e2b.dev) for secure code execution
+- [OpenAI](https://openai.com) and [Anthropic](https://anthropic.com) for AI models
 
 ---
 
-Your local development environment now perfectly mirrors production! 🎉
+Built with ❤️ by the MakeX team

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -10,15 +10,12 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
-
 import { initPaddle } from "@/utils/server/paddle-client";
-
 import { useToast } from "@/components/ui/use-toast";
 import { PRICING_PLANS } from "@/const";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApp } from "@/context/app-context";
 
-// Using pricing configuration from constants
 const plans = PRICING_PLANS;
 
 const PricingSkeleton = () => {
@@ -101,14 +98,11 @@ export default function PricingPage() {
     }
   };
 
-  // Check if button should be disabled for the current plan
   const isButtonDisabled = (priceId: string) => {
-    // Find the current plan based on planName
     const currentPlan = plans.find(
       (plan) => plan.name === subscription?.planName,
     );
 
-    // Disable the button for the current plan
     if (
       subscription?.hasActiveSubscription &&
       currentPlan &&
@@ -196,7 +190,6 @@ export default function PricingPage() {
             );
           })}
 
-          {/* Contact Us Card */}
           <Card className="flex flex-col border-dashed">
             <CardHeader>
               <CardTitle className="text-2xl">

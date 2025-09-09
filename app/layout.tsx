@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { PostHogProvider } from "@/components/providers/PostHogProvider";
+import { PostHogProvider } from "@/components/providers/posthog-provider";
 import { Footer } from "../components/layout/footer";
 import { Header } from "../components/layout/header";
 import { WAITLIST_WIDGET } from "@/const";

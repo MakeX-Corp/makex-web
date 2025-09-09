@@ -15,7 +15,6 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const appId = searchParams.get("appId");
 
-    // Get app and its current sandbox in one query
     const { data: app, error } = await supabase
       .from("user_apps")
       .select(
@@ -39,7 +38,6 @@ export async function GET(req: Request) {
       );
     }
 
-    // Flatten the data to send just the statuses
     const sandbox = app.user_sandboxes as any;
     const flattenedData = {
       coding_status: app.coding_status,
@@ -89,7 +87,6 @@ export async function PATCH(req: Request) {
 
     const { appId, targetState } = await req.json();
 
-    // get app details
     const { data: app, error: appError } = await supabase
       .from("user_apps")
       .select("*")
@@ -100,7 +97,6 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: appError.message }, { status: 500 });
     }
 
-    // get the sandbox details
     const { data: sandbox, error: sandboxError } = await supabase
       .from("user_sandboxes")
       .select("*")
