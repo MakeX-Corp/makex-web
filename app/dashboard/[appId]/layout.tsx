@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect } from "react";
-import { useApp } from "@/context/AppContext";
+import { useApp } from "@/context/app-context";
 import Intercom from "@intercom/messenger-js-sdk";
 
 // This layout will be shared by all pages under /dashboard/[appId]

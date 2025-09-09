@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 import {
   ChevronDown,
   ChevronRight,
@@ -9,7 +8,7 @@ import {
   Eye,
 } from "lucide-react";
 import { toolStates, ToolName } from "@/utils/client/tools-dictionary";
-import CodeRenderer from "./code-renderer";
+import CodeRenderer from "@/components/app/chat/code-renderer";
 
 export default function ToolInvocation({ part }: { part: any }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -85,7 +84,9 @@ export default function ToolInvocation({ part }: { part: any }) {
                 <code className="text-red-500 whitespace-pre-wrap break-all">
                   {part.output?.errorText || "Tool execution failed"}
                 </code>
-              ) : toolName === "readFile" || toolName === "writeFile" || toolName === "editFile" ? (
+              ) : toolName === "readFile" ||
+                toolName === "writeFile" ||
+                toolName === "editFile" ? (
                 <div className="relative">
                   <code className="text-foreground whitespace-pre-wrap break-all overflow-wrap break-word">
                     {toolName === "readFile"
@@ -97,8 +98,8 @@ export default function ToolInvocation({ part }: { part: any }) {
                         ? part.output.data
                         : JSON.stringify(part.output.data, null, 2)
                       : typeof part.input.content === "string"
-                        ? part.input.content
-                        : JSON.stringify(part.input.content, null, 2)}
+                      ? part.input.content
+                      : JSON.stringify(part.input.content, null, 2)}
                   </code>
                   <button
                     onClick={(e) => {

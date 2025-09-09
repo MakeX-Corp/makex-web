@@ -1,5 +1,5 @@
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { AppProvider } from "@/context/AppContext";
+import { AppProvider } from "@/context/app-context";
 
 export default function DashboardLayout({
   children,

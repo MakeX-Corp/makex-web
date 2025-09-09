@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
-import { PhoneFrame } from "./phone-frame";
+import { PhoneFrame } from "@/components/app/preview/phone-frame";
 
 interface MobileMockupProps {
   appUrl: string | null;

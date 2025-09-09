@@ -1,5 +1,3 @@
-import { Loader2 } from "lucide-react";
-
 interface PhoneFrameProps {
   scaleFactor: number;
   contentWidth: number;
@@ -10,9 +8,7 @@ interface PhoneFrameProps {
 
 export function PhoneFrame({
   scaleFactor,
-  contentWidth,
-  contentHeight,
-  padding,
+
   children,
 }: PhoneFrameProps) {
   // Base dimensions for the phone frame

@@ -16,7 +16,7 @@ import { initPaddle } from "@/utils/server/paddle-client";
 import { useToast } from "@/components/ui/use-toast";
 import { PRICING_PLANS } from "@/const";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useApp } from "@/context/AppContext";
+import { useApp } from "@/context/app-context";
 
 // Using pricing configuration from constants
 const plans = PRICING_PLANS;

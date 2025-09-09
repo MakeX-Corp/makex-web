@@ -13,10 +13,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/context/session-context";
-import { QRCodeDisplay } from "@/components/qr-code";
-import MobileMockup from "@/components/mobile-mockup";
-import CodeView from "./code-view";
-import { ConvexDashboardEmbed } from "./convex-dashboard";
+import { QRCodeDisplay } from "@/components/app/preview/qr-code";
+import MobileMockup from "@/components/app/preview/mobile-mockup";
+import CodeView from "@/components/app/preview/code-view";
+import { ConvexDashboardEmbed } from "@/components/app/preview/convex-dashboard";
 
 interface PreviewProps {
   iframeKey: string;
@@ -109,14 +109,14 @@ export function Preview({
                 state?.sandbox_status === "starting"
                   ? "bg-blue-200 text-blue-800 border-blue-300"
                   : state?.sandbox_status === "active"
-                    ? "bg-green-200 text-green-800 border-green-300"
-                    : state?.sandbox_status === "paused"
-                      ? "bg-red-200 text-red-800 border-red-300"
-                      : state?.sandbox_status === "resuming"
-                        ? "bg-green-100 text-green-600 border-green-200"
-                        : state?.sandbox_status === "pausing"
-                          ? "bg-red-100 text-red-700 border-red-200"
-                          : "bg-gray-100 text-gray-700 border-gray-200"
+                  ? "bg-green-200 text-green-800 border-green-300"
+                  : state?.sandbox_status === "paused"
+                  ? "bg-red-200 text-red-800 border-red-300"
+                  : state?.sandbox_status === "resuming"
+                  ? "bg-green-100 text-green-600 border-green-200"
+                  : state?.sandbox_status === "pausing"
+                  ? "bg-red-100 text-red-700 border-red-200"
+                  : "bg-gray-100 text-gray-700 border-gray-200"
               }`}
               style={{ minWidth: 70, textAlign: "center" }}
             >

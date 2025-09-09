@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import FileTree from "@/components/workspace/code-view/file-tree";
-import CodeEditor from "@/components/workspace/code-view/code-editor";
+import FileTree from "@/components/app/editor/file-tree";
+import CodeEditor from "@/components/app/editor/code-editor";
 import {
   ResizablePanelGroup,
   ResizablePanel,

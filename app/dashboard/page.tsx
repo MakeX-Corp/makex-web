@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, Loader2 } from "lucide-react";
-import { useApp } from "@/context/AppContext";
+import { useApp } from "@/context/app-context";
 import {
   Dialog,
   DialogContent,
