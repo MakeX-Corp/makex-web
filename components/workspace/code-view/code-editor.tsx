@@ -8,6 +8,7 @@ import { AlertCircle, FileCode, CodeXml, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { ANIMATION_TIMINGS } from "@/const";
 import { useSession } from "@/context/session-context";
 
 const Monaco = dynamic(() => import("@monaco-editor/react"), { ssr: false });
@@ -167,7 +168,10 @@ export default function CodeEditor({
       });
       if (res.ok) {
         setSaveStatus("success");
-        setTimeout(() => setSaveStatus(null), 1500);
+        setTimeout(
+          () => setSaveStatus(null),
+          ANIMATION_TIMINGS.SAVE_STATUS_TIMEOUT,
+        );
       } else {
         setSaveStatus("error");
       }

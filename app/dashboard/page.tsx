@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CodeRedemption } from "@/components/code-redemption";
-import { APP_SUGGESTIONS, ROW_1, ROW_2, ROW_3 } from "@/const/const";
+import { APP_SUGGESTIONS, ROW_1, ROW_2, ROW_3 } from "@/const";
 import { getIconComponent } from "@/lib/iconMap";
 
 // Add these styles to your global CSS file

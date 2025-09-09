@@ -1,8 +1,7 @@
 import { generateObject } from "ai";
 import { z } from "zod";
-import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
+import { CLAUDE_SONNET_4_MODEL, APP_CATEGORIES } from "@/const";
 import { gateway } from "@/utils/server/gateway";
-import { APP_CATEGORIES } from "@/const/const";
 
 export interface AppInfoInput {
   appName: string;

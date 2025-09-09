@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { FOOTER_AND_HEADER_PATHS } from "@/const/const";
+import { FOOTER_AND_HEADER_PATHS } from "@/const";
 
 export function Footer() {
   const pathname = usePathname();

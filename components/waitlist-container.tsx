@@ -1,10 +1,12 @@
 "use client";
 
+import { MAKEX_URLS } from "@/const";
+
 export default function WaitlistContainer() {
   return (
     <div className="mb-12 mt-8 relative flex justify-center">
       <a
-        href="https://makexapp.link/app"
+        href={MAKEX_URLS.APP_STORE}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-block"

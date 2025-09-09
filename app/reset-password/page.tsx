@@ -37,7 +37,6 @@ function PasswordResetForm() {
             throw error;
           }
 
-          console.log("OTP verified successfully");
           setVerified(true);
         } catch (error: any) {
           console.error("Error verifying OTP:", error);

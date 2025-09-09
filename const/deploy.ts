@@ -1,0 +1,22 @@
+// Deployment and app setup configuration
+
+export interface DeployStep {
+  id: number;
+  title: string;
+  description: string;
+}
+
+export const DEPLOY_STEPS: DeployStep[] = [
+  { id: 1, title: "Choose", description: "Setup method" },
+  { id: 2, title: "Setup", description: "App details" },
+  { id: 3, title: "Icon", description: "App icon" },
+  { id: 4, title: "Deploy", description: "Final step" },
+] as const;
+
+// Default AI-generated app data for demo purposes
+export const DEFAULT_AI_GENERATED_DATA = {
+  category: "Productivity", // Uses first category from APP_CATEGORIES
+  description:
+    "An AI-powered task management app that helps you organize your work and boost productivity with intelligent suggestions and automated workflows.",
+  tags: "productivity, task-management, ai, automation, workflow",
+} as const;

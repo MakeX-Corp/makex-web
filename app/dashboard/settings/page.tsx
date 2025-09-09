@@ -10,40 +10,9 @@ import { useApp } from "@/context/AppContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/utils/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { getPlanFeatures, getPlanPrice } from "@/const";
 
-// Get plan features from environment variables
-const getPlanFeatures = (planName: string): string[] => {
-  switch (planName) {
-    case "Free":
-      return (
-        process.env.NEXT_PUBLIC_FREE_PLAN_FEATURES ||
-        "20 messages a month, Slower app start times, Discord support"
-      )
-        .split(",")
-        .map((feature) => feature.trim());
-    case "Starter":
-      return (
-        process.env.NEXT_PUBLIC_STARTER_PLAN_FEATURES ||
-        "250 messages a month,Basic AI editing,Faster app start times,Priority support,Publish to App Store and Google Play (coming soon)"
-      )
-        .split(",")
-        .map((feature) => feature.trim());
-    default:
-      return [];
-  }
-};
-
-// Get plan price from environment variables
-const getPlanPrice = (planName: string): string => {
-  switch (planName) {
-    case "Free":
-      return process.env.NEXT_PUBLIC_FREE_PLAN_PRICE || "0";
-    case "Starter":
-      return process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || "9.99";
-    default:
-      return "0";
-  }
-};
+// Using plan utility functions from constants
 
 export default function ProfileSettings() {
   const router = useRouter();
@@ -85,7 +54,6 @@ export default function ProfileSettings() {
         throw error;
       }
       setTimeout(() => {
-        console.log("Redirecting to homepage...");
         window.location.href = "/";
       }, 500);
     } catch (error) {
