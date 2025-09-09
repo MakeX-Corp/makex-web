@@ -6,3 +6,6 @@ export * from "./models";
 export * from "./urls";
 export * from "./timing";
 export * from "./codes";
+export * from "./demo";
+export * from "./pricing";
+export * from "./deploy";

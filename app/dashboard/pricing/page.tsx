@@ -14,50 +14,12 @@ import { Check } from "lucide-react";
 import { initPaddle } from "@/utils/server/paddle-client";
 
 import { useToast } from "@/components/ui/use-toast";
+import { PRICING_PLANS, PlanProps } from "@/const";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApp } from "@/context/AppContext";
 
-interface PlanProps {
-  name: string;
-  description: string;
-  price: string;
-  interval: string;
-  features: string[];
-  priceId: string;
-}
-
-const plans: PlanProps[] = [
-  {
-    name: process.env.NEXT_PUBLIC_FREE_PLAN_NAME || "Free",
-    description:
-      process.env.NEXT_PUBLIC_FREE_PLAN_DESCRIPTION ||
-      "For people just starting out",
-    price: process.env.NEXT_PUBLIC_FREE_PLAN_PRICE || "0",
-    interval: "month",
-    features: (
-      process.env.NEXT_PUBLIC_FREE_PLAN_FEATURES ||
-      "20 messages a month, Slower app start times, Discord support"
-    )
-      .split(",")
-      .map((feature) => feature.trim()),
-    priceId: "",
-  },
-  {
-    name: process.env.NEXT_PUBLIC_STARTER_PLAN_NAME || "Starter",
-    description:
-      process.env.NEXT_PUBLIC_STARTER_PLAN_DESCRIPTION ||
-      "Perfect for individuals starting with AI app creation",
-    price: process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || "9.99",
-    interval: "month",
-    features: (
-      process.env.NEXT_PUBLIC_STARTER_PLAN_FEATURES ||
-      "250 messages a month,Basic AI editing,Faster app start times,Priority support,Publish to App Store and Google Play (coming soon)"
-    )
-      .split(",")
-      .map((feature) => feature.trim()),
-    priceId: process.env.NEXT_PUBLIC_PADDLE_STARTER_ID || "",
-  },
-];
+// Using pricing configuration from constants
+const plans = PRICING_PLANS;
 
 const PricingSkeleton = () => {
   return (

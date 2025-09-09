@@ -11,78 +11,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+  PRICING_PLANS,
+  PRICING_COMPARISON_FEATURES,
+  PlanProps,
+  ComparisonFeature,
+} from "@/const";
 
-interface PlanProps {
-  name: string;
-  description: string;
-  price: string;
-  interval: string;
-  features: string[];
-  priceId: string;
-  popular?: boolean;
-}
+// Using PlanProps interface from constants
 
-const plans: PlanProps[] = [
-  {
-    name: process.env.NEXT_PUBLIC_FREE_PLAN_NAME || "Free",
-    description:
-      process.env.NEXT_PUBLIC_FREE_PLAN_DESCRIPTION ||
-      "For people just starting out",
-    price: process.env.NEXT_PUBLIC_FREE_PLAN_PRICE || "0",
-    interval: "month",
-    features: (
-      process.env.NEXT_PUBLIC_FREE_PLAN_FEATURES ||
-      "20 messages a month, Slower app start times, Discord support"
-    )
-      .split(",")
-      .map((feature) => feature.trim()),
-    priceId: "",
-  },
-  {
-    name: process.env.NEXT_PUBLIC_STARTER_PLAN_NAME || "Starter",
-    description:
-      process.env.NEXT_PUBLIC_STARTER_PLAN_DESCRIPTION ||
-      "Perfect for individuals starting with AI app creation",
-    price: process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || "9.99",
-    interval: "month",
-    features: (
-      process.env.NEXT_PUBLIC_STARTER_PLAN_FEATURES ||
-      "250 messages a month,Basic AI editing,Faster app start times,Priority support,Publish to App Store and Google Play (coming soon)"
-    )
-      .split(",")
-      .map((feature) => feature.trim()),
-    priceId: process.env.NEXT_PUBLIC_PADDLE_STARTER_ID || "",
-    popular: true,
-  },
-];
+// Using pricing plans from constants
+const plans = PRICING_PLANS;
 
-const comparisonFeatures = [
-  {
-    name: "Messages",
-    free: "20/month",
-    starter: "250/month",
-  },
-  {
-    name: "App Start Times",
-    free: "Slower",
-    starter: "Faster",
-  },
-  {
-    name: "Support",
-    free: "Discord",
-    starter: "Priority",
-  },
-  {
-    name: "AI Editing",
-    free: false,
-    starter: "Basic",
-  },
-  {
-    name: "App Store Publishing",
-    free: false,
-    starter: "Coming Soon",
-  },
-];
+// Using comparison features from constants
+const comparisonFeatures = PRICING_COMPARISON_FEATURES;
 
 export default function PricingPage() {
   const [isLoading, setIsLoading] = useState<string | null>(null);
@@ -107,7 +49,9 @@ export default function PricingPage() {
         {plans.map((plan) => (
           <Card
             key={plan.name}
-            className={`flex flex-col ${plan.popular ? "border-2 border-primary shadow-lg" : ""}`}
+            className={`flex flex-col ${
+              plan.popular ? "border-2 border-primary shadow-lg" : ""
+            }`}
           >
             <CardHeader>
               {plan.popular && (
