@@ -14,10 +14,9 @@ import { gateway, getModelAndOrder } from "@/utils/server/gateway";
 import { extractPlainText } from "@/utils/server/message-helpers";
 import { generateCheckpointInfo } from "@/utils/server/checkpoint-generator";
 import { saveCheckpoint, getDirectoryTree } from "@/utils/server/e2b";
-import { API_TIMEOUTS, DEFAULT_MODEL } from "@/const";
+import { DEFAULT_MODEL } from "@/const";
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = API_TIMEOUTS.MAX_DURATION;
+export const maxDuration = 300;
 
 // GET /api/chat - Get all messages for a specific session
 export async function GET(req: Request) {

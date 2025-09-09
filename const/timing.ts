@@ -9,6 +9,5 @@ export const ANIMATION_TIMINGS = {
 
 // API timeouts
 export const API_TIMEOUTS = {
-  MAX_DURATION: 300, // Maximum API route duration in seconds
   CODE_VALIDATION_DELAY: 1000, // Code redemption validation delay
 } as const;
