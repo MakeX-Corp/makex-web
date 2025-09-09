@@ -1,12 +1,21 @@
-// App suggestion types
-export interface AppSuggestion {
-  iconName: string;
-  label: string;
-  prompt: string;
-}
+// App-related constants and configurations
 
-// Expanded app suggestion chips for multiple rows with detailed prompts
-export const APP_SUGGESTIONS: AppSuggestion[] = [
+// App categories for classification
+export const APP_CATEGORIES = [
+  "Productivity",
+  "Social",
+  "Gaming",
+  "Education",
+  "Finance",
+  "Health",
+  "Entertainment",
+  "Developer Tools",
+  "Business",
+  "Lifestyle",
+] as const;
+
+// App suggestions with prompts for the dashboard
+export const APP_SUGGESTIONS = [
   {
     iconName: "Layout",
     label: "Landing page",

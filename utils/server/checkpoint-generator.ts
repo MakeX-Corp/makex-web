@@ -1,6 +1,6 @@
 import { generateObject } from "ai";
 import { z } from "zod";
-import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
+import { CLAUDE_SONNET_4_MODEL } from "@/const";
 import { gateway } from "@/utils/server/gateway";
 
 export async function generateCheckpointInfo(

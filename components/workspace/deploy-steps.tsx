@@ -11,9 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, Globe, Lock, Check, Edit, X } from "lucide-react";
+import { Sparkles, Globe, Lock, Check, X } from "lucide-react";
 import { useState, useRef } from "react";
-import { APP_CATEGORIES } from "@/const/app-categories";
+import {
+  APP_CATEGORIES,
+  DEPLOY_STEPS,
+  DEFAULT_AI_GENERATED_DATA,
+} from "@/const";
 
 interface DeployStepsProps {
   currentStep: number;
@@ -62,12 +66,8 @@ export function DeploySteps({
   const [iconError, setIconError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const steps = [
-    { id: 1, title: "Choose", description: "Setup method" },
-    { id: 2, title: "Setup", description: "App details" },
-    { id: 3, title: "Icon", description: "App icon" },
-    { id: 4, title: "Deploy", description: "Final step" },
-  ];
+  // Using deploy steps from constants
+  const steps = DEPLOY_STEPS;
 
   const handleAIGeneration = () => {
     // If we have existing data, preserve it instead of generating new data
@@ -81,9 +81,8 @@ export function DeploySteps({
     // Simulate AI generation only if no existing data
     const generatedData = {
       category: APP_CATEGORIES[0],
-      description:
-        "An AI-powered task management app that helps you organize your work and boost productivity with intelligent suggestions and automated workflows.",
-      tags: "productivity, task-management, ai, automation, workflow",
+      description: DEFAULT_AI_GENERATED_DATA.description,
+      tags: DEFAULT_AI_GENERATED_DATA.tags,
     };
 
     setAppData(generatedData);

@@ -110,6 +110,10 @@
 }
 
 @layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
   .animate-float {
     animation: float 3s ease-in-out infinite;
   }

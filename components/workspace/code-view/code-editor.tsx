@@ -4,16 +4,11 @@ import dynamic from "next/dynamic";
 import useSWR from "swr";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  AlertCircle,
-  FileCode,
-  CodeXml,
-  Image as ImageIcon,
-  X,
-} from "lucide-react";
+import { AlertCircle, FileCode, CodeXml, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { ANIMATION_TIMINGS } from "@/const";
 import { useSession } from "@/context/session-context";
 
 const Monaco = dynamic(() => import("@monaco-editor/react"), { ssr: false });
@@ -136,8 +131,8 @@ export default function CodeEditor({
   const editorTheme = !mounted
     ? "vs-dark"
     : theme === "dark"
-      ? "vs-dark"
-      : "vs-light";
+    ? "vs-dark"
+    : "vs-light";
 
   // Ensure we have access to the theme after hydration
   useEffect(() => {
@@ -173,7 +168,10 @@ export default function CodeEditor({
       });
       if (res.ok) {
         setSaveStatus("success");
-        setTimeout(() => setSaveStatus(null), 1500);
+        setTimeout(
+          () => setSaveStatus(null),
+          ANIMATION_TIMINGS.SAVE_STATUS_TIMEOUT,
+        );
       } else {
         setSaveStatus("error");
       }
@@ -271,8 +269,8 @@ export default function CodeEditor({
           {saveStatus === "saving"
             ? "Saving..."
             : saveStatus === "success"
-              ? "Saved!"
-              : "Save"}
+            ? "Saved!"
+            : "Save"}
         </Button>
       </div>
 

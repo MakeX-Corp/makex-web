@@ -14,8 +14,8 @@ import { gateway, getModelAndOrder } from "@/utils/server/gateway";
 import { extractPlainText } from "@/utils/server/message-helpers";
 import { generateCheckpointInfo } from "@/utils/server/checkpoint-generator";
 import { saveCheckpoint, getDirectoryTree } from "@/utils/server/e2b";
+import { DEFAULT_MODEL } from "@/const";
 
-// Allow streaming responses up to 30 seconds
 export const maxDuration = 300;
 
 // GET /api/chat - Get all messages for a specific session
@@ -205,7 +205,7 @@ export async function POST(req: Request) {
       const fileTreeResponse = await getDirectoryTree(sandbox.sandbox_id);
       const fileTree = fileTreeResponse.tree || "";
 
-      const modelName = model || "claude-4-sonnet-latest";
+      const modelName = model || DEFAULT_MODEL;
 
       const tools = createTools({
         sandboxId: sandbox.sandbox_id,

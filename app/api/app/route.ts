@@ -8,6 +8,7 @@ import { redisUrlSetter } from "@/utils/server/redis-client";
 import { deleteConvex } from "@/trigger/delete-convex";
 import { generateDisplayName } from "@/utils/server/app-name-generator";
 import { setupContainer } from "@/trigger/setup-container";
+
 export const maxDuration = 300;
 
 export async function POST(request: Request) {

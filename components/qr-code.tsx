@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { MAKEX_URLS } from "@/const";
 
 interface QRCodeDisplayProps {
   url: string;
@@ -45,8 +46,6 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
     if (url) {
       generateQR();
     }
-
-    console.log("the url is", url);
   }, [url, theme, isIOS]);
 
   // Generate QR code for app download when modal opens
@@ -54,8 +53,8 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
     const generateDownloadQR = async () => {
       try {
         const downloadUrl = isIOS
-          ? "https://makexapp.link/in-web-download-ios"
-          : "https://makexapp.link/in-web-download-android";
+          ? MAKEX_URLS.IOS_DOWNLOAD
+          : MAKEX_URLS.ANDROID_DOWNLOAD;
         const dataUrl = await QRCode.toDataURL(downloadUrl, {
           width: 256,
           margin: 1,
@@ -137,7 +136,7 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
                 1. Download{" "}
                 {isIOS ? (
                   <a
-                    href="https://makexapp.link/in-web-download-ios"
+                    href={MAKEX_URLS.IOS_DOWNLOAD}
                     className="text-primary hover:underline"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -147,7 +146,7 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
                   </a>
                 ) : (
                   <a
-                    href="https://makexapp.link/in-web-download-android"
+                    href={MAKEX_URLS.ANDROID_DOWNLOAD}
                     className="text-primary hover:underline"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -225,9 +224,7 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
             <div className="flex gap-2 w-full">
               <a
                 href={
-                  isIOS
-                    ? "https://makexapp.link/in-web-download-ios"
-                    : "https://makexapp.link/in-web-download-android"
+                  isIOS ? MAKEX_URLS.IOS_DOWNLOAD : MAKEX_URLS.ANDROID_DOWNLOAD
                 }
                 target="_blank"
                 rel="noopener noreferrer"

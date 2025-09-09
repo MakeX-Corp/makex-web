@@ -10,8 +10,8 @@ import { getPrompt } from "@/utils/server/prompt";
 import { getDirectoryTree, saveCheckpoint } from "@/utils/server/e2b";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { resumeContainer } from "./resume-container";
-import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
-import { CLAUDE_SONNET_4_MODEL } from "@/const/const";
+import { sendPushNotifications } from "@/utils/server/send-push-notifications";
+import { CLAUDE_SONNET_4_MODEL } from "@/const";
 import { gateway, getModelAndOrder } from "@/utils/server/gateway";
 
 const LOG_PREFIX = "[AI Agent]";

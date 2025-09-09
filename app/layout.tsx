@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { PostHogProvider } from "@/components/providers/PostHogProvider";
 import { Footer } from "../components/footer";
 import { Header } from "../components/header";
+import { WAITLIST_WIDGET } from "@/const";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -48,12 +49,8 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         {/* External stylesheets and scripts */}
-        <link
-          rel="stylesheet"
-          type="text/css"
-          href="https://prod-waitlist-widget.s3.us-east-2.amazonaws.com/getwaitlist.min.css"
-        />
-        <script src="https://prod-waitlist-widget.s3.us-east-2.amazonaws.com/getwaitlist.min.js"></script>
+        <link rel="stylesheet" type="text/css" href={WAITLIST_WIDGET.CSS} />
+        <script src={WAITLIST_WIDGET.JS}></script>
       </head>
       <body className="overflow-x-hidden antialiased min-h-screen flex flex-col">
         <ThemeProvider

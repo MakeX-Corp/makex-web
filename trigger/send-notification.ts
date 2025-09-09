@@ -1,6 +1,6 @@
 import { task } from "@trigger.dev/sdk";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
-import { sendPushNotifications } from "@/utils/server/sendPushNotifications";
+import { sendPushNotifications } from "@/utils/server/send-push-notifications";
 
 const LOG_PREFIX = "[Send Notification]";
 

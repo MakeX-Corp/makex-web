@@ -6,10 +6,6 @@ import { restoreCheckpoint } from "@/utils/server/e2b";
 export async function POST(request: Request) {
   const { messageId, appId, sessionId } = await request.json();
 
-  console.log("message", messageId);
-  console.log("appId", appId);
-  console.log("sessionId", sessionId);
-
   // query supabase chat_history to get the commit hash
   const userResult = await getSupabaseWithUser(request as NextRequest);
   if (userResult instanceof NextResponse) return userResult;
@@ -29,8 +25,6 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
-
-  console.log("data", data);
 
   // get the sandbox id from user_sandboxes
   const { data: sandboxData, error: sandboxError } = await supabase

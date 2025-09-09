@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PausedAppModal } from "@/components/workspace/paused-app-modal";
+import { AI_MODELS, DEFAULT_MODEL } from "@/const";
 import type { UIMessagePart } from "ai";
 
 type MessagePart = UIMessagePart<any, any>;
@@ -42,40 +43,6 @@ interface ChatProps {
   onSessionError?: (error: string) => void;
   containerState: string;
 }
-
-// Available AI models
-const AI_MODELS = [
-  {
-    id: "claude-4-sonnet-latest",
-    name: "Claude 4 Sonnet",
-    description: "Fast and capable",
-  },
-  {
-    id: "claude-4.1-opus",
-    name: "Claude 4.1 Opus",
-    description: "Most advanced reasoning",
-  },
-  {
-    id: "claude-3-7-sonnet-latest",
-    name: "Claude 3.7",
-    description: "Latest and most capable",
-  },
-  {
-    id: "gpt-4-5-turbo",
-    name: "GPT-4o",
-    description: "OpenAI's latest model",
-  },
-  {
-    id: "gpt-5",
-    name: "GPT-5",
-    description: "OpenAI's most advanced model",
-  },
-  {
-    id: "gemini-2-5-pro",
-    name: "Gemini 2.5 Pro",
-    description: "Google's advanced model",
-  },
-];
 
 export function Chat({
   sessionId,
@@ -105,7 +72,7 @@ export function Chat({
     null,
   );
   const [input, setInput] = useState("");
-  const [selectedModel, setSelectedModel] = useState("claude-4-sonnet-latest");
+  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL);
   const [isPausedAppModalOpen, setIsPausedAppModalOpen] = useState(false);
 
   const injectedPromptRef = useRef(false);

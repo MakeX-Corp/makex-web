@@ -54,7 +54,6 @@ export function SessionSelector() {
       // Create a new session
       const newSession = await createSession();
       if (newSession) {
-        console.log(`New session created: ${newSession.id}`);
         // Close dropdown after successful creation
         setDropdownOpen(false);
       }
@@ -73,7 +72,6 @@ export function SessionSelector() {
       return;
     }
 
-    console.log(`Setting current session: ${sessionId}`);
     switchSession(sessionId);
     setDropdownOpen(false);
   };
@@ -84,7 +82,6 @@ export function SessionSelector() {
 
     try {
       setIsSubmitting(true);
-      console.log(`Updating session ${sessionId} to name: ${editSessionName}`);
 
       // Call the updateSessionTitle function from context
       const success = await updateSessionTitle(
@@ -116,8 +113,6 @@ export function SessionSelector() {
     if (sessions.length <= 1) return;
     try {
       setIsDeleting(true);
-      console.log(`Deleting session: ${sessionId}`);
-
       // Call the deleteSession function from context
       const success = await deleteSession(sessionId);
 
