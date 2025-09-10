@@ -29,7 +29,7 @@ export async function createConvexProject({
     );
   }
 
-  return response.json(); // contains projectSlug, prodUrl, projectId, etc.
+  return response.json();
 }
 
 export async function deleteConvexProject({
@@ -86,7 +86,7 @@ export async function deployConvexProject({
   }
 
   const result = await response.json();
-  return result; // contains deploymentName like "crazy-horse-123"
+  return result;
 }
 
 export async function getConvexProdAdminKey({

@@ -1,4 +1,4 @@
-import { initializePaddle, Environments } from "@paddle/paddle-js";
+import { initializePaddle } from "@paddle/paddle-js";
 
 export function initPaddle() {
   if (typeof window === "undefined") {
