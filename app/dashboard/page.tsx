@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import { ArrowRight, Sparkles, Loader2, ExternalLink } from "lucide-react";
 import { useApp } from "@/context/app-context";
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { APP_SUGGESTIONS, ROW_1, ROW_2, ROW_3 } from "@/const";
 import { getIconComponent } from "@/lib/iconMap";
+import { ListExternalAppModal } from "@/components/app/list-external-app-modal";
 
 // Add these styles to your global CSS file
 const GlobalStyles = () => (
@@ -59,6 +60,7 @@ export default function DashboardPage() {
   const [initialPromptLoaded, setInitialPromptLoaded] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [isExternalModalOpen, setIsExternalModalOpen] = useState(false);
 
   // Create refs with explicit typing
   const row1Ref = useRef<HTMLDivElement>(null);
@@ -203,9 +205,20 @@ export default function DashboardPage() {
                 className="mx-auto"
               />
             </div>
-            <h1 className="text-4xl font-bold tracking-tight mb-3">
+            <h1 className="text-4xl font-bold tracking-tight mb-4">
               What do you want to build?
             </h1>
+            <Button
+              variant="outline"
+              onClick={() => setIsExternalModalOpen(true)}
+              className="mb-2"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              List External App
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Or add an existing app to the catalog
+            </p>
           </div>
 
           {/* Moving suggestion pills in three rows */}
@@ -403,6 +416,11 @@ export default function DashboardPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        <ListExternalAppModal
+          open={isExternalModalOpen}
+          onOpenChange={setIsExternalModalOpen}
+        />
       </div>
     </>
   );
