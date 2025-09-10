@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getSupabaseWithUser } from "@/utils/server/auth";
 import { tasks } from "@trigger.dev/sdk";
-import "@/trigger/create-external-listing";
 
 interface DeployRequest {
   appId: string | null;
@@ -39,13 +38,14 @@ export async function POST(req: Request) {
   } else if (type === "external") {
     // For external apps, just create the listing without deployment
     tasks.trigger("create-external-listing", {
+      appId: null, // No appId for external listings
       userEmail,
       deployData,
     });
 
     return NextResponse.json({
       success: true,
-      message: "External app listing created successfully",
+      message: "External app listing started in background",
     });
   } else {
     tasks.trigger("deploy-web", {

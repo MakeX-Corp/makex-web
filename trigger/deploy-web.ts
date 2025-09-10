@@ -13,49 +13,7 @@ import {
 } from "@/utils/server/e2b";
 import { generateAppInfo } from "@/utils/server/generate-app-info";
 import { generateAppImageBase64 } from "@/utils/server/generate-app-image";
-async function shareIdGenerator(appId: string, supabase: any): Promise<string> {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const maxAttempts = 3; // Maximum number of attempts to generate a unique ID
-
-  // Use appId as seed by summing its character codes
-  const seed = appId
-    .split("")
-    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-
-  // Add timestamp component (last 4 digits of current timestamp)
-  const timestamp = Date.now().toString().slice(-4);
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    let result = "";
-
-    // Generate 6 characters using the seed and attempt number
-    for (let i = 0; i < 6; i++) {
-      const index = (seed + i * 31 + attempt * 17) % characters.length; // Added attempt number for variation
-      result += characters[index];
-    }
-
-    // Combine with timestamp
-    const shareId = `${result}${timestamp}`;
-
-    // Check if this ID already exists
-    const { data: existingMapping } = await supabase
-      .from("app_listing_info")
-      .select("share_id")
-      .eq("share_id", shareId)
-      .single();
-
-    if (!existingMapping) {
-      return shareId;
-    }
-  }
-
-  // If all attempts failed, generate a completely random ID
-  let randomId = "";
-  for (let i = 0; i < 6; i++) {
-    randomId += characters[Math.floor(Math.random() * characters.length)];
-  }
-  return `${randomId}${timestamp}`;
-}
+import { generateShareId } from "@/utils/server/share-id-generator";
 
 async function handleUrlMapping(
   supabase: any,
@@ -239,7 +197,7 @@ async function handleUrlMapping(
     console.log(`[DeployWeb] Using description: ${description}`);
 
     // Create new Dub link only if it doesn't exist
-    const shareId = await shareIdGenerator(appId, supabase);
+    const shareId = await generateShareId(supabase, appId);
 
     const dubLink = await dub.links.create({
       url: `https://makex.app/share/${shareId}`,
