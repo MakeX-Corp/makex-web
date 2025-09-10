@@ -1,7 +1,6 @@
 import { task } from "@trigger.dev/sdk";
 import { getSupabaseAdmin } from "@/utils/server/supabase-admin";
 import { dub } from "@/utils/server/dub";
-import { sendPushNotifications } from "@/utils/server/send-push-notifications";
 import { deployWebFromGit } from "@/utils/server/freestyle";
 import {
   deployConvexProject,
@@ -644,14 +643,6 @@ export const deployWeb = task({
           await updateDeploymentStatus(supabase, deploymentId, "failed");
         }
         throw error;
-      } finally {
-        // send notification to user
-        await sendPushNotifications({
-          supabase,
-          userId: user_id,
-          title: "Deployment completed",
-          body: "Your app has been deployed successfully",
-        });
       }
     } catch (error) {
       console.error("[DeployWeb] Critical deployment error:", error);
