@@ -1,4 +1,4 @@
-import { Daytona, SandboxResources, Sandbox } from "@daytonaio/sdk";
+import { Daytona, SandboxResources } from "@daytonaio/sdk";
 
 const resources: SandboxResources = {
   cpu: 4,
@@ -21,7 +21,6 @@ async function startFastAPI(container: any, sessionId: string) {
 
   // Get preview link for the API
   const apiPreview = await container.getPreviewLink(8001);
-  console.log("API Preview URL:", apiPreview.url);
 
   return apiPreview;
 }
@@ -70,12 +69,8 @@ export async function startExpoInContainer(containerId: string) {
 
   const appPreview = await container.getPreviewLink(8000);
   const apiPreview = await container.getPreviewLink(8001);
-  console.log("App Preview URL:", appPreview.url);
-  console.log("API Preview URL:", apiPreview.url);
 
   const expoResult = await startExpo(container, sessionId, appPreview);
-
-  console.log("expo start result:", expoResult);
 
   return {
     appPreview: appPreview.url,
@@ -120,7 +115,6 @@ export async function killDaytonaContainer(sandboxId: string) {
     };
   }
 
-  // if the container is running, stop itcn
   if (containerInfo.state == "started") {
     await container.stop();
   }

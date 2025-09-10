@@ -2,14 +2,12 @@
 
 import React from "react";
 import {
-  ExternalLink,
   MessageSquare,
   HelpCircle,
   Users,
   Mail,
   ArrowRight,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 const SupportPage = () => {
@@ -43,7 +41,6 @@ const SupportPage = () => {
             </div>
 
             <div className="space-y-4">
-              {/* Email Contact Card */}
               <Card
                 className="border-2 hover:border-primary/50 transition-all cursor-pointer"
                 onClick={handleEmailClick}
@@ -66,7 +63,6 @@ const SupportPage = () => {
                 </CardContent>
               </Card>
 
-              {/* Discord Community Card */}
               <Card
                 className="border-2 hover:border-primary/50 transition-all cursor-pointer"
                 onClick={handleDiscordClick}

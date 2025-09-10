@@ -36,6 +36,5 @@ export async function getRelevantContext(
     return [];
   }
 
-  console.log("🔍 Found context:", data);
-  return data.map((row: EmbeddingRow) => row.content); // or include `source`, `category`, etc.
+  return data.map((row: EmbeddingRow) => row.content);
 }
