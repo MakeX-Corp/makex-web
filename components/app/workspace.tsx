@@ -28,7 +28,7 @@ import {
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SessionSelector } from "@/components/app/session/session-selector";
-import { SessionsError } from "@/components/app/session/sessions-error";
+import { SessionsError } from "@/components/app/session/session-error";
 import { createClient } from "@/utils/supabase/client";
 import { DeployButton } from "@/components/app/deploy/deploy-button";
 import { GitHubSyncModal } from "@/components/app/github-sync-modal";
