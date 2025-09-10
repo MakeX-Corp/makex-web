@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CodeRedemption } from "@/components/features/code-redemption";
 import { APP_SUGGESTIONS, ROW_1, ROW_2, ROW_3 } from "@/const";
 import { getIconComponent } from "@/lib/iconMap";
 
@@ -54,13 +53,12 @@ const GlobalStyles = () => (
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { createApp, subscription } = useApp();
+  const { createApp } = useApp();
   const [isCreating, setIsCreating] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [initialPromptLoaded, setInitialPromptLoaded] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [isUnlimited, setIsUnlimited] = useState(false);
 
   // Create refs with explicit typing
   const row1Ref = useRef<HTMLDivElement>(null);
@@ -184,10 +182,6 @@ export default function DashboardPage() {
     setPrompt(suggestion.prompt);
   };
 
-  const handleUnlimitedChange = (unlimited: boolean) => {
-    setIsUnlimited(unlimited);
-  };
-
   // Function to duplicate items for continuous scrolling effect
   const duplicateItemsForScrolling = (items: typeof APP_SUGGESTIONS) => {
     return [...items, ...items];
@@ -212,9 +206,6 @@ export default function DashboardPage() {
             <h1 className="text-4xl font-bold tracking-tight mb-3">
               What do you want to build?
             </h1>
-
-            {/* Code redemption component */}
-            <CodeRedemption onUnlimitedChange={handleUnlimitedChange} />
           </div>
 
           {/* Moving suggestion pills in three rows */}

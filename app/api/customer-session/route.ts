@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    // Parse the request body properly
     const body = await request.json();
     const customerId = body.customerId;
     let url = "";
@@ -27,7 +26,6 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log("Data.data.urlsdfdf:", data.data.urls.general);
 
     return NextResponse.json({ url: data.data.urls.general.overview });
   } catch (error) {

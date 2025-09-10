@@ -12,8 +12,6 @@ import { createClient } from "@/utils/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { getPlanFeatures, getPlanPrice } from "@/const";
 
-// Using plan utility functions from constants
-
 export default function ProfileSettings() {
   const router = useRouter();
   const { subscription, isLoading: subscriptionLoading, user } = useApp();

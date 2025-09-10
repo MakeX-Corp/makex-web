@@ -21,7 +21,6 @@ export async function POST(request: Request) {
   const { supabase, user } = result;
 
   try {
-    // Get prompt from request body
     const body = await request.json();
     const { prompt } = body;
 
@@ -30,7 +29,6 @@ export async function POST(request: Request) {
 
     timings.authAndSetup = performance.now() - startTime;
 
-    // Begin transaction to ensure both app and session are created atomically
     const appStartTime = performance.now();
     const { data: insertedApp, error: insertError } = await supabase
       .from("user_apps")
@@ -88,9 +86,8 @@ export async function POST(request: Request) {
 
     timings.containerInitiation = performance.now() - containerStartTime;
 
-    // Retry mechanism for API host
     const maxRetries = 10;
-    const retryDelay = 2000; // 2 seconds
+    const retryDelay = 2000;
     let response;
     let retryCount = 0;
 
@@ -126,7 +123,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Update the user_apps table to set the current_sandbox_id
     const { error: appUpdateError } = await adminSupabase
       .from("user_apps")
       .update({
@@ -142,15 +138,14 @@ export async function POST(request: Request) {
 
     await redisUrlSetter(appName, appHost);
 
-    // Create the session in the same transaction
     const sessionStartTime = performance.now();
     const { data: session, error: sessionError } = await supabase
       .from("chat_sessions")
       .insert({
         app_id: insertedApp.id,
         user_id: user.id,
-        title: `New Chat`, // Default title
-        metadata: { initialPrompt: prompt }, // Store prompt in metadata
+        title: `New Chat`,
+        metadata: { initialPrompt: prompt },
       })
       .select()
       .single();
@@ -176,11 +171,10 @@ export async function POST(request: Request) {
         sandboxId: sandboxDbId,
       },
       {
-        queue: "critical-container-setup", // High-priority queue for user-facing operations
+        queue: "critical-container-setup",
       },
     );
 
-    // Return the app data along with session ID, redirect URL, and timings
     return NextResponse.json({
       ...insertedApp,
       sessionId: session.id,
@@ -195,7 +189,6 @@ export async function POST(request: Request) {
   }
 }
 
-// GET /api/app - Get all apps or a specific app by ID for the authenticated user
 export async function GET(request: Request) {
   try {
     const result = await getSupabaseWithUser(request as NextRequest);
@@ -207,7 +200,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const appId = searchParams.get("id");
 
-    // If an appId is provided, get just that specific app
     if (appId) {
       const { data: app, error } = await supabase
         .from("user_apps")
@@ -224,10 +216,7 @@ export async function GET(request: Request) {
       }
 
       return NextResponse.json(app);
-    }
-
-    // Otherwise, get all apps for the user
-    else {
+    } else {
       const { data: apps, error } = await supabase
         .from("user_apps")
         .select(
@@ -247,7 +236,6 @@ export async function GET(request: Request) {
         );
       }
 
-      // Transform to include session_id field
       const appsWithSessionId = apps?.map((app) => ({
         ...app,
         session_id: app.chat_sessions?.[0]?.id || "",
@@ -262,7 +250,6 @@ export async function GET(request: Request) {
   }
 }
 
-// DELETE /api/app - Delete specific app
 export async function DELETE(request: Request) {
   try {
     const result = await getSupabaseWithUser(request as NextRequest);
@@ -271,7 +258,6 @@ export async function DELETE(request: Request) {
 
     const { supabase, user } = result;
 
-    // Get the app ID from the URL
     const { searchParams } = new URL(request.url);
     const appId = searchParams.get("id");
 
@@ -282,7 +268,6 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Get the app details from Supabase first
     const { data: app, error: fetchError } = await supabase
       .from("user_apps")
       .select("*")
@@ -294,7 +279,6 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "App not found" }, { status: 404 });
     }
 
-    // Delete the corresponding listing from app_listing_info if it exists
     const { error: listingDeleteError } = await supabase
       .from("app_listing_info")
       .delete()
@@ -305,10 +289,8 @@ export async function DELETE(request: Request) {
         "Warning: Could not delete app listing:",
         listingDeleteError.message,
       );
-      // Continue with app deletion even if listing deletion fails
     }
 
-    // Update the app status to "deleted"
     const { error: updateError } = await supabase
       .from("user_apps")
       .update({ status: "deleted" })
@@ -339,7 +321,6 @@ export async function DELETE(request: Request) {
   }
 }
 
-// PATCH /api/app - Update specific fields of an app
 export async function PATCH(request: Request) {
   try {
     const result = await getSupabaseWithUser(request as NextRequest);
@@ -348,7 +329,6 @@ export async function PATCH(request: Request) {
 
     const { supabase, user } = result;
 
-    // Get the request body
     const body = await request.json();
     const { appId, displayName } = body;
 
@@ -366,7 +346,6 @@ export async function PATCH(request: Request) {
       );
     }
 
-    // Verify the app belongs to the user
     const { data: app, error: fetchError } = await supabase
       .from("user_apps")
       .select("id")
@@ -381,7 +360,6 @@ export async function PATCH(request: Request) {
       );
     }
 
-    // Update only the display_name field
     const { data: updatedApp, error: updateError } = await supabase
       .from("user_apps")
       .update({ display_name: displayName })

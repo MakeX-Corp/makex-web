@@ -94,14 +94,12 @@ export function Chat({
     handleDrop,
   } = useImageUpload();
 
-  // Function to reset textarea height
   const resetTextareaHeight = () => {
     if (inputRef.current) {
       inputRef.current.style.height = "auto";
     }
   };
 
-  // 1. Load storedPrompt from localStorage
   useEffect(() => {
     const prompt =
       typeof window !== "undefined"
@@ -114,7 +112,6 @@ export function Chat({
     setPromptChecked(true);
   }, []);
 
-  // 2. Boot logic: fetch messages only if there's no prompt
   useEffect(() => {
     if (!promptChecked) return;
 
@@ -147,22 +144,11 @@ export function Chat({
     runBoot();
   }, [promptChecked, storedPrompt, sessionId, appId, justCreatedSessionId]);
 
-  // 3. Check message limits
   useEffect(() => {
     let isMounted = true;
 
     const checkLimit = async () => {
       if (!subscription) return;
-
-      const hasUnlimitedMessages =
-        typeof window !== "undefined" &&
-        localStorage.getItem("unlimited_messages_activated") === "true";
-
-      if (hasUnlimitedMessages) {
-        setRemainingMessages(500);
-        setLimitReached(false);
-        return;
-      }
 
       setRemainingMessages(
         (subscription?.messagesLimit || 0) - (subscription?.messagesUsed || 0),
@@ -181,7 +167,6 @@ export function Chat({
     };
   }, [subscription]);
 
-  // 4. Initialize useChat
   const { messages, sendMessage, setMessages, status, error } = useChat({
     id: sessionId,
 
@@ -191,15 +176,12 @@ export function Chat({
     onFinish: (result) => {
       setIsAIResponding(false);
       onResponseComplete();
-      // AI message saving is now handled in the chat endpoint's onFinish callback
 
-      // Update session title if needed
       if (
         messages.length === 0 &&
         result.message.role === "assistant" &&
         getCurrentSessionTitle() === "New Chat"
       ) {
-        // Extract text content from message parts
         const userMessageText =
           messages[0]?.parts?.find((part) => part.type === "text")?.text || "";
         const assistantMessageText =
@@ -216,8 +198,6 @@ export function Chat({
           }
         });
       }
-
-      // Check message limits, might not need this could just decrement and see maybe
 
       checkMessageLimit().then((result) => {
         if (result) {
@@ -238,14 +218,12 @@ export function Chat({
     setMessages(initialMessages);
   }, [initialMessages, setMessages]);
 
-  // 5. Handle cleanup on unmount
   useEffect(() => {
     return () => {
       setIsAIResponding(false);
     };
   }, [setIsAIResponding]);
 
-  // 6. Inject prompt once
   useEffect(() => {
     if (storedPrompt && !injectedPromptRef.current && booted) {
       injectedPromptRef.current = true;
@@ -258,9 +236,6 @@ export function Chat({
             sessionId,
             subscription,
             model: selectedModel,
-            hasUnlimitedMessages:
-              typeof window !== "undefined" &&
-              localStorage.getItem("unlimited_messages_activated") === "true",
           },
         },
       );
@@ -275,7 +250,6 @@ export function Chat({
     subscription,
   ]);
 
-  // 7. Auto-scroll to bottom when messages change
   useEffect(() => {
     const messagesContainer = document.querySelector(".messages-container");
     if (messagesContainer) {
@@ -296,7 +270,6 @@ export function Chat({
     setIsAIResponding(true);
 
     try {
-      /* ------- build parts array (text + images) ------- */
       const parts: MessagePart[] = [];
 
       parts.push({ type: "text", text: input.trim() });
@@ -310,7 +283,6 @@ export function Chat({
         });
       });
 
-      /* ------- send one multimodal message ------- */
       sendMessage(
         { role: "user", parts },
         {
@@ -319,14 +291,10 @@ export function Chat({
             sessionId,
             subscription,
             model: selectedModel,
-            hasUnlimitedMessages:
-              typeof window !== "undefined" &&
-              localStorage.getItem("unlimited_messages_activated") === "true",
           },
         },
       );
 
-      /* ------- clean up ------- */
       resetImages();
       setInput("");
       resetTextareaHeight();
@@ -354,7 +322,6 @@ export function Chat({
         );
 
       case "file":
-        /* show images inline; fallback text for other mime types */
         if (part.mediaType?.startsWith("image/")) {
           return (
             <img
@@ -385,7 +352,6 @@ export function Chat({
     }
   };
 
-  // Handle checkpoint restoration
   const handleRestore = async (messageId: string) => {
     try {
       setRestoringMessageId(messageId);
@@ -407,7 +373,6 @@ export function Chat({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Drag overlay indicator */}
       {isDragging && (
         <div className="absolute top-0 left-0 right-0 bottom-0 bg-primary/20 backdrop-blur-sm z-20 flex items-center justify-center border-4 border-dashed border-primary rounded pointer-events-none">
           <div className="text-center p-4 bg-background rounded shadow-lg">
@@ -417,7 +382,6 @@ export function Chat({
         </div>
       )}
 
-      {/* Messages area */}
       <div className="flex-1 overflow-hidden">
         <div className="messages-container h-full overflow-y-auto px-4 py-4 space-y-4">
           {isLoading ? (
@@ -430,16 +394,14 @@ export function Chat({
             </div>
           ) : (
             messages.map((message, index) => {
-              // Check if message has any visible content
               const hasVisibleContent = message.parts?.some((part: any) => {
                 if (part.type === "step-start" || part.type === "step-end")
                   return false;
                 if (part.type === "text")
                   return part.text && part.text.trim() !== "";
-                return true; // Show other part types
+                return true;
               });
 
-              // Don't render empty messages
               if (!hasVisibleContent) return null;
 
               return (
@@ -470,7 +432,6 @@ export function Chat({
                     </CardContent>
                   </Card>
 
-                  {/* Restore checkpoint button */}
                   {message.role === "assistant" && (
                     <button
                       className="text-[10px] text-muted-foreground hover:text-foreground mt-0.5 flex items-center gap-1"
@@ -492,7 +453,6 @@ export function Chat({
 
       {isAIResponding && <ThreeDotsLoader />}
 
-      {/* Input area - fixed at bottom */}
       <div className="border-t border-border p-4 bg-background relative">
         {limitReached && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
@@ -519,7 +479,6 @@ export function Chat({
           </div>
         )}
 
-        {/* Image previews area */}
         {imagePreviews.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">
             {imagePreviews.map((preview, index) => (
@@ -545,7 +504,6 @@ export function Chat({
           onSubmit={handleFormSubmit}
           className="flex gap-1.5"
         >
-          {/* Model picker */}
           <Select
             value={selectedModel}
             onValueChange={setSelectedModel}
@@ -594,7 +552,6 @@ export function Chat({
             disabled={isAIResponding || isLoading}
           />
 
-          {/* File input for images (hidden) */}
           <input
             type="file"
             ref={fileInputRef}
@@ -605,7 +562,6 @@ export function Chat({
             disabled={isAIResponding || isLoading}
           />
 
-          {/* Image upload button */}
           <Button
             type="button"
             size="sm"
@@ -618,7 +574,6 @@ export function Chat({
             <ImageIcon className="h-4 w-4" />
           </Button>
 
-          {/* Send button */}
           <Button
             type="submit"
             size="sm"
@@ -637,23 +592,12 @@ export function Chat({
           </Button>
         </form>
 
-        {/* Model name and remaining messages counter */}
         <div className="flex justify-between items-center mt-2">
           <div className="text-xs text-muted-foreground">
             {AI_MODELS.find((model) => model.id === selectedModel)?.name ||
               selectedModel}
           </div>
           {(() => {
-            const hasUnlimitedMessages =
-              typeof window !== "undefined" &&
-              localStorage.getItem("unlimited_messages_activated") === "true";
-            if (hasUnlimitedMessages) {
-              return (
-                <div className="text-xs text-muted-foreground">
-                  <span>Unlimited messages</span>
-                </div>
-              );
-            }
             if (remainingMessages !== null && !limitReached) {
               return (
                 <div className="text-xs text-muted-foreground">
@@ -676,7 +620,6 @@ export function Chat({
         )}
       </div>
 
-      {/* Paused App Modal */}
       <PausedAppModal
         open={isPausedAppModalOpen}
         onOpenChange={setIsPausedAppModalOpen}

@@ -19,7 +19,6 @@ interface DeployRequest {
 export async function POST(req: Request) {
   const { appId, type = "web", deployData }: DeployRequest = await req.json();
   const result = await getSupabaseWithUser(req as NextRequest);
-  //need to get the user email from the result
   //@ts-ignore
   const userEmail = result?.user?.email;
 
@@ -50,7 +49,6 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: NextRequest) {
-  // Get appId from query parameters
   const url = new URL(req.url);
   const appId = url.searchParams.get("appId");
 
@@ -61,13 +59,11 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Authenticate the user
   const result = await getSupabaseWithUser(req);
   if (result instanceof NextResponse) return result;
   if ("error" in result) return result.error;
   const { supabase, user } = result;
 
-  // Fetch the latest deployment for this app by this user
   const { data: deployment, error } = await supabase
     .from("user_deployments")
     .select("*")
@@ -79,12 +75,10 @@ export async function GET(req: NextRequest) {
 
   if (error) {
     if (error.code === "PGRST116") {
-      // No deployments found (single() returns error when no rows)
       return NextResponse.json(null);
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Return the deployment data
   return NextResponse.json(deployment);
 }

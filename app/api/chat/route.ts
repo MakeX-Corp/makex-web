@@ -18,7 +18,6 @@ import { DEFAULT_MODEL } from "@/const";
 
 export const maxDuration = 300;
 
-// GET /api/chat - Get all messages for a specific session
 export async function GET(req: Request) {
   try {
     const userResult = await getSupabaseWithUser(req as NextRequest);
@@ -26,7 +25,6 @@ export async function GET(req: Request) {
     if ("error" in userResult) return userResult.error;
     const { supabase, user } = userResult;
 
-    // Get session ID from query params
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get("sessionId");
     const appId = searchParams.get("appId");
@@ -38,7 +36,6 @@ export async function GET(req: Request) {
       );
     }
 
-    // Verify the session belongs to the user and app
     const { data: session, error: sessionError } = await supabase
       .from("chat_sessions")
       .select("id")
@@ -54,7 +51,6 @@ export async function GET(req: Request) {
       );
     }
 
-    // Get all messages for this session
     const { data: messages, error: messagesError } = await supabase
       .from("chat_history")
       .select("*")
@@ -81,25 +77,16 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const {
-      messages,
-      appId,
-      sessionId,
-      subscription,
-      model,
-      hasUnlimitedMessages,
-    } = await req.json();
+    const { messages, appId, sessionId, subscription, model } =
+      await req.json();
 
-    // Get the last user message
     const lastUserMessage = messages[messages.length - 1];
-    // Get the user API client
     const userResult = await getSupabaseWithUser(req as NextRequest);
     if (userResult instanceof NextResponse || "error" in userResult)
       return userResult;
 
     const { supabase, user, token } = userResult;
 
-    // Check if app is already being changed
     const { data: appStatus, error: statusError } = await supabase
       .from("user_apps")
       .select("coding_status")
@@ -120,7 +107,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Lock the app
     const trimmedAppId = appId.trim();
 
     const supabaseAdmin = await getSupabaseAdmin();
@@ -133,7 +119,6 @@ export async function POST(req: Request) {
       .eq("id", trimmedAppId)
       .select();
 
-    // Check if we actually found and updated a record
     if (!lockError && (!lockData || lockData.length === 0)) {
       console.warn(`No record found to update for app_id: ${trimmedAppId}`);
     }
@@ -146,9 +131,8 @@ export async function POST(req: Request) {
     }
 
     try {
-      // Check subscription using existing data and increment usage
       const canSendMessage =
-        process.env.NODE_ENV === "development" || hasUnlimitedMessages
+        process.env.NODE_ENV === "development"
           ? true
           : subscription?.canSendMessage;
 
@@ -162,11 +146,10 @@ export async function POST(req: Request) {
           { status: 429 },
         );
       }
-      if (process.env.NODE_ENV !== "development" && !hasUnlimitedMessages) {
+      if (process.env.NODE_ENV !== "development") {
         await incrementMessageUsage(user.id);
       }
 
-      // Get app details from the database
       const { data: app, error: appError } = await supabase
         .from("user_apps")
         .select("*")
@@ -180,7 +163,6 @@ export async function POST(req: Request) {
         );
       }
 
-      // get sandbox from the database
       const { data: sandbox, error: sandboxError } = await supabase
         .from("user_sandboxes")
         .select("sandbox_id")
@@ -201,7 +183,6 @@ export async function POST(req: Request) {
         );
       }
 
-      // Get the file tree using E2B
       const fileTreeResponse = await getDirectoryTree(sandbox.sandbox_id);
       const fileTree = fileTreeResponse.tree || "";
 
@@ -225,8 +206,6 @@ export async function POST(req: Request) {
           session_id: sessionId,
           message_id: lastUserMessage.id,
         });
-
-      // Get model configuration from helper function
 
       const { model: gatewayModel, order: providerOrder } =
         getModelAndOrder(modelName);
@@ -264,7 +243,6 @@ export async function POST(req: Request) {
                 },
               );
               console.log("checkpointResponse", checkpointResponse);
-              // Store the commit hash from the response
               commitHash =
                 checkpointResponse.commit || checkpointResponse.current_commit;
             } catch (error) {
@@ -296,7 +274,6 @@ export async function POST(req: Request) {
         },
       });
     } catch (error) {
-      // Comprehensive error handling
       console.error("Detailed chat error:", error);
       return NextResponse.json(
         {
@@ -308,7 +285,6 @@ export async function POST(req: Request) {
       );
     }
   } catch (error) {
-    // Comprehensive error handling
     console.error("Detailed chat error:", error);
     return NextResponse.json(
       {

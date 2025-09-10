@@ -3,14 +3,12 @@ import { getSupabaseWithUser } from "@/utils/server/auth";
 import { readFile, writeFile, deleteFile } from "@/utils/server/e2b";
 
 export async function GET(req: NextRequest) {
-  // Get the user API client
   const userResult = await getSupabaseWithUser(req as NextRequest);
   if (userResult instanceof NextResponse || "error" in userResult)
     return userResult;
 
   const { supabase, user } = userResult;
 
-  // Get and decode the path parameter
   const encodedPath = req.nextUrl.searchParams.get("path") ?? "";
   const path = decodeURIComponent(encodedPath);
   const appId = req.nextUrl.searchParams.get("appId") ?? "";
@@ -23,7 +21,6 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Get the sandbox_id from the user_sandboxes table
     const { data: sandboxData, error: sandboxError } = await supabase
       .from("user_sandboxes")
       .select("sandbox_id")
@@ -32,22 +29,19 @@ export async function GET(req: NextRequest) {
       .single();
 
     if (sandboxError || !sandboxData?.sandbox_id) {
-      return NextResponse.json(
-        { error: "Sandbox not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Sandbox not found" }, { status: 404 });
     }
 
     const sandboxId = sandboxData.sandbox_id;
 
-
-    // Use e2b readFile function
     const fileContent = await readFile(sandboxId, path);
 
-    // Transform the response to match what editor expects
     const transformedData = {
       type: "text",
-      code: typeof fileContent === "string" ? fileContent : JSON.stringify(fileContent, null, 2),
+      code:
+        typeof fileContent === "string"
+          ? fileContent
+          : JSON.stringify(fileContent, null, 2),
     };
 
     return NextResponse.json(transformedData);
@@ -76,7 +70,6 @@ export async function POST(req: Request) {
   const { supabase, user } = userResult;
 
   try {
-    // Get the sandbox_id from the user_sandboxes table
     const { data: sandboxData, error: sandboxError } = await supabase
       .from("user_sandboxes")
       .select("sandbox_id")
@@ -85,15 +78,11 @@ export async function POST(req: Request) {
       .single();
 
     if (sandboxError || !sandboxData?.sandbox_id) {
-      return NextResponse.json(
-        { error: "Sandbox not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Sandbox not found" }, { status: 404 });
     }
 
     const sandboxId = sandboxData.sandbox_id;
 
-    // Use e2b writeFile function
     const responseData = await writeFile(sandboxId, path, content || "");
     return NextResponse.json({ success: true, data: responseData });
   } catch (error: any) {
@@ -113,7 +102,6 @@ export async function DELETE(req: NextRequest) {
   const { supabase, user } = userResult;
 
   try {
-    // Get the sandbox_id from the user_sandboxes table
     const { data: sandboxData, error: sandboxError } = await supabase
       .from("user_sandboxes")
       .select("sandbox_id")
@@ -122,15 +110,11 @@ export async function DELETE(req: NextRequest) {
       .single();
 
     if (sandboxError || !sandboxData?.sandbox_id) {
-      return NextResponse.json(
-        { error: "Sandbox not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Sandbox not found" }, { status: 404 });
     }
 
     const sandboxId = sandboxData.sandbox_id;
 
-    // Use e2b deleteFile function
     const responseData = await deleteFile(sandboxId, path);
     return NextResponse.json({ success: true, data: responseData });
   } catch (error: any) {

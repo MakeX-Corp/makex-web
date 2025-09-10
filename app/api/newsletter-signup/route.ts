@@ -4,8 +4,6 @@ import { tasks } from "@trigger.dev/sdk/v3";
 export async function POST(request: Request) {
   try {
     const { email } = await request.json();
-
-    // Trigger the waitlist registration task
     await tasks.trigger("email-signup", {
       email,
     });

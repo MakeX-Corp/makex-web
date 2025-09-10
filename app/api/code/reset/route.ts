@@ -2,12 +2,10 @@ import { getSupabaseWithUser } from "@/utils/server/auth";
 import { NextResponse, NextRequest } from "next/server";
 import { restoreCheckpoint } from "@/utils/server/e2b";
 
-// Add this function to handle checkpoint restore
 export async function POST(request: Request) {
   const { appId } = await request.json();
   const userResult = await getSupabaseWithUser(request as NextRequest);
   if ("error" in userResult) return userResult.error;
-  // query supabase chat_history to get the commit hash
   if (userResult instanceof NextResponse) return userResult;
   const { supabase, user } = userResult;
   const { data, error } = await supabase
@@ -23,9 +21,6 @@ export async function POST(request: Request) {
     );
   }
 
-  console.log("data", data);
-
-  // get the sandbox id from user_sandboxes
   const { data: sandboxData, error: sandboxError } = await supabase
     .from("user_sandboxes")
     .select("sandbox_id")
@@ -52,8 +47,6 @@ export async function POST(request: Request) {
       branch: "master",
       name: data.initial_commit,
     });
-
-    console.log("responseData", responseData);
 
     return NextResponse.json(responseData);
   } catch (error) {
