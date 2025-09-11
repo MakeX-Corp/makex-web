@@ -52,7 +52,7 @@ Return only valid JSON in this format:
       prompt,
       schema: z.object({
         description: z.string().max(30),
-        category: z.enum(APP_CATEGORIES as [string, ...string[]]),
+        category: z.enum(APP_CATEGORIES as unknown as [string, ...string[]]),
         imagePrompt: z.string().max(300),
         tags: z.array(z.string().max(20)).min(3).max(5),
       }),

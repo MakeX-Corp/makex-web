@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import OpenAI from "openai";
-import { getRelevantContext } from "./getRelevantContext";
+import { getRelevantContext } from "./get-relevant-context";
 import FirecrawlApp, { Action } from "@mendable/firecrawl-js";
 import { CONVEX_AUTH_DOCS } from "../docs/convex-auth-docs";
 import {

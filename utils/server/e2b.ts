@@ -1,8 +1,4 @@
-// create a new e2b container
-
 import { Sandbox } from "@e2b/code-interpreter";
-import { cwd } from "process";
-import { string } from "zod/v4";
 
 const APP_DIR = "/app/expo-app";
 
@@ -51,7 +47,7 @@ export async function killE2BContainer(sandboxId: string) {
   return sbx;
 }
 
-// Expo 
+// Expo
 export async function startExpoInContainer(sandboxId: string) {
   const sbx = await Sandbox.connect(sandboxId);
 
@@ -304,18 +300,19 @@ export async function setupFreestyleGitInContainer(
   };
 }
 
-
 // Filesystem
 export async function readFile(sandboxId: string, filePath: string) {
-  console.log(
-    "[readFile] Reading file:", filePath, "from sandbox:", sandboxId
-  );
+  console.log("[readFile] Reading file:", filePath, "from sandbox:", sandboxId);
   const sbx = await Sandbox.connect(sandboxId);
   const fileRead = await sbx.files.read(filePath);
   return fileRead;
 }
 
-export async function writeFile(sandboxId: string, filePath: string, content: string) {
+export async function writeFile(
+  sandboxId: string,
+  filePath: string,
+  content: string,
+) {
   const sbx = await Sandbox.connect(sandboxId);
   const fileWritten = await sbx.files.write(filePath, content);
   return fileWritten;
@@ -348,45 +345,56 @@ export async function listDirectory(sandboxId: string, dirPath: string) {
 }
 
 // Directory tree management
-export async function getDirectoryTree(sandboxId: string, path: string = APP_DIR) {
+export async function getDirectoryTree(
+  sandboxId: string,
+  path: string = APP_DIR,
+) {
   const sbx = await Sandbox.connect(sandboxId);
-  
+
   try {
     // Get the absolute path
     const absPathResult = await sbx.commands.run(`realpath "${path}"`);
     const fullPath = absPathResult.stdout.trim();
-    
+
     // Check if the path exists
-    const existsResult = await sbx.commands.run(`test -e "${fullPath}" && echo "exists" || echo "not_exists"`);
+    const existsResult = await sbx.commands.run(
+      `test -e "${fullPath}" && echo "exists" || echo "not_exists"`,
+    );
     if (existsResult.stdout.trim() === "not_exists") {
       throw new Error("Path does not exist");
     }
-    
+
     // Check if it's a file
-    const isFileResult = await sbx.commands.run(`test -f "${fullPath}" && echo "is_file" || echo "is_dir"`);
+    const isFileResult = await sbx.commands.run(
+      `test -f "${fullPath}" && echo "is_file" || echo "is_dir"`,
+    );
     if (isFileResult.stdout.trim() === "is_file") {
       throw new Error("Path must be a directory, not a file");
     }
-    
+
     // Use find command to get directory structure, excluding hidden folders and node_modules
     let treeResult;
     try {
-      treeResult = await sbx.commands.run(`find "${fullPath}" -type f -o -type d | grep -v "/\\." | grep -v "/node_modules" | sort`);
+      treeResult = await sbx.commands.run(
+        `find "${fullPath}" -type f -o -type d | grep -v "/\\." | grep -v "/node_modules" | sort`,
+      );
     } catch (error) {
       // Fallback to simple ls -R if find fails, but still exclude hidden and node_modules
-      treeResult = await sbx.commands.run(`ls -laR "${fullPath}" | grep -v "^\\." | grep -v "node_modules"`);
+      treeResult = await sbx.commands.run(
+        `ls -laR "${fullPath}" | grep -v "^\\." | grep -v "node_modules"`,
+      );
     }
-    
+
     return {
       path: fullPath,
       tree: treeResult.stdout,
-      error: null
+      error: null,
     };
   } catch (error) {
     return {
       path: path,
       tree: null,
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -397,24 +405,24 @@ export async function grepSearch(
   {
     pattern,
     include_pattern = "*",
-    case_sensitive = false
+    case_sensitive = false,
   }: {
     pattern: string;
     include_pattern?: string;
     case_sensitive?: boolean;
-  }
+  },
 ) {
   const sbx = await Sandbox.connect(sandboxId);
-  
+
   try {
     // Internal defaults (not configurable from input)
     const maxFiles = 1000;
     const maxMatches = 1000;
-    
+
     // Build grep command with proper flags
     const grepFlags = case_sensitive ? "" : "-i";
     const escapedPattern = pattern.replace(/"/g, '\\"');
-    
+
     // Create a shell script to handle the search with proper limits and exclusions
     const shellScript = `
 #!/bin/bash
@@ -509,53 +517,53 @@ echo "COMPLETE: Searched $files_searched files, found $match_count matches" >&2
     // Write the shell script to a temporary file
     const scriptPath = "/tmp/grep_search.sh";
     await sbx.files.write(scriptPath, shellScript);
-    
+
     // Make the script executable
     await sbx.commands.run(`chmod +x ${scriptPath}`);
-    
+
     // Execute the shell script
     const result = await sbx.commands.run(`bash ${scriptPath}`, {
-      cwd: APP_DIR
+      cwd: APP_DIR,
     });
-    
+
     // Clean up the temporary script
     await sbx.commands.run(`rm -f ${scriptPath}`);
-    
+
     // Parse the results
     const results = [];
     let totalMatches = 0;
     let filesSearched = 0;
     let error = null;
     let warning = null;
-    
+
     // Process stdout for matches
-    const lines = result.stdout.split('\n').filter(line => line.trim());
+    const lines = result.stdout.split("\n").filter((line) => line.trim());
     for (const line of lines) {
-      if (line.startsWith('MATCH:')) {
-        const parts = line.substring(6).split(':');
+      if (line.startsWith("MATCH:")) {
+        const parts = line.substring(6).split(":");
         if (parts.length >= 3) {
           const file = parts[0];
           const lineNum = parseInt(parts[1]);
-          const content = parts.slice(2).join(':');
-          
+          const content = parts.slice(2).join(":");
+
           results.push({
             file,
             line: lineNum,
-            content
+            content,
           });
           totalMatches++;
         }
       }
     }
-    
+
     // Process stderr for status messages
-    const stderrLines = result.stderr.split('\n').filter(line => line.trim());
+    const stderrLines = result.stderr.split("\n").filter((line) => line.trim());
     for (const line of stderrLines) {
-      if (line.startsWith('LIMIT_EXCEEDED:')) {
+      if (line.startsWith("LIMIT_EXCEEDED:")) {
         error = line.substring(15);
-      } else if (line.startsWith('MATCH_LIMIT:')) {
+      } else if (line.startsWith("MATCH_LIMIT:")) {
         warning = line.substring(13);
-      } else if (line.startsWith('COMPLETE:')) {
+      } else if (line.startsWith("COMPLETE:")) {
         const match = line.match(/Searched (\d+) files, found (\d+) matches/);
         if (match) {
           filesSearched = parseInt(match[1]);
@@ -563,30 +571,43 @@ echo "COMPLETE: Searched $files_searched files, found $match_count matches" >&2
         }
       }
     }
-    
+
     return {
       results,
       totalMatches,
       filesSearched,
       error,
-      warning
+      warning,
     };
-    
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Unknown error during search",
+      error:
+        error instanceof Error ? error.message : "Unknown error during search",
       results: [],
       totalMatches: 0,
-      filesSearched: 0
+      filesSearched: 0,
     };
   }
 }
 
-// Generalised run command 
+// Generalised run command
 export async function runCommand(sandboxId: string, command: string) {
   const allowedCommands = [
-    'ls', 'pwd', 'cat', 'grep', 'find', 'echo', 'mkdir', 'rm', 'cp', 'mv',
-    'yarn', 'npm', 'npx', 'sudo', 'eslint'
+    "ls",
+    "pwd",
+    "cat",
+    "grep",
+    "find",
+    "echo",
+    "mkdir",
+    "rm",
+    "cp",
+    "mv",
+    "yarn",
+    "npm",
+    "npx",
+    "sudo",
+    "eslint",
   ];
 
   try {
@@ -601,7 +622,7 @@ export async function runCommand(sandboxId: string, command: string) {
         allowedCommands: allowedCommands,
         stdout: null,
         stderr: null,
-        returnCode: null
+        returnCode: null,
       };
     }
 
@@ -610,24 +631,30 @@ export async function runCommand(sandboxId: string, command: string) {
 
     // For yarn/npm commands, automatically add sudo if not present
     let finalCommand = command;
-    if ((baseCommand === 'yarn' || baseCommand === 'npm' || baseCommand === 'npx' || baseCommand === 'eslint') && !command.includes('sudo')) {
+    if (
+      (baseCommand === "yarn" ||
+        baseCommand === "npm" ||
+        baseCommand === "npx" ||
+        baseCommand === "eslint") &&
+      !command.includes("sudo")
+    ) {
       finalCommand = `sudo ${command}`;
     }
 
-    console.log("command being run ", finalCommand)
-    
+    console.log("command being run ", finalCommand);
+
     try {
       // Execute the command with timeout
       const result = await sbx.commands.run(finalCommand, {
         timeoutMs: 450000, // 45 second timeout
-        cwd: APP_DIR
+        cwd: APP_DIR,
       });
 
       return {
         stdout: result.stdout,
         stderr: result.stderr,
         returnCode: result.exitCode,
-        error: null
+        error: null,
       };
     } catch (cmdError: any) {
       // If the command failed but we have result data, return it
@@ -636,42 +663,45 @@ export async function runCommand(sandboxId: string, command: string) {
           stdout: cmdError.result.stdout || "",
           stderr: cmdError.result.stderr || "",
           returnCode: cmdError.result.exitCode || 1,
-          error: `Command failed with exit code ${cmdError.result.exitCode || 1}`
+          error: `Command failed with exit code ${
+            cmdError.result.exitCode || 1
+          }`,
         };
       }
-      
+
       // If no result data, return the error message
       return {
         stdout: "",
         stderr: "",
         returnCode: 1,
-        error: cmdError.message || "Command execution failed"
+        error: cmdError.message || "Command execution failed",
       };
     }
-
   } catch (error) {
     // Handle timeout specifically
-    if (error instanceof Error && error.message.includes('timeout')) {
+    if (error instanceof Error && error.message.includes("timeout")) {
       return {
         error: "Command execution timed out after 45 seconds",
         stdout: null,
         stderr: null,
-        returnCode: null
+        returnCode: null,
       };
     }
 
     // Handle other errors
     return {
-      error: error instanceof Error ? error.message : "Unknown error during command execution",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unknown error during command execution",
       stdout: null,
       stderr: null,
-      returnCode: null
+      returnCode: null,
     };
   }
 }
 
-
-// Git commands 
+// Git commands
 export async function saveCheckpoint(
   sandboxId: string,
   {
@@ -680,22 +710,25 @@ export async function saveCheckpoint(
   }: {
     branch: string;
     message: string;
-  }
+  },
 ) {
   const sbx = await Sandbox.connect(sandboxId);
-  
+
   try {
     // Check if git repository exists
-    const gitExists = await sbx.commands.run(`test -d .git && echo "exists" || echo "not_exists"`, {
-      cwd: APP_DIR,
-    });
-    
+    const gitExists = await sbx.commands.run(
+      `test -d .git && echo "exists" || echo "not_exists"`,
+      {
+        cwd: APP_DIR,
+      },
+    );
+
     if (gitExists.stdout.trim() === "not_exists") {
       // Initialize git repository
       await sbx.commands.run(`sudo git init`, {
         cwd: APP_DIR,
       });
-      
+
       // Set git config
       await sbx.commands.run(`sudo git config user.email "bot@makex.app"`, {
         cwd: APP_DIR,
@@ -703,15 +736,18 @@ export async function saveCheckpoint(
       await sbx.commands.run(`sudo git config user.name "MakeX Bot"`, {
         cwd: APP_DIR,
       });
-      
+
       // Create initial commit if repository is empty
-      const hasCommits = await sbx.commands.run(`sudo git rev-parse --verify HEAD >/dev/null 2>&1 && echo "has_commits" || echo "no_commits"`, {
-        cwd: APP_DIR,
-      });
-      
+      const hasCommits = await sbx.commands.run(
+        `sudo git rev-parse --verify HEAD >/dev/null 2>&1 && echo "has_commits" || echo "no_commits"`,
+        {
+          cwd: APP_DIR,
+        },
+      );
+
       if (hasCommits.stdout.trim() === "no_commits") {
         // Create .gitkeep file for initial commit
-        await sbx.files.write(`${APP_DIR}/.gitkeep`, '');
+        await sbx.files.write(`${APP_DIR}/.gitkeep`, "");
         await sbx.commands.run(`sudo git add .gitkeep`, {
           cwd: APP_DIR,
         });
@@ -728,12 +764,15 @@ export async function saveCheckpoint(
         cwd: APP_DIR,
       });
     }
-    
+
     // Check if branch exists, if not create it
-    const branchExists = await sbx.commands.run(`sudo git branch --list ${branch}`, {
-      cwd: APP_DIR,
-    });
-    
+    const branchExists = await sbx.commands.run(
+      `sudo git branch --list ${branch}`,
+      {
+        cwd: APP_DIR,
+      },
+    );
+
     if (!branchExists.stdout.trim()) {
       await sbx.commands.run(`sudo git checkout -b ${branch}`, {
         cwd: APP_DIR,
@@ -743,44 +782,44 @@ export async function saveCheckpoint(
         cwd: APP_DIR,
       });
     }
-    
+
     // Check if there are any changes
     const status = await sbx.commands.run(`sudo git status --porcelain`, {
       cwd: APP_DIR,
     });
-    
+
     if (!status.stdout.trim()) {
       // No changes to commit
       const currentCommit = await sbx.commands.run(`sudo git rev-parse HEAD`, {
         cwd: APP_DIR,
       });
-      
+
       return {
         message: "No changes to commit",
         current_commit: currentCommit.stdout.trim(),
         branch: branch,
       };
     }
-    
+
     // Add all files
     await sbx.commands.run(`sudo git add .`, {
       cwd: APP_DIR,
     });
-    
+
     // Create a commit with the message
     await sbx.commands.run(`sudo git commit -m "${message}"`, {
       cwd: APP_DIR,
     });
-    
+
     // Get the commit hash
     const commitHash = await sbx.commands.run(`sudo git rev-parse HEAD`, {
       cwd: APP_DIR,
     });
-    
+
     // Push to freestyle master branch
     let pushSuccess = false;
     let pushMessage = "";
-    
+
     try {
       await sbx.commands.run(`sudo git push freestyle master --force`, {
         cwd: APP_DIR,
@@ -791,7 +830,7 @@ export async function saveCheckpoint(
       pushSuccess = false;
       pushMessage = `Failed to push to freestyle: ${pushError}`;
     }
-    
+
     return {
       message: "Changes committed successfully",
       commit: commitHash.stdout.trim(),
@@ -799,9 +838,12 @@ export async function saveCheckpoint(
       push_success: pushSuccess,
       push_message: pushMessage,
     };
-    
   } catch (error) {
-    throw new Error(`Failed to save checkpoint: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to save checkpoint: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+    );
   }
 }
 
@@ -813,62 +855,70 @@ export async function restoreCheckpoint(
   }: {
     branch: string;
     name: string;
-  }
+  },
 ) {
   const sbx = await Sandbox.connect(sandboxId);
-  
+
   try {
     // Check if git repository exists
-    const gitExists = await sbx.commands.run(`test -d .git && echo "exists" || echo "not_exists"`, {
-      cwd: APP_DIR,
-    });
-    
+    const gitExists = await sbx.commands.run(
+      `test -d .git && echo "exists" || echo "not_exists"`,
+      {
+        cwd: APP_DIR,
+      },
+    );
+
     if (gitExists.stdout.trim() === "not_exists") {
       throw new Error("No git repository found");
     }
-    
+
     // Check if branch exists
-    const branchExists = await sbx.commands.run(`sudo git branch --list ${branch}`, {
-      cwd: APP_DIR,
-    });
-    
+    const branchExists = await sbx.commands.run(
+      `sudo git branch --list ${branch}`,
+      {
+        cwd: APP_DIR,
+      },
+    );
+
     if (!branchExists.stdout.trim()) {
       throw new Error(`Branch '${branch}' not found`);
     }
-    
+
     // Switch to the specified branch
     await sbx.commands.run(`sudo git checkout ${branch}`, {
       cwd: APP_DIR,
     });
-    
+
     // Try to restore by commit hash
     try {
       // Verify the commit exists
       await sbx.commands.run(`sudo git rev-parse --verify ${name}`, {
         cwd: APP_DIR,
       });
-      
+
       // Reset to the specified commit
       await sbx.commands.run(`sudo git reset --hard ${name}`, {
         cwd: APP_DIR,
       });
-      
+
       // Get the current commit hash
       const currentCommit = await sbx.commands.run(`sudo git rev-parse HEAD`, {
         cwd: APP_DIR,
       });
-      
+
       return {
         message: `Successfully restored to commit ${name}`,
         commit: currentCommit.stdout.trim(),
         branch: branch,
       };
-      
     } catch (commitError) {
       throw new Error(`Commit '${name}' not found`);
     }
-    
   } catch (error) {
-    throw new Error(`Failed to restore checkpoint: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to restore checkpoint: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+    );
   }
-} 
+}
