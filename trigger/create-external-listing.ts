@@ -50,6 +50,9 @@ export const createExternalListing = task({
           userPrompt: `Generate app details for an external app located at: ${deployData.importUrl}`,
         });
 
+        console.log(
+          `[CreateExternalListing] App info: ${JSON.stringify(appInfo)}`,
+        );
         category = appInfo.category || "";
         description = appInfo.description || "";
         tags = appInfo.tags || [];
@@ -79,6 +82,7 @@ export const createExternalListing = task({
       // Generate share ID
       const shareId = await generateShareId(supabase, null);
 
+      console.log(`[CreateExternalListing] Share ID: ${shareId}`);
       // Create display name from URL
       const displayName = `External App - ${
         new URL(deployData.importUrl).hostname
@@ -95,12 +99,15 @@ export const createExternalListing = task({
         description,
       });
 
-      // Insert into app_listing_info
+      console.log(
+        `[CreateExternalListing] Dub link: ${JSON.stringify(dubLink)}`,
+      );
+
       const result = await supabase.from("app_listing_info").insert({
-        app_id: null, // No app_id for external listings
+        app_id: null,
         share_url: dubLink.shortLink || dubLink.url,
-        web_url: deployData.importUrl, // The external URL
-        app_url: deployData.importUrl, // Same as web_url for external apps
+        web_url: deployData.importUrl,
+        app_url: deployData.importUrl,
         dub_id: dubLink.id,
         dub_key: dubLink.key,
         share_id: shareId,
@@ -110,9 +117,9 @@ export const createExternalListing = task({
         tags: tags,
         is_public: deployData.isPublic,
         author: userEmail,
-        is_external: true, // Mark as external listing
       });
 
+      console.log(`[CreateExternalListing] Result: ${JSON.stringify(result)}`);
       console.log(
         `[CreateExternalListing] External listing created successfully`,
       );
