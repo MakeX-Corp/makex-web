@@ -38,12 +38,10 @@ export function GitHubSyncModal({
   const [isChangingRepo, setIsChangingRepo] = useState(false);
   const { toast } = useToast();
 
-  // Update currentSyncRepo when github_sync_repo prop changes
   useEffect(() => {
     setCurrentSyncRepo(github_sync_repo);
   }, [github_sync_repo]);
 
-  // Fetch current GitHub sync status when modal opens (fallback)
   useEffect(() => {
     if (open && appId && !github_sync_repo) {
       fetchCurrentSyncStatus();
@@ -77,7 +75,6 @@ export function GitHubSyncModal({
     try {
       setSaving(true);
 
-      // If we're changing an existing repository or have an original sync repo, use PUT
       const method = currentSyncRepo || github_sync_repo ? "PUT" : "POST";
 
       const res = await fetch("/api/github-sync", {
@@ -101,11 +98,9 @@ export function GitHubSyncModal({
           result.message || `Your app will now sync with ${repoName}.`,
       });
 
-      // Update local state
       setCurrentSyncRepo(repoName);
       setRepoName("");
 
-      // Refresh the session context to get updated data
       onRefresh?.();
 
       onClose();
@@ -144,7 +139,6 @@ export function GitHubSyncModal({
       setCurrentSyncRepo(null);
       setRepoName("");
 
-      // Refresh the session context to get updated data
       onRefresh?.();
     } catch (err: any) {
       toast({
@@ -196,7 +190,6 @@ export function GitHubSyncModal({
 
         <div className="flex flex-col gap-4">
           {currentSyncRepo ? (
-            // Show current sync status
             <div className="space-y-4">
               <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <CheckCircle className="h-5 w-5 text-blue-600" />
@@ -239,7 +232,6 @@ export function GitHubSyncModal({
               </div>
             </div>
           ) : (
-            // Show setup form
             <div className="space-y-3">
               {!isChangingRepo && (
                 <>

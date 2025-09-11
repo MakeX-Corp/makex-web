@@ -3,8 +3,8 @@ import { getSupabaseWithUser } from "@/utils/server/auth";
 import { tasks } from "@trigger.dev/sdk";
 
 interface DeployRequest {
-  appId: string;
-  type?: "web" | "mobile";
+  appId: string | null;
+  type?: "web" | "mobile" | "external";
   deployData?: {
     category: string;
     description: string;
@@ -13,6 +13,7 @@ interface DeployRequest {
     isPublic: boolean;
     aiGeneratedDetails: boolean;
     aiGeneratedIcon: boolean;
+    importUrl?: string;
   };
 }
 
@@ -33,6 +34,17 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       message: "Mobile deployment started in background",
+    });
+  } else if (type === "external") {
+    tasks.trigger("create-external-listing", {
+      appId: null,
+      userEmail,
+      deployData,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "External app listing started in background",
     });
   } else {
     tasks.trigger("deploy-web", {

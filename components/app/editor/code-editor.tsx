@@ -14,12 +14,10 @@ import { useSession } from "@/context/session-context";
 const Monaco = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 const fetchJSON = (u: string) => fetch(u).then((r) => r.json());
 
-// Language detection based on file extension
 function detectLanguage(filePath: string): string {
   const extension = filePath.split(".").pop()?.toLowerCase() || "";
 
   const languageMap: { [key: string]: string } = {
-    // Web
     js: "javascript",
     jsx: "javascript",
     ts: "typescript",
@@ -31,12 +29,10 @@ function detectLanguage(filePath: string): string {
     sass: "scss",
     json: "json",
 
-    // Markup
     md: "markdown",
     markdown: "markdown",
     mdx: "markdown",
 
-    // Images
     png: "image",
     jpg: "image",
     jpeg: "image",
@@ -45,26 +41,21 @@ function detectLanguage(filePath: string): string {
     webp: "image",
     ico: "image",
 
-    // Python
     py: "python",
     pyw: "python",
 
-    // Java
     java: "java",
     class: "java",
 
-    // C/C++
     c: "c",
     cpp: "cpp",
     h: "cpp",
     hpp: "cpp",
 
-    // Shell
     sh: "shell",
     bash: "shell",
     zsh: "shell",
 
-    // Other common languages
     txt: "plaintext",
     xml: "xml",
     yaml: "yaml",
@@ -79,7 +70,6 @@ function detectLanguage(filePath: string): string {
   return languageMap[extension] || "plaintext";
 }
 
-// Image viewer component
 interface BinaryImageData {
   type: "binary";
   mime_type: string;
@@ -112,7 +102,6 @@ export default function CodeEditor({
   const [mounted, setMounted] = useState(false);
   const { appId } = useSession();
 
-  // Detect language if not provided
   const detectedLanguage = file
     ? file.language || detectLanguage(file.path)
     : "";
@@ -124,35 +113,29 @@ export default function CodeEditor({
     fetchJSON,
   );
 
-  // Get file name from path if available
   const fileName = file?.path ? file.path.split("/").pop() : "";
 
-  // Choose a theme based on the system/user preference
   const editorTheme = !mounted
     ? "vs-dark"
     : theme === "dark"
     ? "vs-dark"
     : "vs-light";
 
-  // Ensure we have access to the theme after hydration
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Track code in state for editing (non-image files)
   const [code, setCode] = useState<string>("");
   const [saveStatus, setSaveStatus] = useState<
     null | "success" | "error" | "saving"
   >(null);
 
-  // Update code state when file or data changes
   useEffect(() => {
     if (data && data.code !== undefined) {
       setCode(data.code);
     }
   }, [data, file]);
 
-  // Save handler
   const handleSave = async () => {
     if (!file) return;
     setSaveStatus("saving");
@@ -230,7 +213,6 @@ export default function CodeEditor({
       </div>
     );
 
-  // Handle image files
   if (detectedLanguage === "image") {
     return (
       <div className="h-full flex flex-col">
@@ -253,7 +235,6 @@ export default function CodeEditor({
 
   return (
     <div className="h-full flex flex-col">
-      {/* File header */}
       <div className="border-b border-border bg-muted/50 px-4 py-2 flex items-center">
         <div className="text-sm font-medium truncate">{fileName}</div>
         <div className="text-xs text-muted-foreground ml-2 px-2 py-0.5 rounded bg-muted">
@@ -274,7 +255,6 @@ export default function CodeEditor({
         </Button>
       </div>
 
-      {/* Error message */}
       {saveStatus === "error" && (
         <div className="border-b border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -294,7 +274,6 @@ export default function CodeEditor({
         </div>
       )}
 
-      {/* Monaco editor */}
       <div className="flex-1 relative">
         <Monaco
           key={file.path}

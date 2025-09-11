@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import { ArrowRight, Sparkles, Loader2, ExternalLink } from "lucide-react";
 import { useApp } from "@/context/app-context";
 import {
   Dialog,
@@ -14,42 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { APP_SUGGESTIONS, ROW_1, ROW_2, ROW_3 } from "@/const";
 import { getIconComponent } from "@/lib/iconMap";
-
-// Add these styles to your global CSS file
-const GlobalStyles = () => (
-  <style jsx global>{`
-    @keyframes fadeInOut {
-      0%,
-      100% {
-        opacity: 0;
-        transform: scale(0);
-      }
-      50% {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
-    @keyframes progress {
-      0% {
-        width: 5%;
-      }
-      50% {
-        width: 70%;
-      }
-      90% {
-        width: 90%;
-      }
-      100% {
-        width: 95%;
-      }
-    }
-
-    .animate-progress {
-      animation: progress 3s ease-in-out infinite;
-    }
-  `}</style>
-);
+import { ListExternalAppModal } from "@/components/app/list-external-app-modal";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -59,14 +24,11 @@ export default function DashboardPage() {
   const [initialPromptLoaded, setInitialPromptLoaded] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-
-  // Create refs with explicit typing
+  const [isExternalModalOpen, setIsExternalModalOpen] = useState(false);
   const row1Ref = useRef<HTMLDivElement>(null);
   const row2Ref = useRef<HTMLDivElement>(null);
   const row3Ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  // Check localStorage for initial prompt - only on initial mount
   useEffect(() => {
     if (!initialPromptLoaded) {
       const storedPrompt = localStorage.getItem("makeX_home_prompt");
@@ -85,10 +47,7 @@ export default function DashboardPage() {
       setInitialPromptLoaded(true);
     }
   }, [initialPromptLoaded]);
-
-  // Animation for moving suggestion pills
   useEffect(() => {
-    // Modified the function to accept any ref type and handle null check inside
     const animateRow = (
       rowRef: { current: HTMLDivElement | null },
       direction: "left" | "right",
@@ -100,8 +59,6 @@ export default function DashboardPage() {
       const row = rowRef.current;
       const rowWidth = row.scrollWidth;
       const viewWidth = row.offsetWidth;
-
-      // Set initial position based on direction
       if (direction === "right") {
         position = -rowWidth / 2;
       }
@@ -109,38 +66,28 @@ export default function DashboardPage() {
       const animate = () => {
         if (!row) return;
 
-        // Update position
         if (direction === "left") {
           position -= speed;
-          // Reset when enough content has scrolled by
           if (position <= -rowWidth / 2) {
             position = 0;
           }
         } else {
           position += speed;
-          // Reset when enough content has scrolled by
           if (position >= 0) {
             position = -rowWidth / 2;
           }
         }
-
-        // Apply the transformation
         row.style.transform = `translateX(${position}px)`;
         requestAnimationFrame(animate);
       };
 
       requestAnimationFrame(animate);
     };
-
-    // Start animations for each row with different speeds and directions
     animateRow(row1Ref, "left", 0.3);
     animateRow(row2Ref, "right", 0.2);
     animateRow(row3Ref, "left", 0.3);
 
-    // Cleanup
-    return () => {
-      // Animation cleanup will happen automatically when component unmounts
-    };
+    return () => {};
   }, []);
 
   const handleCreateApp = async () => {
@@ -152,23 +99,18 @@ export default function DashboardPage() {
     setCurrentStep(0);
 
     try {
-      // Simulate setup steps while waiting for response
       const steps = [
         "Setting up your files...",
         "Configuring cloud environment...",
         "Warming up AI models...",
         "Finalizing setup...",
       ];
-
-      // Start the step animation
       const stepInterval = setInterval(() => {
         setCurrentStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
       }, 1000);
 
       localStorage.setItem("makeX_prompt", prompt);
       const redirectUrl = await createApp(prompt);
-
-      // Clear the interval and redirect
       clearInterval(stepInterval);
       router.push(redirectUrl);
     } catch (error) {
@@ -181,18 +123,14 @@ export default function DashboardPage() {
   const handleSuggestionClick = (suggestion: (typeof APP_SUGGESTIONS)[0]) => {
     setPrompt(suggestion.prompt);
   };
-
-  // Function to duplicate items for continuous scrolling effect
   const duplicateItemsForScrolling = (items: typeof APP_SUGGESTIONS) => {
     return [...items, ...items];
   };
 
   return (
     <>
-      <GlobalStyles />
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-2xl mx-auto">
-          {/* Header with logo */}
           <div className="mb-10 text-center">
             <div className="mb-2">
               <Image
@@ -203,14 +141,22 @@ export default function DashboardPage() {
                 className="mx-auto"
               />
             </div>
-            <h1 className="text-4xl font-bold tracking-tight mb-3">
+            <h1 className="text-4xl font-bold tracking-tight mb-4">
               What do you want to build?
             </h1>
+            <Button
+              variant="outline"
+              onClick={() => setIsExternalModalOpen(true)}
+              className="mb-2"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              List External App
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Or add an existing app to the catalog
+            </p>
           </div>
-
-          {/* Moving suggestion pills in three rows */}
           <div className="mb-8">
-            {/* Row 1 - scrolling left */}
             <div className="overflow-hidden mb-2">
               <div
                 ref={row1Ref}
@@ -229,8 +175,6 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
-
-            {/* Row 2 - scrolling right */}
             <div className="overflow-hidden mb-2">
               <div
                 ref={row2Ref}
@@ -249,8 +193,6 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
-
-            {/* Row 3 - scrolling left */}
             <div className="overflow-hidden">
               <div
                 ref={row3Ref}
@@ -270,8 +212,6 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-
-          {/* Main prompt input */}
           <div className="mb-8">
             <div className="relative border rounded-xl shadow-lg overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
               <textarea
@@ -283,8 +223,6 @@ export default function DashboardPage() {
                 rows={3}
                 style={{ minHeight: "120px" }}
               />
-
-              {/* Button area with clean design */}
               <div className="absolute bottom-0 left-0 right-0 py-3 px-4 border-t flex items-center justify-end">
                 <div className="flex items-center mr-2">
                   <Sparkles className="h-5 w-5 text-gray-400" />
@@ -403,6 +341,11 @@ export default function DashboardPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        <ListExternalAppModal
+          open={isExternalModalOpen}
+          onOpenChange={setIsExternalModalOpen}
+        />
       </div>
     </>
   );

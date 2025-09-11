@@ -1,6 +1,3 @@
-// App-related constants and configurations
-
-// App categories for classification
 export const APP_CATEGORIES = [
   "Productivity",
   "Social",
@@ -14,7 +11,6 @@ export const APP_CATEGORIES = [
   "Lifestyle",
 ] as const;
 
-// App suggestions with prompts for the dashboard
 export const APP_SUGGESTIONS = [
   {
     iconName: "Layout",

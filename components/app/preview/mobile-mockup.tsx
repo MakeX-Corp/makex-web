@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { PhoneFrame } from "@/components/app/preview/phone-frame";
 
 interface MobileMockupProps {
@@ -18,7 +18,6 @@ export default function MobileMockup({
   );
 
   useEffect(() => {
-    // Track window size
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
     };
@@ -27,39 +26,33 @@ export default function MobileMockup({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Base dimensions for the phone frame
   const basePadding = 10;
   const basePhoneWidth = 300;
   const basePhoneHeight = 580;
 
-  // Calculate scale factor based on window width
   const getScaleFactor = () => {
-    if (windowWidth > 1200) return 1; // Full size on large screens
-    if (windowWidth > 992) return 0.9; // 90% on medium-large screens
-    if (windowWidth > 768) return 0.8; // 80% on medium screens
-    if (windowWidth > 576) return 0.7; // 70% on small-medium screens
-    if (windowWidth > 400) return 0.6; // 60% on small screens
-    return 0.5; // 50% on very small screens
+    if (windowWidth > 1200) return 1;
+    if (windowWidth > 992) return 0.9;
+    if (windowWidth > 768) return 0.8;
+    if (windowWidth > 576) return 0.7;
+    if (windowWidth > 400) return 0.6;
+    return 0.5;
   };
 
   const scaleFactor = getScaleFactor();
 
-  // Scaled dimensions
   const phoneWidth = basePhoneWidth * scaleFactor;
   const phoneHeight = basePhoneHeight * scaleFactor;
   const padding = basePadding * scaleFactor;
 
-  // Content dimensions (phone size minus border thickness)
   const contentWidth = phoneWidth - padding * 2;
   const contentHeight = phoneHeight - padding * 2;
 
-  // Determine what to display based on state
   const getDisplayContent = () => {
     const sandboxStatus = state?.sandbox_status;
     const expoStatus = state?.expo_status;
     const codingStatus = state?.coding_status;
 
-    // Highest precedence: Container state
     if (sandboxStatus === "paused") {
       return {
         message: "Refresh page to restart container",
@@ -74,9 +67,7 @@ export default function MobileMockup({
       };
     }
 
-    // Container is active
     if (sandboxStatus === "active") {
-      // If expo_status is not bundled, show expo_status
       if (expoStatus !== "bundled") {
         return {
           message: `Expo: ${expoStatus || "loading"}...`,
@@ -84,7 +75,6 @@ export default function MobileMockup({
         };
       }
 
-      // If expo_status is bundled, show coding_status
       if (expoStatus === "bundled") {
         return {
           message: `App: ${codingStatus || "loading"}...`,
@@ -93,7 +83,6 @@ export default function MobileMockup({
       }
     }
 
-    // Default fallback
     return {
       message: "App is loading...",
       showSpinner: true,
@@ -110,7 +99,6 @@ export default function MobileMockup({
         contentHeight={contentHeight}
         padding={padding}
       >
-        {/* Show the app if container is active, expo_status is bundled, and coding_status is active */}
         {state?.sandbox_status === "active" &&
         state?.expo_status === "bundled" &&
         state?.coding_status === "finished" &&

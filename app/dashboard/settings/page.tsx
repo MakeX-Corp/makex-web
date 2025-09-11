@@ -17,7 +17,6 @@ export default function ProfileSettings() {
   const { subscription, isLoading: subscriptionLoading, user } = useApp();
   const { toast } = useToast();
 
-  // Derive values from the subscription data
   const planName = subscription?.planName || "Free";
   const customerId = subscription?.customerId || null;
   const email = user?.email || "";
@@ -25,16 +24,13 @@ export default function ProfileSettings() {
   const [isManagingSubscription, setIsManagingSubscription] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
-  // Get plan features and price from environment variables
   const planFeatures = getPlanFeatures(planName);
   const planPrice = getPlanPrice(planName);
 
-  // Check if user has active subscription
   const hasActiveSubscription = () => {
     return subscription?.hasActiveSubscription;
   };
 
-  // Check if user is on free plan
   const isOnFreePlan = () => {
     return (
       !subscription?.hasActiveSubscription || subscription?.planName === "Free"
@@ -64,13 +60,11 @@ export default function ProfileSettings() {
     try {
       setIsManagingSubscription(true);
 
-      // If we don't have a customer ID or on free plan, redirect to pricing
       if (!customerId || isOnFreePlan()) {
         router.push("/dashboard/pricing");
         return;
       }
 
-      // Get customer portal URL from our API
       const response = await fetch("/api/customer-session", {
         method: "POST",
         headers: {
@@ -83,7 +77,6 @@ export default function ProfileSettings() {
 
       if (response.ok) {
         const data = await response.json();
-        // Open the customer portal URL
         window.open(data.url, "_blank");
       } else {
         toast({
@@ -139,7 +132,6 @@ export default function ProfileSettings() {
         </Button>
       </div>
 
-      {/* Profile Card */}
       <Card className="mb-6 overflow-hidden border-none shadow-sm bg-gradient-to-br from-background to-muted">
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
@@ -166,7 +158,6 @@ export default function ProfileSettings() {
         </CardContent>
       </Card>
 
-      {/* Account Information Section */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Account Information</h2>
@@ -175,7 +166,6 @@ export default function ProfileSettings() {
         <Card>
           <CardContent className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Email Address */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
                   Email Address
@@ -185,7 +175,6 @@ export default function ProfileSettings() {
                 </div>
               </div>
 
-              {/* Language Settings */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
                   Language & Region
@@ -207,7 +196,6 @@ export default function ProfileSettings() {
         </Card>
       </section>
 
-      {/* Subscription Section */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Subscription & Billing</h2>
@@ -251,7 +239,6 @@ export default function ProfileSettings() {
               </div>
             </div>
 
-            {/* Subscription Features */}
             {!isOnFreePlan() && planFeatures.length > 0 && (
               <div className="mb-6">
                 <div className="bg-muted/50 rounded-md p-4">

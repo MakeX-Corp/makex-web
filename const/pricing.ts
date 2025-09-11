@@ -1,5 +1,3 @@
-// Pricing plans and subscription configuration
-
 export interface PlanProps {
   name: string;
   description: string;
@@ -10,7 +8,6 @@ export interface PlanProps {
   popular?: boolean;
 }
 
-// Default pricing plans configuration
 export const PRICING_PLANS: PlanProps[] = [
   {
     name: process.env.NEXT_PUBLIC_FREE_PLAN_NAME || "Free",

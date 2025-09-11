@@ -1,4 +1,3 @@
-// AI Model configurations
 export const AI_MODELS = [
   {
     id: "claude-4-sonnet-latest",
@@ -32,7 +31,6 @@ export const AI_MODELS = [
   },
 ];
 
-// Model identifiers
 export const CLAUDE_SONNET_4_MODEL = "anthropic/claude-4-sonnet";
 export const CLAUDE_3_5_SONNET_LATEST = "claude-3-5-sonnet-latest";
 export const DEFAULT_MODEL = "claude-4-sonnet-latest";

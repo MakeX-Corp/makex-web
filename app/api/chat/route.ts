@@ -194,18 +194,16 @@ export async function POST(req: Request) {
 
       const plainText = extractPlainText(lastUserMessage.parts);
 
-      const { data: chatHistoryData, error: chatHistoryError } = await supabase
-        .from("chat_history")
-        .insert({
-          app_id: trimmedAppId,
-          user_id: user.id,
-          plain_text: plainText,
-          parts: lastUserMessage.parts,
-          role: "user",
-          model_used: modelName,
-          session_id: sessionId,
-          message_id: lastUserMessage.id,
-        });
+      await supabase.from("chat_history").insert({
+        app_id: trimmedAppId,
+        user_id: user.id,
+        plain_text: plainText,
+        parts: lastUserMessage.parts,
+        role: "user",
+        model_used: modelName,
+        session_id: sessionId,
+        message_id: lastUserMessage.id,
+      });
 
       const { model: gatewayModel, order: providerOrder } =
         getModelAndOrder(modelName);
@@ -242,7 +240,6 @@ export async function POST(req: Request) {
                   message: checkpointInfo.message,
                 },
               );
-              console.log("checkpointResponse", checkpointResponse);
               commitHash =
                 checkpointResponse.commit || checkpointResponse.current_commit;
             } catch (error) {
