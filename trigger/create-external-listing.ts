@@ -103,11 +103,14 @@ export const createExternalListing = task({
         `[CreateExternalListing] Dub link: ${JSON.stringify(dubLink)}`,
       );
 
+      // Convert external URL to EAS URL format
+      const easUrl = deployData.importUrl.replace("https://", "makex://");
+
       const result = await supabase.from("app_listing_info").insert({
         app_id: null,
         share_url: dubLink.shortLink || dubLink.url,
         web_url: deployData.importUrl,
-        app_url: deployData.importUrl,
+        app_url: easUrl,
         dub_id: dubLink.id,
         dub_key: dubLink.key,
         share_id: shareId,
