@@ -17,7 +17,7 @@ export default function CodeView() {
   } | null>(null);
 
   const [isMobile, setIsMobile] = useState(false);
-  const [fileTreeKey, setFileTreeKey] = useState(0); // Force re-render of file tree
+  const [fileTreeKey, setFileTreeKey] = useState(0);
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -29,19 +29,15 @@ export default function CodeView() {
     return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
 
-  // Handle file selection
   const handleFileSelect = (file: { path: string; language: string }) => {
     setSelectedFile(file);
   };
 
-  // Handle file tree refresh
   const handleFileTreeRefresh = () => {
     setFileTreeKey((prev) => prev + 1);
-    // Clear selected file if it was deleted
     setSelectedFile(null);
   };
 
-  // Different styling for mobile vs desktop
   const containerStyle = isMobile
     ? {
         height: "100%",
@@ -61,7 +57,6 @@ export default function CodeView() {
 
   return (
     <div style={containerStyle}>
-      {/* Header */}
       <div
         style={{
           flexShrink: 0,
@@ -78,7 +73,6 @@ export default function CodeView() {
         <span>Explorer</span>
       </div>
 
-      {/* Main content with ResizablePanelGroup */}
       <div
         style={{
           flex: 1,
@@ -91,7 +85,6 @@ export default function CodeView() {
           direction="horizontal"
           style={{ height: "100%", width: "100%" }}
         >
-          {/* File tree sidebar */}
           <ResizablePanel
             defaultSize={25}
             minSize={15}
@@ -110,10 +103,8 @@ export default function CodeView() {
             />
           </ResizablePanel>
 
-          {/* Resizable handle */}
           <ResizableHandle withHandle />
 
-          {/* Code editor */}
           <ResizablePanel
             defaultSize={75}
             style={{ overflow: "auto", maxHeight: "100%" }}

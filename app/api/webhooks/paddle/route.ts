@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
-// Initialize Supabase client
 const getSupabaseClient = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
@@ -46,8 +45,6 @@ export async function POST(req: Request) {
     const event = payload.data;
     const eventType = payload.event_type;
 
-    console.log("Received webhook:", eventType);
-
     // Verify signature if in production
     // Uncomment the block below when ready for production
     /*
@@ -57,7 +54,6 @@ export async function POST(req: Request) {
     }
     */
 
-    // Get Supabase client
     const supabase = getSupabaseClient();
     if (!supabase) {
       return NextResponse.json(
@@ -84,7 +80,6 @@ export async function POST(req: Request) {
         console.log(`Unhandled event type: ${eventType}`);
     }
 
-    // Return success response
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Webhook processing error:", error);
@@ -96,15 +91,12 @@ export async function POST(req: Request) {
 }
 
 async function handleSubscriptionCreated(event: any, supabase: any) {
-  // Extract userId from custom data
   let userId = event.custom_data?.userId;
   if (!userId) {
     console.error("No userId found in subscription data");
     return;
   }
-  console.log("userId", userId);
 
-  // Determine subscription type based on price_id
   const priceId = event.items[0].price.id;
   let subscriptionType = "free";
 
@@ -113,7 +105,6 @@ async function handleSubscriptionCreated(event: any, supabase: any) {
   }
 
   try {
-    // Check if user already has a free subscription that needs to be updated
     const { data: existingSubscription } = await supabase
       .from("subscriptions")
       .select("id, subscription_type")
@@ -122,7 +113,6 @@ async function handleSubscriptionCreated(event: any, supabase: any) {
       .single();
 
     if (existingSubscription) {
-      // Update existing free subscription to paid
       const { error } = await supabase
         .from("subscriptions")
         .update({
@@ -144,11 +134,7 @@ async function handleSubscriptionCreated(event: any, supabase: any) {
         .eq("id", existingSubscription.id);
 
       if (error) throw error;
-      console.log(
-        `Updated existing subscription ${existingSubscription.id} to ${subscriptionType} plan`,
-      );
     } else {
-      // Insert new subscription record
       const { error } = await supabase.from("subscriptions").insert({
         subscription_id: event.id,
         user_id: userId,
@@ -166,9 +152,6 @@ async function handleSubscriptionCreated(event: any, supabase: any) {
       });
 
       if (error) throw error;
-      console.log(
-        `Subscription ${event.id} created successfully with type: ${subscriptionType}`,
-      );
     }
   } catch (error) {
     console.error("Error creating subscription:", error);
@@ -177,10 +160,6 @@ async function handleSubscriptionCreated(event: any, supabase: any) {
 
 async function handleSubscriptionUpdated(event: any, supabase: any) {
   try {
-    // Update subscription record
-    console.log("event", event);
-
-    // Determine subscription type based on price_id
     const priceId = event.items[0].price?.id;
     let subscriptionType = "free";
 
@@ -209,9 +188,6 @@ async function handleSubscriptionUpdated(event: any, supabase: any) {
       .eq("subscription_id", event.id);
 
     if (error) throw error;
-    console.log(
-      `Subscription ${event.id} updated successfully with type: ${subscriptionType}`,
-    );
   } catch (error) {
     console.error("Error updating subscription:", error);
   }
@@ -219,8 +195,6 @@ async function handleSubscriptionUpdated(event: any, supabase: any) {
 
 async function handleSubscriptionCanceled(event: any, supabase: any) {
   try {
-    // Update subscription to canceled status
-    console.log("event", event);
     const { error } = await supabase
       .from("subscriptions")
       .update({
@@ -231,7 +205,6 @@ async function handleSubscriptionCanceled(event: any, supabase: any) {
       .eq("subscription_id", event.id);
 
     if (error) throw error;
-    console.log(`Subscription ${event.id} canceled successfully`);
   } catch (error) {
     console.error("Error canceling subscription:", error);
   }
@@ -239,10 +212,8 @@ async function handleSubscriptionCanceled(event: any, supabase: any) {
 
 async function handleTransactionCompleted(event: any, supabase: any) {
   try {
-    // Get user ID from transaction data or related subscription
     let userId = event.customer?.user_id || event.passthrough?.userId;
 
-    // If userId is not directly available, try to get it from the subscription
     if (!userId && event.subscription_id) {
       const { data: subscription } = await supabase
         .from("subscriptions")
@@ -260,7 +231,6 @@ async function handleTransactionCompleted(event: any, supabase: any) {
       return;
     }
 
-    // Insert transaction record
     const { error } = await supabase.from("transactions").insert({
       id: event.id,
       user_id: userId,
@@ -274,7 +244,6 @@ async function handleTransactionCompleted(event: any, supabase: any) {
     });
 
     if (error) throw error;
-    console.log(`Transaction ${event.id} recorded successfully`);
   } catch (error) {
     console.error("Error creating transaction:", error);
   }

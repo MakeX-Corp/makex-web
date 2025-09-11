@@ -6,7 +6,6 @@ import { AlertCircle } from "lucide-react";
 import { useSession } from "@/context/session-context";
 import { Loader2 } from "lucide-react";
 
-//iframe for dev and prod
 function DashboardFrame({
   adminKey,
   deploymentUrl,
@@ -76,7 +75,6 @@ export function ConvexDashboardEmbed() {
       return;
     }
 
-    // If context config is already complete, skip fetch
     if (isConfigComplete(contextConvexConfig)) {
       setConvexConfig(contextConvexConfig);
       setCredentialsReady(true);

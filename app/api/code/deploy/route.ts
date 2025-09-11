@@ -36,9 +36,8 @@ export async function POST(req: Request) {
       message: "Mobile deployment started in background",
     });
   } else if (type === "external") {
-    // For external apps, just create the listing without deployment
     tasks.trigger("create-external-listing", {
-      appId: null, // No appId for external listings
+      appId: null,
       userEmail,
       deployData,
     });

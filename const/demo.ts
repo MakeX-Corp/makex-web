@@ -1,5 +1,3 @@
-// Demo data and content for the landing page
-
 export const DEMO_PROMPT = "A calorie tracker app like Cal AI";
 
 export const DEMO_CODE_SNIPPETS = [

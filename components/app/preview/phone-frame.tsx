@@ -11,11 +11,9 @@ export function PhoneFrame({
 
   children,
 }: PhoneFrameProps) {
-  // Base dimensions for the phone frame
   const basePhoneWidth = 300;
   const basePhoneHeight = 580;
 
-  // Scaled dimensions
   const phoneWidth = basePhoneWidth * scaleFactor;
   const phoneHeight = basePhoneHeight * scaleFactor;
 
@@ -27,7 +25,6 @@ export function PhoneFrame({
         height: `${phoneHeight}px`,
       }}
     >
-      {/* Side buttons - scaled with the phone */}
       <div
         className="absolute rounded-l-md shadow-lg bg-black"
         style={{
@@ -46,7 +43,6 @@ export function PhoneFrame({
           height: `${30 * scaleFactor}px`,
         }}
       ></div>
-      {/* Power Button - scaled with the phone */}
       <div
         className="absolute rounded-r-md shadow-lg bg-black"
         style={{
@@ -57,7 +53,6 @@ export function PhoneFrame({
         }}
       ></div>
 
-      {/* Content area - scaled with the phone */}
       <div
         className="absolute overflow-hidden"
         style={{
@@ -71,7 +66,6 @@ export function PhoneFrame({
         {children}
       </div>
 
-      {/* Phone border overlay - scaled with the phone */}
       <div
         className="absolute pointer-events-none bg-transparent"
         style={{
@@ -86,7 +80,6 @@ export function PhoneFrame({
         }}
       />
 
-      {/* iPhone Notch - scaled with the phone */}
       <div
         className="absolute bg-black pointer-events-none"
         style={{

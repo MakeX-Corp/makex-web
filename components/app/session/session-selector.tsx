@@ -39,22 +39,19 @@ export function SessionSelector() {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editSessionName, setEditSessionName] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+
   const editInputRef = useRef<HTMLInputElement>(null);
 
   const isLoading = loadingSessions || loadingCurrentSession;
 
-  // Handle creating a new session
   const handleCreateSession = async () => {
     if (isSubmitting) return;
 
     try {
       setIsSubmitting(true);
       setDropdownOpen(false);
-      // Create a new session
       const newSession = await createSession();
       if (newSession) {
-        // Close dropdown after successful creation
         setDropdownOpen(false);
       }
     } catch (error) {
@@ -64,7 +61,6 @@ export function SessionSelector() {
     }
   };
 
-  // Handle session selection
   const handleSessionSelection = (sessionId: string) => {
     if (isAIResponding) return;
     if (sessionId === currentSessionId) {
@@ -76,14 +72,12 @@ export function SessionSelector() {
     setDropdownOpen(false);
   };
 
-  // Handle editing session
   const handleEditSession = async (sessionId: string) => {
     if (!editSessionName.trim() || isSubmitting) return;
 
     try {
       setIsSubmitting(true);
 
-      // Call the updateSessionTitle function from context
       const success = await updateSessionTitle(
         sessionId,
         editSessionName.trim(),
@@ -93,7 +87,6 @@ export function SessionSelector() {
         console.error("Failed to update session title");
       }
 
-      // Reset editing state
       setEditingSessionId(null);
       setEditSessionName("");
     } catch (error) {
@@ -103,7 +96,6 @@ export function SessionSelector() {
     }
   };
 
-  // Handle deleting session
   const handleDeleteSession = async (
     sessionId: string,
     event: React.MouseEvent,
@@ -113,7 +105,6 @@ export function SessionSelector() {
     if (sessions.length <= 1) return;
     try {
       setIsDeleting(true);
-      // Call the deleteSession function from context
       const success = await deleteSession(sessionId);
 
       if (!success) {
@@ -132,7 +123,6 @@ export function SessionSelector() {
     setEditSessionName(session.title || "");
   };
 
-  // Get the current session title from the sessions array
   const currentTitle = getCurrentSessionTitle();
 
   return (
@@ -230,13 +220,11 @@ export function SessionSelector() {
                                 : "text-foreground hover:bg-muted",
                             )}
                           >
-                            {/* Always use the title from the sessions array */}
                             <span className="truncate">
                               {session.title || "Untitled Session"}
                             </span>
                           </div>
                           <div className="absolute right-1 top-1/2 -translate-y-1/2 flex opacity-0 group-hover:opacity-100 transition-opacity">
-                            {/* Edit button */}
                             <Button
                               variant="ghost"
                               size="icon"
@@ -245,7 +233,7 @@ export function SessionSelector() {
                             >
                               <Edit className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
                             </Button>
-                            {/* Delete button */}
+
                             <Button
                               variant="ghost"
                               size="icon"

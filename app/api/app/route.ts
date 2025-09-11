@@ -161,8 +161,6 @@ export async function POST(request: Request) {
 
     timings.totalTime = performance.now() - startTime;
 
-    console.log("Timings:", timings);
-
     await setupContainer.trigger(
       {
         appId: insertedApp.id,

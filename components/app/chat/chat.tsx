@@ -79,7 +79,6 @@ export function Chat({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Use image upload custom hook
   const {
     selectedImages,
     imagePreviews,
@@ -532,13 +531,11 @@ export function Chat({
             onChange={(e) => {
               setInput(e.target.value);
 
-              // Auto-resize logic
               e.target.style.height = "auto";
-              const newHeight = Math.min(e.target.scrollHeight, 200); // Max height of 200px
+              const newHeight = Math.min(e.target.scrollHeight, 200);
               e.target.style.height = `${newHeight}px`;
             }}
             onKeyDown={(e) => {
-              // Submit on Enter (without Shift key)
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 formRef.current?.dispatchEvent(

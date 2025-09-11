@@ -127,7 +127,6 @@ export function DeployButton({ appId }: { appId: string | null }) {
 
     fetchLastDeployment();
 
-    // Set up realtime subscription
     const channel = supabase
       .channel(`realtime:user_deployments:${appId}`)
       .on(
@@ -139,25 +138,21 @@ export function DeployButton({ appId }: { appId: string | null }) {
           filter: `app_id=eq.${appId}`,
         },
         (payload) => {
-          // Update local state with deployment info
           setLastDeployment({
             url: payload.new.url || "",
             status: payload.new.status,
             created_at: payload.new.created_at,
           });
 
-          // If deployment is completed, fetch share info
           if (payload.new.status === "completed") {
-            // Add a small delay to ensure backend is ready
             setTimeout(() => {
               fetchShareUrl(appId);
-            }, 1000); // 1 second delay
+            }, 1000);
           }
         },
       )
       .subscribe((status) => {});
 
-    // Cleanup subscription on unmount
     return () => {
       supabase.removeChannel(channel);
     };
@@ -173,21 +168,19 @@ export function DeployButton({ appId }: { appId: string | null }) {
     }
   };
 
-  // Deploy web function with improved error handling and form data integration
   const deployWeb = useCallback(
     async (deployData: DeployData) => {
       setIsDeploying(true);
       setError(null);
 
       try {
-        // Then trigger the deployment
         const response = await fetch("/api/code/deploy", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             appId,
             type: "web",
-            deployData, // Pass the deploy data to the backend
+            deployData,
           }),
         });
 

@@ -40,7 +40,6 @@ export default function Signup() {
       setError(result.error);
       setLoading(false);
     } else {
-      // redirect to /dashboard
       router.push("/dashboard");
     }
   };
