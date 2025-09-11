@@ -1,4 +1,3 @@
-// Central exports for all constants
 export * from "./app";
 export * from "./limits";
 export * from "./routes";

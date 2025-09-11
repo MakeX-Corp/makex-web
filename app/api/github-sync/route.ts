@@ -53,13 +53,11 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Configure GitHub sync using Freestyle API
       await configureGitHubSync({
         repoId: app.git_repo_id,
         githubRepoName: repoName,
       });
 
-      // Save the GitHub sync repository name to the database
       const { error: updateError } = await supabase
         .from("user_apps")
         .update({ github_sync_repo: repoName })
@@ -76,7 +74,6 @@ export async function POST(request: NextRequest) {
     } catch (freestyleError) {
       console.error("Freestyle API error:", freestyleError);
 
-      // Provide more specific error messages based on the error
       let errorMessage =
         "Failed to configure GitHub sync. Please ensure your GitHub App is installed on the repository.";
 
@@ -112,7 +109,6 @@ export async function POST(request: NextRequest) {
         typeof freestyleError === "object" &&
         freestyleError !== null
       ) {
-        // Handle API error objects that might not be Error instances
         const errorObj = freestyleError as any;
         if (errorObj.message) {
           errorMessage = `GitHub sync error: ${errorObj.message}`;
@@ -183,10 +179,8 @@ export async function DELETE(request: NextRequest) {
       });
     } catch (freestyleError) {
       console.error("Freestyle API error:", freestyleError);
-      // Continue with database update even if Freestyle API fails
     }
 
-    // Remove the GitHub sync repository name from the database
     const { error: updateError } = await supabase
       .from("user_apps")
       .update({ github_sync_repo: null })
@@ -269,12 +263,9 @@ export async function PUT(request: NextRequest) {
         const res = await removeGitHubSync({
           repoId: app.git_repo_id,
         });
-        console.log("removeGitHubSync result:", res);
-        // Add a delay between remove and configure to allow the system to process the removal
         await new Promise((resolve) => setTimeout(resolve, 2000));
       } catch (freestyleError) {
         console.error("Failed to remove old GitHub sync:", freestyleError);
-        // Continue with new sync setup even if removal fails
       }
     }
 

@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { MAKEX_URLS } from "@/const";
 
@@ -48,7 +47,6 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
     }
   }, [url, theme, isIOS]);
 
-  // Generate QR code for app download when modal opens
   useEffect(() => {
     const generateDownloadQR = async () => {
       try {
@@ -75,18 +73,15 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
   }, [isModalOpen, isIOS, theme]);
 
   const handleDownloadClick = (e: React.MouseEvent, isIOSLink: boolean) => {
-    // Check if user is on mobile device
     const isMobile =
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent,
       );
 
     if (isMobile) {
-      // On mobile, let the link work normally
       return;
     }
 
-    // On desktop, prevent default and open modal
     e.preventDefault();
     setIsIOS(isIOSLink);
     setIsModalOpen(true);
@@ -167,7 +162,6 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
         </>
       )}
 
-      {/* Download Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -183,7 +177,6 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
               </p>
             </div>
 
-            {/* QR Code in Modal for App Download */}
             {downloadQrCodeDataUrl && (
               <div className="flex flex-col items-center gap-4">
                 <img
@@ -203,7 +196,6 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
               </div>
             )}
 
-            {/* Download Instructions */}
             <div className="text-sm text-muted-foreground text-center max-w-sm">
               <p className="font-medium mb-2">How to get the app:</p>
               <ol className="text-left space-y-2">
@@ -220,7 +212,6 @@ export function QRCodeDisplay({ url }: QRCodeDisplayProps) {
               </ol>
             </div>
 
-            {/* Direct Download Links */}
             <div className="flex gap-2 w-full">
               <a
                 href={

@@ -43,10 +43,8 @@ export function Preview({
   return (
     <Card className="h-full border rounded-md">
       <CardContent className="relative h-full flex flex-col p-4">
-        {/* toolbar */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 border rounded-lg p-1 bg-background">
-            {/* buttons */}
             <button
               onClick={() => switchView("mobile")}
               className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
@@ -102,7 +100,7 @@ export function Preview({
               <ExternalLink className="h-4 w-4" />
             </Button>
           </div>
-          {/* status + refresh */}
+
           <div className="flex items-center gap-2">
             <Badge
               className={`ml-2 px-3 py-1 text-xs capitalize font-semibold border rounded-full flex items-center justify-center select-none pointer-events-none shadow-none ${
@@ -134,7 +132,6 @@ export function Preview({
           </div>
         </div>
 
-        {/* content */}
         <div className="flex-1 overflow-auto">
           {viewMode === "mobile" && state && (
             <div className="h-full w-full flex items-center justify-center">
