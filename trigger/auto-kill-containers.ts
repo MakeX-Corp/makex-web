@@ -7,7 +7,6 @@ export const autoKillContainers = schedules.task({
   cron: "0 */6 * * *", // Run every 6 hours
   run: async (payload) => {
     try {
-      // Get all finished apps with their current sandbox and sandbox status
       const supabase = await getSupabaseAdmin();
       const { data: finishedApps, error: appsError } = await supabase
         .from("user_apps")

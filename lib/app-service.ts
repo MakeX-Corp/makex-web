@@ -1,4 +1,3 @@
-// Function to update app name
 export const updateAppName = async (
   appId: string,
   newName: string,

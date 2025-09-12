@@ -16,17 +16,14 @@ export interface SessionData {
   metadata?: any;
 }
 
-// API response types
 interface ApiError {
   error: string;
 }
 
-// Helper function to check if response is an ApiError
 function isApiError(data: any): data is ApiError {
   return data && typeof data.error === "string";
 }
 
-// Get session list for an app
 export async function getSessionsForApp(
   appId: string,
 ): Promise<{ sessions: SessionListItem[] }> {
@@ -43,10 +40,9 @@ export async function getSessionsForApp(
       );
     }
 
-    // Map to our SessionListItem format
     const sessions = data.map((session: any) => ({
       id: session.id,
-      title: session.title || `New Chat`, // Use title or fallback
+      title: session.title || `New Chat`,
       app_id: session.app_id,
       created_at: session.created_at,
       last_activity: session.updated_at,
@@ -55,29 +51,23 @@ export async function getSessionsForApp(
     return { sessions };
   } catch (error) {
     console.error("[SESSION SERVICE] Error fetching sessions:", error);
-    // You might want to show a toast notification here
+
     return { sessions: [] };
   }
 }
 
-// Get a specific session
 export async function getSession(
   appId: string,
   sessionId: string,
 ): Promise<SessionData | null> {
   try {
-    console.log("TK getting session", sessionId);
-
-    // First check if this is a new session request
     if (sessionId.startsWith("new-session-")) {
-      // Create a new session
       return createNewSession(
         appId,
         `New Session ${new Date().toLocaleString()}`,
       );
     }
 
-    // Fetch the session from the API
     const response = await fetch(`/api/sessions?sessionId=${sessionId}`);
 
     const data = await response.json();
@@ -88,7 +78,6 @@ export async function getSession(
       );
     }
 
-    // Process the session data
     const sessionData: SessionData = {
       id: data.id,
       title: data.title || `Session ${data.id.slice(0, 8)}`,
@@ -106,7 +95,6 @@ export async function getSession(
   }
 }
 
-// Create a new session
 export async function createNewSession(
   appId: string,
   title?: string,
@@ -146,7 +134,6 @@ export async function createNewSession(
   }
 }
 
-// Delete a session (soft delete)
 export async function deleteSession(sessionId: string): Promise<boolean> {
   try {
     const response = await fetch(
@@ -200,7 +187,6 @@ export async function updateSessionTitle(
   }
 }
 
-// Get app information
 export async function getAppInfo(appId: string): Promise<{
   data: any | null;
   error: string | null;
@@ -210,7 +196,6 @@ export async function getAppInfo(appId: string): Promise<{
 
     const data = await response.json();
 
-    console.log("data  ihtbehb thing", data);
     if (!response.ok) {
       return {
         data: null,

@@ -1,4 +1,3 @@
-// Types for messages
 interface MessagePart {
   type: string;
   text?: string;
@@ -24,9 +23,6 @@ interface ProcessedMessage {
   }>;
 }
 
-/**
- * Fetch messages for a chat session
- */
 export const fetchChatMessages = async (
   sessionId: string,
   appId: string,
@@ -38,7 +34,6 @@ export const fetchChatMessages = async (
 
     if (!response.ok) {
       if (response.status === 404) {
-        // Session not found - it might be newly created
         return [];
       }
       throw new Error("Failed to fetch messages");
@@ -57,9 +52,6 @@ export const fetchChatMessages = async (
   }
 };
 
-/**
- * Restore a checkpoint
- */
 export const restoreCheckpoint = async (
   messageId: string,
   appId: string,

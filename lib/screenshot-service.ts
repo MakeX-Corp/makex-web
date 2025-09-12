@@ -1,4 +1,3 @@
-// Helper function to convert data URL to Blob
 export const dataURLToBlob = (dataURL: string) => {
   const parts = dataURL.split(";base64,");
   const contentType = parts[0].split(":")[1];

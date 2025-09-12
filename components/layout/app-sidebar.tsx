@@ -54,7 +54,7 @@ export function AppSidebar() {
   const [filteredApps, setFilteredApps] = useState(apps);
   const { theme } = useTheme();
   const router = useRouter();
-  // State for delete confirmation
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeletingApp, setIsDeletingApp] = useState(false);
   const [appToDelete, setAppToDelete] = useState<null | {
@@ -62,22 +62,17 @@ export function AppSidebar() {
     name: string;
   }>(null);
 
-  // State for editing app names
   const [editingAppId, setEditingAppId] = useState<string | null>(null);
   const [editedAppName, setEditedAppName] = useState("");
   const [isUpdatingApp, setIsUpdatingApp] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
 
-  // External links
   const twitterUrl = "https://x.com/Makexapp";
-  const discordUrl = "https://discord.gg/3EsUgb53Zp";
 
-  // Get current app ID from pathname
   const currentAppId = pathname.startsWith("/dashboard/")
     ? pathname.split("/")[2]
     : null;
 
-  // Filter apps when search query changes
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredApps(apps);
@@ -89,32 +84,29 @@ export function AppSidebar() {
     }
   }, [searchQuery, apps]);
 
-  // Focus the input when editing starts
   useEffect(() => {
     if (editingAppId && editInputRef.current) {
       editInputRef.current.focus();
     }
   }, [editingAppId]);
 
-  // Handle delete confirmation
   const confirmDelete = (
     e: React.MouseEvent,
     appId: string,
     appName: string,
   ) => {
-    e.preventDefault(); // Prevent navigation
-    e.stopPropagation(); // Prevent event bubbling
+    e.preventDefault();
+    e.stopPropagation();
     setAppToDelete({ id: appId, name: appName });
     setIsDeleteModalOpen(true);
   };
 
-  // Execute the actual deletion
   const handleDeleteApp = async () => {
     if (appToDelete) {
       setIsDeletingApp(true);
       try {
         await deleteApp(appToDelete.id);
-        // Check if we're deleting the current app
+
         if (appToDelete.id === currentAppId) {
           router.push("/dashboard");
         }
@@ -122,33 +114,29 @@ export function AppSidebar() {
         setAppToDelete(null);
       } catch (error) {
         console.error("Failed to delete app:", error);
-        // Handle error (e.g., show toast notification)
       } finally {
         setIsDeletingApp(false);
       }
     }
   };
 
-  // Start editing app name
   const startEditing = (
     e: React.MouseEvent,
     appId: string,
     currentName: string,
   ) => {
-    e.preventDefault(); // Prevent navigation
-    e.stopPropagation(); // Prevent event bubbling
+    e.preventDefault();
+    e.stopPropagation();
     setEditingAppId(appId);
     setEditedAppName(currentName);
   };
 
-  // Cancel editing
   const cancelEditing = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setEditingAppId(null);
   };
 
-  // Save app name
   const saveAppName = async (e: React.MouseEvent, appId: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -170,13 +158,11 @@ export function AppSidebar() {
       setEditingAppId(null);
     } catch (error) {
       console.error("Failed to update app name:", error);
-      // Handle error (e.g., show toast notification)
     } finally {
       setIsUpdatingApp(false);
     }
   };
 
-  // Navigation items - properly typed
   const navItems = [
     {
       href: twitterUrl,
@@ -206,7 +192,6 @@ export function AppSidebar() {
           expanded ? "w-64" : "w-16",
         )}
       >
-        {/* Top header with logo and toggle button */}
         <div className="p-4 flex items-center justify-between">
           {expanded && (
             <div className="flex items-center gap-2">
@@ -244,7 +229,6 @@ export function AppSidebar() {
           </Button>
         </div>
 
-        {/* Apps section - Now takes up remaining space before bottom nav */}
         <div className="px-3 py-3 flex flex-col flex-1 overflow-hidden">
           {expanded ? (
             <>
@@ -252,7 +236,7 @@ export function AppSidebar() {
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Your Apps
                 </h2>
-                {/* Add New Plus Button */}
+
                 <Link href="/dashboard">
                   <Button
                     variant="ghost"
@@ -265,7 +249,6 @@ export function AppSidebar() {
                 </Link>
               </div>
 
-              {/* Search bar */}
               <div className="relative mb-3">
                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
@@ -277,7 +260,6 @@ export function AppSidebar() {
                 />
               </div>
 
-              {/* Enhanced Apps list with edit and delete functionality */}
               <div className="space-y-1 overflow-y-auto flex-1">
                 {isLoading ? (
                   <div className="flex justify-center py-2">
@@ -287,7 +269,6 @@ export function AppSidebar() {
                   filteredApps.map((app) => (
                     <div key={app.id} className="group relative">
                       {editingAppId === app.id ? (
-                        // Editing mode
                         <div className="flex items-center p-1.5 rounded-md bg-muted/50">
                           <input
                             ref={editInputRef}
@@ -323,7 +304,6 @@ export function AppSidebar() {
                           </div>
                         </div>
                       ) : (
-                        // Normal view mode
                         <>
                           <Link
                             href={`/dashboard/${app.id}`}
@@ -357,7 +337,7 @@ export function AppSidebar() {
                             >
                               <Edit className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
                             </Button>
-                            {/* Delete button */}
+
                             <Button
                               variant="ghost"
                               size="icon"
@@ -397,7 +377,6 @@ export function AppSidebar() {
           )}
         </div>
 
-        {/* Theme Toggle Button */}
         <div className={expanded ? "px-3 py-2" : "flex justify-center py-2"}>
           {expanded ? (
             <div className="flex items-center">
@@ -411,7 +390,6 @@ export function AppSidebar() {
           )}
         </div>
 
-        {/* Feedback button directly below Dark Mode */}
         <div className={expanded ? "px-3 pb-2" : "flex justify-center pb-2"}>
           <FeedbackFish projectId="3012bf1e2d0eab">
             <button
@@ -429,7 +407,6 @@ export function AppSidebar() {
           </FeedbackFish>
         </div>
 
-        {/* Navigation - moved to bottom */}
         <div className="py-4 mt-2 border-t border-muted/40">
           <div className={expanded ? "px-3 pb-2" : "px-0 pb-2"}>
             <h2
@@ -485,7 +462,6 @@ export function AppSidebar() {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
