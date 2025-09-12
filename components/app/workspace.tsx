@@ -58,26 +58,22 @@ export default function WorkspaceContent({
   const { theme } = useTheme();
   const [githubSyncOpen, setGitHubSyncOpen] = useState(false);
 
-  // State for UI elements
   const [activeView, setActiveView] = useState<"chat" | "preview">("chat");
   const [isResetting, setIsResetting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
 
-  // State to manage the iframe refresh
   const [iframeKey, setIframeKey] = useState<string>(
     Math.random().toString(36).substring(2, 15),
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Track window width for responsive design
   const [windowWidth, setWindowWidth] = useState(0);
 
   const [state, setState] = useState<any>(null);
   const supabase = createClient();
   useEffect(() => {
     if (appId) {
-      // Initial fetch
       const fetchInitialState = async () => {
         const res = await fetch("/api/sandbox?appId=" + appId, {
           method: "GET",
@@ -96,7 +92,6 @@ export default function WorkspaceContent({
 
       fetchInitialState();
 
-      // Realtime subscriptions
       const sandboxChannel = supabase
         .channel(`realtime:user_sandboxes:${appId}`)
         .on(
@@ -158,12 +153,9 @@ export default function WorkspaceContent({
     }
   };
 
-  // Effect to set window width on mount and resize
   useEffect(() => {
-    // Set initial width
     setWindowWidth(window.innerWidth);
 
-    // Update width on resize
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
     };
@@ -172,13 +164,11 @@ export default function WorkspaceContent({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Load sessions when component mounts or appId changes
   useEffect(() => {
     if (appId) {
       initializeApp(appId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appId]); // Only depend on appId
+  }, [appId]);
 
   const exportCode = async () => {
     setIsExporting(true);
@@ -197,13 +187,10 @@ export default function WorkspaceContent({
         throw new Error("Export failed");
       }
 
-      // Convert response to blob
       const blob = await response.blob();
 
-      // Create a URL for the blob
       const url = URL.createObjectURL(blob);
 
-      // Create a download link
       const a = document.createElement("a");
       a.href = url;
       a.download = `${appName || "app_export"}.zip`;
@@ -243,7 +230,6 @@ export default function WorkspaceContent({
     }
   };
 
-  // Function to refresh the iframe
   const refreshPreview = async () => {
     setIsRefreshing(true);
     setIframeKey(Math.random().toString(36).substring(2, 15));
@@ -255,24 +241,19 @@ export default function WorkspaceContent({
     }, 1000);
   };
 
-  // Handler for when chat response is complete
   const handleResponseComplete = () => {
     refreshPreview();
   };
 
-  // If there's an error loading sessions, show an error
   if (sessionsError) {
     return <SessionsError sessionsError={sessionsError} />;
   }
 
-  // Determine if we're on mobile/tablet or desktop
-  const isDesktop = windowWidth >= 1024; // lg breakpoint is 1024px
+  const isDesktop = windowWidth >= 1024;
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Top navigation bar */}
       <header className="border-b px-3 sm:px-6 py-3 bg-background">
-        {/* Desktop view with full button bar - only at larger screen sizes */}
         <div className="hidden lg:flex items-center justify-between">
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-3">
@@ -282,7 +263,6 @@ export default function WorkspaceContent({
               </h1>
             </div>
 
-            {/* Session selector on the same line for desktop */}
             <SessionSelector />
           </div>
 
@@ -359,7 +339,6 @@ export default function WorkspaceContent({
           </div>
         </div>
 
-        {/* Medium layout - with dots but session selector inline */}
         <div className="hidden md:flex lg:hidden items-center justify-between">
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-3">
@@ -369,11 +348,9 @@ export default function WorkspaceContent({
               </h1>
             </div>
 
-            {/* Session selector on the same line for medium screens */}
             <SessionSelector />
           </div>
 
-          {/* Three dots even for medium screen sizes */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -479,9 +456,7 @@ export default function WorkspaceContent({
           </DropdownMenu>
         </div>
 
-        {/* Mobile view - stacked layout */}
         <div className="flex flex-col space-y-3 md:hidden">
-          {/* App title and menu row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <Smartphone className="h-5 w-5 text-primary" />
@@ -490,7 +465,6 @@ export default function WorkspaceContent({
               </h1>
             </div>
 
-            {/* Mobile menu button */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -596,16 +570,13 @@ export default function WorkspaceContent({
             </DropdownMenu>
           </div>
 
-          {/* Session selector on new line only for mobile/tablet */}
           <div className="flex justify-start w-full">
             <SessionSelector />
           </div>
         </div>
       </header>
 
-      {/* Main content */}
       <main className="flex-1 overflow-auto">
-        {/* Show session error */}
         {currentSessionError && (
           <div className="p-4 sm:p-6">
             <Alert>
@@ -617,7 +588,6 @@ export default function WorkspaceContent({
                   <Button
                     variant="default"
                     onClick={() => {
-                      // Try to use first session if available or create new
                       if (sessions.length > 0) {
                         switchSession(sessions[0].id);
                       } else {
@@ -636,24 +606,17 @@ export default function WorkspaceContent({
           </div>
         )}
 
-        {/* Show session content when a session is loaded */}
         <div className="p-2 sm:p-4 overflow-auto h-full">
-          {/* Only render the desktop or mobile view based on screen size */}
           {windowWidth > 0 && (
             <>
               {isDesktop ? (
-                // Desktop view - side by side layout
                 <div className="grid grid-cols-2 gap-4 h-full">
-                  {/* Left panel - Chat */}
-
                   <Chat
                     sessionId={currentSessionId || initialSessionId || ""}
                     onResponseComplete={handleResponseComplete}
                     onSessionError={() => {}}
                     containerState={state?.sandbox_status}
                   />
-
-                  {/* Right panel - Preview */}
 
                   <Preview
                     iframeKey={iframeKey}
@@ -663,7 +626,6 @@ export default function WorkspaceContent({
                   />
                 </div>
               ) : (
-                // Mobile/tablet view - tabbed interface with persistent components
                 <div className="h-full">
                   <Tabs
                     defaultValue="chat"
@@ -691,7 +653,6 @@ export default function WorkspaceContent({
                     </TabsList>
 
                     <div className="flex-1 relative">
-                      {/* Both components are always rendered, but we control visibility with CSS */}
                       <div
                         className={`absolute inset-0 ${
                           activeView === "chat" ? "block" : "hidden"
@@ -725,7 +686,7 @@ export default function WorkspaceContent({
           )}
         </div>
       </main>
-      {/* At the end of the component, render the modal */}
+
       <GitHubSyncModal
         open={githubSyncOpen}
         onClose={() => setGitHubSyncOpen(false)}
