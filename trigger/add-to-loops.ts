@@ -6,7 +6,6 @@ export const addToLoops = task({
     maxAttempts: 0,
   },
   run: async (payload: { email: string }) => {
-    console.log(process.env.LOOPS_API_KEY);
     try {
       const apiKey = process.env.LOOPS_API_KEY?.trim();
 
@@ -34,7 +33,7 @@ export const addToLoops = task({
       }
 
       const result = await response.json();
-      console.log("Successfully added to Loop.so:", result);
+
       return result;
     } catch (error) {
       console.error("Error in addToLoops task:", error);

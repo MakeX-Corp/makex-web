@@ -67,13 +67,10 @@ export function DeployButton({ appId }: { appId: string | null }) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Simple step state
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Initialize Supabase client
   const supabase = createClient();
 
-  // Reusable function to fetch share URL and app listing info
   const fetchShareUrl = async (appId: string) => {
     try {
       const response = await fetch(`/api/share?app_id=${appId}`);
@@ -88,7 +85,6 @@ export function DeployButton({ appId }: { appId: string | null }) {
     }
   };
 
-  // Set up Supabase realtime subscription for deployment status
   useEffect(() => {
     if (!appId) return;
 
@@ -197,7 +193,6 @@ export function DeployButton({ appId }: { appId: string | null }) {
           throw new Error(data.error || "Unknown deployment error");
         }
 
-        // Update local state for immediate feedback
         const newDeployment = {
           id: data.deploymentId || "pending",
           url: data.url || "",
@@ -207,7 +202,6 @@ export function DeployButton({ appId }: { appId: string | null }) {
 
         setLastDeployment(newDeployment);
 
-        // Close the dropdown and reset to first step
         setIsOpen(false);
         setCurrentStep(1);
       } catch (error: any) {
@@ -220,7 +214,6 @@ export function DeployButton({ appId }: { appId: string | null }) {
     [appId],
   );
 
-  // Format timestamp
   const formatTime = (timestamp: string) => {
     try {
       return format(new Date(timestamp), "MMM d, h:mm a");
@@ -229,7 +222,6 @@ export function DeployButton({ appId }: { appId: string | null }) {
     }
   };
 
-  // Get status icon based on deployment status
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
@@ -242,7 +234,6 @@ export function DeployButton({ appId }: { appId: string | null }) {
     }
   };
 
-  // Get status text based on deployment status
   const getStatusText = (status: string) => {
     switch (status) {
       case "completed":
@@ -296,7 +287,6 @@ export function DeployButton({ appId }: { appId: string | null }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
-        {/* Deploy action buttons */}
         <DropdownMenuLabel>Deploy Options</DropdownMenuLabel>
 
         {!isLoading && !error && shareInfo && (
@@ -373,7 +363,6 @@ export function DeployButton({ appId }: { appId: string | null }) {
 
         <DropdownMenuSeparator />
 
-        {/* Last deployment section */}
         <DropdownMenuLabel className="flex items-center">
           <Clock className="h-4 w-4 mr-2" />
           Last Deployment

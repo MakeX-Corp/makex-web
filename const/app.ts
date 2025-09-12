@@ -134,7 +134,6 @@ export const APP_SUGGESTIONS = [
   },
 ];
 
-// Create three rows of suggestions for animation
 export const ROW_1 = APP_SUGGESTIONS.slice(0, 7);
 export const ROW_2 = APP_SUGGESTIONS.slice(7, 14);
 export const ROW_3 = APP_SUGGESTIONS.slice(14);
