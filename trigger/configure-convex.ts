@@ -74,7 +74,6 @@ export const configureConvex = task({
 
     console.log("[configureConvex] Writing Convex config in container");
     try {
-      // Write Convex config
       const writeConvexConfigResponse = await writeConvexConfigInContainer(
         containerId,
         {
@@ -87,7 +86,6 @@ export const configureConvex = task({
         writeConvexConfigResponse,
       );
 
-      // Only start Convex if write succeeded
       const startConvexResponse = await startConvexInContainer(containerId);
       console.log(
         "[configureConvex] Convex started in container:",

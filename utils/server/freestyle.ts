@@ -1,13 +1,11 @@
 import { FreestyleSandboxes } from "freestyle-sandboxes";
 
-// Initialize Freestyle Sandboxes client
 export function getFreestyleClient() {
   return new FreestyleSandboxes({
     apiKey: process.env.FREESTYLE_API_KEY!,
   });
 }
 
-// Create a Git repository
 export async function createGitRepository(name?: string) {
   const sandboxes = getFreestyleClient();
 
@@ -18,7 +16,6 @@ export async function createGitRepository(name?: string) {
   return repoResponse;
 }
 
-// Grant permission to a Git repository
 export async function grantGitPermission({
   identityId,
   repoId,
@@ -37,14 +34,12 @@ export async function grantGitPermission({
   });
 }
 
-// List Git repositories
 export async function listGitRepositories() {
   const sandboxes = getFreestyleClient();
 
   return await (sandboxes as any).listGitRepositories();
 }
 
-// Delete a Git repository
 export async function deleteGitRepository(repoId: string) {
   const sandboxes = getFreestyleClient();
 
@@ -53,7 +48,6 @@ export async function deleteGitRepository(repoId: string) {
   });
 }
 
-// Download a zip of a Git repository
 export async function downloadGitRepositoryZip(repoId: string, ref?: string) {
   const freestyleApiKey = process.env.FREESTYLE_API_KEY;
   if (!freestyleApiKey) {
@@ -80,7 +74,6 @@ export async function downloadGitRepositoryZip(repoId: string, ref?: string) {
   return response.arrayBuffer();
 }
 
-// Deploy web application from Git repository
 export async function deployWebFromGit(
   gitRepoId: string,
   domains: string[],
@@ -104,7 +97,6 @@ export async function deployWebFromGit(
   );
 }
 
-// Configure GitHub sync for a Freestyle repository
 export async function configureGitHubSync({
   repoId,
   githubRepoName,
@@ -120,7 +112,6 @@ export async function configureGitHubSync({
   });
 }
 
-// Remove GitHub sync for a Freestyle repository
 export async function removeGitHubSync({ repoId }: { repoId: string }) {
   const sandboxes = getFreestyleClient();
 

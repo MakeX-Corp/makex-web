@@ -18,7 +18,6 @@ export const deployConvex = task({
     let containerId: string | undefined;
 
     try {
-      // Get app record to fetch git_repo_id and convex_dev_url
       console.log("[deployConvex] Fetching app record for appId:", appId);
       const { data: appRecord, error: appError } = await supabase
         .from("user_apps")
@@ -60,9 +59,7 @@ export const deployConvex = task({
 
       console.log("[deployConvex] E2B container created:", containerId);
 
-      // Deploy Convex prod in the container
-      console.log("[deployConvex] Deploying Convex prod in container...");
-      const deployResult = await deployConvexProdInContainer(
+      await deployConvexProdInContainer(
         containerId,
         convex_dev_url,
         git_repo_id,
@@ -72,7 +69,6 @@ export const deployConvex = task({
         "[deployConvex] Convex prod deployment initiated successfully",
       );
 
-      // Kill the container
       console.log("[deployConvex] Killing the container...");
       await killE2BContainer(containerId);
 

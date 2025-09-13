@@ -1,6 +1,5 @@
 export const getAuthToken = (): string | null => {
   try {
-    // Check if running in browser context
     if (typeof document === "undefined") {
       return null;
     }
@@ -9,7 +8,6 @@ export const getAuthToken = (): string | null => {
       .find((row) => row.startsWith("sb-aljrjyhwwmjqfkgnbeiz-auth-token="))
       ?.split("=")[1];
 
-    // Decode the URL-encoded token and parse it
     const decodedToken = token
       ? JSON.parse(decodeURIComponent(token))[0]
       : null;
@@ -23,7 +21,6 @@ export const getAuthToken = (): string | null => {
 
 export const decodeToken = (token: string): any => {
   try {
-    // Split the token and get the payload part
     const base64Url = token.split(".")[1];
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
     const jsonPayload = decodeURIComponent(

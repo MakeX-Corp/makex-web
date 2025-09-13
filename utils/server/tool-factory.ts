@@ -25,9 +25,7 @@ export function createTools(config: ToolConfig) {
     ? new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY })
     : null;
 
-  // Helper function to ensure absolute paths with /app/expo-app prefix
   const getAbsolutePath = (path: string): string => {
-    // Handle special cases like "." or "./"
     if (path === "." || path === "./" || path === "") {
       return "/app/expo-app";
     }
@@ -204,7 +202,6 @@ export function createTools(config: ToolConfig) {
       }),
       execute: async ({ target_file, instructions, code_edit }) => {
         try {
-          // First, read the current file content
           const absoluteTargetFile = getAbsolutePath(target_file);
           const currentFileData = await e2bReadFile(
             config.sandboxId,
@@ -212,7 +209,6 @@ export function createTools(config: ToolConfig) {
           );
           const initialCode = currentFileData;
 
-          // Use Morph's Fast Apply API to merge the edit
           const morphApiKey = process.env.MORPH_API_KEY;
           if (!morphApiKey) {
             return {
@@ -222,7 +218,6 @@ export function createTools(config: ToolConfig) {
             };
           }
 
-          // Use OpenAI SDK with Morph's base URL
           const openai = new OpenAI({
             apiKey: morphApiKey,
             baseURL: "https://api.morphllm.com/v1",
@@ -243,7 +238,6 @@ export function createTools(config: ToolConfig) {
             throw new Error("No content received from Morph API");
           }
 
-          // Write the merged code back to the file
           const fileWriteRes = await e2bWriteFile(
             config.sandboxId,
             absoluteTargetFile,
@@ -394,7 +388,6 @@ export function createTools(config: ToolConfig) {
           const targetPath = path || ".";
           const absolutePath = getAbsolutePath(targetPath);
 
-          // First check if eslint is available
           const checkEslint = await e2bRunCommand(
             config.sandboxId,
             "npx eslint --version",
@@ -402,7 +395,6 @@ export function createTools(config: ToolConfig) {
           if (checkEslint.error || checkEslint.returnCode !== 0) {
             console.log("ESLint not found, attempting to install...");
 
-            // Try to install eslint
             const installEslint = await e2bRunCommand(
               config.sandboxId,
               "yarn add -D eslint",
@@ -427,7 +419,6 @@ export function createTools(config: ToolConfig) {
 
           console.log("ESLint result:", JSON.stringify(result, null, 2));
 
-          // Check if the command failed
           if (result.error) {
             return {
               success: false,
@@ -438,7 +429,6 @@ export function createTools(config: ToolConfig) {
             };
           }
 
-          // Check if eslint returned a non-zero exit code (indicating linting errors)
           if (result.returnCode !== 0) {
             return {
               success: false,

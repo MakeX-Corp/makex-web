@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 import { embed } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { supabase } from "@/utils/supabase/basic";
