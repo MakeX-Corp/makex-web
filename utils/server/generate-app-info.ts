@@ -69,7 +69,6 @@ Return only valid JSON in this format:
   } catch (error) {
     console.error("App info generation failed:", error);
 
-    // Return fallback values if generation fails
     return {
       description: `Check out ${input.displayName}`,
       category: "Productivity",

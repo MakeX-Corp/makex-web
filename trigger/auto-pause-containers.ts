@@ -9,9 +9,8 @@ export const firstScheduledTask = schedules.task({
     name: "auto-pause-containers-queue",
     concurrencyLimit: 1,
   },
-  run: async (payload) => {
+  run: async () => {
     try {
-      // Get all finished apps with their current sandbox
       const supabase = await getSupabaseAdmin();
       const { data: finishedApps, error: appsError } = await supabase
         .from("user_apps")
@@ -38,13 +37,10 @@ export const firstScheduledTask = schedules.task({
         return;
       }
 
-      // Current time
       const stoppedContainers = [];
 
-      // Process each finished app
       for (const app of finishedApps) {
         try {
-          // Get the latest message for this app
           const { data: latestMessage, error: messageError } = await supabase
             .from("chat_history")
             .select("created_at")
@@ -53,7 +49,6 @@ export const firstScheduledTask = schedules.task({
             .limit(1)
             .single();
 
-          // Get sandbox updated time
           const { data: sandbox, error: sandboxError } = await supabase
             .from("user_sandboxes")
             .select("sandbox_updated_at")
@@ -76,7 +71,6 @@ export const firstScheduledTask = schedules.task({
             }
           }
 
-          console.log("RECENT TIME", new Date().getTime());
           const diffMinutes = Math.floor(
             (new Date().getTime() - mostRecentActivity.getTime()) / (1000 * 60),
           );

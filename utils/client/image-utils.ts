@@ -1,6 +1,3 @@
-/**
- * Convert a File object to base64 string
- */
 export const getBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

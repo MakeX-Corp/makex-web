@@ -7,7 +7,6 @@ export const waitlistRegistration = task({
   },
   run: async (payload: { email: string }) => {
     try {
-      // Register with Loops.so
       const loopsResponse = await fetch(
         "https://app.loops.so/api/v1/contacts/create",
         {

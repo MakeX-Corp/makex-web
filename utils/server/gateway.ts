@@ -9,7 +9,6 @@ export const gateway = createGateway({
   },
 });
 
-// Map model names to gateway models and determine provider order
 export const getModelAndOrder = (modelName: string) => {
   switch (modelName) {
     case "claude-3-7-sonnet-latest":

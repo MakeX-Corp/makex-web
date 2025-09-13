@@ -38,7 +38,6 @@ export const createExternalListing = task({
       let tags: string[] = [];
       let icon = "";
 
-      // Handle app details generation
       if (deployData.aiGeneratedDetails) {
         console.log(`[CreateExternalListing] Generating app details with AI`);
 
@@ -57,13 +56,11 @@ export const createExternalListing = task({
         description = appInfo.description || "";
         tags = appInfo.tags || [];
       } else {
-        // Use manually provided data
         category = deployData.category || "";
         description = deployData.description || "";
         tags = deployData.tags || [];
       }
 
-      // Handle icon generation
       if (deployData.aiGeneratedIcon) {
         console.log(`[CreateExternalListing] Generating app icon with AI`);
 
@@ -75,21 +72,17 @@ export const createExternalListing = task({
         const appImage = await generateAppImageBase64(imagePrompt);
         icon = appImage || "";
       } else {
-        // Use manually provided icon
         icon = deployData.icon !== "ai-generated" ? deployData.icon : "";
       }
 
-      // Generate share ID
       const shareId = await generateShareId(supabase, null);
 
       console.log(`[CreateExternalListing] Share ID: ${shareId}`);
-      // Create display name from URL
       const displayName = `External App - ${
         new URL(deployData.importUrl).hostname
       }`;
       const title = `Check out ${displayName}`;
 
-      // Create Dub link
       const dubLink = await dub.links.create({
         url: `https://makex.app/share/${shareId}`,
         proxy: true,
@@ -103,7 +96,6 @@ export const createExternalListing = task({
         `[CreateExternalListing] Dub link: ${JSON.stringify(dubLink)}`,
       );
 
-      // Convert external URL to EAS URL format
       const easUrl = deployData.importUrl.replace("https://", "makex://");
 
       const result = await supabase.from("app_listing_info").insert({

@@ -16,7 +16,6 @@ export async function getOrCreateSubscription(
 ): Promise<SubscriptionInfo> {
   const admin = await getSupabaseAdmin();
 
-  // Try to get existing subscription
   let { data: subscription, error } = await admin
     .from("subscriptions")
     .select("*")
@@ -25,7 +24,6 @@ export async function getOrCreateSubscription(
 
   const now = new Date();
 
-  // Create free subscription if none exists
   if (error || !subscription) {
     const start = now;
     const end = new Date(start);
@@ -59,11 +57,9 @@ export async function getOrCreateSubscription(
     subscription = newSubscription;
   }
 
-  // Check if subscription is expired and needs renewal (for free tier)
   if (subscription.subscription_type === "free") {
     const endDate = new Date(subscription.current_period_end);
     if (now > endDate) {
-      // Renew free subscription
       const newStart = now;
       const newEnd = new Date(now);
       newEnd.setMonth(newEnd.getMonth() + 1);
@@ -89,7 +85,6 @@ export async function getOrCreateSubscription(
     }
   }
 
-  // Determine limits and status
   const limits = {
     free: Number(process.env.NEXT_PUBLIC_FREE_PLAN_LIMIT) || 20,
     starter: Number(process.env.NEXT_PUBLIC_STARTER_PLAN_LIMIT) || 250,
@@ -107,13 +102,11 @@ export async function getOrCreateSubscription(
     planNames[subscriptionType as keyof typeof planNames] || planNames.free;
   const messagesUsed = subscription.messages_used_this_period || 0;
 
-  // Check if subscription is active
   const isActive =
     subscription.status === "active" ||
     subscription.status === "trialing" ||
     subscription.status === "past_due";
 
-  // Check if user can send messages
   const canSendMessage =
     isActive && (messagesLimit === -1 || messagesUsed < messagesLimit);
 
@@ -167,7 +160,6 @@ export async function checkSubscription(userId: string): Promise<boolean> {
       return false;
     }
 
-    // Increment usage
     await incrementMessageUsage(userId);
 
     return true;
