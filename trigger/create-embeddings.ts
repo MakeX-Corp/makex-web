@@ -21,16 +21,13 @@ export const createEmbeddings = task({
     category: string;
   }) => {
     try {
-      // 1. Chunk the content
       const chunks = chunkText(payload.content);
 
-      // 2. Generate embeddings for chunks
       const { embeddings } = await embedMany({
         model: embeddingModel,
         values: chunks,
       });
 
-      // 3. Prepare rows for Supabase
       const rows = chunks.map((chunk, i) => ({
         content: chunk,
         embedding: embeddings[i],
@@ -38,7 +35,6 @@ export const createEmbeddings = task({
         category: payload.category,
       }));
 
-      // 4. Save to Supabase
       const { error } = await supabase.from("embeddings").insert(rows);
 
       if (error) {

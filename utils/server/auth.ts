@@ -16,7 +16,6 @@ export async function getSupabaseWithUser(
   const authHeader = request.headers.get("authorization");
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
-  // ✅ 1. Token-based (React Native / external clients)
   if (token) {
     const supabase = createTokenClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,7 +41,6 @@ export async function getSupabaseWithUser(
     return { supabase, user: data.user, token };
   }
 
-  // ✅ 2. Cookie-based (Next.js frontend)
   try {
     const supabase = await createCookieClient();
     const { data, error } = await supabase.auth.getUser();

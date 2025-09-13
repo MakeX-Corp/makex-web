@@ -29,12 +29,6 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -59,11 +53,9 @@ export async function updateSession(request: NextRequest) {
     "/api/apple",
   ];
 
-  // Check if user is new (created after May 21, 2025)
   if (user) {
     const isNewUser = false;
 
-    // For new users, only allow access to specific pages
     if (
       isNewUser &&
       !pagesWithoutAuth.includes(request.nextUrl.pathname) &&
@@ -76,7 +68,6 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Only redirect to dashboard if user is not new
     if (!isNewUser && request.nextUrl.pathname === "/") {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
@@ -92,7 +83,6 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.match(/^\/share\/[A-Za-z0-9]+$/) &&
     request.nextUrl.pathname !== "/"
   ) {
-    // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

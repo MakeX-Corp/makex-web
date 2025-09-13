@@ -4,8 +4,8 @@ import { deleteContainer } from "./delete-container";
 
 export const autoKillContainers = schedules.task({
   id: "auto-kill-containers",
-  cron: "0 */6 * * *", // Run every 6 hours
-  run: async (payload) => {
+  cron: "0 */6 * * *",
+  run: async () => {
     try {
       const supabase = await getSupabaseAdmin();
       const { data: finishedApps, error: appsError } = await supabase
@@ -36,7 +36,6 @@ export const autoKillContainers = schedules.task({
         return;
       }
 
-      // Filter to only include apps with paused sandbox status
       const pausedFinishedApps = finishedApps.filter((app) => {
         const sandbox = app.user_sandboxes as any;
         return sandbox && sandbox.sandbox_status === "paused";
@@ -51,10 +50,8 @@ export const autoKillContainers = schedules.task({
 
       const killedContainers = [];
 
-      // Process each paused finished app
       for (const app of pausedFinishedApps) {
         try {
-          // Get the latest message for this app
           const { data: latestMessage, error: messageError } = await supabase
             .from("chat_history")
             .select("created_at")
@@ -78,7 +75,6 @@ export const autoKillContainers = schedules.task({
 
           console.log("Diff minutes:", diffMinutes);
 
-          // Kill container if inactive for more than 2 days (2880 minutes)
           if (diffMinutes > 2800) {
             killedContainers.push(app.current_sandbox_id);
             console.log("Killing container:", app.current_sandbox_id);

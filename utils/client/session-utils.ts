@@ -5,7 +5,6 @@ export async function updateSessionTitle(
   callback?: () => void,
 ) {
   try {
-    // 2. Update the session title in the database
     const updateResponse = await fetch(`/api/sessions/title`, {
       method: "PUT",
       body: JSON.stringify({
@@ -20,7 +19,7 @@ export async function updateSessionTitle(
       throw new Error("Failed to update title");
     }
 
-    return data.title; // Return the title from the response
+    return data.title;
   } catch (error) {
     console.error("Error updating session title:", error);
     return null;

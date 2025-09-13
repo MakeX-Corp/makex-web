@@ -13,20 +13,17 @@ const daytona = new Daytona({
 });
 
 async function startFastAPI(container: any, sessionId: string) {
-  // Execute initialization script
   const initResult = await container.process.executeSessionCommand(sessionId, {
     command: "cd /app && ./init.sh",
   });
   console.log("init.sh result:", initResult);
 
-  // Get preview link for the API
   const apiPreview = await container.getPreviewLink(8001);
 
   return apiPreview;
 }
 
 async function startExpo(container: any, sessionId: string, appPreview: any) {
-  // Start expo server
   const expoCommand = `cd /app/expo-app && export EXPO_PACKAGER_PROXY_URL=${appPreview.url} && yarn expo start --port 8000 > expo.log 2>&1 &`;
   const expoResult = await container.process.executeSessionCommand(
     sessionId,
@@ -35,7 +32,7 @@ async function startExpo(container: any, sessionId: string, appPreview: any) {
       async: true,
     },
     30,
-  ); // 30 second timeout
+  );
   console.log("expo start result:", expoResult);
 
   return expoResult;
@@ -54,7 +51,6 @@ export async function initiateDaytonaContainer() {
   await startFastAPI(container, sessionId);
   const apiPreview = await container.getPreviewLink(8001);
 
-  // start the fastapi process
   return {
     containerId: container.id,
     apiUrl: apiPreview.url,
@@ -70,7 +66,7 @@ export async function startExpoInContainer(containerId: string) {
   const appPreview = await container.getPreviewLink(8000);
   const apiPreview = await container.getPreviewLink(8001);
 
-  const expoResult = await startExpo(container, sessionId, appPreview);
+  await startExpo(container, sessionId, appPreview);
 
   return {
     appPreview: appPreview.url,

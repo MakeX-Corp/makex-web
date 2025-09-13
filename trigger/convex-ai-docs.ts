@@ -2,7 +2,7 @@ import { schedules } from "@trigger.dev/sdk";
 import axios from "axios";
 import { embedMany } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { supabase } from "@/utils/supabase/basic"; // update path as needed
+import { supabase } from "@/utils/supabase/basic";
 import { python } from "@trigger.dev/python";
 
 const embeddingModel = openai.textEmbeddingModel("text-embedding-3-small");
@@ -15,10 +15,8 @@ function chunkText(text: string, size = 800, overlap = 100): string[] {
   return chunks;
 }
 
-// Add delay function with exponential backoff
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Add retry function with exponential backoff
 async function fetchWithRetry(url: string, maxRetries = 3) {
   let retries = 0;
   while (true) {
@@ -39,11 +37,9 @@ async function fetchWithRetry(url: string, maxRetries = 3) {
 
 export const fetchConvexDocs = schedules.task({
   id: "fetch-convex-docs",
-  // Run every Sunday at 1am UTC
   cron: "0 1 * * 0",
-  run: async (payload) => {
+  run: async () => {
     console.log("[ConvexDocs] Task started");
-    // 1. Delete existing Convex docs
     const { error: deleteError } = await supabase
       .from("embeddings")
       .delete()
@@ -58,10 +54,8 @@ export const fetchConvexDocs = schedules.task({
     }
     console.log("[ConvexDocs] Existing Convex docs deleted");
 
-    // 2. Fetch the Convex llms.txt file
     const rawUrl = "https://www.convex.dev/llms.txt";
     try {
-      // Use Python script for contextual chunking
       const result = await python.runScript("./python/chunk-runner.py", [
         rawUrl,
       ]);
@@ -73,8 +67,7 @@ export const fetchConvexDocs = schedules.task({
         console.log(`[ConvexDocs] Chunk ${idx + 1}:`, JSON.stringify(chunk));
       });
 
-      // Process embeddings in batches to avoid token limit
-      const batchSize = 50; // Process 50 chunks at a time
+      const batchSize = 50;
       let totalChunks = 0;
 
       for (let i = 0; i < chunks.length; i += batchSize) {
@@ -125,7 +118,6 @@ export const fetchConvexDocs = schedules.task({
           }, total inserted: ${totalChunks}`,
         );
 
-        // Add small delay between batches to avoid rate limits
         if (i + batchSize < chunks.length) {
           await delay(1000);
         }

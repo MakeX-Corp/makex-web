@@ -35,7 +35,6 @@ export const deleteContainer = task({
       }
     }
 
-    // update status to deleted
     const { error: updateError } = await adminSupabase
       .from("user_sandboxes")
       .update({ sandbox_status: "deleted" })
@@ -45,7 +44,6 @@ export const deleteContainer = task({
       throw new Error(`Failed updating sandbox status: ${updateError.message}`);
     }
 
-    // update user_apps to set current_sandbox_id to null
     const { error: appUpdateError } = await adminSupabase
       .from("user_apps")
       .update({ current_sandbox_id: null })

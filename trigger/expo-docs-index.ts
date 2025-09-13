@@ -2,20 +2,18 @@ import { schedules } from "@trigger.dev/sdk";
 import axios from "axios";
 import { embedMany } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { supabase } from "@/utils/supabase/basic"; // update path as needed
+import { supabase } from "@/utils/supabase/basic";
 import { python } from "@trigger.dev/python";
 
 const embeddingModel = openai.textEmbeddingModel("text-embedding-3-small");
 
-// Add delay function with exponential backoff
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const fetchExpoDocs = schedules.task({
   id: "fetch-expo-docs",
-  // Run every Sunday at midnight UTC
+
   cron: "0 0 * * 0",
-  run: async (payload) => {
-    // 1. Delete existing Expo docs
+  run: async () => {
     const { error: deleteError } = await supabase
       .from("embeddings")
       .delete()
@@ -29,7 +27,6 @@ export const fetchExpoDocs = schedules.task({
       };
     }
 
-    // 2. Get all .mdx files in the sdk directory from GitHub API
     const sdkDirApiUrl =
       "https://api.github.com/repos/expo/expo/contents/docs/pages/versions/v53.0.0/sdk";
     try {
@@ -42,12 +39,10 @@ export const fetchExpoDocs = schedules.task({
       let errors: string[] = [];
 
       for (const file of files) {
-        // Add 2 second base delay between each file to avoid rate limits
         await delay(2000);
 
         const rawUrl = `https://raw.githubusercontent.com/expo/expo/main/docs/pages/versions/v53.0.0/sdk/${file}`;
         try {
-          // Use Python script for contextual chunking
           const result = await python.runScript("./python/chunk-runner.py", [
             rawUrl,
             "code",
@@ -61,8 +56,7 @@ export const fetchExpoDocs = schedules.task({
             console.log(`[ExpoDocs] Chunk ${idx + 1}:`, JSON.stringify(chunk));
           });
 
-          // Process embeddings in batches to avoid token limit
-          const batchSize = 50; // Process 50 chunks at a time
+          const batchSize = 50;
           for (let i = 0; i < chunks.length; i += batchSize) {
             const batch = chunks.slice(i, i + batchSize);
             console.log(
@@ -98,7 +92,7 @@ export const fetchExpoDocs = schedules.task({
             if (error) throw error;
 
             totalChunks += rows.length;
-            // Add small delay between batches to avoid rate limits
+
             if (i + batchSize < chunks.length) {
               await delay(1000);
             }

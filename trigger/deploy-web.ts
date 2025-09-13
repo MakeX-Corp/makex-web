@@ -42,9 +42,7 @@ async function handleUrlMapping(
 
     console.log(`[DeployWeb] Existing mapping: ${existingMapping}`);
 
-    // If mapping exists, update web_url but keep the existing Dub link
     if (existingMapping?.dub_id) {
-      // Update the Dub link with new title and description
       await dub.links.update(existingMapping.dub_id, {
         title: `Check out my ${displayName} app`,
         description: "Check out this amazing app built with MakeX!",
@@ -70,7 +68,6 @@ async function handleUrlMapping(
     let tags: string[] = [];
     let icon: string = "";
 
-    // Fetch prompt info once - we'll need it for either details generation or icon generation
     let promptInfo: any[] = [];
     let userPrompt: string = "";
 
@@ -78,7 +75,6 @@ async function handleUrlMapping(
       deployData &&
       (deployData.aiGeneratedDetails || deployData.aiGeneratedIcon)
     ) {
-      // We need prompt info for AI generation, so fetch it once
       console.log(`[DeployWeb] Fetching prompt info for AI generation`);
       const { data: promptData, error } = await supabase
         .from("chat_history")
@@ -97,9 +93,7 @@ async function handleUrlMapping(
         .join(" ");
     }
 
-    // Handle app details generation
     if (deployData && !deployData.aiGeneratedDetails) {
-      // Use manually provided data
       category = deployData.category || "";
       description = deployData.description || "";
       tags = deployData.tags || [];
@@ -107,7 +101,6 @@ async function handleUrlMapping(
         `[DeployWeb] Using manually provided app details for appId: ${appId}`,
       );
     } else if (deployData && deployData.aiGeneratedDetails) {
-      // Generate app info with AI using the prompt info we already fetched
       console.log(
         `[DeployWeb] Generating app details with AI for appId: ${appId}`,
       );
@@ -125,15 +118,12 @@ async function handleUrlMapping(
       tags = appInfo.tags || [];
     }
 
-    // Handle icon generation
     if (deployData && !deployData.aiGeneratedIcon) {
-      // Use manually provided icon
       icon = deployData.icon !== "ai-generated" ? deployData.icon : "";
       console.log(
         `[DeployWeb] Using manually provided icon for appId: ${appId}`,
       );
     } else {
-      // Generate icon with AI
       console.log(
         `[DeployWeb] Generating app icon with AI for appId: ${appId}`,
       );
@@ -159,7 +149,6 @@ async function handleUrlMapping(
           `[DeployWeb] No description available, generating minimal app info for icon`,
         );
 
-        // We already have the prompt info from the beginning, so reuse it
         const tempAppInfo = await generateAppInfo({
           appName: appId,
           displayName: displayName,
@@ -167,7 +156,6 @@ async function handleUrlMapping(
             "These are the first 5 user prompts for this app: " + userPrompt,
         });
 
-        // Use the generated image prompt, or fallback to description, or fallback to display name
         imagePrompt =
           tempAppInfo.imagePrompt ||
           `Create an app icon for: ${tempAppInfo.description || displayName}`;
@@ -176,7 +164,6 @@ async function handleUrlMapping(
         );
       }
 
-      // Generate the icon using the determined image prompt
       if (imagePrompt) {
         appImage = (await generateAppImageBase64(imagePrompt)) || "";
         console.log(
@@ -193,10 +180,6 @@ async function handleUrlMapping(
 
     const title = `Check out my ${displayName} app`;
 
-    console.log(`[DeployWeb] Using title: ${title}`);
-    console.log(`[DeployWeb] Using description: ${description}`);
-
-    // Create new Dub link only if it doesn't exist
     const shareId = await generateShareId(supabase, appId);
 
     const dubLink = await dub.links.create({
@@ -299,7 +282,7 @@ async function updateConvexProdUrl(
 async function updateConvexProdAdminKey(deploymentName: string, appId: string) {
   try {
     const supabase = await getSupabaseAdmin();
-    //update the app record with the convex_prod_admin_key
+
     const convexProdAdminKey = await getConvexProdAdminKey({
       deploymentName: deploymentName,
     });
@@ -338,13 +321,11 @@ async function deployConvexInContainer(
 
     console.log("[DeployWeb] E2B container created:", containerId);
 
-    // Deploy Convex prod in the container
     console.log("[DeployWeb] Deploying Convex prod in container...");
     await deployConvexProdInContainer(containerId, convexDevUrl, gitRepoId);
 
     console.log("[DeployWeb] Convex prod deployment initiated successfully");
 
-    // Kill the container
     console.log("[DeployWeb] Killing the container...");
     await killE2BContainer(containerId);
 
@@ -358,7 +339,6 @@ async function deployConvexInContainer(
       error.message,
     );
 
-    // Kill the container if it was created
     if (containerId) {
       console.log("[DeployWeb] Killing the container due to failure...");
       try {
@@ -403,7 +383,6 @@ export const deployWeb = task({
     let deploymentId: string | undefined;
 
     try {
-      // Get app record
       console.log(`[DeployWeb] Fetching app record for appId: ${appId}`);
       const { data: appRecord } = await supabase
         .from("user_apps")
@@ -433,7 +412,6 @@ export const deployWeb = task({
         throw new Error("Git repository ID not found for this app");
       }
 
-      // Create deployment record
       console.log(`[DeployWeb] Creating deployment record`);
       const { data: deploymentRecord, error: createError } = await supabase
         .from("user_deployments")
@@ -467,7 +445,6 @@ export const deployWeb = task({
       );
 
       try {
-        // Deploy Convex project first if it exists
         let convexProdUrl: string | undefined;
 
         if (convex_project_id) {
@@ -492,13 +469,11 @@ export const deployWeb = task({
                   git_repo_id,
                 );
 
-                // Update the app record with the convex_prod_url
                 convexProdUrl = await updateConvexProdUrl(
                   supabase,
                   appId,
                   convexDeployment.deploymentName,
                 );
-                // update the app record with the convex_prod_admin_key
                 await updateConvexProdAdminKey(
                   convexDeployment.deploymentName,
                   appId,
@@ -508,13 +483,11 @@ export const deployWeb = task({
                   "[DeployWeb] Error during Convex deployment:",
                   error,
                 );
-                // Don't fail the entire deployment if Convex deployment fails
               }
             } else {
               console.log(
                 `[DeployWeb] Skipping container deployment - convex_dev_url not found`,
               );
-              // Still update the app record with the convex_prod_url even without container deployment
               convexProdUrl = await updateConvexProdUrl(
                 supabase,
                 appId,
@@ -526,7 +499,6 @@ export const deployWeb = task({
               "[DeployWeb] Error during Convex project deployment:",
               error,
             );
-            // Don't fail the entire deployment if Convex deployment fails
           }
         } else {
           console.log(
@@ -534,9 +506,6 @@ export const deployWeb = task({
           );
         }
 
-        // Deploy to Freestyle using Git repository
-
-        // Set environment variables for the deployment
         const envVars: Record<string, string> = {
           ...(convexProdUrl && { EXPO_PUBLIC_CONVEX_URL: convexProdUrl }),
         };
@@ -560,10 +529,8 @@ export const deployWeb = task({
           throw new Error("No deployment URL returned from Freestyle");
         }
 
-        // Convert deployment URL to EAS URL format
         const easUrl = deploymentUrl.replace("https://", "makex://");
 
-        // Update status to completed
         console.log(`[DeployWeb] Updating deployment status to completed`);
         await updateDeploymentStatus(
           supabase,
@@ -574,7 +541,6 @@ export const deployWeb = task({
           deploymentResult.deploymentId,
         );
 
-        // Handle URL mapping
         console.log(`[DeployWeb] Setting up URL mapping`);
         const { dubLink } = await handleUrlMapping(
           supabase,
