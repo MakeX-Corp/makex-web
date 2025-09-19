@@ -39,8 +39,8 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/makex.git
-cd makex
+git clone https://github.com/MakeX-Corp/makex-app.git
+cd makex-app
 npm install
 ```
 
@@ -197,10 +197,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- 📧 **Email**: support@makex.app
+- 📧 **Email**: contact@makex.app
 - 💬 **Discord**: [Join our community](https://discord.gg/makex)
-- 📖 **Documentation**: [docs.makex.app](https://docs.makex.app)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/your-org/makex/issues)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/MakeX-Corp/makex-app/issues)
 
 ## Acknowledgments
 
