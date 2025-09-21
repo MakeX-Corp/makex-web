@@ -30,7 +30,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { PausedAppModal } from "@/components/app/paused-app-modal";
+import { PausedAppModal } from "@/components/app/modal/paused-app-modal";
 import { AI_MODELS, DEFAULT_MODEL } from "@/const";
 import type { UIMessagePart } from "ai";
 

@@ -31,7 +31,7 @@ import { SessionSelector } from "@/components/app/session/session-selector";
 import { SessionsError } from "@/components/app/session/session-error";
 import { createClient } from "@/utils/supabase/client";
 import { DeployButton } from "@/components/app/deploy/deploy-button";
-import { GitHubSyncModal } from "@/components/app/github-sync-modal";
+import { GitHubSyncModal } from "@/components/app/modal/github-sync-modal";
 
 interface WorkspaceContentProps {
   initialSessionId: string | null;

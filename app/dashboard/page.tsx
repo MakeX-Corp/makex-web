@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { APP_SUGGESTIONS } from "@/const";
 import { SuggestionsContainer, PromptInput } from "@/components/landing";
-import { ListExternalAppModal } from "@/components/app/list-external-app-modal";
+import { ListExternalAppModal } from "@/components/app/modal/list-external-app-modal";
 
 export default function DashboardPage() {
   const router = useRouter();
