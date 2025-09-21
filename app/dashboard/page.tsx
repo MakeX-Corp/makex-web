@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, Loader2, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useApp } from "@/context/app-context";
 import {
   Dialog,
@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { APP_SUGGESTIONS } from "@/const";
-import { SuggestionsContainer } from "@/components/landing";
+import { SuggestionsContainer, PromptInput } from "@/components/landing";
 import { ListExternalAppModal } from "@/components/app/list-external-app-modal";
 
 export default function DashboardPage() {
@@ -109,42 +109,14 @@ export default function DashboardPage() {
             onSuggestionClick={handleSuggestionClick}
             className="mb-8"
           />
-          <div className="mb-8">
-            <div className="relative border rounded-xl shadow-lg overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
-              <textarea
-                ref={inputRef}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe your app idea in detail..."
-                className="w-full px-6 pt-5 pb-16 resize-none focus:outline-none text-base bg-transparent transition-colors"
-                rows={3}
-                style={{ minHeight: "120px" }}
-              />
-              <div className="absolute bottom-0 left-0 right-0 py-3 px-4 border-t flex items-center justify-end">
-                <div className="flex items-center mr-2">
-                  <Sparkles className="h-5 w-5 text-gray-400" />
-                </div>
-
-                <Button
-                  onClick={handleCreateApp}
-                  disabled={!prompt.trim() || isCreating}
-                  variant="default"
-                  className="font-medium rounded-md flex items-center disabled:opacity-50"
-                >
-                  {isCreating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    </>
-                  ) : (
-                    <>
-                      Create App
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
+          <PromptInput
+            ref={inputRef}
+            prompt={prompt}
+            onPromptChange={setPrompt}
+            onCreateApp={handleCreateApp}
+            loading={isCreating}
+            className="mb-8"
+          />
 
           {limitReached && (
             <div className="bg-background/5 border rounded-lg p-4 text-center relative">
