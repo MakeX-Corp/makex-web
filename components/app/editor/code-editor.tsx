@@ -93,7 +93,7 @@ function ImageViewer({ src }: { src: BinaryImageData }) {
   );
 }
 
-export default function CodeEditor({
+export function CodeEditor({
   file,
 }: {
   file: { path: string; language?: string } | null;

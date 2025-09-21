@@ -11,7 +11,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-export default function DeleteConfirmationDialog({
+export function DeleteConfirmationDialog({
   fileName,
   onConfirm,
 }: {

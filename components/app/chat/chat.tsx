@@ -12,7 +12,7 @@ import {
   X,
   MoreVertical,
 } from "lucide-react";
-import ToolInvocation from "@/components/app/chat/tool-render";
+import { ToolInvocation } from "@/components/app/chat/tool-render";
 import { useSession } from "@/context/session-context";
 import { useApp } from "@/context/app-context";
 import { useRouter } from "next/navigation";
@@ -30,7 +30,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { PausedAppModal } from "@/components/app/paused-app-modal";
+import { PausedAppModal } from "@/components/app/modal/paused-app-modal";
 import { AI_MODELS, DEFAULT_MODEL } from "@/const";
 import type { UIMessagePart } from "ai";
 

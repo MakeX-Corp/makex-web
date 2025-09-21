@@ -7,7 +7,7 @@ interface CodeRendererProps {
   language?: string;
 }
 
-export default function CodeRenderer({
+export function CodeRenderer({
   content,
   language = "javascript",
 }: CodeRendererProps) {

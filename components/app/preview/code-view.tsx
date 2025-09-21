@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import FileTree from "@/components/app/editor/file-tree";
-import CodeEditor from "@/components/app/editor/code-editor";
+import { FileTree } from "@/components/app/editor/file-tree";
+import { CodeEditor } from "@/components/app/editor/code-editor";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/resizable";
 import { FolderTree } from "lucide-react";
 
-export default function CodeView() {
+export function CodeView() {
   const [selectedFile, setSelectedFile] = useState<{
     path: string;
     language: string;

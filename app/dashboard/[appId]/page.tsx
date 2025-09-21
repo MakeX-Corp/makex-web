@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { use } from "react";
 import { SessionProvider } from "@/context/session-context";
-import Workspace from "@/components/app/workspace";
+import { WorkspaceContent } from "@/components/app/workspace";
 
 interface PageProps {
   params: any;
@@ -17,7 +17,7 @@ export default function WorkspacePage({ params }: PageProps) {
 
   return (
     <SessionProvider initialAppId={appId}>
-      <Workspace initialSessionId={sessionId} />
+      <WorkspaceContent initialSessionId={sessionId} />
     </SessionProvider>
   );
 }
