@@ -37,9 +37,7 @@ interface WorkspaceContentProps {
   initialSessionId: string | null;
 }
 
-export default function WorkspaceContent({
-  initialSessionId,
-}: WorkspaceContentProps) {
+export function WorkspaceContent({ initialSessionId }: WorkspaceContentProps) {
   const {
     appId,
     appName,

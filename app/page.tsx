@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import WaitlistContainer from "@/components/waitlist-container";
+import { WaitlistContainer } from "@/components/waitlist-container";
 import {
   HeroSection,
   SuggestionsContainer,

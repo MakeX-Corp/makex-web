@@ -8,13 +8,13 @@ import { DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { MoreHorizontal } from "lucide-react";
-import DeleteConfirmationDialog from "./delete-file-dialog";
+import { DeleteConfirmationDialog } from "./delete-file-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { getFileIcon, formatFileSize, Node } from "./utils";
 import { useState } from "react";
 
-export default function FileItem({
+export function FileItem({
   node,
   active,
   onSelect,

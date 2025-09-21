@@ -12,7 +12,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { Node, fetchJSON } from "./utils";
-import FileItem from "./file-item";
+import { FileItem } from "./file-item";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
-export default function FolderItem({
+export function FolderItem({
   node,
   activePath,
   onSelect,

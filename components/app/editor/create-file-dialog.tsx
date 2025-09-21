@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 
-export default function CreateFileDialog({
+export function CreateFileDialog({
   parentPath,
   onCreateFile,
 }: {

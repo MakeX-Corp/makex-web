@@ -12,7 +12,7 @@ import {
   X,
   MoreVertical,
 } from "lucide-react";
-import ToolInvocation from "@/components/app/chat/tool-render";
+import { ToolInvocation } from "@/components/app/chat/tool-render";
 import { useSession } from "@/context/session-context";
 import { useApp } from "@/context/app-context";
 import { useRouter } from "next/navigation";
