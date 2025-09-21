@@ -2,7 +2,7 @@
 
 import { MAKEX_URLS } from "@/const";
 
-export default function WaitlistContainer() {
+export function WaitlistContainer() {
   return (
     <div className="mb-12 mt-8 relative flex justify-center">
       <a

@@ -14,8 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/context/session-context";
 import { QRCodeDisplay } from "@/components/app/preview/qr-code";
-import MobileMockup from "@/components/app/preview/mobile-mockup";
-import CodeView from "@/components/app/preview/code-view";
+import { MobileMockup } from "@/components/app/preview/mobile-mockup";
+import { CodeView } from "@/components/app/preview/code-view";
 import { ConvexDashboardEmbed } from "@/components/app/preview/convex-dashboard";
 
 interface PreviewProps {

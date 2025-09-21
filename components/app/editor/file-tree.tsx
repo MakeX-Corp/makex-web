@@ -5,8 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle } from "lucide-react";
 import { useSession } from "@/context/session-context";
 import { useToast } from "@/hooks/use-toast";
-import FileItem from "./file-item";
-import FolderItem from "./folder-item";
+import { FileItem } from "./file-item";
+import { FolderItem } from "./folder-item";
 import { Node, fetchJSON } from "./utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import { Loader2 } from "lucide-react";
 
-export default function FileTree({
+export function FileTree({
   onSelect,
   selectedPath,
   onFileTreeChange,

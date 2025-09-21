@@ -8,7 +8,7 @@ interface MobileMockupProps {
   state: any;
 }
 
-export default function MobileMockup({
+export function MobileMockup({
   appUrl,
   iframeKey,
   state,

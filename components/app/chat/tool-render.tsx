@@ -8,9 +8,9 @@ import {
   Eye,
 } from "lucide-react";
 import { toolStates, ToolName } from "@/utils/client/tools-dictionary";
-import CodeRenderer from "@/components/app/chat/code-renderer";
+import { CodeRenderer } from "@/components/app/chat/code-renderer";
 
-export default function ToolInvocation({ part }: { part: any }) {
+export function ToolInvocation({ part }: { part: any }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showCodePopup, setShowCodePopup] = useState(false);
 
