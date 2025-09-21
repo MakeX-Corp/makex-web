@@ -12,8 +12,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { APP_SUGGESTIONS, ROW_1, ROW_2, ROW_3 } from "@/const";
-import { getIconComponent } from "@/lib/iconMap";
+import { APP_SUGGESTIONS } from "@/const";
+import { SuggestionsContainer } from "@/components/landing";
 import { ListExternalAppModal } from "@/components/app/list-external-app-modal";
 
 export default function DashboardPage() {
@@ -25,21 +25,15 @@ export default function DashboardPage() {
   const [limitReached, setLimitReached] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isExternalModalOpen, setIsExternalModalOpen] = useState(false);
-  const row1Ref = useRef<HTMLDivElement>(null);
-  const row2Ref = useRef<HTMLDivElement>(null);
-  const row3Ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (!initialPromptLoaded) {
       const storedPrompt = localStorage.getItem("makeX_home_prompt");
       if (storedPrompt) {
-        // Update the state
         setPrompt(storedPrompt);
 
-        // Clear the localStorage item after retrieving it
         localStorage.removeItem("makeX_home_prompt");
 
-        // Focus the textarea
         if (inputRef.current) {
           inputRef.current.focus();
         }
@@ -47,48 +41,6 @@ export default function DashboardPage() {
       setInitialPromptLoaded(true);
     }
   }, [initialPromptLoaded]);
-  useEffect(() => {
-    const animateRow = (
-      rowRef: { current: HTMLDivElement | null },
-      direction: "left" | "right",
-      speed: number,
-    ) => {
-      if (!rowRef.current) return;
-
-      let position = 0;
-      const row = rowRef.current;
-      const rowWidth = row.scrollWidth;
-      const viewWidth = row.offsetWidth;
-      if (direction === "right") {
-        position = -rowWidth / 2;
-      }
-
-      const animate = () => {
-        if (!row) return;
-
-        if (direction === "left") {
-          position -= speed;
-          if (position <= -rowWidth / 2) {
-            position = 0;
-          }
-        } else {
-          position += speed;
-          if (position >= 0) {
-            position = -rowWidth / 2;
-          }
-        }
-        row.style.transform = `translateX(${position}px)`;
-        requestAnimationFrame(animate);
-      };
-
-      requestAnimationFrame(animate);
-    };
-    animateRow(row1Ref, "left", 0.3);
-    animateRow(row2Ref, "right", 0.2);
-    animateRow(row3Ref, "left", 0.3);
-
-    return () => {};
-  }, []);
 
   const handleCreateApp = async () => {
     if (!prompt.trim()) {
@@ -123,9 +75,6 @@ export default function DashboardPage() {
   const handleSuggestionClick = (suggestion: (typeof APP_SUGGESTIONS)[0]) => {
     setPrompt(suggestion.prompt);
   };
-  const duplicateItemsForScrolling = (items: typeof APP_SUGGESTIONS) => {
-    return [...items, ...items];
-  };
 
   return (
     <>
@@ -156,62 +105,10 @@ export default function DashboardPage() {
               Or add an existing app to the catalog
             </p>
           </div>
-          <div className="mb-8">
-            <div className="overflow-hidden mb-2">
-              <div
-                ref={row1Ref}
-                className="flex whitespace-nowrap"
-                style={{ willChange: "transform" }}
-              >
-                {duplicateItemsForScrolling(ROW_1).map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
-                  >
-                    {getIconComponent(suggestion.iconName)}
-                    {suggestion.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="overflow-hidden mb-2">
-              <div
-                ref={row2Ref}
-                className="flex whitespace-nowrap"
-                style={{ willChange: "transform" }}
-              >
-                {duplicateItemsForScrolling(ROW_2).map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
-                  >
-                    {getIconComponent(suggestion.iconName)}
-                    {suggestion.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="overflow-hidden">
-              <div
-                ref={row3Ref}
-                className="flex whitespace-nowrap"
-                style={{ willChange: "transform" }}
-              >
-                {duplicateItemsForScrolling(ROW_3).map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-full border text-sm transition-colors whitespace-nowrap hover:bg-primary/10 hover:border-primary/30"
-                  >
-                    {getIconComponent(suggestion.iconName)}
-                    {suggestion.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          <SuggestionsContainer
+            onSuggestionClick={handleSuggestionClick}
+            className="mb-8"
+          />
           <div className="mb-8">
             <div className="relative border rounded-xl shadow-lg overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
               <textarea
